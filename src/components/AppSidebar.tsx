@@ -1,3 +1,4 @@
+
 import { Calculator, Home, FileText, User, Settings, LogOut, FormInput, PiggyBank } from "lucide-react"
 import { NavLink } from "react-router-dom"
 import {
@@ -17,7 +18,7 @@ const menuItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Basic Details", url: "/basic-details", icon: User },
   { title: "Forms", url: "/forms", icon: FormInput },
-  { title: "Annuity Calculator", url: "/calculate", icon: Calculator },
+  { title: "Annuity Calculator", url: "/living-annuity-calculator", icon: Calculator },
   { title: "Quotation Management", url: "/quotes", icon: FileText },
 ]
 

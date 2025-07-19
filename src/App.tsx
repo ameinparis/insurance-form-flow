@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +12,7 @@ import Results from "./pages/Results";
 import PersonalDetails from "./pages/PersonalDetails";
 import QuotePreview from "./pages/QuotePreview";
 import Quotes from "./pages/Quotes";
+import LivingAnnuityCalculator from "./pages/LivingAnnuityCalculator";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +32,7 @@ const App = () => (
             <Route path="/quote/personal-details" element={<PersonalDetails />} />
             <Route path="/quote/preview" element={<QuotePreview />} />
             <Route path="/quotes" element={<Quotes />} />
+            <Route path="/living-annuity-calculator" element={<LivingAnnuityCalculator />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
