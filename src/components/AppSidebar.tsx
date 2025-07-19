@@ -28,7 +28,7 @@ const settingsItems = [
 
 export function AppSidebar() {
   return (
-    <Sidebar className="bg-white border-r">
+    <Sidebar className="bg-white rounded-2xl shadow-sm border-0">
       <SidebarHeader className="p-6">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 bg-blue-500 rounded flex items-center justify-center">
