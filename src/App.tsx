@@ -8,6 +8,7 @@ import { Layout } from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Calculate from "./pages/Calculate";
 import CalculateForm from "./pages/CalculateForm";
+import CalculatorForm from "./components/CalculatorForm";
 import Results from "./pages/Results";
 import PersonalDetails from "./pages/PersonalDetails";
 import QuotePreview from "./pages/QuotePreview";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/calculate" element={<Calculate />} />
             <Route path="/calculate/:type" element={<CalculateForm />} />
             <Route path="/calculate/results" element={<Results />} />
+            <Route path="/calculator/:type" element={<CalculatorForm />} />
             <Route path="/quote/personal-details" element={<PersonalDetails />} />
             <Route path="/quote/preview" element={<QuotePreview />} />
             <Route path="/quotes" element={<Quotes />} />
