@@ -14,6 +14,7 @@ import PersonalDetails from "./pages/PersonalDetails";
 import QuotePreview from "./pages/QuotePreview";
 import Quotes from "./pages/Quotes";
 import LivingAnnuityCalculator from "./pages/LivingAnnuityCalculator";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,14 +28,14 @@ const App = () => (
         <Layout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/calculate" element={<Calculate />} />
-            <Route path="/calculate/:type" element={<CalculateForm />} />
-            <Route path="/calculate/results" element={<Results />} />
+            <Route path="/calculator" element={<Calculate />} />
             <Route path="/calculator/:type" element={<CalculatorForm />} />
+            <Route path="/calculate/results" element={<Results />} />
             <Route path="/quote/personal-details" element={<PersonalDetails />} />
             <Route path="/quote/preview" element={<QuotePreview />} />
             <Route path="/quotes" element={<Quotes />} />
             <Route path="/living-annuity-calculator" element={<LivingAnnuityCalculator />} />
+            <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
