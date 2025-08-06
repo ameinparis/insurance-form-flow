@@ -17,7 +17,7 @@ import {
 
 
 const menuItems = [
-  { title: "Dashboard", url: "/", icon: Home },
+  { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Quotation Management", url: "/quotes", icon: FileText },
 ]
 
@@ -43,7 +43,7 @@ export function AppSidebar() {
           </div>
           <div>
             <h2 className="font-semibold text-sidebar-foreground">EXCLUSIVE</h2>
-            <p className="text-xs text-sidebar-foreground/60 uppercase tracking-wide">LIFE INSURANCE</p>
+            <p className="text-xs text-sidebar-foreground/60 uppercase tracking-wide">INSURANCE</p>
           </div>
         </div>
       </SidebarHeader>

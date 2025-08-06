@@ -1,73 +1,107 @@
 
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Calculator, FileText, TrendingUp, Download, Trash2 } from "lucide-react"
 import { Link } from "react-router-dom"
 import { SimpleChart } from "@/components/SimpleChart"
+import { dashboardApi, quotesApi, Quote, DashboardStats, ChartData } from "@/lib/api"
+import { toast } from "sonner"
 
 const Dashboard = () => {
-  // Mock chart data
-  const monthlyData = [
-    { month: "Jan", quotes: 12, calculations: 18 },
-    { month: "Feb", quotes: 19, calculations: 25 },
-    { month: "Mar", quotes: 15, calculations: 22 },
-    { month: "Apr", quotes: 25, calculations: 35 },
-    { month: "May", quotes: 22, calculations: 38 },
-    { month: "Jun", quotes: 30, calculations: 42 },
-  ]
-
-  const categoryData = [
-    { name: "Living Annuity", value: 45, color: "#3B82F6" },
-    { name: "Life Insurance", value: 30, color: "#06B6D4" },
-    { name: "Health Insurance", value: 25, color: "#8B5CF6" },
-  ]
-
-  const performanceData = [
-    { metric: "Conversion Rate", value: 78, target: 80, color: "#10B981" },
-    { metric: "Customer Satisfaction", value: 92, target: 90, color: "#F59E0B" },
-    { metric: "Processing Speed", value: 85, target: 85, color: "#EF4444" },
-  ]
-
-
-  // Mock recently created quotes data
-  const recentQuotes = [
-    {
-      id: "EXQ-0012/25",
-      createdBy: "Kesego Gosata-Mosweu",
-      customerName: "Motlapele Raleru",
-      productName: "Living Annuity",
-      frequency: "Monthly",
-      contact: "71633111",
-      quoteCreated: "11/07/2025"
-    },
-    {
-      id: "EXQ-0011/25",
-      createdBy: "ame busang",
-      customerName: "ame busang",
-      productName: "Living Annuity",
-      frequency: "Monthly",
-      contact: "72791628",
-      quoteCreated: "10/07/2025"
-    },
-    {
-      id: "EXQ-0010/25",
-      createdBy: "Oratile Busang",
-      customerName: "Tsentle Mothusi",
-      productName: "Living Annuity",
-      frequency: "Monthly",
-      contact: "72791628",
-      quoteCreated: "23/06/2025"
-    }
-  ]
+  const [stats, setStats] = useState<DashboardStats>({
+    totalQuotes: 0,
+    totalCalculations: 0,
+    successRate: 0,
+    revenue: 0
+  })
+  const [chartData, setChartData] = useState<ChartData>({
+    monthlyData: [],
+    categoryData: []
+  })
+  const [recentQuotes, setRecentQuotes] = useState<Quote[]>([])
+  const [loading, setLoading] = useState(true)
 
   // Mock current user role (in real app this would come from auth context)
   const currentUser = { role: 'superuser' } // or 'user'
 
-  const handleDeleteQuote = (quoteId: string) => {
-    console.log('Deleting quote:', quoteId)
-    // In real app, this would call an API to delete the quote
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true)
+        const [statsData, chartsData, quotesData] = await Promise.all([
+          dashboardApi.getStats(),
+          dashboardApi.getChartData(),
+          quotesApi.getRecentQuotes()
+        ])
+        
+        setStats(statsData)
+        setChartData(chartsData)
+        setRecentQuotes(quotesData)
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error)
+        toast.error('Failed to load dashboard data')
+        
+        // Fallback to mock data if API fails
+        setStats({
+          totalQuotes: 24,
+          totalCalculations: 45,
+          successRate: 78,
+          revenue: 124000
+        })
+        setChartData({
+          monthlyData: [
+            { month: "Jan", quotes: 12, calculations: 18 },
+            { month: "Feb", quotes: 19, calculations: 25 },
+            { month: "Mar", quotes: 15, calculations: 22 },
+            { month: "Apr", quotes: 25, calculations: 35 },
+            { month: "May", quotes: 22, calculations: 38 },
+            { month: "Jun", quotes: 30, calculations: 42 },
+          ],
+          categoryData: [
+            { name: "Living Annuity", value: 45, color: "#3B82F6" },
+            { name: "Life Insurance", value: 30, color: "#06B6D4" },
+            { name: "Health Insurance", value: 25, color: "#8B5CF6" },
+          ]
+        })
+        setRecentQuotes([
+          {
+            id: "EXQ-0012/25",
+            createdBy: "Kesego Gosata-Mosweu",
+            customerName: "Motlapele Raleru",
+            productName: "Living Annuity",
+            frequency: "Monthly",
+            contact: "71633111",
+            quoteCreated: "11/07/2025"
+          },
+          {
+            id: "EXQ-0011/25",
+            createdBy: "ame busang",
+            customerName: "ame busang",
+            productName: "Living Annuity",
+            frequency: "Monthly",
+            contact: "72791628",
+            quoteCreated: "10/07/2025"
+          }
+        ])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboardData()
+  }, [])
+
+  const handleDeleteQuote = async (quoteId: string) => {
+    try {
+      await quotesApi.deleteQuote(quoteId)
+      setRecentQuotes(quotes => quotes.filter(q => q.id !== quoteId))
+      toast.success('Quote deleted successfully')
+    } catch (error) {
+      console.error('Error deleting quote:', error)
+      toast.error('Failed to delete quote')
+    }
   }
 
   return (
@@ -84,7 +118,7 @@ const Dashboard = () => {
             <FileText className="h-4 w-4 text-blue-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">24</div>
+            <div className="text-3xl font-bold">{loading ? "..." : stats.totalQuotes}</div>
             <p className="text-xs text-blue-200">+2 from last month</p>
           </CardContent>
         </Card>
@@ -95,7 +129,7 @@ const Dashboard = () => {
             <Calculator className="h-4 w-4 text-cyan-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">45</div>
+            <div className="text-3xl font-bold">{loading ? "..." : stats.totalCalculations}</div>
             <p className="text-xs text-cyan-200">+8 from last month</p>
           </CardContent>
         </Card>
@@ -106,7 +140,7 @@ const Dashboard = () => {
             <TrendingUp className="h-4 w-4 text-purple-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">78%</div>
+            <div className="text-3xl font-bold">{loading ? "..." : `${stats.successRate}%`}</div>
             <p className="text-xs text-purple-200">+5% from last month</p>
           </CardContent>
         </Card>
@@ -117,7 +151,7 @@ const Dashboard = () => {
             <TrendingUp className="h-4 w-4 text-green-200" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">$124K</div>
+            <div className="text-3xl font-bold">{loading ? "..." : `$${(stats.revenue / 1000).toFixed(0)}K`}</div>
             <p className="text-xs text-green-200">+12% from last month</p>
           </CardContent>
         </Card>
@@ -131,7 +165,7 @@ const Dashboard = () => {
             <CardDescription>Monthly quotes and calculations trend</CardDescription>
           </CardHeader>
           <CardContent>
-            <SimpleChart data={monthlyData} type="area" className="h-[300px]" />
+            <SimpleChart data={chartData.monthlyData} type="area" className="h-[300px]" />
           </CardContent>
         </Card>
 
@@ -141,7 +175,7 @@ const Dashboard = () => {
             <CardDescription>Distribution by insurance type</CardDescription>
           </CardHeader>
           <CardContent>
-            <SimpleChart data={categoryData} type="pie" className="h-[300px]" />
+            <SimpleChart data={chartData.categoryData} type="pie" className="h-[300px]" />
           </CardContent>
         </Card>
       </div>

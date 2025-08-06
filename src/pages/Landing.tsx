@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Shield, TrendingUp, Users, Award, ArrowRight, Lock, Mail } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { authApi } from "@/lib/api"
+import { toast } from "sonner"
 
 const Landing = () => {
   const [showAuthDialog, setShowAuthDialog] = useState(false)
@@ -17,12 +19,17 @@ const Landing = () => {
     e.preventDefault()
     setIsLoading(true)
     
-    // Simulate authentication
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    setIsLoading(false)
-    setShowAuthDialog(false)
-    navigate("/dashboard")
+    try {
+      await authApi.signIn(email, password)
+      setIsLoading(false)
+      setShowAuthDialog(false)
+      toast.success("Welcome to Exclusive Insurance!")
+      navigate("/dashboard")
+    } catch (error) {
+      setIsLoading(false)
+      toast.error("Authentication failed. Please check your credentials.")
+      console.error("Authentication error:", error)
+    }
   }
 
   return (
@@ -40,7 +47,7 @@ const Landing = () => {
           <div className="flex items-center space-x-2">
             <Shield className="h-8 w-8 text-blue-400" />
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
-              InsureForward
+              Exclusive Insurance
             </span>
           </div>
           <Button 
@@ -149,7 +156,7 @@ const Landing = () => {
       {/* Features Section */}
       <section className="relative z-10 max-w-7xl mx-auto px-6 py-20">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4">Why Choose InsureForward?</h2>
+          <h2 className="text-4xl font-bold mb-4">Why Choose Exclusive Insurance?</h2>
           <p className="text-xl text-slate-300">Advanced technology meets personalized service</p>
         </div>
         
