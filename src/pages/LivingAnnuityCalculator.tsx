@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Calculator } from "lucide-react"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Calculator, Loader2 } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 
 const LivingAnnuityCalculator = () => {
   const [formData, setFormData] = useState({
@@ -17,23 +17,56 @@ const LivingAnnuityCalculator = () => {
     frequency: "Monthly"
   })
   
-  const [results, setResults] = useState(null)
+  const [results, setResults] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [errors, setErrors] = useState<{ ageAtStart?: string; purchaseAmount?: string }>({})
+  const { toast } = useToast()
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
+    if (field in errors) {
+      setErrors(prev => ({ ...prev, [field]: undefined }))
+    }
+  }
+
+  const validate = () => {
+    const errs: { ageAtStart?: string; purchaseAmount?: string } = {}
+    const age = Number(formData.ageAtStart)
+    if (!age || age < 50 || age > 85) {
+      errs.ageAtStart = "Starting age must be between 50 and 85."
+    }
+    const amount = Number(formData.purchaseAmount)
+    if (!amount || amount < 300000) {
+      errs.purchaseAmount = "Minimum investment is BWP 300,000."
+    }
+    setErrors(errs)
+    if (Object.keys(errs).length) {
+      toast({
+        variant: "destructive",
+        title: "Please fix the form",
+        description: Object.values(errs).join(" "),
+      })
+      return false
+    }
+    return true
   }
 
   const handleCalculate = () => {
-    // Mock calculation - you can implement actual logic later
-    const mockResults = {
-      monthlyPayment: "P 2,450",
-      totalReturn: "P 294,000",
-      guaranteedPeriod: "20 years"
-    }
-    setResults(mockResults)
+    if (!validate()) return
+    setIsLoading(true)
+    setResults(null)
+    setTimeout(() => {
+      const mockResults = {
+        monthlyPayment: formData.frequency === "Monthly" ? "BWP 2,450" : "BWP 29,400",
+        totalReturn: "BWP 294,000",
+        guaranteedPeriod: "20 years"
+      }
+      setResults(mockResults)
+      setIsLoading(false)
+    }, 1200)
   }
 
   const handleCreateQuote = () => {
@@ -58,18 +91,18 @@ const LivingAnnuityCalculator = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="ageAtStart">Age at start of Living Annuity</Label>
-                <Select onValueChange={(value) => handleInputChange("ageAtStart", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select age" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 50 }, (_, i) => i + 18).map((age) => (
-                      <SelectItem key={age} value={age.toString()}>
-                        {age} years
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="ageAtStart"
+                  type="number"
+                  min={50}
+                  max={85}
+                  placeholder="65"
+                  value={formData.ageAtStart}
+                  onChange={(e) => handleInputChange("ageAtStart", e.target.value)}
+                />
+                {errors.ageAtStart && (
+                  <p className="text-sm text-destructive">{errors.ageAtStart}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -77,66 +110,59 @@ const LivingAnnuityCalculator = () => {
                 <Input
                   id="purchaseAmount"
                   type="number"
-                  placeholder="Enter amount"
+                  min={300000}
+                  step="1000"
+                  placeholder="BWP 500,000"
                   value={formData.purchaseAmount}
                   onChange={(e) => handleInputChange("purchaseAmount", e.target.value)}
                 />
+                {errors.purchaseAmount && (
+                  <p className="text-sm text-destructive">{errors.purchaseAmount}</p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="drawdownPercentage">Living Annuity Drawdown Percentage (%)</Label>
-                <Select onValueChange={(value) => handleInputChange("drawdownPercentage", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select percentage" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 16 }, (_, i) => i + 2.5).map((percentage) => (
-                      <SelectItem key={percentage} value={percentage.toString()}>
-                        {percentage}%
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="drawdownPercentage"
+                  type="number"
+                  step="0.5"
+                  placeholder="5"
+                  value={formData.drawdownPercentage}
+                  onChange={(e) => handleInputChange("drawdownPercentage", e.target.value)}
+                />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="ageForLifeGuarantee">Age at which Life Guaranteed amount starts for Life</Label>
-                <Select onValueChange={(value) => handleInputChange("ageForLifeGuarantee", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select age" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 30 }, (_, i) => i + 55).map((age) => (
-                      <SelectItem key={age} value={age.toString()}>
-                        {age} years
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="ageForLifeGuarantee"
+                  type="number"
+                  placeholder="75"
+                  value={formData.ageForLifeGuarantee}
+                  onChange={(e) => handleInputChange("ageForLifeGuarantee", e.target.value)}
+                />
               </div>
 
               <div className="space-y-2">
                 <Label>Annual / Monthly</Label>
-                <div className="flex gap-2">
-                  <Badge 
-                    variant={formData.frequency === "Monthly" ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => handleInputChange("frequency", "Monthly")}
-                  >
-                    Monthly
-                  </Badge>
-                  <Badge 
-                    variant={formData.frequency === "Annual" ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => handleInputChange("frequency", "Annual")}
-                  >
-                    Annual
-                  </Badge>
-                </div>
+                <ToggleGroup
+                  type="single"
+                  value={formData.frequency}
+                  onValueChange={(value) => value && handleInputChange("frequency", value)}
+                  className="flex gap-2"
+                >
+                  <ToggleGroupItem value="Annual" aria-label="Annual">Annual</ToggleGroupItem>
+                  <ToggleGroupItem value="Monthly" aria-label="Monthly">Monthly</ToggleGroupItem>
+                </ToggleGroup>
               </div>
 
-              <Button onClick={handleCalculate} className="w-full">
-                Calculate
+              <Button onClick={handleCalculate} className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Calculating...</>
+                ) : (
+                  "Calculate Living Annuity"
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -151,7 +177,12 @@ const LivingAnnuityCalculator = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {results ? (
+              {isLoading ? (
+                <div className="text-center text-muted-foreground py-8">
+                  <Loader2 className="h-12 w-12 mx-auto mb-4 animate-spin" />
+                  <p>Calculating your living annuity...</p>
+                </div>
+              ) : results ? (
                 <div className="space-y-4">
                   <div className="p-4 bg-gray-50 rounded-lg">
                     <div className="text-sm text-gray-600">Monthly Payment</div>
