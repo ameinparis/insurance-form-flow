@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { 
@@ -9,7 +10,8 @@ import {
   UserCheck, 
   User 
 } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import LivingAnnuityFlow from "@/components/LivingAnnuityFlow"
 
 const Calculate = () => {
   const options = [
@@ -18,51 +20,65 @@ const Calculate = () => {
       title: "Life Funeral Quotation",
       description: "Comprehensive funeral insurance coverage",
       icon: Heart,
-      color: "bg-gradient-to-br from-blue-500 to-blue-600"
+      color: "bg-gradient-to-br from-blue-500 to-blue-600",
     },
     {
       id: "living-annuities",
       title: "Living Annuities Quotation",
       description: "Retirement income planning solutions",
       icon: Shield,
-      color: "bg-gradient-to-br from-green-500 to-green-600"
+      color: "bg-gradient-to-br from-green-500 to-green-600",
     },
     {
       id: "group-life-assurance",
       title: "Group Life Assurance (GLA)",
       description: "Employee group life insurance coverage",
       icon: Users,
-      color: "bg-gradient-to-br from-purple-500 to-purple-600"
+      color: "bg-gradient-to-br from-purple-500 to-purple-600",
     },
     {
       id: "credit-life",
       title: "Credit Life Cover",
       description: "Protection for outstanding credit balances",
       icon: CreditCard,
-      color: "bg-gradient-to-br from-orange-500 to-orange-600"
+      color: "bg-gradient-to-br from-orange-500 to-orange-600",
     },
     {
       id: "critical-illness",
       title: "Critical Illness Cover",
       description: "Financial protection against serious illnesses",
       icon: Activity,
-      color: "bg-gradient-to-br from-red-500 to-red-600"
+      color: "bg-gradient-to-br from-red-500 to-red-600",
     },
     {
       id: "occupational-disability",
       title: "Occupational Disability",
       description: "Income protection for work-related disabilities",
       icon: UserCheck,
-      color: "bg-gradient-to-br from-indigo-500 to-indigo-600"
+      color: "bg-gradient-to-br from-indigo-500 to-indigo-600",
     },
     {
       id: "individual-life",
       title: "Individual Life Cover",
       description: "Personal life insurance protection",
       icon: User,
-      color: "bg-gradient-to-br from-teal-500 to-teal-600"
-    }
+      color: "bg-gradient-to-br from-teal-500 to-teal-600",
+    },
   ]
+
+  const [selected, setSelected] = useState<string | null>(null)
+  const flowRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+
+  const handleStart = (id: string) => {
+    setSelected(id)
+  }
+
+  useEffect(() => {
+    if (selected === "living-annuities" && flowRef.current) {
+      flowRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+  }, [selected])
 
   return (
     <div className="space-y-6 p-6">
@@ -86,15 +102,27 @@ const Calculate = () => {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <Button asChild className="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5">
-                <Link to={`/calculator/${option.id}`}>
+              {option.id === "living-annuities" ? (
+                <Button className="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5" onClick={() => handleStart(option.id)}>
                   Get Started
-                </Link>
-              </Button>
+                </Button>
+              ) : (
+                <Button asChild className="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5">
+                  <Link to={`/calculator/${option.id}`}>
+                    Get Started
+                  </Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {selected === "living-annuities" && (
+        <div ref={flowRef} className="pt-8">
+          <LivingAnnuityFlow onCreateQuote={(payload) => navigate('/quote/personal-details', { state: payload })} />
+        </div>
+      )}
     </div>
   )
 }
