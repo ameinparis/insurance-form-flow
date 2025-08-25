@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Shield, TrendingUp, Users, Award, ArrowRight, Lock, Mail } from "lucide-react"
+import { Shield, ArrowRight, Lock, Mail } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { authApi } from "@/lib/api"
 import { toast } from "sonner"
@@ -14,30 +14,6 @@ const Landing = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const navigate = useNavigate()
-
-  // SEO: set basic meta and canonical
-  useEffect(() => {
-    const title = 'Exclusive Insurance — Simple, Smart Coverage'
-    document.title = title
-
-    const desc = 'Get a quick Living Annuity quotation and more, simply and securely.'
-    let meta = document.querySelector('meta[name="description"]')
-    if (!meta) {
-      meta = document.createElement('meta')
-      meta.setAttribute('name', 'description')
-      document.head.appendChild(meta)
-    }
-    meta.setAttribute('content', desc)
-
-    const href = window.location.origin + '/'
-    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null
-    if (!link) {
-      link = document.createElement('link')
-      link.setAttribute('rel', 'canonical')
-      document.head.appendChild(link)
-    }
-    link.setAttribute('href', href)
-  }, [])
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,109 +32,92 @@ const Landing = () => {
     }
   }
 
+  useEffect(() => {
+    const title = "Exclusive Insurance — Simple, Secure Insurance"
+    const description = "Simple, secure insurance with smart protection and fast quotes."
+    document.title = title
+
+    const meta = document.querySelector('meta[name="description"]')
+    if (meta) {
+      meta.setAttribute("content", description)
+    } else {
+      const m = document.createElement("meta")
+      m.setAttribute("name", "description")
+      m.setAttribute("content", description)
+      document.head.appendChild(m)
+    }
+
+    const canonicalHref = window.location.origin + "/"
+    const existingLink = document.querySelector('link[rel="canonical"]')
+    if (existingLink) {
+      existingLink.setAttribute("href", canonicalHref)
+    } else {
+      const link = document.createElement("link")
+      link.setAttribute("rel", "canonical")
+      link.setAttribute("href", canonicalHref)
+      document.head.appendChild(link)
+    }
+  }, [])
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="relative z-10 border-b border-border">
-        <nav className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
+    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(1200px_600px_at_50%_-200px,hsl(var(--hero-bg-start))_0%,hsl(var(--hero-bg-end))_60%)] text-[hsl(var(--hero-foreground))]">
+      <header className="relative z-10">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
           <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
+            <Shield className="h-7 w-7 text-[hsl(var(--brand-accent))]" aria-hidden="true" />
             <span className="text-xl font-semibold">Exclusive Insurance</span>
           </div>
-          <Button onClick={() => setShowAuthDialog(true)} className="rounded-full">
-            Sign In
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => setShowAuthDialog(true)}
+              className="rounded-full px-5 bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Sign in
+            </Button>
+          </div>
         </nav>
       </header>
 
-      {/* Hero Section */}
-      <main className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-32">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-8">
-            {/* <div className="space-y-6">
-              <h1 className="text-6xl font-bold leading-tight">
-                The Future of
-                <span className="block bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-400 bg-clip-text text-transparent">
-                  Insurance
-                </span>
-                <span className="block">Innovation</span>
-              </h1>
-              <p className="text-xl text-slate-300 leading-relaxed">
-                Revolutionizing insurance with cutting-edge technology, personalized solutions, 
-                and unparalleled customer experience. Your protection, reimagined.
-              </p>
-            </div> */}
+      <main className="relative z-10 mx-auto max-w-7xl px-6 pt-16 pb-24">
+        <section className="max-w-2xl">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight">
+            Insurance protection, simplified.
+          </h1>
+          <p className="mt-6 text-lg text-muted-foreground max-w-xl">
+            Smart coverage, clear pricing, and rapid quotes—built to protect what matters with confidence.
+          </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
-                onClick={() => setShowAuthDialog(true)}
-                size="lg"
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 hover:scale-105 hover:shadow-xl"
-              >
-                Get Started
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              {/* <Button 
-                variant="outline" 
-                size="lg"
-                className="border-slate-400 text-slate-300 hover:bg-slate-800 px-8 py-4 rounded-full text-lg transition-all duration-300"
-              >
-                Learn More
-              </Button> */}
-            </div>
-      <main className="relative z-10">
-        <section className="max-w-5xl mx-auto px-6 py-20 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">Modern Insurance, made simple</h1>
-          <p className="mt-4 text-lg text-muted-foreground">Get fast, accurate quotations for Living and Life Annuities.</p>
-
-          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" className="rounded-full" onClick={() => navigate('/calculate')}>
-              Calculator
-              <ArrowRight className="ml-2 h-5 w-5" />
+          <div className="mt-10 flex flex-col sm:flex-row gap-4">
+            <Button
+              size="lg"
+              className="rounded-full px-7 bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => navigate('/quote/personal-details')}
+            >
+              Get a Quote
+              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
-            <Button size="lg" variant="outline" className="rounded-full" onClick={() => setShowAuthDialog(true)}>
-              Sign In
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-full px-7 border-border hover:bg-accent hover:text-accent-foreground"
+              onClick={() => navigate('/calculator')}
+            >
+              Explore Calculator
             </Button>
           </div>
-
-          <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
-            <div className="rounded-xl border border-border p-4">
-              <div className="flex items-center gap-2 font-medium"><TrendingUp className="h-4 w-4 text-primary" /> Living Annuity</div>
-              <p className="mt-1 text-sm text-muted-foreground">Transparent fees and flexible payouts.</p>
-            </div>
-            <div className="rounded-xl border border-border p-4">
-              <div className="flex items-center gap-2 font-medium"><Award className="h-4 w-4 text-primary" /> Life Annuity</div>
-              <p className="mt-1 text-sm text-muted-foreground">Guaranteed income for life.</p>
-            </div>
-            <div className="rounded-xl border border-border p-4">
-              <div className="flex items-center gap-2 font-medium"><Users className="h-4 w-4 text-primary" /> Expert Support</div>
-              <p className="mt-1 text-sm text-muted-foreground">We’re here to help you decide.</p>
-            </div>
-          </div>
-
-          {/* Structured Data */}
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
-                "@context": "https://schema.org",
-                "@type": "Organization",
-                name: "Exclusive Insurance",
-                url: typeof window !== 'undefined' ? window.location.origin : ''
-              })
-            }}
-          />
         </section>
       </main>
 
-      
-        
-      
-
+      {/* subtle background motif */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 h-[600px] w-[600px] rounded-full opacity-20 blur-3xl" style={{ background: 'radial-gradient(closest-side, hsl(var(--brand-accent)), transparent)' }} />
+        <div className="absolute right-10 bottom-10 opacity-15">
+          <Shield className="h-24 w-24 text-[hsl(var(--brand-accent))]" aria-hidden="true" />
+        </div>
+      </div>
 
       {/* Authentication Dialog */}
       <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-        <DialogContent className="sm:max-w-md bg-background border border-border text-foreground">
+        <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center">Welcome Back</DialogTitle>
           </DialogHeader>
@@ -166,15 +125,15 @@ const Landing = () => {
           <form onSubmit={handleSignIn} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-foreground">Email</Label>
+                <Label htmlFor="email" className="text-slate-300">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-muted border border-border text-foreground placeholder-muted-foreground"
+                    className="pl-10"
                     placeholder="Enter your email"
                     required
                   />
@@ -182,15 +141,15 @@ const Landing = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-foreground">Password</Label>
+                <Label htmlFor="password" className="text-slate-300">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 bg-muted border border-border text-foreground placeholder-muted-foreground"
+                    className="pl-10"
                     placeholder="Enter your password"
                     required
                   />
@@ -200,7 +159,7 @@ const Landing = () => {
             
             <Button 
               type="submit" 
-              className="w-full rounded-full"
+              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white py-3 rounded-full font-semibold transition-all duration-300"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -218,10 +177,10 @@ const Landing = () => {
 
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="fixed inset-0 bg-foreground/50 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-background border border-border rounded-2xl p-8 text-center text-foreground">
-            <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-lg">Connecting to your dashboard...</p>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-slate-800 rounded-2xl p-8 text-center">
+            <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-white text-lg">Connecting to your dashboard...</p>
           </div>
         </div>
       )}
