@@ -81,7 +81,7 @@ const Landing = () => {
       <main className="relative z-10 mx-auto max-w-7xl px-6 pt-16 pb-24">
         <section className="max-w-2xl">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight">
-            Insurance protection, simplified.
+            Exclusive Life Insurance<br />Quote Management
           </h1>
           <p className="mt-6 text-lg text-muted-foreground max-w-xl">
             Smart coverage, clear pricing, and rapid quotes—built to protect what matters with confidence.
