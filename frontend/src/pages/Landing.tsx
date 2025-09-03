@@ -7,6 +7,7 @@ import { Shield, ArrowRight, Lock, Mail } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { authApi } from "@/lib/api"
 import { toast } from "sonner"
+import corporateHandshake from "@/assets/corporate-handshake.jpg"
 
 const Landing = () => {
   const [showAuthDialog, setShowAuthDialog] = useState(false)
@@ -59,7 +60,7 @@ const Landing = () => {
     }
   }, [])
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(1200px_600px_at_50%_-200px,hsl(var(--hero-bg-start))_0%,hsl(var(--hero-bg-end))_60%)] text-[hsl(var(--hero-foreground))]">
+    <div className="relative min-h-screen overflow-hidden text-[hsl(var(--hero-foreground))]" style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(${corporateHandshake})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <header className="relative z-10">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
           <div className="flex items-center gap-2">
