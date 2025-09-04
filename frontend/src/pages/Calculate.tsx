@@ -13,19 +13,19 @@ import { Link } from "react-router-dom"
 
 const Calculate = () => {
   const options = [
+        {
+      id: "living-annuities",
+      title: "Living Annuities Quotation",
+      description: "Retirement income planning solutions",
+      icon: Shield,
+      color: "bg-gradient-to-br from-green-500 to-green-600"
+    },
     {
       id: "life-funeral",
       title: "Life Funeral Quotation",
       description: "Comprehensive funeral insurance coverage",
       icon: Heart,
       color: "bg-gradient-to-br from-blue-500 to-blue-600"
-    },
-    {
-      id: "living-annuities",
-      title: "Living Annuities Quotation",
-      description: "Retirement income planning solutions",
-      icon: Shield,
-      color: "bg-gradient-to-br from-green-500 to-green-600"
     },
     {
       id: "group-life-assurance",

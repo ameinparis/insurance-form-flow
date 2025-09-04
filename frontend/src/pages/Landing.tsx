@@ -7,7 +7,6 @@ import { Shield, ArrowRight, Lock, Mail } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { authApi } from "@/lib/api"
 import { toast } from "sonner"
-// import corporateHandshake from "@/assets/corporate-handshake.jpg"
 
 const Landing = () => {
   const [showAuthDialog, setShowAuthDialog] = useState(false)
@@ -16,22 +15,40 @@ const Landing = () => {
   const [password, setPassword] = useState("")
   const navigate = useNavigate()
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    
-    try {
-      await authApi.signIn(email, password)
-      setIsLoading(false)
-      setShowAuthDialog(false)
+const handleSignIn = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setIsLoading(true)
+
+  try {
+    const response = await fetch("http://localhost:5002/api/users/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    })
+
+    const data = await response.json()
+
+    if (response.ok) {
+      localStorage.setItem("token", data.token)
+      localStorage.setItem("userId", data.userId)
+      if (data.role) localStorage.setItem("userRole", data.role)
+
       toast.success("Welcome to Exclusive Insurance!")
       navigate("/dashboard")
-    } catch (error) {
-      setIsLoading(false)
-      toast.error("Authentication failed. Please check your credentials.")
-      console.error("Authentication error:", error)
+    } else {
+      toast.error(data.message || "Invalid login credentials")
     }
+  } catch (error) {
+    toast.error("Network error or backend service is unreachable")
+    console.error("Authentication error:", error)
+  } finally {
+    setIsLoading(false)
+    setShowAuthDialog(false)
   }
+}
+
 
   useEffect(() => {
     const title = "Exclusive Insurance — Simple, Secure Insurance"
@@ -189,4 +206,4 @@ const Landing = () => {
   )
 }
 
-export default Landing
+export default Landing;
