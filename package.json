@@ -1,0 +1,13 @@
+{
+  "name": "life-insurance-quote-management",
+  "private": true,
+  "type": "module",
+  "workspaces": ["frontend"],
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "preview": "cd frontend && npm run preview",
+    "lint": "cd frontend && npm run lint"
+  },
+  "devDependencies": {}
+}
