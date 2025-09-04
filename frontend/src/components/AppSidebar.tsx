@@ -37,15 +37,13 @@ export function AppSidebar() {
   return (
     <Sidebar className="bg-sidebar-background rounded-2xl shadow-lg border-0 z-50">
       <SidebarHeader className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 bg-primary rounded flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-lg">X</span>
+          <div className="flex items-center gap-3">
+            <img src="/Assets/exclusive.png" alt="Exclusive Insurance Logo" className="h-8 w-8" />
+            <div>
+              <h2 className="font-semibold text-sidebar-foreground">EXCLUSIVE</h2>
+              <p className="text-xs text-sidebar-foreground/60 uppercase tracking-wide">INSURANCE</p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-semibold text-sidebar-foreground">EXCLUSIVE</h2>
-            <p className="text-xs text-sidebar-foreground/60 uppercase tracking-wide">INSURANCE</p>
-          </div>
-        </div>
       </SidebarHeader>
       
       <SidebarContent className="px-4 py-6">

@@ -81,7 +81,7 @@ const handleSignIn = async (e: React.FormEvent) => {
       <header className="relative z-10">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
           <div className="flex items-center gap-2">
-            <Shield className="h-7 w-7 text-[hsl(var(--brand-accent))]" aria-hidden="true" />
+            <img src="/Assets/exclusive.png" alt="Exclusive Insurance Logo" className="h-7 w-7" />
             <span className="text-xl font-semibold">Exclusive Insurance</span>
           </div>
           <div className="flex items-center gap-3">

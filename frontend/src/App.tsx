@@ -17,6 +17,7 @@ import Quotes from "./pages/Quotes";
 import LivingAnnuityCalculator from "./pages/LivingAnnuityCalculator";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import LogoutHandler from "./components/LogoutHandler";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
                 <Settings />
               </Layout>
             } />
+            <Route path="/logout" element={<LogoutHandler />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
