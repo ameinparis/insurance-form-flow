@@ -15,39 +15,39 @@ const Landing = () => {
   const [password, setPassword] = useState("")
   const navigate = useNavigate()
 
-const handleSignIn = async (e: React.FormEvent) => {
-  e.preventDefault()
-  setIsLoading(true)
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
 
-  try {
-    const response = await fetch("http://localhost:5002/api/users/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    })
+    try {
+      const response = await fetch("http://localhost:5002/api/users/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      })
 
-    const data = await response.json()
+      const data = await response.json()
 
-    if (response.ok) {
-      localStorage.setItem("token", data.token)
-      localStorage.setItem("userId", data.userId)
-      if (data.role) localStorage.setItem("userRole", data.role)
+      if (response.ok) {
+        localStorage.setItem("token", data.token)
+        localStorage.setItem("userId", data.userId)
+        if (data.role) localStorage.setItem("userRole", data.role)
 
-      toast.success("Welcome to Exclusive Insurance!")
-      navigate("/dashboard")
-    } else {
-      toast.error(data.message || "Invalid login credentials")
+        toast.success("Welcome to Exclusive Insurance!")
+        navigate("/dashboard")
+      } else {
+        toast.error(data.message || "Invalid login credentials")
+      }
+    } catch (error) {
+      toast.error("Network error or backend service is unreachable")
+      console.error("Authentication error:", error)
+    } finally {
+      setIsLoading(false)
+      setShowAuthDialog(false)
     }
-  } catch (error) {
-    toast.error("Network error or backend service is unreachable")
-    console.error("Authentication error:", error)
-  } finally {
-    setIsLoading(false)
-    setShowAuthDialog(false)
   }
-}
 
 
   useEffect(() => {
@@ -81,8 +81,11 @@ const handleSignIn = async (e: React.FormEvent) => {
       <header className="relative z-10">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
           <div className="flex items-center gap-2">
-            <img src="/Assets/exclusive.png" alt="Exclusive Insurance Logo" className="h-7 w-7" />
-            <span className="text-xl font-semibold">Exclusive Insurance</span>
+            <img
+              src="/exclusive.png"
+              alt="Exclusive Insurance Logo"
+              className="h-16 w-auto"
+            />
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -95,6 +98,7 @@ const handleSignIn = async (e: React.FormEvent) => {
         </nav>
       </header>
 
+
       <main className="relative z-10 mx-auto max-w-7xl px-6 pt-16 pb-24">
         <section className="max-w-2xl">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight">
@@ -104,7 +108,7 @@ const handleSignIn = async (e: React.FormEvent) => {
             Smart coverage, clear pricing, and rapid quotes—built to protect what matters with confidence.
           </p>
 
-          <div className="mt-10 flex flex-col sm:flex-row gap-4">
+          {/* <div className="mt-10 flex flex-col sm:flex-row gap-4">
             <Button
               size="lg"
               className="rounded-full px-7 bg-primary text-primary-foreground hover:bg-primary/90"
@@ -121,7 +125,7 @@ const handleSignIn = async (e: React.FormEvent) => {
             >
               Explore Calculator
             </Button>
-          </div>
+          </div> */}
         </section>
       </main>
 
@@ -139,7 +143,7 @@ const handleSignIn = async (e: React.FormEvent) => {
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center">Welcome Back</DialogTitle>
           </DialogHeader>
-          
+
           <form onSubmit={handleSignIn} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
@@ -157,7 +161,7 @@ const handleSignIn = async (e: React.FormEvent) => {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-slate-300">Password</Label>
                 <div className="relative">
@@ -174,11 +178,14 @@ const handleSignIn = async (e: React.FormEvent) => {
                 </div>
               </div>
             </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white py-3 rounded-full font-semibold transition-all duration-300"
+
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-[hsl(218,27%,25%)] to-[hsl(197,70%,50%)] 
+           hover:from-[hsl(218,27%,30%)] hover:to-[hsl(197,70%,45%)] 
+           text-white py-3 rounded-full font-semibold transition-all duration-300"
               disabled={isLoading}
+
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
