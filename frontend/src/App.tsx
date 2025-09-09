@@ -9,7 +9,7 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Calculate from "./pages/Calculate";
 import CalculateForm from "./pages/CalculateForm";
-import CalculatorForm from "./components/CalculatorForm";
+import FormRouter from "./components/FormRouter";
 import Results from "./pages/Results";
 import PersonalDetails from "./pages/PersonalDetails";
 import QuotePreview from "./pages/QuotePreview";
@@ -41,7 +41,7 @@ const App = () => (
             } />
             <Route path="/calculator/:type" element={
               <Layout>
-                <CalculatorForm />
+                <FormRouter />
               </Layout>
             } />
             <Route path="/calculate/results" element={
