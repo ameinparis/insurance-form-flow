@@ -42,48 +42,18 @@ const Dashboard = () => {
         console.error('Error fetching dashboard data:', error)
         toast.error('Failed to load dashboard data')
         
-        // Fallback to mock data if API fails
+        // Clear dummy data - will show empty state when API fails
         setStats({
-          totalQuotes: 24,
-          totalCalculations: 45,
-          successRate: 78,
-          revenue: 124000
+          totalQuotes: 0,
+          totalCalculations: 0,
+          successRate: 0,
+          revenue: 0
         })
         setChartData({
-          monthlyData: [
-            { month: "Jan", quotes: 12, calculations: 18 },
-            { month: "Feb", quotes: 19, calculations: 25 },
-            { month: "Mar", quotes: 15, calculations: 22 },
-            { month: "Apr", quotes: 25, calculations: 35 },
-            { month: "May", quotes: 22, calculations: 38 },
-            { month: "Jun", quotes: 30, calculations: 42 },
-          ],
-          categoryData: [
-            { name: "Living Annuity", value: 45, color: "#3b83f6c1" },
-            { name: "Life Insurance", value: 30, color: "#06B6D4" },
-            { name: "Health Insurance", value: 25, color: "#8B5CF6" },
-          ]
+          monthlyData: [],
+          categoryData: []
         })
-        setRecentQuotes([
-          {
-            id: "EXQ-0012/25",
-            createdBy: "Kesego Gosata-Mosweu",
-            customerName: "Motlapele Raleru",
-            productName: "Living Annuity",
-            frequency: "Monthly",
-            contact: "71633111",
-            quoteCreated: "11/07/2025"
-          },
-          {
-            id: "EXQ-0011/25",
-            createdBy: "ame busang",
-            customerName: "ame busang",
-            productName: "Living Annuity",
-            frequency: "Monthly",
-            contact: "72791628",
-            quoteCreated: "10/07/2025"
-          }
-        ])
+        setRecentQuotes([])
       } finally {
         setLoading(false)
       }
@@ -110,51 +80,6 @@ const Dashboard = () => {
         <p className="text-muted-foreground">Manage your quotations and calculations.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-100">Total Quotes</CardTitle>
-            <FileText className="h-4 w-4 text-blue-200" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{loading ? "..." : stats.totalQuotes}</div>
-            <p className="text-xs text-blue-200">+2 from last month</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-cyan-500 to-cyan-600 text-white border-0">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-cyan-100">Calculations</CardTitle>
-            <Calculator className="h-4 w-4 text-cyan-200" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{loading ? "..." : stats.totalCalculations}</div>
-            <p className="text-xs text-cyan-200">+8 from last month</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-100">Success Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-purple-200" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{loading ? "..." : `${stats.successRate}%`}</div>
-            <p className="text-xs text-purple-200">+5% from last month</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-100">Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-200" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{loading ? "..." : `$${(stats.revenue / 1000).toFixed(0)}K`}</div>
-            <p className="text-xs text-green-200">+12% from last month</p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

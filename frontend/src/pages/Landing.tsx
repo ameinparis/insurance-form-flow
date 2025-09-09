@@ -141,51 +141,50 @@ const Landing = () => {
       <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
         <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center">Welcome Back</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-center">Sign In</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSignIn} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-300">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    placeholder="Enter your email"
-                    required
-                  />
-                </div>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email"
+                  required
+                  className="rounded-full py-6 px-4 text-base"
+                />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-slate-300">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                    placeholder="Enter your password"
-                    required
-                  />
-                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  required
+                  className="rounded-full py-6 px-4 text-base"
+                />
               </div>
+            </div>
+
+            <div className="text-center">
+              <Button
+                type="button"
+                variant="link"
+                className="text-blue-500 hover:text-blue-600 text-sm"
+              >
+                Forgot Password?
+              </Button>
             </div>
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-[hsl(218,27%,25%)] to-[hsl(197,70%,50%)] 
-           hover:from-[hsl(218,27%,30%)] hover:to-[hsl(197,70%,45%)] 
-           text-white py-3 rounded-full font-semibold transition-all duration-300"
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-6 rounded-full font-semibold text-base transition-all duration-300"
               disabled={isLoading}
-
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
@@ -193,9 +192,23 @@ const Landing = () => {
                   Signing in...
                 </div>
               ) : (
-                "Sign In"
+                "Login"
               )}
             </Button>
+
+            <div className="text-center">
+              <div className="text-muted-foreground mb-4">OR</div>
+              <div className="text-muted-foreground">
+                Don't have an account?{" "}
+                <Button
+                  type="button"
+                  variant="link"
+                  className="text-blue-500 hover:text-blue-600 p-0 h-auto font-normal"
+                >
+                  Signup
+                </Button>
+              </div>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
