@@ -23,8 +23,7 @@ const Dashboard = () => {
   const [recentQuotes, setRecentQuotes] = useState<Quote[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Mock current user role (in real app this would come from auth context)
-  const currentUser = { role: 'superuser' } // or 'user'
+  const currentUser = { role: 'superuser' } 
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -60,7 +59,7 @@ const Dashboard = () => {
             { month: "Jun", quotes: 30, calculations: 42 },
           ],
           categoryData: [
-            { name: "Living Annuity", value: 45, color: "#3B82F6" },
+            { name: "Living Annuity", value: 45, color: "#3b83f6c1" },
             { name: "Life Insurance", value: 30, color: "#06B6D4" },
             { name: "Health Insurance", value: 25, color: "#8B5CF6" },
           ]

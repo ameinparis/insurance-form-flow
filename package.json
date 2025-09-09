@@ -1,14 +1,13 @@
 {
-  "name": "life-insurance-quote-management",
+  "name": "exclusive-life-insurance-workspace",
   "private": true,
-  "type": "module",
-  "workspaces": ["frontend"],
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
-    "dev": "cd frontend && npm run dev",
-    "build": "cd frontend && npm run build",
-    "build:dev": "cd frontend && npm run build:dev",
-    "preview": "cd frontend && npm run preview",
-    "lint": "cd frontend && npm run lint"
-  },
-  "devDependencies": {}
+    "dev": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend", 
+    "build:dev": "npm run build:dev --workspace=frontend",
+    "preview": "npm run preview --workspace=frontend"
+  }
 }
