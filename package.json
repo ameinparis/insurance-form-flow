@@ -6,9 +6,17 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=frontend",
-    "build": "npm run build --workspace=frontend", 
+    "build": "npm run build --workspace=frontend",
     "build:dev": "npm run build:dev --workspace=frontend",
     "preview": "npm run preview --workspace=frontend"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@tailwindcss/typography": "^0.5.16",
+    "autoprefixer": "^10.4.21",
+    "lovable-tagger": "^1.1.9",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.13",
+    "tailwindcss-animate": "^1.0.7",
+    "vite": "^7.1.6"
+  }
 }
