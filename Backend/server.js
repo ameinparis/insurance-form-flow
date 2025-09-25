@@ -35,14 +35,15 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
 
 /* ------------------------------- Models ------------------------------ */
 const userSchema = new mongoose.Schema({
-  email:     { type: String, required: true, unique: true, lowercase: true, trim: true },
-  password:  { type: String, required: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  password: { type: String, required: true },
   firstName: { type: String, required: true, trim: true },
-  lastName:  { type: String, required: true, trim: true },
-  role:      { type: String, enum: ["user","superuser","admin"], default: "user" },
+  lastName: { type: String, required: true, trim: true },
+  role: { type: String, enum: ["user", "superuser", "admin"], default: "user" },
 }, { timestamps: true });
 const User = mongoose.model("User", userSchema);
 
+// 🔹 Old schema (keep for compatibility)
 const quoteSchema = new mongoose.Schema({
   fullName: String,
   dateOfBirth: String,
@@ -65,6 +66,30 @@ const quoteSchema = new mongoose.Schema({
   annualLifeAnnuity: Number,
 }, { timestamps: true });
 const Quote = mongoose.model("Quotations", quoteSchema);
+
+//New schema (for scalable design)
+const newQuoteSchema = new mongoose.Schema({
+  productType: { type: String, enum: ["annuity", "funeral", "life"], required: true },
+
+  client: {
+    fullName: String,
+    dateOfBirth: String,
+    idNumber: String,
+    contactNumber: String,
+    email: String,
+  },
+
+  // Dynamic payload → store calculations/output based on product type
+  inputs: mongoose.Schema.Types.Mixed,  
+  outputs: mongoose.Schema.Types.Mixed,  
+
+  quoteId: { type: String, index: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  createdByName: String,
+}, { timestamps: true });
+
+const Quotes = mongoose.model("Quotes", newQuoteSchema);
+
 
 /* ---------------------------- Auth helpers --------------------------- */
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -164,7 +189,7 @@ app.post("/api/quotes", authenticateToken, async (req, res) => {
     const yy = String(now.getFullYear()).slice(-2);
 
     const start = new Date(`${now.getFullYear()}-01-01T00:00:00Z`);
-    const end   = new Date(`${now.getFullYear()}-12-31T23:59:59Z`);
+    const end = new Date(`${now.getFullYear()}-12-31T23:59:59Z`);
     const count = await Quote.countDocuments({ createdAt: { $gte: start, $lte: end } });
 
     const next = String(count + 1).padStart(4, "0");
@@ -187,7 +212,7 @@ app.post("/api/quotes", authenticateToken, async (req, res) => {
 // (compat alias if your frontend still calls /api/save-quote)
 app.post("/api/save-quote", authenticateToken, async (req, res) => {
   req.url = "/api/quotes";  // forward internally
-  app._router.handle(req, res, () => {});
+  app._router.handle(req, res, () => { });
 });
 
 /** List quotes */
@@ -215,5 +240,60 @@ app.get("/api/quotes/:id", authenticateToken, async (req, res) => {
   }
 });
 
+/** ----------------- NEW QUOTES (scalable design) ----------------- */
+
+// Create a new quote
+app.post("/api/new-quotes", authenticateToken, async (req, res) => {
+  try {
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+
+    const start = new Date(`${now.getFullYear()}-01-01T00:00:00Z`);
+    const end   = new Date(`${now.getFullYear()}-12-31T23:59:59Z`);
+    const count = await Quotes.countDocuments({ createdAt: { $gte: start, $lte: end } });
+
+    const next = String(count + 1).padStart(4, "0");
+    const quoteId = `NEWQ-${next}/${yy}`;
+
+    const quote = await Quotes.create({
+      ...req.body,
+      quoteId,
+      createdBy: req.user.userId,
+      createdByName: req.body.createdByName,
+    });
+
+    res.status(201).json({ message: "New Quote saved", quoteId, quote });
+  } catch (e) {
+    console.error("Save new quote error:", e);
+    res.status(500).json({ message: "Failed to save new quote" });
+  }
+});
+
+// List all new quotes
+app.get("/api/new-quotes", authenticateToken, async (_req, res) => {
+  try {
+    const quotes = await Quotes.find()
+      .sort({ createdAt: -1 })
+      .populate("createdBy", "firstName lastName email");
+    res.json(quotes);
+  } catch (e) {
+    console.error("List new quotes error:", e);
+    res.status(500).json({ message: "Failed to fetch new quotes" });
+  }
+});
+
+// Get one new quote
+app.get("/api/new-quotes/:id", authenticateToken, async (req, res) => {
+  try {
+    const q = await Quotes.findById(req.params.id);
+    if (!q) return res.status(404).json({ message: "New Quote not found" });
+    res.json(q);
+  } catch (e) {
+    console.error("Get new quote error:", e);
+    res.status(500).json({ message: "Failed to fetch new quote" });
+  }
+});
+
+
 /* ----------------------------- Start server -------------------------- */
-app.listen(PORT, () => console.log(`Server running on Port :${PORT}`));
+app.listen(PORT, () => console.log(`Server running on Port ${PORT}`));
