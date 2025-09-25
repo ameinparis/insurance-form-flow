@@ -4,6 +4,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "sonner"
 
 type LivingResult = {
@@ -76,6 +79,17 @@ const AnnuityQuotationForm = () => {
   const [lifePurchaseAmount, setLifePurchaseAmount] = useState("")
   const [lifeLoading, setLifeLoading] = useState(false)
   const [lifeResult, setLifeResult] = useState<LifeResult | null>(null)
+
+  // Quote dialog state
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false)
+  const [customerDetails, setCustomerDetails] = useState({
+    fullName: "",
+    dateOfBirth: "",
+    gender: "",
+    idNumber: "",
+    contactNumber: "",
+    email: ""
+  })
 
   const annuityType = "combined"
 
@@ -153,7 +167,26 @@ const AnnuityQuotationForm = () => {
       toast.error("Calculate the Living Annuity first.")
       return
     }
-    toast.success("Quote ready (wire up API later).")
+    setShowQuoteDialog(true)
+  }
+
+  const handleCustomerDetailsChange = (field: string, value: string) => {
+    setCustomerDetails(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleFinalQuoteSubmit = () => {
+    // Validate customer details
+    const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
+    const missingFields = requiredFields.filter(field => !customerDetails[field])
+    
+    if (missingFields.length > 0) {
+      toast.error(`Please fill in: ${missingFields.join(', ')}`)
+      return
+    }
+    
+    // Here you would typically save to database or generate PDF
+    toast.success("Quote generated successfully!")
+    setShowQuoteDialog(false)
   }
 
   return (
@@ -261,6 +294,203 @@ const AnnuityQuotationForm = () => {
           Create Quote
         </Button>
       </div>
+
+      {/* Quote Dialog */}
+      <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Customer Quotation</DialogTitle>
+            <DialogDescription>
+              Enter customer details and review calculation results
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Customer Details Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Customer Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Full Name</Label>
+                  <Input
+                    value={customerDetails.fullName}
+                    onChange={(e) => handleCustomerDetailsChange("fullName", e.target.value)}
+                    placeholder="Enter full name"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Date of Birth</Label>
+                  <Input
+                    type="date"
+                    value={customerDetails.dateOfBirth}
+                    onChange={(e) => handleCustomerDetailsChange("dateOfBirth", e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Gender</Label>
+                  <RadioGroup
+                    value={customerDetails.gender}
+                    onValueChange={(value) => handleCustomerDetailsChange("gender", value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Male" id="male" />
+                      <Label htmlFor="male">Male</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Female" id="female" />
+                      <Label htmlFor="female">Female</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>ID/Passport Number</Label>
+                  <Input
+                    value={customerDetails.idNumber}
+                    onChange={(e) => handleCustomerDetailsChange("idNumber", e.target.value)}
+                    placeholder="Enter ID number"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Contact Number</Label>
+                  <Input
+                    value={customerDetails.contactNumber}
+                    onChange={(e) => handleCustomerDetailsChange("contactNumber", e.target.value)}
+                    placeholder="Enter contact number"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Email Address</Label>
+                  <Input
+                    type="email"
+                    value={customerDetails.email}
+                    onChange={(e) => handleCustomerDetailsChange("email", e.target.value)}
+                    placeholder="Enter email address"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Calculation Results */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quotation Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="font-medium">Age at Start:</span>
+                    <span>{age} years</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="font-medium">Purchase Amount:</span>
+                    <span>{fmtMoney(toNum(amountRaw))}</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="font-medium">Drawdown Rate:</span>
+                    <span>{drawdown}%</span>
+                  </div>
+
+                  <Separator />
+
+                  {livingResult && (
+                    <>
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-primary">Living Annuity Phase</h4>
+                        
+                        <div className="flex justify-between">
+                          <span>Guarantee Period:</span>
+                          <span>{livingResult.guarantee_period} years</span>
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span>{frequency} Payment:</span>
+                          <span>{fmtMoney(livingResult.guaranteed_annuity)}</span>
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span>Funds Remaining at {guaranteedStartAge}:</span>
+                          <span>{fmtMoney(livingResult.funds_remaining)}</span>
+                        </div>
+                      </div>
+
+                      <Separator />
+                    </>
+                  )}
+
+                  {lifeResult && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-primary">Life Annuity Phase</h4>
+                      
+                      <div className="flex justify-between">
+                        <span>Monthly Life Annuity:</span>
+                        <span>{fmtMoney(lifeResult.monthly_annuity)}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Terms and Conditions */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Terms and Conditions</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm space-y-3">
+              <p>
+                This quotation outlines the guaranteed monthly income you could receive from a conventional life annuity, 
+                as well as the projected monthly income from a living annuity based on various drawdown rates. The income 
+                from the life annuity is affected by the prevailing interest rates at the time of the quote. Please note 
+                that Exclusive Life reserves the right to adjust any annuity income before the first payment.
+              </p>
+              
+              <p>
+                The income you receive during the living annuity phase is guaranteed until the transition date. However, 
+                you can change your annual drawdown rate on each policy anniversary, subject to policy limits. The income 
+                you earn after the transition date will be recalculated as of the transition date and will depend on your 
+                chosen drawdown rate, future investment returns, and any fees applicable to your fund.
+              </p>
+              
+              <p>
+                All annuity income is subject to taxation under Botswana income tax laws. The applicable tax rate is 
+                determined by your total monthly income, according to the PAYE tax tables issued by the Commissioner of 
+                Taxes. If there are any changes to the legislation, Exclusive Life Insurance will adjust the tax deducted 
+                accordingly.
+              </p>
+              
+              <p className="font-medium">
+                This quotation is confidential, and any unauthorized alterations will render it invalid. Exclusive Life 
+                Insurance will not accept liability for any losses incurred as a result of using an altered quotation.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Dialog Actions */}
+          <div className="flex justify-between mt-6">
+            <Button variant="outline" onClick={() => setShowQuoteDialog(false)}>
+              Return to Calculator
+            </Button>
+            <div className="space-x-2">
+              <Button variant="secondary" onClick={() => setShowQuoteDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleFinalQuoteSubmit}>
+                Generate Quote
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
