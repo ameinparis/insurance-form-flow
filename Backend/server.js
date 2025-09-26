@@ -242,6 +242,19 @@ app.get("/api/quotes/:id", authenticateToken, async (req, res) => {
 
 /** ----------------- NEW QUOTES (scalable design) ----------------- */
 
+/** Annuity calculator proxy → Python */
+app.post("/api/calculate-annuity", async (req, res) => {
+  try {
+    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/calculate";
+    const { data } = await axios.post(PY_URL, req.body);
+    res.json(data);
+  } catch (e) {
+    console.error("Annuity proxy error:", e.response?.data || e.message);
+    res.status(500).json({ message: "Failed to calculate annuity" });
+  }
+});
+
+
 // Create a new quote
 app.post("/api/new-quotes", authenticateToken, async (req, res) => {
   try {

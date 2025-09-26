@@ -8,12 +8,15 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "sonner"
+import axios from "axios"
 
 type LivingResult = {
   guarantee_period: number
   guaranteed_annuity: number
   funds_remaining: number
+  retirement_annuity: number
 }
+
 type LifeResult = { monthly_annuity: number }
 
 const MIN_AGE = 50
@@ -24,46 +27,12 @@ const toNum = (s: string) => (s === "" ? NaN : Number(s))
 const fmtMoney = (n: number, d = 0) =>
   isFinite(n) ? `BWP ${n.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d })}` : "—"
 
-// currency helpers
 const formatCurrencyInput = (raw: string) => {
   const num = parseFloat(raw.replace(/[^0-9.]/g, ""))
   if (isNaN(num)) return ""
   return "BWP " + num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 }
 const unformatCurrencyInput = (val: string) => val.replace(/[^0-9.]/g, "")
-
-/* ---------------- MOCK CALCS ---------------- */
-const calcLiving = (p: {
-  age: number
-  purchaseAmount: number
-  frequency: "Monthly" | "Annual"
-  drawdownPct: number
-  guaranteedStartAge: number
-}): LivingResult => {
-  const { age, purchaseAmount, frequency, drawdownPct, guaranteedStartAge } = p
-  const years = Math.max(0, Math.floor(guaranteedStartAge - age))
-  const r = 0.05
-  let balance = purchaseAmount
-  for (let y = 0; y < years; y++) {
-    const withdrawal = balance * (drawdownPct / 100)
-    balance = Math.max(0, (balance - withdrawal) * (1 + r))
-  }
-  const annualPayout = purchaseAmount * (drawdownPct / 100)
-  const perPeriod = frequency === "Monthly" ? annualPayout / 12 : annualPayout
-  return {
-    guarantee_period: years,
-    guaranteed_annuity: perPeriod,
-    funds_remaining: Math.max(0, Math.round(balance)),
-  }
-}
-
-const calcLife = (p: { startAge: number; purchaseAmount: number }): LifeResult => {
-  const terminalAge = 85
-  const months = Math.max(0, Math.round((terminalAge - p.startAge) * 12))
-  const monthly = months > 0 ? p.purchaseAmount / months : 0
-  return { monthly_annuity: monthly }
-}
-/* -------------------------------------------------------------------- */
 
 const AnnuityQuotationForm = () => {
   const [age, setAge] = useState("")
@@ -80,7 +49,6 @@ const AnnuityQuotationForm = () => {
   const [lifeLoading, setLifeLoading] = useState(false)
   const [lifeResult, setLifeResult] = useState<LifeResult | null>(null)
 
-  // Quote dialog state
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [customerDetails, setCustomerDetails] = useState({
     fullName: "",
@@ -90,8 +58,6 @@ const AnnuityQuotationForm = () => {
     contactNumber: "",
     email: ""
   })
-
-  const annuityType = "combined"
 
   // validations
   const aNum = toNum(age)
@@ -121,45 +87,61 @@ const AnnuityQuotationForm = () => {
 
   const lifeDisabled = !livingResult || !Number.isFinite(toNum(lifePurchaseAmount)) || toNum(lifePurchaseAmount) <= 0
 
-  // handlers
-  const handleLivingCalc = () => {
+  // === BACKEND CALLS ===
+  const handleLivingCalc = async () => {
     if (livingDisabled) {
       toast.error([ageError, amountError, gsaError, drawError].filter(Boolean).join(" "))
       return
     }
     setLivingLoading(true)
-    setTimeout(() => {
-      const res = calcLiving({
+    try {
+      const payload = {
+        annuityType: "combined",
         age: aNum,
         purchaseAmount: amtNum,
         frequency,
-        drawdownPct: drawNum,
+        drawdown: drawNum,
         guaranteedStartAge: gsaNum,
-      })
+      }
+      const { data } = await axios.post("http://localhost:5002/api/calculate-annuity", payload)
+      const res = data.output
+
       setLivingResult(res)
       setShowLifeForm(true)
       setLifeResult(null)
       setLifePurchaseAmount(String(res.funds_remaining))
-      setLivingLoading(false)
       toast.success("Living annuity calculated")
-    }, 250)
+    } catch (e: any) {
+      console.error(e)
+      toast.error("Failed to calculate living annuity")
+    } finally {
+      setLivingLoading(false)
+    }
   }
 
-  const handleLifeCalc = () => {
+  const handleLifeCalc = async () => {
     if (lifeDisabled) {
       toast.error("Please check the Life Annuity inputs.")
       return
     }
     setLifeLoading(true)
-    setTimeout(() => {
-      const res = calcLife({
-        startAge: gsaNum,
+    try {
+      const payload = {
+        annuityType: "life",
+        age: gsaNum,
         purchaseAmount: toNum(lifePurchaseAmount),
-      })
+      }
+      const { data } = await axios.post("http://localhost:5002/api/calculate-annuity", payload)
+      const res = data.output
+
       setLifeResult(res)
-      setLifeLoading(false)
       toast.success("Life annuity calculated")
-    }, 250)
+    } catch (e: any) {
+      console.error(e)
+      toast.error("Failed to calculate life annuity")
+    } finally {
+      setLifeLoading(false)
+    }
   }
 
   const handleCreateQuote = () => {
@@ -175,23 +157,22 @@ const AnnuityQuotationForm = () => {
   }
 
   const handleFinalQuoteSubmit = () => {
-    // Validate customer details
     const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
     const missingFields = requiredFields.filter(field => !customerDetails[field])
-    
+
     if (missingFields.length > 0) {
       toast.error(`Please fill in: ${missingFields.join(', ')}`)
       return
     }
-    
-    // Here you would typically save to database or generate PDF
+
+    // Later: POST to /api/quotes
     toast.success("Quote generated successfully!")
     setShowQuoteDialog(false)
   }
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
-      {/* Step 1 */}
+      {/* Step 1: Living Annuity */}
       <Card>
         <CardHeader>
           <CardTitle>Living Annuity Setup</CardTitle>
@@ -199,12 +180,12 @@ const AnnuityQuotationForm = () => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-1">
+            <div>
               <Label>Age at start</Label>
               <Input type="number" value={age} onChange={(e) => setAge(e.target.value)} />
               {ageError && <p className="text-sm text-red-600">{ageError}</p>}
             </div>
-            <div className="space-y-1">
+            <div>
               <Label>Purchase Amount</Label>
               <Input
                 type="text"
@@ -213,17 +194,17 @@ const AnnuityQuotationForm = () => {
               />
               {amountError && <p className="text-sm text-red-600">{amountError}</p>}
             </div>
-            <div className="space-y-1">
+            <div>
               <Label>Drawdown %</Label>
               <Input type="number" value={drawdown} onChange={(e) => setDrawdown(e.target.value)} />
               {drawError && <p className="text-sm text-red-600">{drawError}</p>}
             </div>
-            <div className="space-y-1">
+            <div>
               <Label>Life Start Age</Label>
               <Input type="number" value={guaranteedStartAge} onChange={(e) => setGuaranteedStartAge(e.target.value)} />
               {gsaError && <p className="text-sm text-red-600">{gsaError}</p>}
             </div>
-            <div className="space-y-1 col-span-2">
+            <div className="col-span-2">
               <Label>Frequency</Label>
               <Select value={frequency} onValueChange={(v) => setFrequency(v as "Monthly" | "Annual")}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -233,7 +214,7 @@ const AnnuityQuotationForm = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="col-span-2 flex gap-3">
+            <div className="col-span-2">
               <Button onClick={handleLivingCalc} disabled={livingLoading || livingDisabled}>
                 {livingLoading ? "Calculating..." : "Calculate"}
               </Button>
@@ -241,16 +222,17 @@ const AnnuityQuotationForm = () => {
           </div>
 
           {livingResult && (
-            <div className="mt-6 rounded-lg border p-4 bg-muted/50 text-sm">
-              <div><strong>Guarantee Period:</strong> {livingResult.guarantee_period}</div>
+            <div className="mt-6 border p-4 rounded bg-muted/50 text-sm">
+              <div><strong>Guarantee Period:</strong> {livingResult.guarantee_period} years</div>
               <div><strong>Living Annuity:</strong> {fmtMoney(livingResult.guaranteed_annuity, 0)} / {frequency}</div>
               <div><strong>Funds Remaining at {guaranteedStartAge}:</strong> {fmtMoney(livingResult.funds_remaining, 0)}</div>
+              <div><strong>Retirement Annuity:</strong> {fmtMoney(livingResult.retirement_annuity, 0)}</div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Step 2 */}
+      {/* Step 2: Life Annuity */}
       <Card className={showLifeForm ? "" : "opacity-60 pointer-events-none"}>
         <CardHeader>
           <CardTitle>Life Annuity Setup</CardTitle>
@@ -259,21 +241,21 @@ const AnnuityQuotationForm = () => {
         <CardContent>
           {showLifeForm && (
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-1">
+              <div>
                 <Label>Life Purchase Amount</Label>
                 <Input type="number" value={lifePurchaseAmount} onChange={(e) => setLifePurchaseAmount(e.target.value)} />
               </div>
-              <div className="space-y-1">
+              <div>
                 <Label>Life Start Age</Label>
                 <Input type="number" value={guaranteedStartAge} onChange={(e) => setGuaranteedStartAge(e.target.value)} />
               </div>
-              <div className="col-span-2 flex gap-3 mt-4">
+              <div className="col-span-2">
                 <Button onClick={handleLifeCalc} disabled={lifeLoading || lifeDisabled}>
                   {lifeLoading ? "Calculating..." : "Calculate Life Annuity"}
                 </Button>
               </div>
               {lifeResult && (
-                <div className="col-span-2 mt-4 rounded-lg border p-4 bg-muted/50 text-sm">
+                <div className="col-span-2 mt-4 border p-4 rounded bg-muted/50 text-sm">
                   <strong>Monthly Life Annuity:</strong> {fmtMoney(lifeResult.monthly_annuity, 0)}
                 </div>
               )}
@@ -295,7 +277,7 @@ const AnnuityQuotationForm = () => {
         </Button>
       </div>
 
-      {/* Quote Dialog */}
+  {/* Quote Dialog */}
       <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -320,7 +302,6 @@ const AnnuityQuotationForm = () => {
                     placeholder="Enter full name"
                   />
                 </div>
-                
                 <div className="space-y-2">
                   <Label>Date of Birth</Label>
                   <Input
@@ -386,9 +367,8 @@ const AnnuityQuotationForm = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="font-medium">Age at Start:</span>
-                    <span>{age} years</span>
+                    <span>{age} years</span>
                   </div>
-                  
                   <div className="flex justify-between">
                     <span className="font-medium">Purchase Amount:</span>
                     <span>{fmtMoney(toNum(amountRaw))}</span>
@@ -405,17 +385,14 @@ const AnnuityQuotationForm = () => {
                     <>
                       <div className="space-y-2">
                         <h4 className="font-semibold text-primary">Living Annuity Phase</h4>
-                        
                         <div className="flex justify-between">
                           <span>Guarantee Period:</span>
-                          <span>{livingResult.guarantee_period} years</span>
+                          <span>{livingResult.guarantee_period} years</span>
                         </div>
-                        
                         <div className="flex justify-between">
-                          <span>{frequency} Payment:</span>
+                          <span>{frequency} Payment:</span>
                           <span>{fmtMoney(livingResult.guaranteed_annuity)}</span>
                         </div>
-                        
                         <div className="flex justify-between">
                           <span>Funds Remaining at {guaranteedStartAge}:</span>
                           <span>{fmtMoney(livingResult.funds_remaining)}</span>
@@ -429,7 +406,6 @@ const AnnuityQuotationForm = () => {
                   {lifeResult && (
                     <div className="space-y-2">
                       <h4 className="font-semibold text-primary">Life Annuity Phase</h4>
-                      
                       <div className="flex justify-between">
                         <span>Monthly Life Annuity:</span>
                         <span>{fmtMoney(lifeResult.monthly_annuity)}</span>
@@ -448,28 +424,25 @@ const AnnuityQuotationForm = () => {
             </CardHeader>
             <CardContent className="text-sm space-y-3">
               <p>
-                This quotation outlines the guaranteed monthly income you could receive from a conventional life annuity, 
-                as well as the projected monthly income from a living annuity based on various drawdown rates. The income 
-                from the life annuity is affected by the prevailing interest rates at the time of the quote. Please note 
+                This quotation outlines the guaranteed monthly income you could receive from a conventional life annuity,
+                as well as the projected monthly income from a living annuity based on various drawdown rates. The income
+                from the life annuity is affected by the prevailing interest rates at the time of the quote. Please note
                 that Exclusive Life reserves the right to adjust any annuity income before the first payment.
               </p>
-              
               <p>
-                The income you receive during the living annuity phase is guaranteed until the transition date. However, 
-                you can change your annual drawdown rate on each policy anniversary, subject to policy limits. The income 
-                you earn after the transition date will be recalculated as of the transition date and will depend on your 
+                The income you receive during the living annuity phase is guaranteed until the transition date. However,
+                you can change your annual drawdown rate on each policy anniversary, subject to policy limits. The income
+                you earn after the transition date will be recalculated as of the transition date and will depend on your
                 chosen drawdown rate, future investment returns, and any fees applicable to your fund.
               </p>
-              
               <p>
-                All annuity income is subject to taxation under Botswana income tax laws. The applicable tax rate is 
-                determined by your total monthly income, according to the PAYE tax tables issued by the Commissioner of 
-                Taxes. If there are any changes to the legislation, Exclusive Life Insurance will adjust the tax deducted 
+                All annuity income is subject to taxation under Botswana income tax laws. The applicable tax rate is
+                determined by your total monthly income, according to the PAYE tax tables issued by the Commissioner of
+                Taxes. If there are any changes to the legislation, Exclusive Life Insurance will adjust the tax deducted
                 accordingly.
               </p>
-              
               <p className="font-medium">
-                This quotation is confidential, and any unauthorized alterations will render it invalid. Exclusive Life 
+                This quotation is confidential, and any unauthorized alterations will render it invalid. Exclusive Life
                 Insurance will not accept liability for any losses incurred as a result of using an altered quotation.
               </p>
             </CardContent>
