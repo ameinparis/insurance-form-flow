@@ -7,6 +7,8 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
+const multer = require("multer");
+const upload = multer({ storage: multer.memoryStorage() });
 
 const app = express();
 const PORT = process.env.PORT || 5002;
@@ -253,6 +255,53 @@ app.post("/api/calculate-annuity", async (req, res) => {
     res.status(500).json({ message: "Failed to calculate annuity" });
   }
 });
+
+
+
+app.post("/api/quotes/funeral", authenticateToken, upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "Missing file" });
+
+    const formFields = req.body;
+
+    // Send to Python calculator
+    const PY_URL = process.env.PY_FUNERAL_CALC_URL || "http://localhost:5006/calculate-funeral";
+
+    const response = await axios.post(PY_URL, {
+      inputs: formFields,
+      fileBuffer: req.file.buffer.toString("base64"),
+      fileName: req.file.originalname
+    });
+
+    const { outputs } = response.data;
+
+    // Create quoteId
+    const now = new Date();
+    const yy = String(now.getFullYear()).slice(-2);
+    const start = new Date(`${now.getFullYear()}-01-01T00:00:00Z`);
+    const end = new Date(`${now.getFullYear()}-12-31T23:59:59Z`);
+    const count = await Quotes.countDocuments({ createdAt: { $gte: start, $lte: end } });
+    const next = String(count + 1).padStart(4, "0");
+    const quoteId = `NEWQ-${next}/${yy}`;
+
+    // Save in DB
+    const quote = await Quotes.create({
+      productType: "funeral",
+      client: {},
+      inputs: formFields,
+      outputs,
+      quoteId,
+      createdBy: req.user.userId,
+      createdByName: req.user?.firstName + " " + req.user?.lastName
+    });
+
+    res.status(201).json({ quoteId, outputs });
+  } catch (e) {
+    console.error("Funeral quote error:", e.response?.data || e.message);
+    res.status(500).json({ message: "Failed to calculate funeral quote" });
+  }
+});
+
 
 
 // Create a new quote

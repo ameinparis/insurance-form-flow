@@ -78,6 +78,41 @@ const LifeFuneralQuotationForm = () => {
     }
   }
 
+  const handleSubmit = async () => {
+  if (!uploadedFile) {
+    toast.error("Please upload a member file first.")
+    return
+  }
+
+  const payload = new FormData()
+  payload.append("file", uploadedFile)
+
+  // Append form fields
+  Object.entries(formData).forEach(([key, value]) => {
+    payload.append(key, value)
+  })
+
+  try {
+    const res = await fetch("http://localhost:5002/api/quotes/funeral", {
+      method: "POST",
+      body: payload
+    })
+
+    if (!res.ok) throw new Error(`Status ${res.status}`)
+
+    const result = await res.json()
+    toast.success("Quotation calculated")
+
+    console.log("Premium result:", result)
+    // You can later display result here (we’ll do that after backend works)
+
+  } catch (err: any) {
+    console.error("Quote error", err)
+    toast.error(`Failed to calculate: ${err.message}`)
+  }
+}
+
+
   const isSchemeRules = formData.coverLevelType === "scheme-rules"
 
   const schemeTooltip = `An open scheme allows new members and is reviewed yearly. A closed scheme maintains the same premium unless members change rules.`
@@ -326,6 +361,12 @@ const LifeFuneralQuotationForm = () => {
           </div>
         </CardContent>
       </Card>
+      <div className="flex justify-end">
+        <Button onClick={handleSubmit} disabled={!uploadedFile}>
+          Calculate Quotation
+        </Button>
+      </div>
+
     </div>
   )
 }

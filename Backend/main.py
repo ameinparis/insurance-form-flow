@@ -2,6 +2,7 @@ import sys
 import io
 from waitress import serve
 from calculations.livingannuity import app
+from calculations.lifefuneral import app
 import logging
 
 # Fix Windows encoding issues
