@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, Info } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Upload, Info, HelpCircle } from "lucide-react"
 import { toast } from "sonner"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
@@ -119,32 +120,84 @@ const LifeFuneralQuotationForm = () => {
   const coverLevelTooltip = `"Scheme rules" apply fixed benefit levels to all members. "Member specified" means each member has custom cover defined in the uploaded data.`
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
-      {/* Upload Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload Member Data</CardTitle>
-          <CardDescription>Upload your member CSV or Excel file</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-            <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <Label htmlFor="file-upload" className="cursor-pointer text-primary hover:text-primary/80">
-              Click to upload CSV or Excel file
-            </Label>
-            <Input
-              id="file-upload"
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-            {uploadedFile && (
-              <p className="text-sm text-green-600 font-medium mt-2">✓ {uploadedFile.name} uploaded</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+    <TooltipProvider>
+      <div className="w-full max-w-4xl mx-auto space-y-6">
+        {/* Upload Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Upload Member Data</CardTitle>
+                <CardDescription>Upload your member CSV or Excel file</CardDescription>
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-muted-foreground hover:text-foreground transition-colors">
+                    <HelpCircle className="h-5 w-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-2xl p-4">
+                  <div className="space-y-2">
+                    <p className="font-semibold text-sm mb-3">Required CSV Format Example:</p>
+                    <div className="overflow-x-auto">
+                      <table className="text-xs border-collapse w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="px-2 py-1 text-left font-semibold">Member Number</th>
+                            <th className="px-2 py-1 text-left font-semibold">Surname</th>
+                            <th className="px-2 py-1 text-left font-semibold">First Name</th>
+                            <th className="px-2 py-1 text-left font-semibold">Date of Birth</th>
+                            <th className="px-2 py-1 text-left font-semibold">Relationship</th>
+                            <th className="px-2 py-1 text-left font-semibold">Gender</th>
+                            <th className="px-2 py-1 text-left font-semibold">Sum Assured</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="border-b">
+                            <td className="px-2 py-1">P1168</td>
+                            <td className="px-2 py-1">Nkuatsama</td>
+                            <td className="px-2 py-1">A.</td>
+                            <td className="px-2 py-1">22/05/1953</td>
+                            <td className="px-2 py-1">Adult Dependent</td>
+                            <td className="px-2 py-1">M</td>
+                            <td className="px-2 py-1">15000</td>
+                          </tr>
+                          <tr>
+                            <td className="px-2 py-1">P1168</td>
+                            <td className="px-2 py-1">Setotela</td>
+                            <td className="px-2 py-1">Abednico</td>
+                            <td className="px-2 py-1">20/04/1988</td>
+                            <td className="px-2 py-1">Child</td>
+                            <td className="px-2 py-1">F</td>
+                            <td className="px-2 py-1">10000</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+              <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <Label htmlFor="file-upload" className="cursor-pointer text-primary hover:text-primary/80">
+                Click to upload CSV or Excel file
+              </Label>
+              <Input
+                id="file-upload"
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              {uploadedFile && (
+                <p className="text-sm text-green-600 font-medium mt-2">✓ {uploadedFile.name} uploaded</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
       {/* Quotation Setup Card */}
       <Card>
@@ -367,7 +420,8 @@ const LifeFuneralQuotationForm = () => {
         </Button>
       </div>
 
-    </div>
+      </div>
+    </TooltipProvider>
   )
 }
 
