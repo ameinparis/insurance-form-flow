@@ -35,39 +35,41 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className="bg-sidebar-background rounded-2xl shadow-lg border-0 z-50">
-      <SidebarHeader className="p-6 border-b border-sidebar-border">
+    <Sidebar className="bg-sidebar border-sidebar-border/50">
+      <SidebarHeader className="p-6 border-b border-sidebar-border/50">
           <div className="flex items-center gap-3">
-            <img src="/Assets/exclusive.png" alt="Exclusive Insurance Logo" className="h-8 w-8" />
+            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
+              <img src="/Assets/exclusive.png" alt="Exclusive Insurance Logo" className="h-6 w-6 object-contain" />
+            </div>
             <div>
-              <h2 className="font-semibold text-sidebar-foreground">EXCLUSIVE</h2>
-              <p className="text-xs text-sidebar-foreground/60 uppercase tracking-wide">INSURANCE</p>
+              <h2 className="font-bold text-sidebar-foreground text-base">EXCLUSIVE</h2>
+              <p className="text-xs text-sidebar-foreground/50 uppercase tracking-wider font-medium">INSURANCE</p>
             </div>
           </div>
       </SidebarHeader>
       
-      <SidebarContent className="px-4 py-6">
+      <SidebarContent className="px-3 py-6">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs text-sidebar-foreground/60 uppercase tracking-wide font-medium mb-6">
-            MENU
+          <SidebarGroupLabel className="px-3 text-xs text-sidebar-foreground/50 uppercase tracking-wider font-semibold mb-2">
+            Menu
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-3">
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to={item.url} 
                       className={({ isActive }) =>
-                        `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                        `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
                           isActive 
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" 
-                            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm" 
+                            : "text-sidebar-foreground hover:bg-sidebar-accent-hover hover:text-sidebar-accent-foreground"
                         }`
                       }
                     >
-                      <item.icon className="h-5 w-5" />
-                      <span className="text-sm font-medium">{item.title}</span>
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <span className="text-sm">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -79,15 +81,15 @@ export function AppSidebar() {
                   <NavLink 
                     to="/calculator" 
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                      `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
                         isActive 
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" 
-                          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm" 
+                          : "text-sidebar-foreground hover:bg-sidebar-accent-hover hover:text-sidebar-accent-foreground"
                       }`
                     }
                   >
-                    <Calculator className="h-5 w-5" />
-                    <span className="text-sm font-medium">Calculator</span>
+                    <Calculator className="h-5 w-5 flex-shrink-0" />
+                    <span className="text-sm">Calculator</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -96,23 +98,23 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-sidebar-border">
+      <SidebarFooter className="p-3 border-t border-sidebar-border/50 mt-auto">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs text-sidebar-foreground/60 uppercase tracking-wide font-medium mb-4">
-            SETTINGS
+          <SidebarGroupLabel className="px-3 text-xs text-sidebar-foreground/50 uppercase tracking-wider font-semibold mb-2">
+            Settings
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-3">
+            <SidebarMenu className="space-y-1">
               {/* Dark mode toggle */}
               <SidebarMenuItem>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={toggleDarkMode}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground w-full justify-start transition-all duration-200"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent-hover hover:text-sidebar-accent-foreground w-full justify-start transition-all duration-200 h-auto font-normal"
                 >
-                  {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                  <span className="text-sm font-medium">{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
+                  {isDarkMode ? <Sun className="h-5 w-5 flex-shrink-0" /> : <Moon className="h-5 w-5 flex-shrink-0" />}
+                  <span className="text-sm">{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
                 </Button>
               </SidebarMenuItem>
               
@@ -122,15 +124,15 @@ export function AppSidebar() {
                     <NavLink 
                       to={item.url} 
                       className={({ isActive }) =>
-                        `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                        `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
                           isActive 
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm" 
-                            : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm" 
+                            : "text-sidebar-foreground hover:bg-sidebar-accent-hover hover:text-sidebar-accent-foreground"
                         }`
                       }
                     >
-                      <item.icon className="h-5 w-5" />
-                      <span className="text-sm font-medium">{item.title}</span>
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <span className="text-sm">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
