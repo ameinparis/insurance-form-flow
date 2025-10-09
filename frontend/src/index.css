@@ -18,8 +18,8 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 15%;
 
-    --brand-accent: 16 88% 58%;       /* Coral/orange accent */
-    --primary: 16 88% 58%;            /* Coral primary */
+    --brand-accent: 200 75% 55%;      /* Light blue accent from logo */
+    --primary: 200 75% 55%;           /* Light blue primary */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 240 10% 96%;
@@ -36,7 +36,7 @@ All colors MUST be HSL.
 
     --border: 240 6% 90%;
     --input: 240 6% 90%;
-    --ring: 16 88% 58%;
+    --ring: 200 75% 55%;
 
     --radius: 0.75rem;
 
@@ -47,9 +47,9 @@ All colors MUST be HSL.
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 5% 96%;
     --sidebar-accent-foreground: 240 10% 15%;
-    --sidebar-accent-hover: 16 88% 96%;
+    --sidebar-accent-hover: 200 75% 96%;
     --sidebar-border: 240 6% 92%;
-    --sidebar-ring: 16 88% 58%;
+    --sidebar-ring: 200 75% 55%;
   }
 
   .dark {
@@ -63,8 +63,8 @@ All colors MUST be HSL.
     --popover: 220 18% 12%;
     --popover-foreground: 0 0% 95%;
 
-    --brand-accent: 210 100% 60%;     /* Bright blue accent */
-    --primary: 210 100% 60%;          /* Blue primary */
+    --brand-accent: 205 90% 60%;      /* Bright blue accent from logo */
+    --primary: 205 90% 60%;           /* Blue primary */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 15% 18%;
@@ -81,18 +81,18 @@ All colors MUST be HSL.
 
     --border: 220 15% 18%;
     --input: 220 15% 18%;
-    --ring: 210 100% 60%;
+    --ring: 205 90% 60%;
     
     /* Sidebar - Deep dark */
     --sidebar-background: 220 20% 10%;
     --sidebar-foreground: 0 0% 80%;
-    --sidebar-primary: 210 100% 60%;
+    --sidebar-primary: 205 90% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 15% 16%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-accent-hover: 210 100% 20%;
+    --sidebar-accent-hover: 205 90% 20%;
     --sidebar-border: 220 15% 15%;
-    --sidebar-ring: 210 100% 60%;
+    --sidebar-ring: 205 90% 60%;
   }
 }
 

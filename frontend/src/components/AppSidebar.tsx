@@ -14,6 +14,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar"
+import exclusiveLogo from "@/assets/exclusive-logo.png"
 
 
 const menuItems = [
@@ -36,15 +37,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="bg-sidebar border-sidebar-border/50">
-      <SidebarHeader className="p-6 border-b border-sidebar-border/50">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-              <img src="/Assets/exclusive.png" alt="Exclusive Insurance Logo" className="h-6 w-6 object-contain" />
-            </div>
-            <div>
-              <h2 className="font-bold text-sidebar-foreground text-base">EXCLUSIVE</h2>
-              <p className="text-xs text-sidebar-foreground/50 uppercase tracking-wider font-medium">INSURANCE</p>
-            </div>
+      <SidebarHeader className="p-4 border-b border-sidebar-border/50">
+          <div className="flex items-center gap-2">
+            <img src={exclusiveLogo} alt="Exclusive Life Insurance" className="h-8 w-auto object-contain" />
           </div>
       </SidebarHeader>
       
