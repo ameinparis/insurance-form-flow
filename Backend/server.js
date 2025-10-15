@@ -9,6 +9,8 @@ const jwt = require("jsonwebtoken");
 const axios = require("axios");
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
+const Papa = require("papaparse");
+const XLSX = require("xlsx");
 
 const app = express();
 const PORT = process.env.PORT || 5002;
@@ -256,51 +258,57 @@ app.post("/api/calculate-annuity", async (req, res) => {
   }
 });
 
-
-
 app.post("/api/quotes/funeral", authenticateToken, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "Missing file" });
 
-    const formFields = req.body;
+    // Step 1: Parse uploaded file
+    const buffer = req.file.buffer;
+    const fileName = req.file.originalname.toLowerCase();
 
-    // Send to Python calculator
-    const PY_URL = process.env.PY_FUNERAL_CALC_URL || "http://localhost:5006/calculate-funeral";
+    let rows = [];
+    if (fileName.endsWith(".csv")) {
+      const csvText = buffer.toString("utf8");
+      const parsed = Papa.parse(csvText, { header: true });
+      rows = parsed.data.filter(r => Object.values(r).some(Boolean));
+    } else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
+      const workbook = XLSX.read(buffer, { type: "buffer" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    } else {
+      return res.status(400).json({ message: "Unsupported file type" });
+    }
 
-    const response = await axios.post(PY_URL, {
-      inputs: formFields,
-      fileBuffer: req.file.buffer.toString("base64"),
-      fileName: req.file.originalname
+    // Step 2: Map members
+    const members = rows.map(row => ({
+      name: `${row["First Name"]} ${row["Member Surname"]}`.trim(),
+      dob: row["Date of Birth"],
+      relationship: row["Relationship"],
+      gender: row["Gender"],
+      coverAmount: parseFloat(row["Sum assured"] || 0),
+      premium: 0,
+      age: 0,
+    }));
+
+    // Step 3: Extract form fields from body
+    const inputs = req.body;
+
+    // Step 4: Send to Python for processing
+    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/calculate";
+    const { data } = await axios.post(PY_URL, { members, inputs });
+
+    // Step 5: Return the result
+    res.status(200).json({
+      message: "Quotation calculated successfully",
+      result: data.output || {},
     });
 
-    const { outputs } = response.data;
-
-    // Create quoteId
-    const now = new Date();
-    const yy = String(now.getFullYear()).slice(-2);
-    const start = new Date(`${now.getFullYear()}-01-01T00:00:00Z`);
-    const end = new Date(`${now.getFullYear()}-12-31T23:59:59Z`);
-    const count = await Quotes.countDocuments({ createdAt: { $gte: start, $lte: end } });
-    const next = String(count + 1).padStart(4, "0");
-    const quoteId = `NEWQ-${next}/${yy}`;
-
-    // Save in DB
-    const quote = await Quotes.create({
-      productType: "funeral",
-      client: {},
-      inputs: formFields,
-      outputs,
-      quoteId,
-      createdBy: req.user.userId,
-      createdByName: req.user?.firstName + " " + req.user?.lastName
-    });
-
-    res.status(201).json({ quoteId, outputs });
   } catch (e) {
-    console.error("Funeral quote error:", e.response?.data || e.message);
-    res.status(500).json({ message: "Failed to calculate funeral quote" });
+    console.error("Funeral parse error:", e);
+    res.status(500).json({ message: "Failed to process funeral quote", error: e.message });
   }
 });
+
 
 
 

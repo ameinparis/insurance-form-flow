@@ -94,10 +94,13 @@ const LifeFuneralQuotationForm = () => {
   })
 
   try {
-    const res = await fetch("http://localhost:5002/api/quotes/funeral", {
-      method: "POST",
-      body: payload
-    })
+   const res = await fetch("http://localhost:5002/api/quotes/funeral", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("token")}`, // 👈 send token
+  },
+  body: payload
+})
 
     if (!res.ok) throw new Error(`Status ${res.status}`)
 
