@@ -76,7 +76,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold mb-2">Welcome back!</h2>
+        <h2 className="text-3xl font-bold mb-2 font-heading">Welcome back!</h2>
         <p className="text-muted-foreground">Manage your quotations and calculations.</p>
       </div>
 
@@ -85,7 +85,7 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Performance Overview</CardTitle>
+            <CardTitle className="font-heading">Performance Overview</CardTitle>
             <CardDescription>Monthly quotes and calculations trend</CardDescription>
           </CardHeader>
           <CardContent>
@@ -95,7 +95,7 @@ const Dashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Quote Categories</CardTitle>
+            <CardTitle className="font-heading">Quote Categories</CardTitle>
             <CardDescription>Distribution by insurance type</CardDescription>
           </CardHeader>
           <CardContent>
@@ -106,7 +106,7 @@ const Dashboard = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recently Created</CardTitle>
+          <CardTitle className="font-heading">Recently Created</CardTitle>
           <CardDescription>Latest quotes created by your team</CardDescription>
         </CardHeader>
         <CardContent>
@@ -158,7 +158,7 @@ const Dashboard = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+          <CardTitle className="font-heading">Quick Actions</CardTitle>
           <CardDescription>Get started with your quotation process</CardDescription>
         </CardHeader>
         <CardContent className="flex gap-4">

@@ -19,6 +19,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+				heading: ['Avenir', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',

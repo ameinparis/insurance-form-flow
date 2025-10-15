@@ -35,24 +35,21 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className="bg-sidebar border-sidebar-border/50">
-      <SidebarHeader className="p-6 border-b border-sidebar-border/50">
+    <Sidebar className="bg-sidebar border-r border-sidebar-border/50 rounded-3xl m-4 shadow-sm">
+      <SidebarHeader className="p-6 border-b border-sidebar-border/30">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-              <img src="/Assets/exclusive.png" alt="Exclusive Insurance Logo" className="h-6 w-6 object-contain" />
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[hsl(var(--primary-gradient-from))] to-[hsl(var(--primary-gradient-to))] flex items-center justify-center shadow-md">
+              <img src="/Assets/exclusive.png" alt="Exclusive Insurance Logo" className="h-7 w-7 object-contain brightness-0 invert" />
             </div>
             <div>
-              <h2 className="font-bold text-sidebar-foreground text-base">EXCLUSIVE</h2>
+              <h2 className="font-bold text-sidebar-foreground text-base font-heading">EXCLUSIVE</h2>
               <p className="text-xs text-sidebar-foreground/50 uppercase tracking-wider font-medium">INSURANCE</p>
             </div>
           </div>
       </SidebarHeader>
       
-      <SidebarContent className="px-3 py-6">
+      <SidebarContent className="px-4 py-6">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3 text-xs text-sidebar-foreground/50 uppercase tracking-wider font-semibold mb-2">
-            Menu
-          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               {menuItems.map((item) => (
@@ -61,15 +58,26 @@ export function AppSidebar() {
                     <NavLink 
                       to={item.url} 
                       className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                        `flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                           isActive 
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm" 
-                            : "text-sidebar-foreground hover:bg-sidebar-accent-hover hover:text-sidebar-accent-foreground"
+                            ? "bg-gradient-to-r from-[hsl(var(--primary-gradient-from))] to-[hsl(var(--primary-gradient-to))] text-white font-medium shadow-lg shadow-primary/20" 
+                            : "text-sidebar-foreground hover:bg-sidebar-accent-hover"
                         }`
                       }
                     >
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
-                      <span className="text-sm">{item.title}</span>
+                      {({ isActive }) => (
+                        <>
+                          <div className="flex items-center gap-3">
+                            <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
+                            <span className="text-sm">{item.title}</span>
+                          </div>
+                          {!isActive && (
+                            <svg className="h-4 w-4 opacity-40 group-hover:opacity-70 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          )}
+                        </>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -81,15 +89,26 @@ export function AppSidebar() {
                   <NavLink 
                     to="/calculator" 
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                      `flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                         isActive 
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm" 
-                          : "text-sidebar-foreground hover:bg-sidebar-accent-hover hover:text-sidebar-accent-foreground"
+                          ? "bg-gradient-to-r from-[hsl(var(--primary-gradient-from))] to-[hsl(var(--primary-gradient-to))] text-white font-medium shadow-lg shadow-primary/20" 
+                          : "text-sidebar-foreground hover:bg-sidebar-accent-hover"
                       }`
                     }
                   >
-                    <Calculator className="h-5 w-5 flex-shrink-0" />
-                    <span className="text-sm">Calculator</span>
+                    {({ isActive }) => (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <Calculator className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
+                          <span className="text-sm">Calculator</span>
+                        </div>
+                        {!isActive && (
+                          <svg className="h-4 w-4 opacity-40 group-hover:opacity-70 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        )}
+                      </>
+                    )}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -98,11 +117,8 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3 border-t border-sidebar-border/50 mt-auto">
+      <SidebarFooter className="p-4 border-t border-sidebar-border/30 mt-auto">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3 text-xs text-sidebar-foreground/50 uppercase tracking-wider font-semibold mb-2">
-            Settings
-          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               {/* Dark mode toggle */}
@@ -111,10 +127,15 @@ export function AppSidebar() {
                   variant="ghost"
                   size="sm"
                   onClick={toggleDarkMode}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent-hover hover:text-sidebar-accent-foreground w-full justify-start transition-all duration-200 h-auto font-normal"
+                  className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sidebar-foreground hover:bg-sidebar-accent-hover w-full justify-start transition-all duration-200 h-auto font-normal group"
                 >
-                  {isDarkMode ? <Sun className="h-5 w-5 flex-shrink-0" /> : <Moon className="h-5 w-5 flex-shrink-0" />}
-                  <span className="text-sm">{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
+                  <div className="flex items-center gap-3">
+                    {isDarkMode ? <Sun className="h-5 w-5 flex-shrink-0" /> : <Moon className="h-5 w-5 flex-shrink-0" />}
+                    <span className="text-sm">{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
+                  </div>
+                  <svg className="h-4 w-4 opacity-40 group-hover:opacity-70 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </Button>
               </SidebarMenuItem>
               
@@ -124,15 +145,26 @@ export function AppSidebar() {
                     <NavLink 
                       to={item.url} 
                       className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                        `flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                           isActive 
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm" 
-                            : "text-sidebar-foreground hover:bg-sidebar-accent-hover hover:text-sidebar-accent-foreground"
+                            ? "bg-gradient-to-r from-[hsl(var(--primary-gradient-from))] to-[hsl(var(--primary-gradient-to))] text-white font-medium shadow-lg shadow-primary/20" 
+                            : "text-sidebar-foreground hover:bg-sidebar-accent-hover"
                         }`
                       }
                     >
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
-                      <span className="text-sm">{item.title}</span>
+                      {({ isActive }) => (
+                        <>
+                          <div className="flex items-center gap-3">
+                            <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
+                            <span className="text-sm">{item.title}</span>
+                          </div>
+                          {!isActive && (
+                            <svg className="h-4 w-4 opacity-40 group-hover:opacity-70 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          )}
+                        </>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
