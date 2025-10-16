@@ -1,4 +1,4 @@
-import { Calculator, Home, FileText, Settings, LogOut, Moon, Sun } from "lucide-react"
+import { Calculator, Home, FileText, Settings, LogOut, Moon, Sun, ChevronLeft } from "lucide-react"
 import { NavLink } from "react-router-dom"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -7,12 +7,13 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 
@@ -28,6 +29,7 @@ const settingsItems = [
 
 export function AppSidebar() {
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const { open } = useSidebar()
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
@@ -37,15 +39,22 @@ export function AppSidebar() {
   return (
     <Sidebar className="bg-sidebar border-r border-sidebar-border/50 rounded-3xl m-4 shadow-sm">
       <SidebarHeader className="p-6 border-b border-sidebar-border/30">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-[hsl(var(--primary-gradient-from))] to-[hsl(var(--primary-gradient-to))] flex items-center justify-center shadow-md">
               <img src="/Assets/exclusive.png" alt="Exclusive Insurance Logo" className="h-7 w-7 object-contain brightness-0 invert" />
             </div>
-            <div>
-              <h2 className="font-bold text-sidebar-foreground text-base font-heading">EXCLUSIVE</h2>
-              <p className="text-xs text-sidebar-foreground/50 uppercase tracking-wider font-medium">INSURANCE</p>
-            </div>
+            {open && (
+              <div>
+                <h2 className="font-bold text-sidebar-foreground text-base font-heading">EXCLUSIVE</h2>
+                <p className="text-xs text-sidebar-foreground/50 uppercase tracking-wider font-medium">INSURANCE</p>
+              </div>
+            )}
           </div>
+          <SidebarTrigger className="h-8 w-8 p-0">
+            <ChevronLeft className="h-4 w-4" />
+          </SidebarTrigger>
+        </div>
       </SidebarHeader>
       
       <SidebarContent className="px-4 py-6">
@@ -66,12 +75,12 @@ export function AppSidebar() {
                       }
                     >
                       {({ isActive }) => (
-                        <>
+                         <>
                           <div className="flex items-center gap-3">
                             <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
-                            <span className="text-sm">{item.title}</span>
+                            {open && <span className="text-sm">{item.title}</span>}
                           </div>
-                          {!isActive && (
+                          {!isActive && open && (
                             <svg className="h-4 w-4 opacity-40 group-hover:opacity-70 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
@@ -100,9 +109,9 @@ export function AppSidebar() {
                       <>
                         <div className="flex items-center gap-3">
                           <Calculator className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
-                          <span className="text-sm">Calculator</span>
+                          {open && <span className="text-sm">Calculator</span>}
                         </div>
-                        {!isActive && (
+                        {!isActive && open && (
                           <svg className="h-4 w-4 opacity-40 group-hover:opacity-70 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
@@ -131,11 +140,13 @@ export function AppSidebar() {
                 >
                   <div className="flex items-center gap-3">
                     {isDarkMode ? <Sun className="h-5 w-5 flex-shrink-0" /> : <Moon className="h-5 w-5 flex-shrink-0" />}
-                    <span className="text-sm">{isDarkMode ? "Light Mode" : "Dark Mode"}</span>
+                    {open && <span className="text-sm">{isDarkMode ? "Light Mode" : "Dark Mode"}</span>}
                   </div>
-                  <svg className="h-4 w-4 opacity-40 group-hover:opacity-70 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  {open && (
+                    <svg className="h-4 w-4 opacity-40 group-hover:opacity-70 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
                 </Button>
               </SidebarMenuItem>
               
@@ -156,9 +167,9 @@ export function AppSidebar() {
                         <>
                           <div className="flex items-center gap-3">
                             <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-white' : ''}`} />
-                            <span className="text-sm">{item.title}</span>
+                            {open && <span className="text-sm">{item.title}</span>}
                           </div>
-                          {!isActive && (
+                          {!isActive && open && (
                             <svg className="h-4 w-4 opacity-40 group-hover:opacity-70 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
