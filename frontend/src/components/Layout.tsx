@@ -13,28 +13,28 @@ export function Layout({ children }: LayoutProps) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
-        <main className="flex-1 flex flex-col p-6 pl-0">
-          <header className="h-16 bg-card rounded-2xl shadow-sm flex items-center px-6 justify-between mb-6 border border-border/30">
+        <main className="flex-1 flex flex-col min-h-screen">
+          <header className="h-16 flex items-center px-8 justify-between border-b border-border bg-background">
             <div className="flex items-center gap-4 flex-1 max-w-xl">
               <SidebarTrigger className="lg:hidden" />
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
                   placeholder="Search..." 
-                  className="pl-9 bg-muted/50 border-none focus-visible:ring-1 focus-visible:ring-primary"
+                  className="pl-9 bg-background border-input"
                 />
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Avatar className="h-9 w-9 border-2 border-primary/20">
+              <Avatar className="h-9 w-9">
                 <AvatarImage src="" alt="User" />
-                <AvatarFallback className="bg-gradient-to-br from-[hsl(var(--primary-gradient-from))] to-[hsl(var(--primary-gradient-to))] text-white text-sm">
+                <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                   U
                 </AvatarFallback>
               </Avatar>
             </div>
           </header>
-          <div className="flex-1 bg-transparent rounded-xl p-0">
+          <div className="flex-1 p-8 overflow-auto">
             {children}
           </div>
         </main>
