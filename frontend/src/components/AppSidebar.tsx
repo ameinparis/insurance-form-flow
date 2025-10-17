@@ -1,18 +1,18 @@
-import { Calculator, Home, FileText, Settings, LogOut, Moon, Sun, ChevronLeft } from "lucide-react"
+import { Calculator, Home, FileText, Settings, LogOut, Moon, Sun } from "lucide-react"
 import { NavLink } from "react-router-dom"
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarHeader,
   SidebarFooter,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar"
 
@@ -37,41 +37,24 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className="bg-sidebar border-r border-sidebar-border/50">
-      <SidebarHeader className="p-4 border-b border-sidebar-border/30">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-              <img src="/Assets/exclusive.png" alt="Exclusive Insurance Logo" className="h-6 w-6 object-contain brightness-0 invert" />
-            </div>
-            {open && (
-              <div>
-                <h2 className="font-bold text-sidebar-foreground text-sm font-heading">EXCLUSIVE</h2>
-                <p className="text-xs text-sidebar-foreground/50 uppercase tracking-wide font-medium">INSURANCE</p>
-              </div>
-            )}
-          </div>
-          {open && (
-            <SidebarTrigger className="h-8 w-8 p-0">
-              <ChevronLeft className="h-4 w-4" />
-            </SidebarTrigger>
-          )}
-        </div>
-      </SidebarHeader>
-      
-      <SidebarContent className="px-3 py-4">
+    <Sidebar className="bg-sidebar border-sidebar-border m-4 rounded-2xl shadow-xl">
+      <SidebarContent className="px-3 py-6">
+        {/* Menu Section */}
         <SidebarGroup>
+          <SidebarGroupLabel className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Menu
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-3">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to={item.url} 
                       className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                        `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                           isActive 
-                            ? "bg-primary text-primary-foreground font-medium" 
+                            ? "bg-primary text-primary-foreground font-medium shadow-sm" 
                             : "text-sidebar-foreground hover:bg-sidebar-accent"
                         }`
                       }
@@ -83,15 +66,15 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               ))}
               
-              {/* Calculator as single item */}
+              {/* Calculator */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink 
                     to="/calculator" 
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                      `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                         isActive 
-                          ? "bg-primary text-primary-foreground font-medium" 
+                          ? "bg-primary text-primary-foreground font-medium shadow-sm" 
                           : "text-sidebar-foreground hover:bg-sidebar-accent"
                       }`
                     }
@@ -104,34 +87,23 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-      </SidebarContent>
 
-      <SidebarFooter className="p-3 border-t border-sidebar-border/30 mt-auto">
-        <SidebarGroup>
+        {/* Settings Section */}
+        <SidebarGroup className="mt-6">
+          <SidebarGroupLabel className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Settings
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
-              {/* Dark mode toggle */}
-              <SidebarMenuItem>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleDarkMode}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent w-full justify-start transition-colors h-auto font-normal"
-                >
-                  {isDarkMode ? <Sun className="h-5 w-5 flex-shrink-0" /> : <Moon className="h-5 w-5 flex-shrink-0" />}
-                  {open && <span className="text-sm">{isDarkMode ? "Light Mode" : "Dark Mode"}</span>}
-                </Button>
-              </SidebarMenuItem>
-              
+            <SidebarMenu className="space-y-3">
               {settingsItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to={item.url} 
                       className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                        `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                           isActive 
-                            ? "bg-primary text-primary-foreground font-medium" 
+                            ? "bg-primary text-primary-foreground font-medium shadow-sm" 
                             : "text-sidebar-foreground hover:bg-sidebar-accent"
                         }`
                       }
@@ -145,6 +117,25 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="p-4 border-t border-sidebar-border/30 mt-auto">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {isDarkMode ? <Moon className="h-5 w-5 text-sidebar-foreground" /> : <Sun className="h-5 w-5 text-sidebar-foreground" />}
+            {open && (
+              <Label htmlFor="dark-mode" className="text-sm text-sidebar-foreground cursor-pointer">
+                {isDarkMode ? "Dark Mode" : "Light Mode"}
+              </Label>
+            )}
+          </div>
+          <Switch 
+            id="dark-mode"
+            checked={isDarkMode}
+            onCheckedChange={toggleDarkMode}
+            className="data-[state=checked]:bg-primary"
+          />
+        </div>
       </SidebarFooter>
     </Sidebar>
   )
