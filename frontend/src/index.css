@@ -49,7 +49,7 @@ All colors MUST be HSL.
     --secondary: 210 40% 96%;
     --secondary-foreground: 240 10% 15%;
 
-    --muted: 210 40% 96%;
+    --muted: 220 13% 91%;
     --muted-foreground: 240 4% 46%;
 
     --accent: 210 40% 96%;
@@ -78,10 +78,10 @@ All colors MUST be HSL.
 
   .dark {
     /* Dark mode - Deep dark with blue accents */
-    --background: 220 20% 8%;         /* Very dark background */
+    --background: 220 13% 12%;        /* Dark background */
     --foreground: 0 0% 95%;           /* Light text */
 
-    --card: 220 20% 12%;              /* Dark cards */
+    --card: 220 13% 16%;              /* Dark cards */
     --card-foreground: 0 0% 95%;
 
     --popover: 220 20% 12%;
@@ -106,12 +106,12 @@ All colors MUST be HSL.
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 18%;
+    --border: 220 10% 20%;
     --input: 220 15% 18%;
     --ring: 207 100% 62%;
     
     /* Sidebar - Deep dark with blue */
-    --sidebar-background: 220 20% 10%;
+    --sidebar-background: 220 13% 14%;
     --sidebar-foreground: 0 0% 80%;
     --sidebar-primary: 207 100% 62%;
     --sidebar-primary-foreground: 0 0% 100%;

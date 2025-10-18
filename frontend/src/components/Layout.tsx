@@ -18,31 +18,31 @@ export function Layout({ children }: LayoutProps) {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <main className="flex-1 flex flex-col min-h-screen">
-          <header className="h-20 flex items-center px-6 justify-between border-b border-border bg-card">
+          <header className="sticky top-0 z-50 h-20 flex items-center px-6 justify-between border-b border-border bg-card">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-                <img src="/exclusive.png" alt="Logo" className="h-6 w-6 object-contain brightness-0 invert" />
+              <div className="h-14 w-14 rounded-xl bg-primary flex items-center justify-center">
+                <img src="/exclusive.png" alt="Logo" className="h-8 w-8 object-contain brightness-0 invert" />
               </div>
-              <div className="hidden sm:block">
+              <div>
                 <h1 className="font-bold text-foreground text-base font-heading leading-tight">EXCLUSIVE</h1>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">INSURANCE</p>
               </div>
             </div>
 
             {/* Centered Search Bar */}
-            <div className="flex-1 max-w-md mx-8">
+            <div className="flex-1 max-w-3xl mx-12">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
                   placeholder="Search" 
-                  className="pl-11 h-11 bg-muted border-0 rounded-full focus-visible:ring-1 focus-visible:ring-primary"
+                  className="pl-12 h-12 bg-muted border-0 rounded-full focus-visible:ring-1 focus-visible:ring-primary"
                 />
               </div>
             </div>
 
             {/* Right Section: Settings + Avatar */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
               <Button
                 variant="ghost"
                 size="icon"
@@ -51,7 +51,7 @@ export function Layout({ children }: LayoutProps) {
               >
                 <Settings className="h-5 w-5 text-foreground" />
               </Button>
-              <Avatar className="h-10 w-10 border-2 border-primary/20">
+              <Avatar className="h-12 w-12">
                 <AvatarImage src="" alt="User" />
                 <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
                   U
