@@ -2,7 +2,6 @@ import { Calculator, Home, FileText, Settings, LogOut, Moon, Sun, User } from "l
 import { NavLink } from "react-router-dom"
 import { useState } from "react"
 import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import {
   Sidebar,
   SidebarContent,
@@ -12,7 +11,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar"
 
@@ -39,20 +37,7 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className="bg-sidebar border-sidebar-border m-4 rounded-2xl shadow-xl w-64">
-      {/* Logo Section */}
-      <div className="px-6 py-8 flex flex-col items-center gap-3 border-b border-sidebar-border/30">
-        <div className="h-16 w-16 rounded-xl bg-primary flex items-center justify-center">
-          <img src="/exclusive.png" alt="Logo" className="h-10 w-10 object-contain brightness-0 invert" />
-        </div>
-        {open && (
-          <div className="text-center">
-            <h2 className="font-bold text-sidebar-foreground text-sm font-heading leading-tight">EXCLUSIVE</h2>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">LIFE INSURANCE</p>
-          </div>
-        )}
-      </div>
-
+    <Sidebar className="bg-sidebar border-sidebar-border mx-4 my-4 rounded-2xl shadow-xl w-64">
       <SidebarContent className="px-3 py-6">
         {/* Menu Section */}
         <SidebarGroup>
@@ -88,8 +73,27 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Dark Mode Toggle */}
+        <div className="px-3 py-4 mt-6">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              {isDarkMode ? <Moon className="h-5 w-5 text-muted-foreground" /> : <Sun className="h-5 w-5 text-muted-foreground" />}
+              {open && (
+                <span className="text-sm text-muted-foreground">
+                  {isDarkMode ? "Dark Mode" : "Light Mode"}
+                </span>
+              )}
+            </div>
+            <Switch 
+              checked={isDarkMode}
+              onCheckedChange={toggleDarkMode}
+              className="data-[state=checked]:bg-primary"
+            />
+          </div>
+        </div>
+
         {/* Settings Section */}
-        <SidebarGroup className="mt-8">
+        <SidebarGroup className="mt-6">
           {open && (
             <div className="flex items-center gap-3 px-3 mb-4">
               <div className="h-px flex-1 bg-border"></div>
@@ -122,25 +126,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter className="p-4 border-t border-sidebar-border/10 mt-auto">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            {isDarkMode ? <Moon className="h-5 w-5 text-muted-foreground" /> : <Sun className="h-5 w-5 text-muted-foreground" />}
-            {open && (
-              <Label htmlFor="dark-mode" className="text-sm text-muted-foreground cursor-pointer">
-                {isDarkMode ? "Dark Mode" : "Light Mode"}
-              </Label>
-            )}
-          </div>
-          <Switch 
-            id="dark-mode"
-            checked={isDarkMode}
-            onCheckedChange={toggleDarkMode}
-            className="data-[state=checked]:bg-primary"
-          />
-        </div>
-      </SidebarFooter>
     </Sidebar>
   )
 }
