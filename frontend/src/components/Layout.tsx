@@ -15,13 +15,13 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-background">
+      <div className="min-h-screen flex flex-col w-full bg-background p-4">
         {/* Header spans full width at top */}
-        <header className="sticky top-0 z-50 h-20 flex items-center px-6 justify-between border-b border-border bg-card rounded-b-2xl shadow-sm">
+        <header className="sticky top-0 z-50 h-20 flex items-center px-6 justify-between border border-border bg-card rounded-2xl shadow-sm">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="h-14 w-14 rounded-xl bg-primary flex items-center justify-center">
-              <img src="/exclusive.png" alt="Logo" className="h-8 w-8 object-contain brightness-0 invert" />
+            <div className="h-14 w-14 rounded-xl bg-transparent flex items-center justify-center">
+              <img src="/exclusive.png" alt="Logo" className="h-10 w-10 object-contain" />
             </div>
             <div>
               <h1 className="font-bold text-foreground text-base font-heading leading-tight">EXCLUSIVE</h1>
@@ -60,9 +60,9 @@ export function Layout({ children }: LayoutProps) {
         </header>
 
         {/* Sidebar + Main content below header */}
-        <div className="flex flex-1">
+        <div className="flex flex-1 pt-4">
           <AppSidebar />
-          <main className="flex-1 p-8 overflow-auto">
+          <main className="flex-1 pl-4 overflow-auto">
             {children}
           </main>
         </div>
