@@ -15,32 +15,27 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-background p-4">
-        {/* Header spans full width at top */}
-        <header className="sticky top-0 z-50 h-20 flex items-center px-6 justify-between border border-border bg-card rounded-2xl shadow-sm">
-          {/* Logo */}
+      <div className="w-full bg-background px-6 pt-6">
+        {/* Header */}
+        <header className="sticky top-0 z-50 h-20 flex items-center px-6 justify-between border border-border bg-card rounded-2xl shadow-sm mb-6">
           <div className="flex items-center gap-2">
             <div className="h-14 w-14 rounded-xl bg-transparent flex items-center justify-center">
               <img src="/exclusive.png" alt="Logo" className="h-10 w-10 object-contain" />
             </div>
-            <div>
-              <h1 className="font-bold text-foreground text-base font-heading leading-tight">EXCLUSIVE</h1>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">INSURANCE</p>
-            </div>
           </div>
 
-          {/* Centered Search Bar */}
+          {/* Center Search */}
           <div className="flex-1 max-w-3xl mx-12">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input 
-                placeholder="Search" 
+              <Input
+                placeholder="Search"
                 className="pl-12 h-12 bg-muted border-0 rounded-full focus-visible:ring-1 focus-visible:ring-primary"
               />
             </div>
           </div>
 
-          {/* Right Section: Settings + Avatar */}
+          {/* Avatar + Settings */}
           <div className="flex items-center gap-6">
             <Button
               variant="ghost"
@@ -59,13 +54,14 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </header>
 
-        {/* Sidebar + Main content below header */}
-        <div className="flex flex-1 pt-4">
+        {/* Sidebar and Main Content */}
+        <div className="flex gap-6">
           <AppSidebar />
-          <main className="flex-1 pl-4 overflow-auto">
+          <main className="flex-1 overflow-auto">
             {children}
           </main>
         </div>
+
       </div>
     </SidebarProvider>
   )

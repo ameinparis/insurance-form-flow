@@ -36,24 +36,10 @@ export function AppSidebar() {
     document.documentElement.classList.toggle('dark')
   }
 
-  return (
-    <Sidebar className="bg-sidebar border-sidebar-border ml-4 mb-4 rounded-2xl shadow-xl w-64">
-      <SidebarContent className="px-3 py-6 pb-8 flex flex-col h-full">
-        {/* Logo Section */}
-        <div className="px-3 pb-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-            <img src="/exclusive.png" alt="Logo" className="h-6 w-6 object-contain brightness-0 invert" />
-          </div>
-          {open && (
-            <div>
-              <h2 className="font-bold text-sm text-foreground">EXCLUSIVE</h2>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">INSURANCE</p>
-            </div>
-          )}
-        </div>
-
-        {/* Menu Section - Takes available space */}
-        <div className="flex-1">
+return (
+<Sidebar className="bg-white border border-border w-64 rounded-2xl shadow-md ml-2 sticky top-28 h-[85vh] overflow-hidden">
+  <SidebarContent className="px-4 pt-6 pb-12 flex flex-col gap-4 bg-transparent">
+    <div className="text-center text-muted-foreground text-sm">
           <SidebarGroup>
             {open && (
               <div className="flex items-center gap-3 px-3 mb-4">
@@ -67,13 +53,12 @@ export function AppSidebar() {
                 {menuItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.url} 
+                      <NavLink
+                        to={item.url}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                            isActive 
-                              ? "bg-primary/10 text-primary font-medium" 
-                              : "text-sidebar-foreground hover:bg-sidebar-accent"
+                          `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent"
                           }`
                         }
                       >
@@ -90,24 +75,7 @@ export function AppSidebar() {
 
         {/* Bottom Section - Dark Mode + Settings */}
         <div className="mt-auto">
-          {/* Dark Mode Toggle */}
-          <div className="px-3 py-4 border-t border-border/10">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                {isDarkMode ? <Moon className="h-5 w-5 text-muted-foreground" /> : <Sun className="h-5 w-5 text-muted-foreground" />}
-                {open && (
-                  <span className="text-sm text-muted-foreground">
-                    {isDarkMode ? "Dark Mode" : "Light Mode"}
-                  </span>
-                )}
-              </div>
-              <Switch 
-                checked={isDarkMode}
-                onCheckedChange={toggleDarkMode}
-                className="data-[state=checked]:bg-primary"
-              />
-            </div>
-          </div>
+
 
           {/* Settings Section */}
           <SidebarGroup>
@@ -118,18 +86,37 @@ export function AppSidebar() {
                 <div className="h-px flex-1 bg-border"></div>
               </div>
             )}
+
+            {/* Dark Mode Toggle */}
+            <div className="px-3 py-4 border-t border-border/10">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  {isDarkMode ? <Moon className="h-5 w-5 text-muted-foreground" /> : <Sun className="h-5 w-5 text-muted-foreground" />}
+                  {open && (
+                    <span className="text-sm text-muted-foreground">
+                      {isDarkMode ? "Dark Mode" : "Light Mode"}
+                    </span>
+                  )}
+                </div>
+                <Switch
+                  checked={isDarkMode}
+                  onCheckedChange={toggleDarkMode}
+                  className="data-[state=checked]:bg-primary"
+                />
+              </div>
+            </div>
+
             <SidebarGroupContent>
               <SidebarMenu className="space-y-4">
                 {settingsItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.url} 
+                      <NavLink
+                        to={item.url}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
-                            isActive 
-                              ? "bg-primary/10 text-primary font-medium" 
-                              : "text-sidebar-foreground hover:bg-sidebar-accent"
+                          `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent"
                           }`
                         }
                       >
@@ -142,8 +129,13 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        </div>
-      </SidebarContent>
-    </Sidebar>
-  )
+
+    </div>
+  </SidebarContent>
+</Sidebar>
+
+
+
+)
+
 }
