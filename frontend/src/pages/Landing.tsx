@@ -35,9 +35,13 @@ const Landing = () => {
         localStorage.setItem("userId", data.userId)
         if (data.role) localStorage.setItem("userRole", data.role)
 
+        const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ")
+        localStorage.setItem("userName", fullName)
+
         toast.success("Welcome to Exclusive Insurance!")
         navigate("/dashboard")
-      } else {
+      }
+      else {
         toast.error(data.message || "Invalid login credentials")
       }
     } catch (error) {

@@ -156,26 +156,7 @@ const Dashboard = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-heading">Quick Actions</CardTitle>
-          <CardDescription>Get started with your quotation process</CardDescription>
-        </CardHeader>
-        <CardContent className="flex gap-4">
-          <Button asChild>
-            <Link to="/living-annuity-calculator">
-              <Calculator className="h-4 w-4 mr-2" />
-              Living Annuity Calculator
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link to="/quotes">
-              <FileText className="h-4 w-4 mr-2" />
-              View Quotes
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+    
     </div>
   )
 }

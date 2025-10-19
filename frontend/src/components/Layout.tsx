@@ -4,6 +4,8 @@ import { Search } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react"
+import { useAuth } from "@/lib/authlibrary"
+
 
 interface LayoutProps {
   children: React.ReactNode
@@ -11,11 +13,10 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [isDarkMode, setIsDarkMode] = useState(false)
-  
-  // Mock user data - replace with actual user data from your auth system
-  const userName = "John Doe"
-  const userRole = "Admin"
-  
+
+  const { userRole, isLoggedIn, logout } = useAuth()
+  const userName = localStorage.getItem("userName") || "User"
+
   // Generate consistent color based on user name
   const getAvatarColor = (name: string) => {
     const colors = [
@@ -31,7 +32,7 @@ export function Layout({ children }: LayoutProps) {
     const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
     return colors[index]
   }
-  
+
   // Get initials from name
   const getInitials = (name: string) => {
     return name
@@ -41,21 +42,21 @@ export function Layout({ children }: LayoutProps) {
       .toUpperCase()
       .slice(0, 2)
   }
-  
+
   // Monitor dark mode changes
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setIsDarkMode(document.documentElement.classList.contains('dark'))
     })
-    
+
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['class']
     })
-    
+
     // Set initial state
     setIsDarkMode(document.documentElement.classList.contains('dark'))
-    
+
     return () => observer.disconnect()
   }, [])
 
@@ -66,10 +67,10 @@ export function Layout({ children }: LayoutProps) {
         <header className="sticky top-0 z-50 h-20 flex items-center px-6 justify-between border border-border bg-card rounded-2xl shadow-sm mb-6">
           <div className="flex items-center gap-2">
             <div className="h-[150px] w-[150px] rounded-xl bg-transparent flex items-center justify-center">
-              <img 
-                src={isDarkMode ? "/logo-darkmode.png" : "/exclusive.png"} 
-                alt="Logo" 
-                className="h-[150px] w-[150px] object-contain transition-opacity duration-300" 
+              <img
+                src={isDarkMode ? "/logo-darkmode.png" : "/exclusive.png"}
+                alt="Logo"
+                className="h-[150px] w-[150px] object-contain transition-opacity duration-300"
               />
             </div>
           </div>
@@ -94,8 +95,12 @@ export function Layout({ children }: LayoutProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-foreground">{userName}</span>
-              <span className="text-xs text-muted-foreground">{userRole}</span>
+              <span className="text-sm font-semibold text-foreground">
+                {userName.split(" ").map(word => word[0].toUpperCase() + word.slice(1)).join(" ")}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {userRole ? userRole.charAt(0).toUpperCase() + userRole.slice(1) : ""}
+              </span>
             </div>
           </div>
         </header>
