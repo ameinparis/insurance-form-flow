@@ -19,9 +19,11 @@ export function Layout({ children }: LayoutProps) {
         {/* Header */}
         <header className="sticky top-0 z-50 h-20 flex items-center px-6 justify-between border border-border bg-card rounded-2xl shadow-sm mb-6">
           <div className="flex items-center gap-2">
-            <div className="h-14 w-14 rounded-xl bg-transparent flex items-center justify-center">
-              <img src="/exclusive.png" alt="Logo" className="h-10 w-10 object-contain" />
+            <div className="h-[150px] w-[150px] rounded-xl bg-transparent flex items-center justify-center">
+              <img src="/exclusive.png" alt="Logo" className="h-[150px] w-[150px] object-contain" />
             </div>
+
+
           </div>
 
           {/* Center Search */}
