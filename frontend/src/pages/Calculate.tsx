@@ -71,22 +71,27 @@ const Calculate = () => {
         <p className="text-muted-foreground">Choose an insurance type to get started with your calculation.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {options.map((option) => (
-          <Card key={option.id} className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer border-0 shadow-md">
-            <CardHeader className="pb-4">
-              <div className="flex items-center space-x-4">
-                <div className={`p-4 rounded-full ${option.color} text-white shadow-lg`}>
-                  <option.icon className="h-6 w-6" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-semibold">{option.title}</CardTitle>
-                  <CardDescription className="text-sm mt-1">{option.description}</CardDescription>
-                </div>
+          <Card key={option.id} className="group relative overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-card to-card/80">
+            <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
+              {/* Circular Icon */}
+              <div className={`h-20 w-20 rounded-full ${option.color} flex items-center justify-center shadow-lg`}>
+                <option.icon className="h-10 w-10 text-white" />
               </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <Button asChild className="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5">
+              
+              {/* Title */}
+              <CardTitle className="text-lg font-bold text-foreground">
+                {option.title}
+              </CardTitle>
+              
+              {/* Description */}
+              <CardDescription className="text-sm text-muted-foreground">
+                {option.description}
+              </CardDescription>
+              
+              {/* Button */}
+              <Button asChild className="w-full mt-4 bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Link to={`/calculator/${option.id}`}>
                   Get Started
                 </Link>

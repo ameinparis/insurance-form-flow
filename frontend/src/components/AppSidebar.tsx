@@ -37,8 +37,8 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className="bg-sidebar border-sidebar-border ml-4 mb-4 mt-4 rounded-2xl shadow-xl w-64">
-      <SidebarContent className="px-3 py-6 flex flex-col h-full">
+    <Sidebar className="bg-sidebar border-sidebar-border ml-4 mb-4 rounded-2xl shadow-xl w-64">
+      <SidebarContent className="px-3 py-6 pb-8 flex flex-col h-full">
         {/* Logo Section */}
         <div className="px-3 pb-4 flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
