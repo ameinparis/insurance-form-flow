@@ -365,66 +365,6 @@ app.get("/api/new-quotes/:id", authenticateToken, async (req, res) => {
 });
 
 
-app.get('/api/dashboard/stats', authenticateToken, async (req, res) => {
-  try {
-    const totalQuotes = await Quote.countDocuments();
-    const totalCalculations = await Quote.countDocuments({ isCalculation: true }); // if you track that
-    const revenue = await Quote.aggregate([
-      { $group: { _id: null, total: { $sum: "$quotePremium" } } }
-    ]);
-    const successRate = 95; // Just a mock static value for now
-
-    res.json({
-      totalQuotes,
-      totalCalculations,
-      revenue: revenue[0]?.total || 0,
-      successRate
-    });
-  } catch (err) {
-    console.error("Error fetching dashboard stats:", err);
-    res.status(500).json({ error: "Failed to fetch stats" });
-  }
-});
-
-
-app.get('/api/dashboard/charts', authenticateToken, async (req, res) => {
-  try {
-    // Monthly breakdown (last 6 months)
-    const monthlyData = await Quote.aggregate([
-      {
-        $group: {
-          _id: { $substr: ["$createdAt", 0, 7] }, // YYYY-MM
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { _id: 1 } }
-    ]);
-
-    // Category breakdown (e.g. by productName)
-    const categoryData = await Quote.aggregate([
-      {
-        $group: {
-          _id: "$productName",
-          count: { $sum: 1 }
-        }
-      }
-    ]);
-
-    res.json({
-      monthlyData: monthlyData.map((d) => ({
-        name: d._id,
-        value: d.count
-      })),
-      categoryData: categoryData.map((d) => ({
-        name: d._id,
-        value: d.count
-      }))
-    });
-  } catch (err) {
-    console.error("Error fetching chart data:", err);
-    res.status(500).json({ error: "Failed to fetch chart data" });
-  }
-});
 
 
 /* ----------------------------- Start server -------------------------- */
