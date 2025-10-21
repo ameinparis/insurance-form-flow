@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +10,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
 
 const Dashboard = () => {
+  const navigate = useNavigate()
   const [recentQuotes, setRecentQuotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const { userRole } = useAuth()
@@ -173,10 +175,22 @@ useEffect(() => {
                       <TableCell>{new Date(quote.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
+                            title="View Quote"
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => toast.info("Download feature coming soon")}
+                            title="Download Quote"
+                          >
                             <Download className="h-4 w-4" />
                           </Button>
                           {userRole === "superuser" && (
@@ -185,6 +199,7 @@ useEffect(() => {
                               size="icon"
                               className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                               onClick={() => handleDeleteQuote(quote.id)}
+                              title="Delete Quote"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

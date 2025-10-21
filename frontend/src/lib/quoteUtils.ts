@@ -1,0 +1,113 @@
+// Utility functions for quote rendering and data fetching
+
+export interface QuoteData {
+  _id: string;
+  quoteId: string;
+  productType?: string;
+  type?: string; // legacy field
+  client?: {
+    fullName?: string;
+    dateOfBirth?: string;
+    idNumber?: string;
+    contactNumber?: string;
+    email?: string;
+  };
+  // Legacy fields
+  fullName?: string;
+  email?: string;
+  contactNumber?: string;
+  dateOfBirth?: string;
+  idNumber?: string;
+  
+  inputs?: any;
+  outputs?: any;
+  termsAndConditions?: string;
+  createdBy?: {
+    name?: string;
+    email?: string;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
+ * Fetch quote details from either legacy or new API endpoint
+ */
+export const fetchQuoteDetails = async (
+  quoteId: string,
+  isLegacy: boolean = false
+): Promise<QuoteData> => {
+  const token = localStorage.getItem("token");
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
+  const endpoint = isLegacy 
+    ? `/api/quotes/${quoteId}` 
+    : `/api/new-quotes/${quoteId}`;
+  
+  const response = await fetch(`${baseUrl}${endpoint}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch quote: ${response.statusText}`);
+  }
+  
+  return response.json();
+};
+
+/**
+ * Format currency with BWP prefix
+ */
+export const formatCurrency = (amount: number | string | undefined): string => {
+  if (amount === undefined || amount === null) return "—";
+  const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
+  if (isNaN(numAmount)) return "—";
+  return `BWP ${numAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+/**
+ * Get friendly display name for product type
+ */
+export const getProductDisplayName = (productType?: string): string => {
+  if (!productType) return "Insurance Quote";
+  
+  const mapping: Record<string, string> = {
+    "Exclusive Annuity": "Exclusive Annuity",
+    "Exclusive Funeral": "Exclusive Funeral Plan",
+    "life": "Life Insurance",
+    "funeral": "Funeral Plan",
+    "annuity": "Living Annuity",
+  };
+  
+  return mapping[productType] || productType;
+};
+
+/**
+ * Format date string
+ */
+export const formatDate = (dateString?: string): string => {
+  if (!dateString) return "—";
+  try {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return dateString;
+  }
+};
+
+/**
+ * Get client info from quote (handles both legacy and new schema)
+ */
+export const getClientInfo = (quote: QuoteData) => {
+  return {
+    fullName: quote.client?.fullName || quote.fullName || "—",
+    email: quote.client?.email || quote.email || "—",
+    contactNumber: quote.client?.contactNumber || quote.contactNumber || "—",
+    dateOfBirth: quote.client?.dateOfBirth || quote.dateOfBirth || "—",
+    idNumber: quote.client?.idNumber || quote.idNumber || "—",
+  };
+};
