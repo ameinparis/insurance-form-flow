@@ -15,51 +15,7 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
         <h2 className="text-2xl font-semibold">Product: Life Insurance</h2>
       </div>
 
-      {/* Personal & Policy Details */}
-      {(client || inputs) && (
-        <div>
-          <CardContent className="p-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {inputs.sumAssured && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Sum Assured</p>
-                  <p className="text-lg font-semibold">{formatCurrency(inputs.sumAssured)}</p>
-                </div>
-              )}
-              {inputs.age && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Age</p>
-                  <p className="text-lg font-semibold">{inputs.age} years</p>
-                </div>
-              )}
-              {inputs.term && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Policy Term</p>
-                  <p className="text-lg font-semibold">{inputs.term} years</p>
-                </div>
-              )}
-              {inputs.occupation && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Occupation</p>
-                  <p className="text-lg font-semibold">{inputs.occupation}</p>
-                </div>
-              )}
-              {inputs.smoker !== undefined && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Smoker Status</p>
-                  <p className="text-lg font-semibold">{inputs.smoker ? "Yes" : "No"}</p>
-                </div>
-              )}
-              {inputs.healthConditions && (
-                <div className="md:col-span-2">
-                  <p className="text-sm text-muted-foreground">Health Conditions</p>
-                  <p className="text-lg font-semibold">{inputs.healthConditions}</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      
 
       {/* Outputs Section */}
       {outputs && (

@@ -44,7 +44,7 @@ useEffect(() => {
         fullName: q.fullName || "Unnamed",
         email: q.email || "—",
         contactNumber: q.contactNumber || "—",
-        type: "Legacy",
+        type: "Exclusive Annuity",
         createdByName: q.createdByName || q.createdBy?.firstName || "—",
         createdAt: q.createdAt,
         isLegacy: true,

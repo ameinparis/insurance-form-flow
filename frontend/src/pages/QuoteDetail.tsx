@@ -146,7 +146,7 @@ const QuoteDetail = () => {
 
         {/* Quote Meta Information */}
         <div className="text-sm text-muted-foreground text-center space-y-1">
-          <p>Created by: {quote.createdByName || quote.createdBy?.name || quote.createdBy?.email || "Unknown"}</p>
+          <p>Created by: {quote.createdBy?.name || quote.createdBy?.email || "Unknown"}</p>
           <p>Date: {formatDate(quote.createdAt)}</p>
         </div>
       </div>

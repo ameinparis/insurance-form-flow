@@ -53,7 +53,7 @@ useEffect(() => {
         fullName: q.fullName,
         email: q.email,
         contactNumber: q.contactNumber,
-        type: "Legacy",
+        type: "Exclusive Annuity",
         createdByName: q.createdByName || q.createdBy?.firstName || "",
         createdAt: q.createdAt,
         isLegacy: true,
@@ -108,7 +108,6 @@ useEffect(() => {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold mb-2 font-heading">Welcome back!</h2>
-        <p className="text-muted-foreground">Your recent annuity quotes appear below.</p>
       </div>
 
       {/* Chart Section */}

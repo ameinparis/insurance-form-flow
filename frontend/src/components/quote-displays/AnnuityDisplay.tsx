@@ -41,8 +41,12 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
           <span>{inputs?.drawdown || "N/A"}%</span>
         </div>
         <div className="flex justify-between border-b border-gray-200 py-2">
-          <span className="font-medium">Living Annuity per Month (Age {inputs?.age || "N/A"} to {inputs?.guaranteedStartAge || "N/A"}):</span>
-          <span className="font-semibold">{formatCurrency(outputs?.living?.retirement_annuity)}</span>
+          <span className="font-medium">
+            Living Annuity per Month (Age {inputs?.age || "N/A"} to {inputs?.guaranteedStartAge || "N/A"}):
+          </span>
+          <span className="font-semibold">
+            {formatCurrency(outputs?.living?.retirement_annuity)}
+          </span>
         </div>
         <div className="flex justify-between border-b border-gray-200 py-2">
           <span className="font-medium">Funds Remaining:</span>
@@ -55,8 +59,8 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
       </div>
 
       {/* Life Annuity Section */}
-      <div className="mt-8">
-        <div className="border-b-2 border-gray-800 pb-2 mb-4">
+      <div>
+        <div className="border-b-2 border-gray-800 pb-2 mb-4 mt-8">
           <h3 className="text-xl font-semibold">Life Annuity</h3>
         </div>
         <div className="flex justify-between border-b border-gray-200 py-3">
@@ -64,8 +68,66 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
           <span className="font-bold text-lg">{formatCurrency(outputs?.life?.monthly_annuity)}</span>
         </div>
         <p className="text-sm italic text-gray-600 mt-4">
-          * Life annuity is calculated based on guaranteed period of {outputs?.living?.guarantee_period || "N/A"} years
+          * Life annuity is calculated based on guaranteed period of{" "}
+          {outputs?.living?.guarantee_period || "N/A"} years
         </p>
+      </div>
+
+      {/* Fees Section */}
+      <div>
+        <div className="border-b-2 border-gray-800 pb-2 mb-4 mt-8">
+          <h3 className="text-xl font-semibold">Living Annuity Fees</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full border text-sm text-left text-gray-700">
+            <thead className="bg-gray-100">
+              <tr>
+                <th colSpan={2} className="px-4 py-2 font-semibold">Upfront Fees</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-t">
+                <td className="px-4 py-2">Purchase Premium</td>
+                <td className="px-4 py-2">2%</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2">Upfront Commission</td>
+                <td className="px-4 py-2">1%</td>
+              </tr>
+            </tbody>
+            <thead className="bg-gray-100">
+              <tr>
+                <th colSpan={2} className="px-4 py-2 pt-4 font-semibold">Ongoing Fees</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-t">
+                <td className="px-4 py-2">Ongoing Commission</td>
+                <td className="px-4 py-2">1% p.a</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2">Administration Fee</td>
+                <td className="px-4 py-2">1% p.a</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2">Assets Management Fee</td>
+                <td className="px-4 py-2">0.75% p.a</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Signature Section */}
+      <div className="mt-8 flex flex-col sm:flex-row gap-12">
+        <div className="flex-1">
+          <label className="block font-medium mb-1">Signature:</label>
+          <div className="border-b border-black h-8" />
+        </div>
+        <div className="flex-1">
+          <label className="block font-medium mb-1">Date:</label>
+          <div className="border-b border-black h-8" />
+        </div>
       </div>
     </div>
   );

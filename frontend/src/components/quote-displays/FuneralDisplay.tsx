@@ -14,9 +14,9 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
   return (
     <div className="bg-white p-8 space-y-8">
       {/* Product Header */}
-      <div className="border-b-2 border-gray-800 pb-2">
+      {/* <div className="border-b-2 border-gray-800 pb-2">
         <h2 className="text-2xl font-semibold">Product: Exclusive Funeral</h2>
-      </div>
+      </div> */}
 
       {/* Personal Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
