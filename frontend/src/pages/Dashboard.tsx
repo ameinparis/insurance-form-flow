@@ -2,7 +2,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Download, Trash2 } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Eye, Download, Trash2 } from "lucide-react"
 import { SimpleChart } from "@/components/SimpleChart"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
@@ -12,7 +13,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true)
   const { userRole } = useAuth()
 
-  // 🟡 Placeholder chart data (you can replace these later)
   const dummyStats = {
     totalQuotes: 0,
     totalCalculations: 0,
@@ -76,7 +76,7 @@ const Dashboard = () => {
         <p className="text-muted-foreground">Your recent annuity quotes appear below.</p>
       </div>
 
-      {/* Chart Section (structure only for now) */}
+      {/* Chart Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -84,7 +84,6 @@ const Dashboard = () => {
             <CardDescription>Monthly quotes and calculations trend</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Placeholder data — hook up later */}
             <SimpleChart data={dummyChartData.monthlyData} type="area" className="h-[300px]" />
           </CardContent>
         </Card>
@@ -95,13 +94,12 @@ const Dashboard = () => {
             <CardDescription>Distribution by insurance type</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Placeholder data — hook up later */}
             <SimpleChart data={dummyChartData.categoryData} type="pie" className="h-[300px]" />
           </CardContent>
         </Card>
       </div>
 
-      {/* Quotes List */}
+      {/* Recent Quotes Table */}
       <Card>
         <CardHeader>
           <CardTitle className="font-heading">Recently Created</CardTitle>
@@ -114,52 +112,63 @@ const Dashboard = () => {
           ) : recentQuotes.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">No quotes found.</div>
           ) : (
-            <div className="space-y-4">
-              {recentQuotes.map((quote) => (
-                <div
-                  key={quote.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-medium">
-                      PDF
-                    </div>
-                    <div>
-                      <div className="font-medium">{quote.quoteId}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Created by {quote.createdByName || "Unknown"} •{" "}
-                        {quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : "N/A"}
-                      </div>
-                    </div>
-                  </div>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Quote ID</TableHead>
+                    <TableHead>Client Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Created By</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentQuotes.map((quote, idx) => (
+                    <TableRow key={quote.id} className={idx % 2 === 0 ? "bg-background" : "bg-muted/20"}>
+                      <TableCell className="font-medium">#{quote.quoteId}</TableCell>
+                      <TableCell>{quote.fullName || "Unnamed"}</TableCell>
+                      <TableCell className="text-primary underline">{quote.email || "—"}</TableCell>
+                      <TableCell>{quote.contactNumber || "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{quote.type || "Funeral"}</Badge>
+                      </TableCell>
+                      <TableCell>{quote.createdByName}</TableCell>
+                      <TableCell>{new Date(quote.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          {userRole === "superuser" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteQuote(quote.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
 
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <div className="font-medium">{quote.fullName || "Unnamed client"}</div>
-                      <div className="text-sm text-muted-foreground">
-                        <Badge variant="outline" className="mr-2">Annuity</Badge>
-                        {quote.contactNumber || "No contact"}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <Download className="h-4 w-4 text-blue-500" />
-                      </Button>
-                      {userRole === "superuser" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteQuote(quote.id)}
-                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Showing {recentQuotes.length} out of {recentQuotes.length} quotes
+                </p>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

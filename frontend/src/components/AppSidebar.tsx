@@ -58,7 +58,7 @@ return (
                         className={({ isActive }) =>
                           `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
                             ? "bg-primary/10 text-primary font-medium"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent"
+                            : "text-muted-foreground/60 hover:text-primary hover:bg-muted/40"
                           }`
                         }
                       >
@@ -91,7 +91,7 @@ return (
             <div className="px-3 py-4 border-t border-border/10">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  {isDarkMode ? <Moon className="h-5 w-5 text-muted-foreground" /> : <Sun className="h-5 w-5 text-muted-foreground" />}
+                  {isDarkMode ? <Moon className="h-5 w-5 text-muted-foreground/60" /> : <Sun className="h-5 w-5 text-muted-foreground/60" />}
                   {open && (
                     <span className="text-sm text-muted-foreground">
                       {isDarkMode ? "Dark Mode" : "Light Mode"}
@@ -116,7 +116,7 @@ return (
                         className={({ isActive }) =>
                           `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
                             ? "bg-primary/10 text-primary font-medium"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent"
+                            : "text-muted-foreground/60 hover:text-primary hover:bg-muted/40"
                           }`
                         }
                       >

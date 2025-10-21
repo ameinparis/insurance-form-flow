@@ -3,15 +3,21 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Calculator, Download, Eye, FileText, Search, Filter } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { Calculator, Download, Eye, Trash2, FileText, Search, Filter } from "lucide-react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
+import { useAuth } from "@/lib/authlibrary"
 
 const Quotes = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("date")
   const [quotes, setQuotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [previewQuote, setPreviewQuote] = useState<any | null>(null)
+  const { userRole } = useAuth()
 
   useEffect(() => {
     const fetchQuotes = async () => {
@@ -35,6 +41,23 @@ const Quotes = () => {
 
     fetchQuotes()
   }, [])
+
+  const handleDeleteQuote = async (quoteId: string) => {
+    try {
+      const token = localStorage.getItem("token")
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes/${quoteId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (!res.ok) throw new Error("Failed to delete quote")
+      setQuotes((quotes) => quotes.filter((q) => q.id !== quoteId))
+      toast.success("Quote deleted successfully")
+    } catch (err) {
+      console.error("Error deleting quote:", err)
+      toast.error("Failed to delete quote")
+    }
+  }
 
   const filteredAndSortedQuotes = useMemo(() => {
     let filtered = quotes
@@ -68,14 +91,12 @@ const Quotes = () => {
     return filtered
   }, [quotes, searchTerm, sortBy])
 
-  const getTypeIcon = (type: string) => <FileText className="h-5 w-5" />
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold mb-2">Quotation Management</h2>
-          <p className="text-muted-foreground">Manage and view all your funeral insurance quotes.</p>
+          <p className="text-muted-foreground">Manage and view all your insurance quotes.</p>
         </div>
         <Button asChild>
           <Link to="/calculate">
@@ -136,7 +157,7 @@ const Quotes = () => {
             <p className="text-muted-foreground mb-4">
               {searchTerm
                 ? "Try adjusting your search terms."
-                : "Start by creating your first funeral quote."}
+                : "Start by creating your first insurance quote."}
             </p>
             {!searchTerm && (
               <Button asChild>
@@ -149,42 +170,96 @@ const Quotes = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {filteredAndSortedQuotes.map((quote) => (
-            <Card key={quote.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  {getTypeIcon(quote.type)}
-                  {quote.fullName || "Unnamed client"}
-                </CardTitle>
-                <CardDescription>
-                  Quote #{quote.quoteId || quote.id}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-lg font-medium text-primary capitalize">
-                    {quote.type || "Life Funeral"}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4 mr-2" />
-                      View
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
-                  </div>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Created by {quote.createdByName || "Unknown"} • {quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : "N/A"}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead>Quote ID</TableHead>
+                  <TableHead>Client Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Created By</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredAndSortedQuotes.map((quote, idx) => (
+                  <TableRow key={quote.id} className={idx % 2 === 0 ? "bg-background" : "bg-muted/20"}>
+                    <TableCell className="font-medium">#{quote.quoteId}</TableCell>
+                    <TableCell>{quote.fullName || "Unnamed"}</TableCell>
+                    <TableCell className="text-primary underline">{quote.email || "—"}</TableCell>
+                    <TableCell>{quote.contactNumber || "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{quote.type || "Funeral"}</Badge>
+                    </TableCell>
+                    <TableCell>{quote.createdByName}</TableCell>
+                    <TableCell>{new Date(quote.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setPreviewQuote(quote)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        {userRole === "superuser" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDeleteQuote(quote.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            <div className="flex items-center justify-between p-4 border-t">
+              <p className="text-sm text-muted-foreground">
+                Showing {filteredAndSortedQuotes.length} out of {quotes.length} quotes
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       )}
+
+      {/* Preview Dialog */}
+      <Dialog open={!!previewQuote} onOpenChange={() => setPreviewQuote(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Quote Preview</DialogTitle>
+            <DialogDescription>Quote #{previewQuote?.quoteId}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-muted-foreground">
+              Preview functionality will be added with backend integration.
+            </p>
+            {previewQuote && (
+              <div className="space-y-2 text-sm">
+                <div><strong>Client:</strong> {previewQuote.fullName || "Unnamed"}</div>
+                <div><strong>Email:</strong> {previewQuote.email || "—"}</div>
+                <div><strong>Phone:</strong> {previewQuote.contactNumber || "—"}</div>
+                <div><strong>Type:</strong> {previewQuote.type || "Funeral"}</div>
+                <div><strong>Created By:</strong> {previewQuote.createdByName}</div>
+                <div><strong>Date:</strong> {new Date(previewQuote.createdAt).toLocaleDateString()}</div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

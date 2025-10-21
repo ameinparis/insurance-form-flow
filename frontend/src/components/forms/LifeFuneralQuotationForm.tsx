@@ -4,8 +4,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Upload, Info, HelpCircle } from "lucide-react"
+import { Upload, Info, HelpCircle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
@@ -13,7 +16,8 @@ import * as XLSX from "xlsx"
 const LifeFuneralQuotationForm = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [premiumResult, setPremiumResult] = useState<any | null>(null)
-  const [showCustomerModal, setShowCustomerModal] = useState(false)
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false)
+  const [isCalculating, setIsCalculating] = useState(false)
 
   const [customerDetails, setCustomerDetails] = useState({
     fullName: "",
@@ -100,6 +104,8 @@ const LifeFuneralQuotationForm = () => {
       return
     }
 
+    setIsCalculating(true)
+
     const syncedFormData = {
       ...formData,
       spouseCover: formData.spouseCover || formData.principalMemberCover || "0",
@@ -131,12 +137,14 @@ const LifeFuneralQuotationForm = () => {
       // Store result in state
       setPremiumResult(result.result)
 
-      // Open the customer details modal
-      setShowCustomerModal(true)
+      // Open the customer details dialog
+      setShowQuoteDialog(true)
 
     } catch (err: any) {
       console.error("Quote error", err)
       toast.error(`Failed to calculate: ${err.message}`)
+    } finally {
+      setIsCalculating(false)
     }
   }
 
@@ -168,7 +176,7 @@ const LifeFuneralQuotationForm = () => {
 
       const data = await res.json()
       toast.success(`Quote ${data.quoteId} saved successfully!`)
-      setShowCustomerModal(false)
+      setShowQuoteDialog(false)
 
       // optionally redirect or offer PDF download next
 
@@ -481,171 +489,213 @@ const LifeFuneralQuotationForm = () => {
           </CardContent>
         </Card>
         <div className="flex justify-end">
-          <Button onClick={handleSubmit} disabled={!uploadedFile}>
-            Calculate Quotation
+          <Button onClick={handleSubmit} disabled={!uploadedFile || isCalculating}>
+            {isCalculating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Calculating...
+              </>
+            ) : (
+              "Calculate Quotation"
+            )}
           </Button>
         </div>
 
         {premiumResult && (
-          <Card className="mt-6">
+          <Card className="bg-muted/50">
             <CardHeader>
               <CardTitle>Quotation Results</CardTitle>
-              <CardDescription>Based on the uploaded data and inputs</CardDescription>
+              <CardDescription>Calculated premiums based on your inputs</CardDescription>
             </CardHeader>
-            <CardContent>
-              {/* Show the quote name at the top if available */}
+            <CardContent className="space-y-4">
               {premiumResult?.quoteName && (
-                <h3 className="text-lg font-semibold mb-6">{premiumResult.quoteName}</h3>
+                <div className="text-lg font-semibold text-primary">{premiumResult.quoteName}</div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <Separator />
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {premiumResult?.rows?.map((row: any, index: number) => (
-                  <div key={index} className="border rounded-lg p-4 shadow-sm bg-muted/40">
-                    <h4 className="font-semibold capitalize mb-2">{row.status}</h4>
-                    <p><strong>Total:</strong> {row.total != null ? `BWP ${row.total.toFixed(2)}` : "–"}</p>
-                    <p><strong>Count:</strong> {row.count ?? "–"}</p>
-                    <p><strong>Per Member:</strong> {row.perMember != null ? `BWP ${row.perMember.toFixed(2)}` : "–"}</p>
+                  <div key={index} className="border rounded-lg p-4 bg-background space-y-2">
+                    <h4 className="font-semibold capitalize text-primary">{row.status}</h4>
+                    <Separator className="my-2" />
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total:</span>
+                        <span className="font-medium">{row.total != null ? `BWP ${row.total.toFixed(2)}` : "–"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Count:</span>
+                        <span className="font-medium">{row.count ?? "–"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Per Member:</span>
+                        <span className="font-medium">{row.perMember != null ? `BWP ${row.perMember.toFixed(2)}` : "–"}</span>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <div className="flex justify-end mt-6">
-                <Button onClick={() => setShowCustomerModal(true)}>Create Quote</Button>
+              <div className="flex justify-end pt-4">
+                <Button onClick={() => setShowQuoteDialog(true)}>Create Quote</Button>
               </div>
             </CardContent>
-
-
-            {showCustomerModal && (
-              <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
-                <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg w-full max-w-5xl space-y-6 shadow-xl max-h-[90vh] overflow-y-auto">
-                  <h2 className="text-lg font-semibold">Create Customer Funeral Quotation</h2>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Customer Info */}
-                    <div className="space-y-4">
-                      <h3 className="text-base font-medium">Customer Details</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>Full Name</Label>
-                          <Input
-                            value={customerDetails.fullName}
-                            onChange={(e) => setCustomerDetails((prev) => ({ ...prev, fullName: e.target.value }))}
-                          />
-                        </div>
-
-                        <div>
-                          <Label>Date of Birth</Label>
-                          <Input
-                            type="date"
-                            value={customerDetails.dateOfBirth}
-                            onChange={(e) => setCustomerDetails((prev) => ({ ...prev, dateOfBirth: e.target.value }))}
-                          />
-                        </div>
-
-                        <div>
-                          <Label>Gender</Label>
-                          <Select
-                            value={customerDetails.gender}
-                            onValueChange={(value) => setCustomerDetails((prev) => ({ ...prev, gender: value }))}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select gender" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Male">Male</SelectItem>
-                              <SelectItem value="Female">Female</SelectItem>
-                              <SelectItem value="Other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label>ID Number</Label>
-                          <Input
-                            value={customerDetails.idNumber}
-                            onChange={(e) => setCustomerDetails((prev) => ({ ...prev, idNumber: e.target.value }))}
-                          />
-                        </div>
-
-                        <div>
-                          <Label>Contact Number</Label>
-                          <Input
-                            value={customerDetails.contactNumber}
-                            onChange={(e) => setCustomerDetails((prev) => ({ ...prev, contactNumber: e.target.value }))}
-                          />
-                        </div>
-
-                        <div>
-                          <Label>Email</Label>
-                          <Input
-                            type="email"
-                            value={customerDetails.email}
-                            onChange={(e) => setCustomerDetails((prev) => ({ ...prev, email: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Quotation Summary */}
-                    <div className="space-y-4">
-                      <h3 className="text-base font-medium">Quotation Summary</h3>
-
-                      {premiumResult ? (
-                        <div className="space-y-3">
-                          {/* Show quote name */}
-                          {premiumResult.quoteName && (
-                            <p className="font-semibold text-primary mb-3">
-                              {premiumResult.quoteName}
-                            </p>
-                          )}
-
-                          {/* Loop through each row */}
-                          {premiumResult.rows?.map((row: any, index: number) => (
-                            <div key={index} className="border rounded-lg p-4 shadow-sm bg-muted/40">
-                              <h4 className="font-semibold capitalize mb-2">{row.status}</h4>
-                              <p><strong>Total:</strong> {row.total != null ? `BWP ${row.total.toFixed(2)}` : "–"}</p>
-                              <p><strong>Count:</strong> {row.count ?? "–"}</p>
-                              <p><strong>Per Member:</strong> {row.perMember != null ? `BWP ${row.perMember.toFixed(2)}` : "–"}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-muted-foreground text-sm">
-                          No quotation results yet.
-                        </div>
-                      )}
-                    </div>
-
-
-                  </div>
-
-                  {/* Ts & Cs */}
-                  <div className="border rounded bg-muted/40 p-4 text-sm space-y-3">
-                    <h4 className="font-medium">Terms and Conditions</h4>
-                    <p>
-                      This quotation outlines projected premiums for the selected funeral cover scheme. Premiums are based on the age, relationship, and cover amounts submitted, and are subject to change pending underwriting and validation of all data.
-                    </p>
-                    <p>
-                      Exclusive Life reserves the right to review and adjust these premiums at policy issuance. This quotation does not constitute a binding contract. Actual policy terms and conditions will be provided upon application approval.
-                    </p>
-                    <p>
-                      This quotation is confidential and may not be altered. Any unauthorized modifications will render this quote invalid.
-                    </p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex justify-between pt-4">
-                    <Button variant="ghost" onClick={() => setShowCustomerModal(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleCreateQuote}>Generate Quote</Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
           </Card>
         )}
+
+        {/* Quote Dialog */}
+        <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create Customer Funeral Quotation</DialogTitle>
+              <DialogDescription>
+                Enter customer details and review quotation results
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Customer Details Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Customer Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Full Name</Label>
+                    <Input
+                      value={customerDetails.fullName}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, fullName: e.target.value }))}
+                      placeholder="Enter full name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Date of Birth</Label>
+                    <Input
+                      type="date"
+                      value={customerDetails.dateOfBirth}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, dateOfBirth: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Gender</Label>
+                    <RadioGroup
+                      value={customerDetails.gender}
+                      onValueChange={(value) => setCustomerDetails((prev) => ({ ...prev, gender: value }))}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Male" id="male" />
+                        <Label htmlFor="male">Male</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Female" id="female" />
+                        <Label htmlFor="female">Female</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>ID/Passport Number</Label>
+                    <Input
+                      value={customerDetails.idNumber}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, idNumber: e.target.value }))}
+                      placeholder="Enter ID number"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Contact Number</Label>
+                    <Input
+                      value={customerDetails.contactNumber}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, contactNumber: e.target.value }))}
+                      placeholder="Enter contact number"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Email Address</Label>
+                    <Input
+                      type="email"
+                      value={customerDetails.email}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, email: e.target.value }))}
+                      placeholder="Enter email address"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quotation Summary Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quotation Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {premiumResult ? (
+                    <>
+                      {premiumResult.quoteName && (
+                        <div className="font-semibold text-primary">{premiumResult.quoteName}</div>
+                      )}
+
+                      <Separator />
+
+                      <div className="space-y-3">
+                        {premiumResult.rows?.map((row: any, index: number) => (
+                          <div key={index} className="border rounded-lg p-3 bg-muted/30 space-y-1">
+                            <h4 className="font-semibold capitalize text-sm">{row.status}</h4>
+                            <div className="text-xs space-y-0.5">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Total:</span>
+                                <span>{row.total != null ? `BWP ${row.total.toFixed(2)}` : "–"}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Count:</span>
+                                <span>{row.count ?? "–"}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Per Member:</span>
+                                <span>{row.perMember != null ? `BWP ${row.perMember.toFixed(2)}` : "–"}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-muted-foreground text-sm">No quotation results available</div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Terms Card */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Terms and Conditions</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm space-y-3">
+                <p>
+                  This quotation outlines projected premiums for the selected funeral cover scheme. Premiums are based on the age, relationship, and cover amounts submitted, and are subject to change pending underwriting and validation of all data.
+                </p>
+                <p>
+                  Exclusive Life reserves the right to review and adjust these premiums at policy issuance. This quotation does not constitute a binding contract. Actual policy terms and conditions will be provided upon application approval.
+                </p>
+                <p>
+                  This quotation is confidential and may not be altered. Any unauthorized modifications will render this quote invalid.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Actions */}
+            <div className="flex justify-between mt-6">
+              <Button variant="secondary" onClick={() => setShowQuoteDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleCreateQuote}>Generate Quote</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
 
       </div>

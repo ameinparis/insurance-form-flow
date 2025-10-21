@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import axios from "axios"
 
@@ -216,7 +217,14 @@ const AnnuityQuotationForm = () => {
             </div>
             <div className="col-span-2">
               <Button onClick={handleLivingCalc} disabled={livingLoading || livingDisabled}>
-                {livingLoading ? "Calculating..." : "Calculate"}
+                {livingLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Calculating...
+                  </>
+                ) : (
+                  "Calculate"
+                )}
               </Button>
             </div>
           </div>
@@ -251,7 +259,14 @@ const AnnuityQuotationForm = () => {
               </div>
               <div className="col-span-2">
                 <Button onClick={handleLifeCalc} disabled={lifeLoading || lifeDisabled}>
-                  {lifeLoading ? "Calculating..." : "Calculate Life Annuity"}
+                  {lifeLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Calculating...
+                    </>
+                  ) : (
+                    "Calculate Life Annuity"
+                  )}
                 </Button>
               </div>
               {lifeResult && (
