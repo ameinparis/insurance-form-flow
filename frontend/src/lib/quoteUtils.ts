@@ -12,12 +12,23 @@ export interface QuoteData {
     contactNumber?: string;
     email?: string;
   };
-  // Legacy fields
+  // Legacy fields (common)
   fullName?: string;
   email?: string;
   contactNumber?: string;
   dateOfBirth?: string;
   idNumber?: string;
+  
+  // Legacy annuity-specific fields
+  singlePurchasePremium?: number;
+  drawdown?: number;
+  guaranteedAnnuity?: number;
+  fundsRemaining?: number;
+  frequency?: string;
+  guaranteedStartAge?: number;
+  monthlyLifeAnnuity?: number;
+  annualLifeAnnuity?: number;
+  disclaimerText?: string;
   
   inputs?: any;
   outputs?: any;

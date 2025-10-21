@@ -103,23 +103,23 @@ const QuoteDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       {/* Main Content */}
       <div className="max-w-5xl mx-auto p-6 space-y-6">
         {/* Action Bar */}
         <div className="flex justify-between items-center mb-6">
-          <Button variant="outline" onClick={() => navigate(-1)}>
+          <Button variant="outline" onClick={() => navigate(-1)} className="dark:border-gray-700 dark:text-gray-300">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <Button onClick={handleDownloadPDF}>
+          <Button onClick={handleDownloadPDF} className="bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-700">
             <Download className="h-4 w-4 mr-2" />
             Download PDF
           </Button>
         </div>
 
         {/* Quote Document Card */}
-        <Card className="border-2">
+        <Card className="border-2 border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900">
           <CardContent className="p-0">
             {/* Quote Header */}
             <QuoteHeader
@@ -127,17 +127,20 @@ const QuoteDetail = () => {
               clientName={clientInfo.fullName}
               productType={productType}
               date={quote.createdAt}
+              clientEmail={clientInfo.email}
+              clientContact={clientInfo.contactNumber}
+              clientId={clientInfo.idNumber}
             />
 
             {/* Product Details - Dynamic based on product type */}
             {renderProductDisplay()}
 
             {/* Terms and Conditions / Disclaimer */}
-            {quote.termsAndConditions && (
-              <div className="border-t-2 border-gray-200 p-8 bg-gray-50">
-                <h3 className="text-xl font-semibold text-center mb-4">Disclaimer</h3>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  {quote.termsAndConditions}
+            {(quote.termsAndConditions || quote.disclaimerText) && (
+              <div className="border-t-2 border-gray-300 dark:border-gray-700 p-8 bg-gray-50 dark:bg-slate-800">
+                <h3 className="text-xl font-semibold text-center mb-4 text-gray-800 dark:text-gray-100">Terms & Conditions</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {quote.termsAndConditions || quote.disclaimerText}
                 </p>
               </div>
             )}
@@ -145,7 +148,7 @@ const QuoteDetail = () => {
         </Card>
 
         {/* Quote Meta Information */}
-        <div className="text-sm text-muted-foreground text-center space-y-1">
+        <div className="text-sm text-gray-600 dark:text-gray-400 text-center space-y-1">
           <p>Created by: {quote.createdBy?.name || quote.createdBy?.email || "Unknown"}</p>
           <p>Date: {formatDate(quote.createdAt)}</p>
         </div>
