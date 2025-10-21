@@ -129,7 +129,7 @@ const LifeFuneralQuotationForm = () => {
       toast.success("Quotation calculated")
 
       // Store result in state
-      setPremiumResult(result)
+      setPremiumResult(result.result)
 
       // Open the customer details modal
       setShowCustomerModal(true)
@@ -140,42 +140,42 @@ const LifeFuneralQuotationForm = () => {
     }
   }
 
-const handleCreateQuote = async () => {
-  const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
-  const missingFields = requiredFields.filter((field) => !customerDetails[field])
-  if (missingFields.length > 0) {
-    toast.error(`Please fill in: ${missingFields.join(', ')}`)
-    return
+  const handleCreateQuote = async () => {
+    const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
+    const missingFields = requiredFields.filter((field) => !customerDetails[field])
+    if (missingFields.length > 0) {
+      toast.error(`Please fill in: ${missingFields.join(', ')}`)
+      return
+    }
+
+    try {
+      const res = await fetch("http://localhost:5002/api/new-quotes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          productType: "funeral",
+          client: customerDetails,
+          inputs: formData,
+          outputs: premiumResult,
+          createdByName: localStorage.getItem("fullName") || "Unknown User"
+        }),
+      })
+
+      if (!res.ok) throw new Error("Failed to save quote")
+
+      const data = await res.json()
+      toast.success(`Quote ${data.quoteId} saved successfully!`)
+      setShowCustomerModal(false)
+
+      // optionally redirect or offer PDF download next
+
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save quote")
+    }
   }
-
-  try {
-    const res = await fetch("http://localhost:5002/api/new-quotes", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify({
-        productType: "funeral",
-        client: customerDetails,
-        inputs: formData,
-        outputs: premiumResult.result,
-        createdByName: localStorage.getItem("fullName") || "Unknown User"
-      }),
-    })
-
-    if (!res.ok) throw new Error("Failed to save quote")
-
-    const data = await res.json()
-    toast.success(`Quote ${data.quoteId} saved successfully!`)
-    setShowCustomerModal(false)
-
-    // optionally redirect or offer PDF download next
-
-  } catch (err: any) {
-    toast.error(err.message || "Failed to save quote")
-  }
-}
 
 
 
@@ -493,14 +493,18 @@ const handleCreateQuote = async () => {
               <CardDescription>Based on the uploaded data and inputs</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                {Object.entries(premiumResult.result || {}).map(([key, values]: any) => (
+              {/* Show the quote name at the top if available */}
+              {premiumResult?.quoteName && (
+                <h3 className="text-lg font-semibold mb-6">{premiumResult.quoteName}</h3>
+              )}
 
-                  <div key={key} className="border rounded-lg p-4 shadow-sm">
-                    <h4 className="font-semibold capitalize mb-2">{key.replace(/([A-Z])/g, ' $1')}</h4>
-                    <p><strong>Total:</strong> {values.total || 0}</p>
-                    <p><strong>Count:</strong> {values.count || 0}</p>
-                    <p><strong>Per Member:</strong> {values.perMember || 0}</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                {premiumResult?.rows?.map((row: any, index: number) => (
+                  <div key={index} className="border rounded-lg p-4 shadow-sm bg-muted/40">
+                    <h4 className="font-semibold capitalize mb-2">{row.status}</h4>
+                    <p><strong>Total:</strong> {row.total != null ? `BWP ${row.total.toFixed(2)}` : "–"}</p>
+                    <p><strong>Count:</strong> {row.count ?? "–"}</p>
+                    <p><strong>Per Member:</strong> {row.perMember != null ? `BWP ${row.perMember.toFixed(2)}` : "–"}</p>
                   </div>
                 ))}
               </div>
@@ -509,125 +513,136 @@ const handleCreateQuote = async () => {
                 <Button onClick={() => setShowCustomerModal(true)}>Create Quote</Button>
               </div>
             </CardContent>
-        {showCustomerModal && (
-  <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
-    <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg w-full max-w-5xl space-y-6 shadow-xl max-h-[90vh] overflow-y-auto">
-      <h2 className="text-lg font-semibold">Create Customer Funeral Quotation</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Customer Info */}
-        <div className="space-y-4">
-          <h3 className="text-base font-medium">Customer Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Full Name</Label>
-              <Input
-                value={customerDetails.fullName}
-                onChange={(e) => setCustomerDetails((prev) => ({ ...prev, fullName: e.target.value }))}
-              />
-            </div>
 
-            <div>
-              <Label>Date of Birth</Label>
-              <Input
-                type="date"
-                value={customerDetails.dateOfBirth}
-                onChange={(e) => setCustomerDetails((prev) => ({ ...prev, dateOfBirth: e.target.value }))}
-              />
-            </div>
+            {showCustomerModal && (
+              <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
+                <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg w-full max-w-5xl space-y-6 shadow-xl max-h-[90vh] overflow-y-auto">
+                  <h2 className="text-lg font-semibold">Create Customer Funeral Quotation</h2>
 
-            <div>
-              <Label>Gender</Label>
-              <Select
-                value={customerDetails.gender}
-                onValueChange={(value) => setCustomerDetails((prev) => ({ ...prev, gender: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Customer Info */}
+                    <div className="space-y-4">
+                      <h3 className="text-base font-medium">Customer Details</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Full Name</Label>
+                          <Input
+                            value={customerDetails.fullName}
+                            onChange={(e) => setCustomerDetails((prev) => ({ ...prev, fullName: e.target.value }))}
+                          />
+                        </div>
 
-            <div>
-              <Label>ID Number</Label>
-              <Input
-                value={customerDetails.idNumber}
-                onChange={(e) => setCustomerDetails((prev) => ({ ...prev, idNumber: e.target.value }))}
-              />
-            </div>
+                        <div>
+                          <Label>Date of Birth</Label>
+                          <Input
+                            type="date"
+                            value={customerDetails.dateOfBirth}
+                            onChange={(e) => setCustomerDetails((prev) => ({ ...prev, dateOfBirth: e.target.value }))}
+                          />
+                        </div>
 
-            <div>
-              <Label>Contact Number</Label>
-              <Input
-                value={customerDetails.contactNumber}
-                onChange={(e) => setCustomerDetails((prev) => ({ ...prev, contactNumber: e.target.value }))}
-              />
-            </div>
+                        <div>
+                          <Label>Gender</Label>
+                          <Select
+                            value={customerDetails.gender}
+                            onValueChange={(value) => setCustomerDetails((prev) => ({ ...prev, gender: value }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select gender" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Male">Male</SelectItem>
+                              <SelectItem value="Female">Female</SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-            <div>
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={customerDetails.email}
-                onChange={(e) => setCustomerDetails((prev) => ({ ...prev, email: e.target.value }))}
-              />
-            </div>
-          </div>
-        </div>
+                        <div>
+                          <Label>ID Number</Label>
+                          <Input
+                            value={customerDetails.idNumber}
+                            onChange={(e) => setCustomerDetails((prev) => ({ ...prev, idNumber: e.target.value }))}
+                          />
+                        </div>
 
-     {/* Quotation Summary */}
-<div className="space-y-4">
-  <h3 className="text-base font-medium">Quotation Summary</h3>
+                        <div>
+                          <Label>Contact Number</Label>
+                          <Input
+                            value={customerDetails.contactNumber}
+                            onChange={(e) => setCustomerDetails((prev) => ({ ...prev, contactNumber: e.target.value }))}
+                          />
+                        </div>
 
-  {premiumResult?.result ? (
-    <div >
-      {Object.entries(premiumResult.result).map(([key, values]: any) => (
-        <div key={key} className="border rounded-lg p-4 shadow-sm bg-muted/40">
-          <h4 className="font-semibold capitalize mb-2">
-            {key.replace(/([A-Z])/g, ' $1')}
-          </h4>
-          <p><strong>Total:</strong> BWP {values.total?.toLocaleString() || 0}</p>
-          <p><strong>Count:</strong> {values.count || 0}</p>
-          <p><strong>Per Member:</strong> BWP {values.perMember?.toLocaleString() || 0}</p>
-        </div>
-      ))}
-    </div>
-  ) : (
-    <div className="text-muted-foreground text-sm">No quotation results yet.</div>
-  )}
-</div>
+                        <div>
+                          <Label>Email</Label>
+                          <Input
+                            type="email"
+                            value={customerDetails.email}
+                            onChange={(e) => setCustomerDetails((prev) => ({ ...prev, email: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                    </div>
 
-      </div>
+                    {/* Quotation Summary */}
+                    <div className="space-y-4">
+                      <h3 className="text-base font-medium">Quotation Summary</h3>
 
-      {/* Ts & Cs */}
-      <div className="border rounded bg-muted/40 p-4 text-sm space-y-3">
-        <h4 className="font-medium">Terms and Conditions</h4>
-        <p>
-          This quotation outlines projected premiums for the selected funeral cover scheme. Premiums are based on the age, relationship, and cover amounts submitted, and are subject to change pending underwriting and validation of all data.
-        </p>
-        <p>
-          Exclusive Life reserves the right to review and adjust these premiums at policy issuance. This quotation does not constitute a binding contract. Actual policy terms and conditions will be provided upon application approval.
-        </p>
-        <p>
-          This quotation is confidential and may not be altered. Any unauthorized modifications will render this quote invalid.
-        </p>
-      </div>
+                      {premiumResult ? (
+                        <div className="space-y-3">
+                          {/* Show quote name */}
+                          {premiumResult.quoteName && (
+                            <p className="font-semibold text-primary mb-3">
+                              {premiumResult.quoteName}
+                            </p>
+                          )}
 
-      {/* Actions */}
-      <div className="flex justify-between pt-4">
-        <Button variant="ghost" onClick={() => setShowCustomerModal(false)}>
-          Cancel
-        </Button>
-        <Button onClick={handleCreateQuote}>Generate Quote</Button>
-      </div>
-    </div>
-  </div>
-)}
+                          {/* Loop through each row */}
+                          {premiumResult.rows?.map((row: any, index: number) => (
+                            <div key={index} className="border rounded-lg p-4 shadow-sm bg-muted/40">
+                              <h4 className="font-semibold capitalize mb-2">{row.status}</h4>
+                              <p><strong>Total:</strong> {row.total != null ? `BWP ${row.total.toFixed(2)}` : "–"}</p>
+                              <p><strong>Count:</strong> {row.count ?? "–"}</p>
+                              <p><strong>Per Member:</strong> {row.perMember != null ? `BWP ${row.perMember.toFixed(2)}` : "–"}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground text-sm">
+                          No quotation results yet.
+                        </div>
+                      )}
+                    </div>
+
+
+                  </div>
+
+                  {/* Ts & Cs */}
+                  <div className="border rounded bg-muted/40 p-4 text-sm space-y-3">
+                    <h4 className="font-medium">Terms and Conditions</h4>
+                    <p>
+                      This quotation outlines projected premiums for the selected funeral cover scheme. Premiums are based on the age, relationship, and cover amounts submitted, and are subject to change pending underwriting and validation of all data.
+                    </p>
+                    <p>
+                      Exclusive Life reserves the right to review and adjust these premiums at policy issuance. This quotation does not constitute a binding contract. Actual policy terms and conditions will be provided upon application approval.
+                    </p>
+                    <p>
+                      This quotation is confidential and may not be altered. Any unauthorized modifications will render this quote invalid.
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex justify-between pt-4">
+                    <Button variant="ghost" onClick={() => setShowCustomerModal(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleCreateQuote}>Generate Quote</Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
           </Card>
         )}

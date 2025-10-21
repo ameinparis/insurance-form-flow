@@ -93,40 +93,42 @@ def calculate_funeral():
         # --- Extract Premiums ---
         premium_sheet = wb.sheets['PremiumResults']
 
+        # Get Quote Name from C2
+        quote_name = premium_sheet.range("C2").value or ""
+
+        # Extract values
+        total_premiums = premium_sheet.range("D7:D11").value or []
+        beneficiary_counts = premium_sheet.range("E7:E11").value or []
+        per_member_premiums = premium_sheet.range("F7:F11").value or []
+
+        # Try to read statuses, fallback if needed
+        member_statuses = premium_sheet.range("C7:C11").value or []
+        if any(s is None for s in member_statuses) or len(member_statuses) < 5:
+            member_statuses = [
+                "Principal member",
+                "Spouse",
+                "Child",
+                "Adult dependent",
+                "Extended"
+            ]
+
+        # Build premium output
         premium_output = {
-            "principalMember": {
-                "total": premium_sheet.range("C7").value,
-                "count": premium_sheet.range("D7").value,
-                "perMember": premium_sheet.range("F7").value,
-            },
-            "spouse": {
-                "total": premium_sheet.range("C8").value,
-                "count": premium_sheet.range("D8").value,
-                "perMember": premium_sheet.range("F8").value,
-            },
-            "child": {
-                "total": premium_sheet.range("C9").value,
-                "count": premium_sheet.range("D9").value,
-                "perMember": premium_sheet.range("F9").value,
-            },
-            "adultDependent": {
-                "total": premium_sheet.range("C10").value,
-                "count": premium_sheet.range("D10").value,
-                "perMember": premium_sheet.range("F10").value,
-            },
-            "extended": {
-                "total": premium_sheet.range("C11").value,
-                "count": premium_sheet.range("D11").value,
-                "perMember": premium_sheet.range("F11").value,
-            },
-            "total": {
-                "total": premium_sheet.range("C12").value,
-                "count": premium_sheet.range("D12").value,
-                "perMember": premium_sheet.range("F12").value,
-            }
+            "quoteName": quote_name,
+            "rows": []
         }
+        for i in range(len(member_statuses)):
+            row = {
+                "status": member_statuses[i],
+                "total": total_premiums[i] if i < len(total_premiums) else None,
+                "count": beneficiary_counts[i] if i < len(beneficiary_counts) else None,
+                "perMember": per_member_premiums[i] if i < len(per_member_premiums) else None
+            }
+            premium_output["rows"].append(row)
+
 
         print("📤 Premium output extracted:", premium_output)
+
 
         wb.close()
         app_excel.quit()
