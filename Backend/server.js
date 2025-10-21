@@ -84,8 +84,8 @@ const newQuoteSchema = new mongoose.Schema({
   },
 
   // Dynamic payload → store calculations/output based on product type
-  inputs: mongoose.Schema.Types.Mixed,  
-  outputs: mongoose.Schema.Types.Mixed,  
+  inputs: mongoose.Schema.Types.Mixed,
+  outputs: mongoose.Schema.Types.Mixed,
 
   quoteId: { type: String, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
@@ -244,12 +244,15 @@ app.get("/api/quotes/:id", authenticateToken, async (req, res) => {
   }
 });
 
+
+
+
 /** ----------------- NEW QUOTES (scalable design) ----------------- */
 
 /** Annuity calculator proxy → Python */
-app.post("/api/calculate-annuity", async (req, res) => {
+app.post("/api/quotes/calculate-annuity", async (req, res) => {
   try {
-    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/calculate";
+    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/annuity/calculate";
     const { data } = await axios.post(PY_URL, req.body);
     res.json(data);
   } catch (e) {
@@ -258,7 +261,9 @@ app.post("/api/calculate-annuity", async (req, res) => {
   }
 });
 
-app.post("/api/quotes/funeral", authenticateToken, upload.single("file"), async (req, res) => {
+/** Funeral calculator proxy → Python */
+
+app.post("/api/quotes/calculate-funeral", authenticateToken, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "Missing file" });
 
@@ -280,21 +285,24 @@ app.post("/api/quotes/funeral", authenticateToken, upload.single("file"), async 
     }
 
     // Step 2: Map members
-    const members = rows.map(row => ({
-      name: `${row["First Name"]} ${row["Member Surname"]}`.trim(),
-      dob: row["Date of Birth"],
-      relationship: row["Relationship"],
-      gender: row["Gender"],
-      coverAmount: parseFloat(row["Sum assured"] || 0),
-      premium: 0,
-      age: 0,
-    }));
+const members = rows.map(row => ({
+  memberNumber: row["Member Number"] || row["Member number"] || "",
+  surname: row["Member Surname"] || row["Surname"] || "",
+  firstName: row["First Name"] || row["Firstname"] || "",
+  dob: row["Date of Birth"],
+  relationship: row["Relationship"],
+  gender: row["Gender"],
+  coverAmount: parseFloat(row["Sum assured"] || row["Sum Assured"] || 0),
+  premium: 0,
+  age: 0,
+}));
+
 
     // Step 3: Extract form fields from body
     const inputs = req.body;
 
     // Step 4: Send to Python for processing
-    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/calculate";
+    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/funeral/calculate";
     const { data } = await axios.post(PY_URL, { members, inputs });
 
     // Step 5: Return the result
@@ -319,7 +327,7 @@ app.post("/api/new-quotes", authenticateToken, async (req, res) => {
     const yy = String(now.getFullYear()).slice(-2);
 
     const start = new Date(`${now.getFullYear()}-01-01T00:00:00Z`);
-    const end   = new Date(`${now.getFullYear()}-12-31T23:59:59Z`);
+    const end = new Date(`${now.getFullYear()}-12-31T23:59:59Z`);
     const count = await Quotes.countDocuments({ createdAt: { $gte: start, $lte: end } });
 
     const next = String(count + 1).padStart(4, "0");

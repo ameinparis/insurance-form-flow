@@ -103,7 +103,7 @@ const AnnuityQuotationForm = () => {
         drawdown: drawNum,
         guaranteedStartAge: gsaNum,
       }
-      const { data } = await axios.post("http://localhost:5002/api/calculate-annuity", payload)
+      const { data } = await axios.post("http://localhost:5002/api/quotes/calculate-annuity", payload)
       const res = data.output
 
       setLivingResult(res)
@@ -131,7 +131,7 @@ const AnnuityQuotationForm = () => {
         age: gsaNum,
         purchaseAmount: toNum(lifePurchaseAmount),
       }
-      const { data } = await axios.post("http://localhost:5002/api/calculate-annuity", payload)
+      const { data } = await axios.post("http://localhost:5002/api/quotes/calculate-annuity", payload)
       const res = data.output
 
       setLifeResult(res)

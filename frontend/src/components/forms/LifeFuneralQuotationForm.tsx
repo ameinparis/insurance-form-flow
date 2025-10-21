@@ -12,6 +12,19 @@ import * as XLSX from "xlsx"
 
 const LifeFuneralQuotationForm = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [premiumResult, setPremiumResult] = useState<any | null>(null)
+  const [showCustomerModal, setShowCustomerModal] = useState(false)
+
+  const [customerDetails, setCustomerDetails] = useState({
+    fullName: "",
+    dateOfBirth: "",
+    gender: "",
+    idNumber: "",
+    contactNumber: "",
+    email: ""
+  })
+
+
 
   const [formData, setFormData] = useState({
     profitTarget: "",
@@ -24,6 +37,8 @@ const LifeFuneralQuotationForm = () => {
     currentMaxAgeChild: "",
     coverLevelType: "",
     principalMemberCover: "",
+    spouseCover: "",
+    extendedFamilyCover: "",
     children16toMax: "",
     children6to15: "",
     children1to5: "",
@@ -80,41 +95,89 @@ const LifeFuneralQuotationForm = () => {
   }
 
   const handleSubmit = async () => {
-  if (!uploadedFile) {
-    toast.error("Please upload a member file first.")
+    if (!uploadedFile) {
+      toast.error("Please upload a member file first.")
+      return
+    }
+
+    const syncedFormData = {
+      ...formData,
+      spouseCover: formData.spouseCover || formData.principalMemberCover || "0",
+      extendedFamilyCover: formData.extendedFamilyCover || formData.principalMemberCover || "0"
+    }
+
+    const payload = new FormData()
+    payload.append("file", uploadedFile)
+
+    // Append form fields
+    Object.entries(syncedFormData).forEach(([key, value]) => {
+      payload.append(key, value)
+    })
+
+    try {
+      const res = await fetch("http://localhost:5002/api/quotes/calculate-funeral", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: payload
+      })
+
+      if (!res.ok) throw new Error(`Status ${res.status}`)
+
+      const result = await res.json()
+      toast.success("Quotation calculated")
+
+      // Store result in state
+      setPremiumResult(result)
+
+      // Open the customer details modal
+      setShowCustomerModal(true)
+
+    } catch (err: any) {
+      console.error("Quote error", err)
+      toast.error(`Failed to calculate: ${err.message}`)
+    }
+  }
+
+const handleCreateQuote = async () => {
+  const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
+  const missingFields = requiredFields.filter((field) => !customerDetails[field])
+  if (missingFields.length > 0) {
+    toast.error(`Please fill in: ${missingFields.join(', ')}`)
     return
   }
 
-  const payload = new FormData()
-  payload.append("file", uploadedFile)
-
-  // Append form fields
-  Object.entries(formData).forEach(([key, value]) => {
-    payload.append(key, value)
-  })
-
   try {
-   const res = await fetch("http://localhost:5002/api/quotes/funeral", {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem("token")}`, // 👈 send token
-  },
-  body: payload
-})
+    const res = await fetch("http://localhost:5002/api/new-quotes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({
+        productType: "funeral",
+        client: customerDetails,
+        inputs: formData,
+        outputs: premiumResult.result,
+        createdByName: localStorage.getItem("fullName") || "Unknown User"
+      }),
+    })
 
-    if (!res.ok) throw new Error(`Status ${res.status}`)
+    if (!res.ok) throw new Error("Failed to save quote")
 
-    const result = await res.json()
-    toast.success("Quotation calculated")
+    const data = await res.json()
+    toast.success(`Quote ${data.quoteId} saved successfully!`)
+    setShowCustomerModal(false)
 
-    console.log("Premium result:", result)
-    // You can later display result here (we’ll do that after backend works)
+    // optionally redirect or offer PDF download next
 
   } catch (err: any) {
-    console.error("Quote error", err)
-    toast.error(`Failed to calculate: ${err.message}`)
+    toast.error(err.message || "Failed to save quote")
   }
 }
+
+
 
 
   const isSchemeRules = formData.coverLevelType === "scheme-rules"
@@ -202,226 +265,373 @@ const LifeFuneralQuotationForm = () => {
           </CardContent>
         </Card>
 
-      {/* Quotation Setup Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quotation Setup</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-            {/* Form Inputs */}
-            <div className="space-y-1">
-              <Label htmlFor="profitTarget">Profit Target (%)</Label>
+        {/* Quotation Setup Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quotation Setup</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              {/* Form Inputs */}
+              <div className="space-y-1">
+                <Label htmlFor="profitTarget">Profit Target (%)</Label>
+                <Input
+                  id="profitTarget"
+                  type="number"
+                  step="0.01"
+                  value={formData.profitTarget}
+                  onChange={(e) => handleInputChange("profitTarget", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="societyName">Society Name</Label>
+                <Input
+                  id="societyName"
+                  type="text"
+                  value={formData.societyName}
+                  onChange={(e) => handleInputChange("societyName", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="asAndWhenCommission">As-and-When Commission (%)</Label>
+                <Input
+                  id="asAndWhenCommission"
+                  type="number"
+                  step="0.01"
+                  value={formData.asAndWhenCommission}
+                  onChange={(e) => handleInputChange("asAndWhenCommission", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="schemeType">Scheme Type</Label>
+                <Select
+                  value={formData.schemeType}
+                  onValueChange={(value) => handleInputChange("schemeType", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select scheme type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Open">Open</SelectItem>
+                    <SelectItem value="Closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="text-sm text-muted-foreground mt-1 flex items-start gap-1">
+                  <Info className="h-4 w-4 mt-0.5" />
+                  <span>{schemeTooltip}</span>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="numberOfLives">Number of Lives in Scheme</Label>
+                <Input
+                  id="numberOfLives"
+                  type="number"
+                  value={formData.numberOfLives}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="maxExtendedFamilyMembers">Max Extended Family Members</Label>
+                <Input
+                  id="maxExtendedFamilyMembers"
+                  type="number"
+                  value={formData.maxExtendedFamilyMembers}
+                  onChange={(e) => handleInputChange("maxExtendedFamilyMembers", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="maxAgeChildren">Max Age of Children Covered</Label>
+                <Input
+                  id="maxAgeChildren"
+                  type="number"
+                  value={formData.maxAgeChildren}
+                  onChange={(e) => handleInputChange("maxAgeChildren", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="currentMaxAgeChild">Current Max Age of Child in Data</Label>
+                <Input
+                  id="currentMaxAgeChild"
+                  type="number"
+                  value={formData.currentMaxAgeChild}
+                  onChange={(e) => handleInputChange("currentMaxAgeChild", e.target.value)}
+                />
+
+              </div>
+
+              {/* Cover Levels Dropdown */}
+              <div className="space-y-1 col-span-1 md:col-span-2">
+                <Label htmlFor="coverLevelType">Cover Levels</Label>
+                <Select
+                  value={formData.coverLevelType}
+                  onValueChange={(value) => handleInputChange("coverLevelType", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select cover type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="scheme-rules">Scheme Rules Benefits</SelectItem>
+                    <SelectItem value="member-specified">Member Specified</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="text-sm text-muted-foreground mt-1 flex items-start gap-1">
+                  <Info className="h-4 w-4 mt-0.5" />
+                  <span>{coverLevelTooltip}</span>
+                </div>
+              </div>
+
+              {/* Scheme Rules Cover Levels (if selected) */}
+              {isSchemeRules && (
+                <>
+                  <div className="space-y-1">
+                    <Label htmlFor="principalMemberCover">Principal Member Cover (R)</Label>
+                    <Input
+                      id="principalMemberCover"
+                      type="number"
+                      value={formData.principalMemberCover}
+                      onChange={(e) => handleInputChange("principalMemberCover", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="spouseCover">Spouse Cover (Same as Principal)</Label>
+                    <Input
+                      id="spouseCover"
+                      type="number"
+                      value={formData.spouseCover || formData.principalMemberCover}
+                      onChange={(e) => handleInputChange("spouseCover", e.target.value)}
+                    />
+
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="children16toMax">
+                      Children age 16 to {formData.currentMaxAgeChild || "XX"}
+                    </Label>
+
+                    <Input
+                      id="children16toMax"
+                      type="number"
+                      value={formData.children16toMax}
+                      onChange={(e) => handleInputChange("children16toMax", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="children6to15">Children age 6 to 15</Label>
+                    <Input
+                      id="children6to15"
+                      type="number"
+                      value={formData.children6to15}
+                      onChange={(e) => handleInputChange("children6to15", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="children1to5">Children age 1 to 5</Label>
+                    <Input
+                      id="children1to5"
+                      type="number"
+                      value={formData.children1to5}
+                      onChange={(e) => handleInputChange("children1to5", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="children0to1">Children age 0 to 1</Label>
+                    <Input
+                      id="children0to1"
+                      type="number"
+                      value={formData.children0to1}
+                      onChange={(e) => handleInputChange("children0to1", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="extendedFamilyCover">Extended Family Cover (Same as Principal)</Label>
+                    <Input
+                      id="extendedFamilyCover"
+                      type="number"
+                      value={formData.extendedFamilyCover || formData.principalMemberCover}
+                      onChange={(e) => handleInputChange("extendedFamilyCover", e.target.value)}
+                    />
+
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="parentsCover">Parents Cover</Label>
+                    <Input
+                      id="parentsCover"
+                      type="number"
+                      value={formData.parentsCover}
+                      onChange={(e) => handleInputChange("parentsCover", e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        <div className="flex justify-end">
+          <Button onClick={handleSubmit} disabled={!uploadedFile}>
+            Calculate Quotation
+          </Button>
+        </div>
+
+        {premiumResult && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Quotation Results</CardTitle>
+              <CardDescription>Based on the uploaded data and inputs</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                {Object.entries(premiumResult.result || {}).map(([key, values]: any) => (
+
+                  <div key={key} className="border rounded-lg p-4 shadow-sm">
+                    <h4 className="font-semibold capitalize mb-2">{key.replace(/([A-Z])/g, ' $1')}</h4>
+                    <p><strong>Total:</strong> {values.total || 0}</p>
+                    <p><strong>Count:</strong> {values.count || 0}</p>
+                    <p><strong>Per Member:</strong> {values.perMember || 0}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end mt-6">
+                <Button onClick={() => setShowCustomerModal(true)}>Create Quote</Button>
+              </div>
+            </CardContent>
+        {showCustomerModal && (
+  <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center">
+    <div className="bg-white dark:bg-zinc-900 p-6 rounded-lg w-full max-w-5xl space-y-6 shadow-xl max-h-[90vh] overflow-y-auto">
+      <h2 className="text-lg font-semibold">Create Customer Funeral Quotation</h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Customer Info */}
+        <div className="space-y-4">
+          <h3 className="text-base font-medium">Customer Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Full Name</Label>
               <Input
-                id="profitTarget"
-                type="number"
-                step="0.01"
-                value={formData.profitTarget}
-                onChange={(e) => handleInputChange("profitTarget", e.target.value)}
+                value={customerDetails.fullName}
+                onChange={(e) => setCustomerDetails((prev) => ({ ...prev, fullName: e.target.value }))}
               />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="societyName">Society Name</Label>
+            <div>
+              <Label>Date of Birth</Label>
               <Input
-                id="societyName"
-                type="text"
-                value={formData.societyName}
-                onChange={(e) => handleInputChange("societyName", e.target.value)}
+                type="date"
+                value={customerDetails.dateOfBirth}
+                onChange={(e) => setCustomerDetails((prev) => ({ ...prev, dateOfBirth: e.target.value }))}
               />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="asAndWhenCommission">As-and-When Commission (%)</Label>
-              <Input
-                id="asAndWhenCommission"
-                type="number"
-                step="0.01"
-                value={formData.asAndWhenCommission}
-                onChange={(e) => handleInputChange("asAndWhenCommission", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="schemeType">Scheme Type</Label>
+            <div>
+              <Label>Gender</Label>
               <Select
-                value={formData.schemeType}
-                onValueChange={(value) => handleInputChange("schemeType", value)}
+                value={customerDetails.gender}
+                onValueChange={(value) => setCustomerDetails((prev) => ({ ...prev, gender: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select scheme type" />
+                  <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Open">Open</SelectItem>
-                  <SelectItem value="Closed">Closed</SelectItem>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="text-sm text-muted-foreground mt-1 flex items-start gap-1">
-                <Info className="h-4 w-4 mt-0.5" />
-                <span>{schemeTooltip}</span>
-              </div>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="numberOfLives">Number of Lives in Scheme</Label>
+            <div>
+              <Label>ID Number</Label>
               <Input
-                id="numberOfLives"
-                type="number"
-                value={formData.numberOfLives}
-                readOnly
-                className="bg-muted"
+                value={customerDetails.idNumber}
+                onChange={(e) => setCustomerDetails((prev) => ({ ...prev, idNumber: e.target.value }))}
               />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="maxExtendedFamilyMembers">Max Extended Family Members</Label>
+            <div>
+              <Label>Contact Number</Label>
               <Input
-                id="maxExtendedFamilyMembers"
-                type="number"
-                value={formData.maxExtendedFamilyMembers}
-                onChange={(e) => handleInputChange("maxExtendedFamilyMembers", e.target.value)}
+                value={customerDetails.contactNumber}
+                onChange={(e) => setCustomerDetails((prev) => ({ ...prev, contactNumber: e.target.value }))}
               />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="maxAgeChildren">Max Age of Children Covered</Label>
+            <div>
+              <Label>Email</Label>
               <Input
-                id="maxAgeChildren"
-                type="number"
-                value={formData.maxAgeChildren}
-                onChange={(e) => handleInputChange("maxAgeChildren", e.target.value)}
+                type="email"
+                value={customerDetails.email}
+                onChange={(e) => setCustomerDetails((prev) => ({ ...prev, email: e.target.value }))}
               />
             </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="currentMaxAgeChild">Current Max Age of Child in Data</Label>
-              <Input
-                id="currentMaxAgeChild"
-                type="number"
-                value={formData.currentMaxAgeChild}
-                readOnly
-                className="bg-muted"
-              />
-            </div>
-
-            {/* Cover Levels Dropdown */}
-            <div className="space-y-1 col-span-1 md:col-span-2">
-              <Label htmlFor="coverLevelType">Cover Levels</Label>
-              <Select
-                value={formData.coverLevelType}
-                onValueChange={(value) => handleInputChange("coverLevelType", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select cover type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="scheme-rules">Scheme Rules Benefits</SelectItem>
-                  <SelectItem value="member-specified">Member Specified</SelectItem>
-                </SelectContent>
-              </Select>
-              <div className="text-sm text-muted-foreground mt-1 flex items-start gap-1">
-                <Info className="h-4 w-4 mt-0.5" />
-                <span>{coverLevelTooltip}</span>
-              </div>
-            </div>
-
-            {/* Scheme Rules Cover Levels (if selected) */}
-            {isSchemeRules && (
-              <>
-                <div className="space-y-1">
-                  <Label htmlFor="principalMemberCover">Principal Member Cover (R)</Label>
-                  <Input
-                    id="principalMemberCover"
-                    type="number"
-                    value={formData.principalMemberCover}
-                    onChange={(e) => handleInputChange("principalMemberCover", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="spouseCover">Spouse Cover (Same as Principal)</Label>
-                  <Input
-                    id="spouseCover"
-                    type="number"
-                    value={formData.principalMemberCover}
-                    readOnly
-                    className="bg-muted"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="children16toMax">
-                    Children age 16 to {formData.currentMaxAgeChild || "XX"}
-                  </Label>
-
-                  <Input
-                    id="children16toMax"
-                    type="number"
-                    value={formData.children16toMax}
-                    onChange={(e) => handleInputChange("children16toMax", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="children6to15">Children age 6 to 15</Label>
-                  <Input
-                    id="children6to15"
-                    type="number"
-                    value={formData.children6to15}
-                    onChange={(e) => handleInputChange("children6to15", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="children1to5">Children age 1 to 5</Label>
-                  <Input
-                    id="children1to5"
-                    type="number"
-                    value={formData.children1to5}
-                    onChange={(e) => handleInputChange("children1to5", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="children0to1">Children age 0 to 1</Label>
-                  <Input
-                    id="children0to1"
-                    type="number"
-                    value={formData.children0to1}
-                    onChange={(e) => handleInputChange("children0to1", e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="extendedFamilyCover">Extended Family Cover (Same as Principal)</Label>
-                  <Input
-                    id="extendedFamilyCover"
-                    type="number"
-                    value={formData.principalMemberCover}
-                    readOnly
-                    className="bg-muted"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="parentsCover">Parents Cover</Label>
-                  <Input
-                    id="parentsCover"
-                    type="number"
-                    value={formData.parentsCover}
-                    onChange={(e) => handleInputChange("parentsCover", e.target.value)}
-                  />
-                </div>
-              </>
-            )}
           </div>
-        </CardContent>
-      </Card>
-      <div className="flex justify-end">
-        <Button onClick={handleSubmit} disabled={!uploadedFile}>
-          Calculate Quotation
-        </Button>
+        </div>
+
+     {/* Quotation Summary */}
+<div className="space-y-4">
+  <h3 className="text-base font-medium">Quotation Summary</h3>
+
+  {premiumResult?.result ? (
+    <div >
+      {Object.entries(premiumResult.result).map(([key, values]: any) => (
+        <div key={key} className="border rounded-lg p-4 shadow-sm bg-muted/40">
+          <h4 className="font-semibold capitalize mb-2">
+            {key.replace(/([A-Z])/g, ' $1')}
+          </h4>
+          <p><strong>Total:</strong> BWP {values.total?.toLocaleString() || 0}</p>
+          <p><strong>Count:</strong> {values.count || 0}</p>
+          <p><strong>Per Member:</strong> BWP {values.perMember?.toLocaleString() || 0}</p>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div className="text-muted-foreground text-sm">No quotation results yet.</div>
+  )}
+</div>
+
       </div>
+
+      {/* Ts & Cs */}
+      <div className="border rounded bg-muted/40 p-4 text-sm space-y-3">
+        <h4 className="font-medium">Terms and Conditions</h4>
+        <p>
+          This quotation outlines projected premiums for the selected funeral cover scheme. Premiums are based on the age, relationship, and cover amounts submitted, and are subject to change pending underwriting and validation of all data.
+        </p>
+        <p>
+          Exclusive Life reserves the right to review and adjust these premiums at policy issuance. This quotation does not constitute a binding contract. Actual policy terms and conditions will be provided upon application approval.
+        </p>
+        <p>
+          This quotation is confidential and may not be altered. Any unauthorized modifications will render this quote invalid.
+        </p>
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-between pt-4">
+        <Button variant="ghost" onClick={() => setShowCustomerModal(false)}>
+          Cancel
+        </Button>
+        <Button onClick={handleCreateQuote}>Generate Quote</Button>
+      </div>
+    </div>
+  </div>
+)}
+
+          </Card>
+        )}
+
 
       </div>
     </TooltipProvider>

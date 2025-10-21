@@ -51,7 +51,7 @@ def deep_health_check():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-@app.route('/calculatesss', methods=['POST'])
+@app.route('/calculate', methods=['POST'])
 def calculate_annuity():
     try:
         if not request.is_json:
