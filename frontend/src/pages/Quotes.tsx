@@ -4,14 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Calculator, Download, Eye, Trash2, FileText, Search, Filter, Loader2 } from "lucide-react"
+import { Calculator, Download, Eye, Trash2, FileText, Search, Filter } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
-import { fetchQuoteDetails, getClientInfo, formatDate, formatCurrency, getProductDisplayName, QuoteData } from "@/lib/quoteUtils"
 
 const Quotes = () => {
   const navigate = useNavigate()
@@ -19,8 +16,6 @@ const Quotes = () => {
   const [sortBy, setSortBy] = useState("date")
   const [quotes, setQuotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [previewQuote, setPreviewQuote] = useState<QuoteData | null>(null)
-  const [loadingPreview, setLoadingPreview] = useState(false)
   const { userRole } = useAuth()
 
 useEffect(() => {
@@ -85,20 +80,6 @@ useEffect(() => {
 
   fetchQuotes();
 }, []);
-
-  // Preview quote handler
-  const handlePreviewQuote = async (quoteId: string, isLegacy: boolean = false) => {
-    try {
-      setLoadingPreview(true);
-      const data = await fetchQuoteDetails(quoteId, isLegacy);
-      setPreviewQuote(data);
-    } catch (error) {
-      console.error("Error fetching quote details:", error);
-      toast.error("Failed to load quote details");
-    } finally {
-      setLoadingPreview(false);
-    }
-  };
 
   const handleDeleteQuote = async (quoteId: string) => {
     try {
@@ -261,8 +242,8 @@ useEffect(() => {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => handlePreviewQuote(quote.id, quote.isLegacy || false)}
-                          title="Preview Quote"
+                          onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
+                          title="View Quote"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -302,95 +283,6 @@ useEffect(() => {
         </Card>
       )}
 
-      {/* Preview Dialog */}
-      <Dialog open={!!previewQuote} onOpenChange={() => setPreviewQuote(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Quote Preview</DialogTitle>
-            <DialogDescription>
-              {previewQuote && `Quote #${previewQuote.quoteId} - ${getProductDisplayName(previewQuote.productType || previewQuote.type)}`}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {loadingPreview ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : previewQuote ? (
-            <div className="space-y-6">
-              {/* Client Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Client Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Name</p>
-                      <p className="font-medium">{getClientInfo(previewQuote).fullName}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Email</p>
-                      <p className="font-medium text-primary underline">{getClientInfo(previewQuote).email}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Contact</p>
-                      <p className="font-medium">{getClientInfo(previewQuote).contactNumber}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Date Created</p>
-                      <p className="font-medium">{formatDate(previewQuote.createdAt)}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Summary */}
-              {previewQuote.outputs && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Summary</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      {previewQuote.outputs.monthlyPremium && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Monthly Premium:</span>
-                          <span className="font-semibold">{formatCurrency(previewQuote.outputs.monthlyPremium)}</span>
-                        </div>
-                      )}
-                      {previewQuote.outputs.monthlyIncome && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Monthly Income:</span>
-                          <span className="font-semibold">{formatCurrency(previewQuote.outputs.monthlyIncome)}</span>
-                        </div>
-                      )}
-                      {previewQuote.outputs.totalCover && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Total Cover:</span>
-                          <span className="font-semibold">{formatCurrency(previewQuote.outputs.totalCover)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <Separator />
-
-              {/* Actions */}
-              <div className="flex justify-between">
-                <Button variant="outline" onClick={() => setPreviewQuote(null)}>
-                  Close
-                </Button>
-                <Button onClick={() => navigate(`/quotes/${previewQuote._id}?legacy=${!!previewQuote.type && !previewQuote.productType}`)}>
-                  View Full Details
-                </Button>
-              </div>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

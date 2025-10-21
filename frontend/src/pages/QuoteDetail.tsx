@@ -86,110 +86,69 @@ const QuoteDetail = () => {
   const productType = quote.productType || quote.type || "Insurance Quote";
 
   const renderProductDisplay = () => {
+    if (!quote) return null;
+
     switch (productType) {
       case "Exclusive Annuity":
       case "annuity":
-        return <AnnuityDisplay inputs={quote.inputs} outputs={quote.outputs} />;
+        return <AnnuityDisplay quote={quote} />;
       case "Exclusive Funeral":
       case "funeral":
-        return <FuneralDisplay inputs={quote.inputs} outputs={quote.outputs} />;
+        return <FuneralDisplay quote={quote} />;
       case "life":
-        return <LifeDisplay inputs={quote.inputs} outputs={quote.outputs} />;
+        return <LifeDisplay quote={quote} />;
       default:
-        return <GenericDisplay inputs={quote.inputs} outputs={quote.outputs} />;
+        return <GenericDisplay quote={quote} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Header */}
-      <QuoteHeader
-        quoteId={quote.quoteId}
-        clientName={clientInfo.fullName}
-        productType={productType}
-        date={quote.createdAt}
-      />
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="min-h-screen bg-background">
+      {/* Main Content */}
+      <div className="max-w-5xl mx-auto p-6 space-y-6">
         {/* Action Bar */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-6">
           <Button variant="outline" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
           <Button onClick={handleDownloadPDF}>
             <Download className="h-4 w-4 mr-2" />
-            Download as PDF
+            Download PDF
           </Button>
         </div>
 
-        {/* Client Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Client Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div>
-                <p className="text-sm text-muted-foreground">Full Name</p>
-                <p className="font-medium">{clientInfo.fullName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium text-blue-500">{clientInfo.email}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Contact Number</p>
-                <p className="font-medium">{clientInfo.contactNumber}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Date of Birth</p>
-                <p className="font-medium">{formatDate(clientInfo.dateOfBirth)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">ID Number</p>
-                <p className="font-medium">{clientInfo.idNumber}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Quote Created</p>
-                <p className="font-medium">{formatDate(quote.createdAt)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Quote Document Card */}
+        <Card className="border-2">
+          <CardContent className="p-0">
+            {/* Quote Header */}
+            <QuoteHeader
+              quoteId={quote.quoteId}
+              clientName={clientInfo.fullName}
+              productType={productType}
+              date={quote.createdAt}
+            />
 
-        <Separator />
+            {/* Product Details - Dynamic based on product type */}
+            {renderProductDisplay()}
 
-        {/* Product-Specific Display */}
-        {renderProductDisplay()}
-
-        {/* Terms and Conditions */}
-        {quote.termsAndConditions && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Terms and Conditions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="prose prose-sm max-w-none">
-                <p className="whitespace-pre-wrap text-muted-foreground">
+            {/* Terms and Conditions / Disclaimer */}
+            {quote.termsAndConditions && (
+              <div className="border-t-2 border-gray-200 p-8 bg-gray-50">
+                <h3 className="text-xl font-semibold text-center mb-4">Disclaimer</h3>
+                <p className="text-sm text-gray-700 leading-relaxed">
                   {quote.termsAndConditions}
                 </p>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Created By */}
-        {quote.createdBy && (
-          <Card>
-            <CardContent className="py-4">
-              <p className="text-sm text-muted-foreground">
-                Created by: <span className="font-medium text-foreground">{quote.createdBy.name || quote.createdBy.email}</span>
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        {/* Quote Meta Information */}
+        <div className="text-sm text-muted-foreground text-center space-y-1">
+          <p>Created by: {quote.createdByName || quote.createdBy?.name || quote.createdBy?.email || "Unknown"}</p>
+          <p>Date: {formatDate(quote.createdAt)}</p>
+        </div>
       </div>
     </div>
   );

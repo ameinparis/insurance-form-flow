@@ -3,8 +3,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { formatCurrency } from "@/lib/quoteUtils";
 
 interface GenericDisplayProps {
-  inputs?: any;
-  outputs?: any;
+  quote: any;
 }
 
 const renderValue = (value: any): string => {
@@ -66,53 +65,58 @@ const renderObject = (obj: any, depth: number = 0) => {
   );
 };
 
-export const GenericDisplay = ({ inputs, outputs }: GenericDisplayProps) => {
+export const GenericDisplay = ({ quote }: GenericDisplayProps) => {
+  const { client, inputs, outputs } = quote;
+  
   return (
-    <div className="space-y-6">
-      <Accordion type="multiple" defaultValue={["inputs", "outputs"]} className="w-full">
-        {/* Inputs Section */}
-        {inputs && Object.keys(inputs).length > 0 && (
-          <AccordionItem value="inputs">
-            <Card>
-              <CardHeader>
-                <AccordionTrigger className="hover:no-underline">
-                  <CardTitle>Quote Inputs</CardTitle>
-                </AccordionTrigger>
-              </CardHeader>
-              <AccordionContent>
-                <CardContent>
-                  {renderObject(inputs)}
-                </CardContent>
-              </AccordionContent>
-            </Card>
-          </AccordionItem>
-        )}
+    <div className="bg-white p-8 space-y-8">
+      {/* Product Header */}
+      <div className="border-b-2 border-gray-800 pb-2">
+        <h2 className="text-2xl font-semibold">Product: {quote.productType || "Insurance Quote"}</h2>
+      </div>
 
-        {/* Outputs Section */}
-        {outputs && Object.keys(outputs).length > 0 && (
-          <AccordionItem value="outputs">
-            <Card>
-              <CardHeader>
-                <AccordionTrigger className="hover:no-underline">
-                  <CardTitle>Calculation Results</CardTitle>
-                </AccordionTrigger>
-              </CardHeader>
-              <AccordionContent>
-                <CardContent>
-                  {renderObject(outputs)}
-                </CardContent>
-              </AccordionContent>
-            </Card>
-          </AccordionItem>
-        )}
-      </Accordion>
-
-      {(!inputs || Object.keys(inputs).length === 0) && (!outputs || Object.keys(outputs).length === 0) && (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            No detailed information available for this quote.
+      {/* Client Details */}
+      {client && Object.keys(client).length > 0 && (
+        <div>
+          <div className="border-b-2 border-gray-800 pb-2 mb-4">
+            <h3 className="text-xl font-semibold">Client Information</h3>
+          </div>
+          <CardContent className="p-0">
+            {renderObject(client)}
           </CardContent>
-        </Card>
+        </div>
+      )}
+
+      {/* Inputs Section */}
+      {inputs && Object.keys(inputs).length > 0 && (
+        <div>
+          <div className="border-b-2 border-gray-800 pb-2 mb-4">
+            <h3 className="text-xl font-semibold">Quote Details</h3>
+          </div>
+          <CardContent className="p-0">
+            {renderObject(inputs)}
+          </CardContent>
+        </div>
+      )}
+
+      {/* Outputs Section */}
+      {outputs && Object.keys(outputs).length > 0 && (
+        <div>
+          <div className="border-b-2 border-gray-800 pb-2 mb-4">
+            <h3 className="text-xl font-semibold">Calculation Results</h3>
+          </div>
+          <CardContent className="p-0">
+            {renderObject(outputs)}
+          </CardContent>
+        </div>
+      )}
+
+      {(!client || Object.keys(client).length === 0) && 
+       (!inputs || Object.keys(inputs).length === 0) && 
+       (!outputs || Object.keys(outputs).length === 0) && (
+        <div className="py-8 text-center text-muted-foreground">
+          No detailed information available for this quote.
+        </div>
       )}
     </div>
   );

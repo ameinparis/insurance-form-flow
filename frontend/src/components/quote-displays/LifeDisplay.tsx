@@ -3,20 +3,22 @@ import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/lib/quoteUtils";
 
 interface LifeDisplayProps {
-  inputs?: any;
-  outputs?: any;
+  quote: any;
 }
 
-export const LifeDisplay = ({ inputs, outputs }: LifeDisplayProps) => {
+export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
+  const { client, inputs, outputs } = quote;
   return (
-    <div className="space-y-6">
-      {/* Inputs Section */}
-      {inputs && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Life Insurance Details</CardTitle>
-          </CardHeader>
-          <CardContent>
+    <div className="bg-white p-8 space-y-8">
+      {/* Product Header */}
+      <div className="border-b-2 border-gray-800 pb-2">
+        <h2 className="text-2xl font-semibold">Product: Life Insurance</h2>
+      </div>
+
+      {/* Personal & Policy Details */}
+      {(client || inputs) && (
+        <div>
+          <CardContent className="p-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {inputs.sumAssured && (
                 <div>
