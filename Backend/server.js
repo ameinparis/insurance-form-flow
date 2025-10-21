@@ -73,7 +73,7 @@ const Quote = mongoose.model("Quotations", quoteSchema);
 
 //New schema (for scalable design)
 const newQuoteSchema = new mongoose.Schema({
-  productType: { type: String, enum: ["annuity", "funeral", "life"], required: true },
+  productType: { type: String, enum: ["Exclusive Annuity", "Exclusive Funeral", "life"], required: true },
 
   client: {
     fullName: String,
@@ -89,7 +89,8 @@ const newQuoteSchema = new mongoose.Schema({
 
   quoteId: { type: String, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  createdByName: String,
+  termsAndConditions: { type: String },
+
 }, { timestamps: true });
 
 const Quotes = mongoose.model("Quotes", newQuoteSchema);
@@ -324,20 +325,28 @@ const members = rows.map(row => ({
 app.post("/api/new-quotes", authenticateToken, async (req, res) => {
   try {
     const now = new Date();
-    const yy = String(now.getFullYear()).slice(-2);
+const yy = String(now.getFullYear()).slice(-2);
 
-    const start = new Date(`${now.getFullYear()}-01-01T00:00:00Z`);
-    const end = new Date(`${now.getFullYear()}-12-31T23:59:59Z`);
-    const count = await Quotes.countDocuments({ createdAt: { $gte: start, $lte: end } });
+// Set the transition start number
+const START_NUMBER = 140;
 
-    const next = String(count + 1).padStart(4, "0");
-    const quoteId = `NEWQ-${next}/${yy}`;
+// Only count quotes created this year AND starting from EXQ-
+const start = new Date(`${now.getFullYear()}-01-01T00:00:00Z`);
+const end = new Date(`${now.getFullYear()}-12-31T23:59:59Z`);
+
+const count = await Quotes.countDocuments({
+  createdAt: { $gte: start, $lte: end },
+  quoteId: { $regex: /^EXQ-/ }, // optional: only count new-format annuity quotes
+});
+
+const next = String(START_NUMBER + count).padStart(4, "0");
+const quoteId = `EXQ-${next}/${yy}`;
+
 
     const quote = await Quotes.create({
       ...req.body,
       quoteId,
       createdBy: req.user.userId,
-      createdByName: req.body.createdByName,
     });
 
     res.status(201).json({ message: "New Quote saved", quoteId, quote });

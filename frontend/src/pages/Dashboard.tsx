@@ -25,32 +25,65 @@ const Dashboard = () => {
     categoryData: []
   }
 
-  useEffect(() => {
-    const fetchQuotes = async () => {
-      try {
-        setLoading(true)
-        const token = localStorage.getItem("token")
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+useEffect(() => {
+  const fetchQuotes = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+
+      const [oldRes, newRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes`, {
+          headers: { Authorization: `Bearer ${token}` },
         })
+      ]);
 
-        if (!res.ok) throw new Error("Failed to fetch quotes")
-        const data = await res.json()
-        const mapped = data.map((q: any) => ({ ...q, id: q._id }))
-        setRecentQuotes(mapped)
-      } catch (err) {
-        console.error("Error fetching quotes:", err)
-        toast.error("Failed to load quotes")
-        setRecentQuotes([])
-      } finally {
-        setLoading(false)
-      }
+      if (!oldRes.ok || !newRes.ok) throw new Error("Failed to fetch quotes");
+
+      const oldQuotes = await oldRes.json();
+      const newQuotes = await newRes.json();
+
+      const mappedOld = oldQuotes.map((q: any) => ({
+        id: q._id,
+        quoteId: q.quoteId,
+        fullName: q.fullName,
+        email: q.email,
+        contactNumber: q.contactNumber,
+        type: "Legacy",
+        createdByName: q.createdByName || q.createdBy?.firstName || "",
+        createdAt: q.createdAt,
+        isLegacy: true,
+      }));
+
+      const mappedNew = newQuotes.map((q: any) => ({
+        id: q._id,
+        quoteId: q.quoteId,
+        fullName: q.client?.fullName,
+        email: q.client?.email,
+        contactNumber: q.client?.contactNumber,
+        type: q.productType,
+        createdByName: q.createdBy?.firstName || "",
+        createdAt: q.createdAt,
+        isLegacy: false,
+      }));
+
+      setRecentQuotes([...mappedOld, ...mappedNew].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ));
+    } catch (err) {
+      console.error("Error fetching quotes:", err);
+      toast.error("Failed to load quotes");
+      setRecentQuotes([]);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    fetchQuotes()
-  }, [])
+  fetchQuotes();
+}, []);
+
 
   const handleDeleteQuote = async (quoteId: string) => {
     try {
@@ -134,7 +167,7 @@ const Dashboard = () => {
                       <TableCell className="text-primary underline">{quote.email || "—"}</TableCell>
                       <TableCell>{quote.contactNumber || "—"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{quote.type || "Funeral"}</Badge>
+                        <Badge variant="outline">{quote.type || ""}</Badge>
                       </TableCell>
                       <TableCell>{quote.createdByName}</TableCell>
                       <TableCell>{new Date(quote.createdAt).toLocaleDateString()}</TableCell>

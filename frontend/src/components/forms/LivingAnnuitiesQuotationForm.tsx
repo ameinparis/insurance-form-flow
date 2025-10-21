@@ -59,6 +59,26 @@ const AnnuityQuotationForm = () => {
     contactNumber: "",
     email: ""
   })
+  const termsAndConditions = `
+This quotation outlines the guaranteed monthly income you could receive from a conventional life annuity,
+as well as the projected monthly income from a living annuity based on various drawdown rates. The income
+from the life annuity is affected by the prevailing interest rates at the time of the quote. Please note
+that Exclusive Life reserves the right to adjust any annuity income before the first payment.
+
+The income you receive during the living annuity phase is guaranteed until the transition date. However,
+you can change your annual drawdown rate on each policy anniversary, subject to policy limits. The income
+you earn after the transition date will be recalculated as of the transition date and will depend on your
+chosen drawdown rate, future investment returns, and any fees applicable to your fund.
+
+All annuity income is subject to taxation under Botswana income tax laws. The applicable tax rate is
+determined by your total monthly income, according to the PAYE tax tables issued by the Commissioner of
+Taxes. If there are any changes to the legislation, Exclusive Life Insurance will adjust the tax deducted
+accordingly.
+
+This quotation is confidential, and any unauthorized alterations will render it invalid. Exclusive Life
+Insurance will not accept liability for any losses incurred as a result of using an altered quotation.
+`.trim()
+
 
   // validations
   const aNum = toNum(age)
@@ -157,19 +177,57 @@ const AnnuityQuotationForm = () => {
     setCustomerDetails(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleFinalQuoteSubmit = () => {
-    const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
-    const missingFields = requiredFields.filter(field => !customerDetails[field])
+const handleFinalQuoteSubmit = async () => {
+  const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
+  const missingFields = requiredFields.filter(field => !customerDetails[field])
 
-    if (missingFields.length > 0) {
-      toast.error(`Please fill in: ${missingFields.join(', ')}`)
-      return
+  if (missingFields.length > 0) {
+    toast.error(`Please fill in: ${missingFields.join(', ')}`)
+    return
+  }
+
+  try {
+    // 🔹 Construct the payload (similar to the funeral one)
+    const payload = {
+      productType: "Exclusive Annuity",
+      client: customerDetails,
+      inputs: {
+        age: toNum(age),
+        purchaseAmount: toNum(amountRaw),
+        drawdown: toNum(drawdown),
+        frequency,
+        guaranteedStartAge: toNum(guaranteedStartAge),
+        lifePurchaseAmount: toNum(lifePurchaseAmount),
+      },
+      outputs: {
+        living: livingResult,
+        life: lifeResult,
+      },
+      termsAndConditions,
+
+      
     }
 
-    // Later: POST to /api/quotes
-    toast.success("Quote generated successfully!")
+    // 🔹 Send to the backend
+    const { data } = await axios.post(
+      "http://localhost:5002/api/new-quotes",
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    )
+
+    toast.success(`Quote ${data.quoteId} created successfully!`)
     setShowQuoteDialog(false)
+
+  } catch (error: any) {
+    console.error("Error saving quote:", error)
+    toast.error("Failed to save quote. Please try again.")
   }
+}
+
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">

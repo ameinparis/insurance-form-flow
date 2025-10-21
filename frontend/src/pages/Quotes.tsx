@@ -19,28 +19,69 @@ const Quotes = () => {
   const [previewQuote, setPreviewQuote] = useState<any | null>(null)
   const { userRole } = useAuth()
 
-  useEffect(() => {
-    const fetchQuotes = async () => {
-      try {
-        setLoading(true)
-        const token = localStorage.getItem("token")
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!res.ok) throw new Error("Failed to fetch quotes")
-        const data = await res.json()
-        const mapped = data.map((q: any) => ({ ...q, id: q._id }))
-        setQuotes(mapped)
-      } catch (err) {
-        console.error("Error loading quotes:", err)
-        toast.error("Failed to load quotes")
-      } finally {
-        setLoading(false)
-      }
-    }
+useEffect(() => {
+  const fetchQuotes = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
 
-    fetchQuotes()
-  }, [])
+      const [oldRes, newRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      if (!oldRes.ok || !newRes.ok) throw new Error("Failed to fetch quotes");
+
+      const oldQuotes = await oldRes.json();
+      const newQuotes = await newRes.json();
+
+      const mappedOld = oldQuotes.map((q: any) => ({
+        id: q._id,
+        quoteId: q.quoteId,
+        fullName: q.fullName || "Unnamed",
+        email: q.email || "—",
+        contactNumber: q.contactNumber || "—",
+        type: "Legacy",
+        createdByName: q.createdByName || q.createdBy?.firstName || "—",
+        createdAt: q.createdAt,
+        isLegacy: true,
+      }));
+
+      const mappedNew = newQuotes.map((q: any) => ({
+        id: q._id,
+        quoteId: q.quoteId,
+        fullName: q.client?.fullName || "Unnamed",
+        email: q.client?.email || "—",
+        contactNumber: q.client?.contactNumber || "—",
+        type: q.productType || "Unknown",
+        createdByName:
+          q.createdByName ||
+          (q.createdBy?.firstName ? `${q.createdBy.firstName} ${q.createdBy.lastName || ""}` : "—"),
+        createdAt: q.createdAt,
+        isLegacy: false,
+      }));
+
+      setQuotes(
+        [...mappedOld, ...mappedNew].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+      );
+    } catch (err) {
+      console.error("Error fetching quotes:", err);
+      toast.error("Failed to load quotes");
+      setQuotes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchQuotes();
+}, []);
+
 
   const handleDeleteQuote = async (quoteId: string) => {
     try {
