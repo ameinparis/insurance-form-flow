@@ -407,7 +407,7 @@ const termsAndConditions = `
               {isSchemeRules && (
                 <>
                   <div className="space-y-1">
-                    <Label htmlFor="principalMemberCover">Principal Member Cover (R)</Label>
+                    <Label htmlFor="principalMemberCover">Principal Member Cover </Label>
                     <Input
                       id="principalMemberCover"
                       type="number"
