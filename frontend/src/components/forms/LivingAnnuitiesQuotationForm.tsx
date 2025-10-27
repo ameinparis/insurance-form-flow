@@ -49,6 +49,8 @@ const AnnuityQuotationForm = () => {
   const [lifePurchaseAmount, setLifePurchaseAmount] = useState("")
   const [lifeLoading, setLifeLoading] = useState(false)
   const [lifeResult, setLifeResult] = useState<LifeResult | null>(null)
+  const [upfrontCommission, setUpfrontCommission] = useState("")
+  const [ongoingCommission, setOngoingCommission] = useState("")
 
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [customerDetails, setCustomerDetails] = useState({
@@ -85,6 +87,8 @@ Insurance will not accept liability for any losses incurred as a result of using
   const amtNum = toNum(amountRaw)
   const gsaNum = toNum(guaranteedStartAge)
   const drawNum = toNum(drawdown)
+  const upfrontNum = toNum(upfrontCommission)
+  const ongoingNum = toNum(ongoingCommission)
 
   const ageError = age !== "" && (aNum < MIN_AGE || aNum > MAX_AGE)
     ? `Starting age must be between ${MIN_AGE} and ${MAX_AGE}.`
@@ -102,9 +106,21 @@ Insurance will not accept liability for any losses incurred as a result of using
     ? "Drawdown must be between 2.5% and 17.5%."
     : ""
 
+  const upfrontError =
+    upfrontCommission !== "" && (upfrontNum < 0 || upfrontNum > 1.5)
+      ? "The annuity percentage must be between 0.0% and 1.5% per annum."
+      : ""
+
+  const ongoingError =
+    ongoingCommission !== "" && (ongoingNum < 0 || ongoingNum > 1.0)
+      ? "The annuity percentage must be between 0.0% and 1.0% per annum."
+      : ""
+
   const livingDisabled =
     ![aNum, amtNum, drawNum, gsaNum].every(Number.isFinite) ||
-    !!ageError || !!amountError || !!gsaError || !!drawError
+    !!ageError || !!amountError || !!gsaError || !!drawError ||
+    !!upfrontError || !!ongoingError
+
 
   const lifeDisabled = !livingResult || !Number.isFinite(toNum(lifePurchaseAmount)) || toNum(lifePurchaseAmount) <= 0
 
@@ -116,6 +132,8 @@ Insurance will not accept liability for any losses incurred as a result of using
     }
     setLivingLoading(true)
     try {
+      const safeNum = (n: number) => (Number.isFinite(n) ? n : undefined)
+
       const payload = {
         annuityType: "combined",
         age: aNum,
@@ -123,7 +141,10 @@ Insurance will not accept liability for any losses incurred as a result of using
         frequency,
         drawdown: drawNum,
         guaranteedStartAge: gsaNum,
+        upfrontCommission: safeNum(upfrontNum),
+        ongoingCommission: safeNum(ongoingNum),
       }
+
       const { data } = await axios.post("http://localhost:5002/api/quotes/calculate-annuity", payload)
       const res = data.output
 
@@ -177,56 +198,61 @@ Insurance will not accept liability for any losses incurred as a result of using
     setCustomerDetails(prev => ({ ...prev, [field]: value }))
   }
 
-const handleFinalQuoteSubmit = async () => {
-  const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
-  const missingFields = requiredFields.filter(field => !customerDetails[field])
+  const handleFinalQuoteSubmit = async () => {
+    const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
+    const missingFields = requiredFields.filter(field => !customerDetails[field])
 
-  if (missingFields.length > 0) {
-    toast.error(`Please fill in: ${missingFields.join(', ')}`)
-    return
-  }
-
-  try {
-    // 🔹 Construct the payload (similar to the funeral one)
-    const payload = {
-      productType: "Exclusive Annuity",
-      client: customerDetails,
-      inputs: {
-        age: toNum(age),
-        purchaseAmount: toNum(amountRaw),
-        drawdown: toNum(drawdown),
-        frequency,
-        guaranteedStartAge: toNum(guaranteedStartAge),
-        lifePurchaseAmount: toNum(lifePurchaseAmount),
-      },
-      outputs: {
-        living: livingResult,
-        life: lifeResult,
-      },
-      termsAndConditions,
-
-      
+    if (missingFields.length > 0) {
+      toast.error(`Please fill in: ${missingFields.join(', ')}`)
+      return
     }
 
-    // 🔹 Send to the backend
-    const { data } = await axios.post(
-      "http://localhost:5002/api/new-quotes",
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+    try {
+      const safeNum = (n: number) => (Number.isFinite(n) ? n : undefined)
+
+      // 🔹 Construct the payload (similar to the funeral one)
+      const payload = {
+        productType: "Exclusive Annuity",
+        client: customerDetails,
+        inputs: {
+          age: toNum(age),
+          purchaseAmount: toNum(amountRaw),
+          drawdown: toNum(drawdown),
+          frequency,
+          guaranteedStartAge: toNum(guaranteedStartAge),
+          lifePurchaseAmount: toNum(lifePurchaseAmount),
+          upfrontCommission: safeNum(upfrontNum),
+          ongoingCommission: safeNum(ongoingNum),
+
         },
+        outputs: {
+          living: livingResult,
+          life: lifeResult,
+        },
+        termsAndConditions,
+
+
       }
-    )
 
-    toast.success(`Quote ${data.quoteId} created successfully!`)
-    setShowQuoteDialog(false)
+      // 🔹 Send to the backend
+      const { data } = await axios.post(
+        "http://localhost:5002/api/new-quotes",
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      )
 
-  } catch (error: any) {
-    console.error("Error saving quote:", error)
-    toast.error("Failed to save quote. Please try again.")
+      toast.success(`Quote ${data.quoteId} created successfully!`)
+      setShowQuoteDialog(false)
+
+    } catch (error: any) {
+      console.error("Error saving quote:", error)
+      toast.error("Failed to save quote. Please try again.")
+    }
   }
-}
 
 
   return (
@@ -240,12 +266,12 @@ const handleFinalQuoteSubmit = async () => {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label>Age at start</Label>
+              <Label>Age at start of Living Annuity<span className="text-red-500">*</span></Label>
               <Input type="number" value={age} onChange={(e) => setAge(e.target.value)} />
               {ageError && <p className="text-sm text-red-600">{ageError}</p>}
             </div>
             <div>
-              <Label>Purchase Amount</Label>
+              <Label>Living Annuity Purchase Amount<span className="text-red-500">*</span></Label>
               <Input
                 type="text"
                 value={formatCurrencyInput(amountRaw)}
@@ -254,17 +280,17 @@ const handleFinalQuoteSubmit = async () => {
               {amountError && <p className="text-sm text-red-600">{amountError}</p>}
             </div>
             <div>
-              <Label>Drawdown %</Label>
+              <Label>Living Annuity Drawdown Percentage (%)<span className="text-red-500">*</span></Label>
               <Input type="number" value={drawdown} onChange={(e) => setDrawdown(e.target.value)} />
               {drawError && <p className="text-sm text-red-600">{drawError}</p>}
             </div>
             <div>
-              <Label>Life Start Age</Label>
+              <Label>Age at which Life Guaranteed amount starts for Life<span className="text-red-500">*</span></Label>
               <Input type="number" value={guaranteedStartAge} onChange={(e) => setGuaranteedStartAge(e.target.value)} />
               {gsaError && <p className="text-sm text-red-600">{gsaError}</p>}
             </div>
             <div className="col-span-2">
-              <Label>Frequency</Label>
+              <Label>Annual / Monthly<span className="text-red-500">*</span></Label>
               <Select value={frequency} onValueChange={(v) => setFrequency(v as "Monthly" | "Annual")}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -273,6 +299,42 @@ const handleFinalQuoteSubmit = async () => {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Upfront Commission (% - Year 1 only)</Label>
+              <Input
+                type="number"
+                value={upfrontCommission}
+                onChange={(e) => setUpfrontCommission(e.target.value)}
+                placeholder="e.g. 0.1"
+                min={0}
+                max={1.5}
+                step="0.01"
+              />
+              {upfrontError && <p className="text-xs text-red-600 mt-1">{upfrontError}</p>}
+
+              <p className="text-xs text-muted-foreground mt-1">
+                Optional – leave blank if no commission applies.
+              </p>
+            </div>
+
+            <div>
+              <Label>Ongoing Commission (% - Year 2+)</Label>
+              <Input
+                type="number"
+                value={ongoingCommission}
+                onChange={(e) => setOngoingCommission(e.target.value)}
+                placeholder="e.g. 1.0"
+                min={0}
+                max={1.0}
+                step="0.01"
+              />
+              {ongoingError && <p className="text-xs text-red-600 mt-1">{ongoingError}</p>}
+
+              <p className="text-xs text-muted-foreground mt-1">
+                Optional – leave blank if no commission applies.
+              </p>
+            </div>
+
             <div className="col-span-2">
               <Button onClick={handleLivingCalc} disabled={livingLoading || livingDisabled}>
                 {livingLoading ? (
@@ -286,15 +348,23 @@ const handleFinalQuoteSubmit = async () => {
               </Button>
             </div>
           </div>
-
           {livingResult && (
             <div className="mt-6 border p-4 rounded bg-muted/50 text-sm">
               <div><strong>Guarantee Period:</strong> {livingResult.guarantee_period} years</div>
-              <div><strong>Living Annuity:</strong> {fmtMoney(livingResult.guaranteed_annuity, 0)} / {frequency}</div>
+              <div><strong>Living Annuity between {age} and {guaranteedStartAge}: </strong> {fmtMoney(livingResult.guaranteed_annuity, 0)} / {frequency}</div>
               <div><strong>Funds Remaining at {guaranteedStartAge}:</strong> {fmtMoney(livingResult.funds_remaining, 0)}</div>
-              <div><strong>Retirement Annuity:</strong> {fmtMoney(livingResult.retirement_annuity, 0)}</div>
+
+              {/* Optional commission display */}
+              {(upfrontCommission || ongoingCommission) && (
+                <>
+                  <hr className="my-3 border-muted" />
+                  <div><strong>Upfront Commission:</strong> {upfrontCommission ? `${upfrontCommission}%` : "—"}</div>
+                  <div><strong>Ongoing Commission:</strong> {ongoingCommission ? `${ongoingCommission}%` : "—"}</div>
+                </>
+              )}
             </div>
           )}
+
         </CardContent>
       </Card>
 
@@ -350,7 +420,7 @@ const handleFinalQuoteSubmit = async () => {
         </Button>
       </div>
 
-  {/* Quote Dialog */}
+      {/* Quote Dialog */}
       <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -471,6 +541,19 @@ const handleFinalQuoteSubmit = async () => {
                           <span>{fmtMoney(livingResult.funds_remaining)}</span>
                         </div>
                       </div>
+                      {upfrontCommission && (
+                        <div className="flex justify-between">
+                          <span>Upfront Commission (Year 1):</span>
+                          <span>{upfrontCommission}%</span>
+                        </div>
+                      )}
+                      {ongoingCommission && (
+                        <div className="flex justify-between">
+                          <span>Ongoing Commission (Year 2+):</span>
+                          <span>{ongoingCommission}%</span>
+                        </div>
+                      )}
+
 
                       <Separator />
                     </>

@@ -7,7 +7,7 @@ import sys
 app = Flask(__name__)
 
 EXCEL_FILE = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', 'sheets', 'funeral.xlsm')
+    os.path.join(os.path.dirname(__file__), '..', 'sheets', 'exclusive-funeral.xlsm')
 )
 
 if not os.path.exists(EXCEL_FILE):
@@ -53,7 +53,7 @@ def calculate_funeral():
             member_sheet.range(f"E{row}").value = member.get("relationship")
             member_sheet.range(f"F{row}").value = member.get("gender")
 
-        print("🧍 Member data written to MemberData sheet")
+        print("🧝 Member data written to MemberData sheet")
 
         # --- Write inputs ---
         input_sheet = wb.sheets['InputSheet']
@@ -67,65 +67,62 @@ def calculate_funeral():
 
         print("📝 Basic inputs written to InputSheet")
 
+        # Set cover type in I14
         cover_type = inputs.get("coverLevelType", "")
-        if cover_type == "scheme-rules":
-            input_sheet.range("I14").value = "Scheme rules benefits"
-            input_sheet.range("I17").value = float(inputs.get("principalMemberCover", 0))
-            input_sheet.range("I18").value = float(inputs.get("spouseCover", 0))
-            input_sheet.range("I19").value = float(inputs.get("children16toMax", 0))
-            input_sheet.range("I20").value = float(inputs.get("children6to15", 0))
-            input_sheet.range("I21").value = float(inputs.get("children1to5", 0))
-            input_sheet.range("I22").value = float(inputs.get("children0to1", 0))
-            input_sheet.range("I25").value = float(inputs.get("extendedFamilyCover", 0))
-            input_sheet.range("I26").value = float(inputs.get("parentsCover", 0))
+        input_sheet.range("I14").value = (
+            "Scheme rules benefits" if cover_type == "scheme-rules" else "Member specified"
+        )
 
-            print("📘 Scheme-rules cover levels written")
-        else:
-            input_sheet.range("I14").value = "Member specified"
-            print("📘 Member-specified selected (no fixed cover levels)")
+        def parse_number(val):
+            try:
+                return float(str(val).replace(",", ""))
+            except:
+                return 0
 
+        input_sheet.range("I17").value = parse_number(inputs.get("principalMemberCover"))
+        input_sheet.range("I18").value = parse_number(inputs.get("spouseCover"))
+        input_sheet.range("I19").value = parse_number(inputs.get("children16toMax"))
+        input_sheet.range("I20").value = parse_number(inputs.get("children6to15"))
+        input_sheet.range("I21").value = parse_number(inputs.get("children1to5"))
+        input_sheet.range("I22").value = parse_number(inputs.get("children0to1"))
+        input_sheet.range("I25").value = parse_number(inputs.get("extendedFamilyCover"))
+        input_sheet.range("I26").value = parse_number(inputs.get("parentsCover"))
+
+        print("📘 Cover levels written (I17–I26)")
+
+        # --- Run Macro ---
         print("⚙️ Running Excel macro 'Pricing'...")
         wb.macro("Pricing")()
         wb.app.calculate()
         time.sleep(1)
         print("✅ Macro executed and workbook calculated")
 
-        # --- Extract Premiums ---
+      # --- Extract Premiums (explicit visible rows only) ---
         premium_sheet = wb.sheets['PremiumResults']
-
-        # Get Quote Name from C2
         quote_name = premium_sheet.range("C2").value or ""
 
-        # Extract values
-        total_premiums = premium_sheet.range("D7:D11").value or []
-        beneficiary_counts = premium_sheet.range("E7:E11").value or []
-        per_member_premiums = premium_sheet.range("F7:F11").value or []
+        # Explicit visible rows
+        visible_rows = [7, 10, 11, 12]
 
-        # Try to read statuses, fallback if needed
-        member_statuses = premium_sheet.range("C7:C11").value or []
-        if any(s is None for s in member_statuses) or len(member_statuses) < 5:
-            member_statuses = [
-                "Principal member",
-                "Spouse",
-                "Child",
-                "Adult dependent",
-                "Extended"
-            ]
+        rows = []
+        for r in visible_rows:
+            status = premium_sheet.range(f"C{r}").value
+            total = premium_sheet.range(f"D{r}").value
+            count = premium_sheet.range(f"E{r}").value
+            per_member = premium_sheet.range(f"F{r}").value
 
-        # Build premium output
+            if status and str(status).strip():
+                rows.append({
+                    "memberStatus": str(status).strip(),
+                    "totalPremium": float(total or 0),
+                    "numberOfBeneficiaries": int(count or 0),
+                    "premiumPerBeneficiary": float(per_member or 0),
+                })
+
         premium_output = {
             "quoteName": quote_name,
-            "rows": []
+            "rows": rows
         }
-        for i in range(len(member_statuses)):
-            row = {
-                "status": member_statuses[i],
-                "total": total_premiums[i] if i < len(total_premiums) else None,
-                "count": beneficiary_counts[i] if i < len(beneficiary_counts) else None,
-                "perMember": per_member_premiums[i] if i < len(per_member_premiums) else None
-            }
-            premium_output["rows"].append(row)
-
 
         print("📤 Premium output extracted:", premium_output)
 
@@ -133,7 +130,7 @@ def calculate_funeral():
         wb.close()
         app_excel.quit()
 
-        return jsonify({ "output": premium_output })
+        return jsonify({"output": premium_output})
 
     except Exception as e:
         print(f"❌ Exception during calculation: {e}")

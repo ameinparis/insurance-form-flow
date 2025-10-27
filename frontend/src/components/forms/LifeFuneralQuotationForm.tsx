@@ -18,17 +18,15 @@ const LifeFuneralQuotationForm = () => {
   const [premiumResult, setPremiumResult] = useState<any | null>(null)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [isCalculating, setIsCalculating] = useState(false)
-
   const [customerDetails, setCustomerDetails] = useState({
-    fullName: "",
-    dateOfBirth: "",
-    gender: "",
-    idNumber: "",
-    contactNumber: "",
-    email: ""
+    companyName: "",
+    registrationNumber: "",
+    companyContact: "",
+    companyEmail: ""
   })
 
-const termsAndConditions = `
+
+  const termsAndConditions = `
     This quotation outlines projected premiums for the selected funeral cover scheme. Premiums are based on the age, relationship, and cover amounts submitted, and are subject to change pending underwriting and validation of all data.
 
     Exclusive Life reserves the right to review and adjust these premiums at policy issuance. This quotation does not constitute a binding contract. Actual policy terms and conditions will be provided upon application approval.
@@ -56,9 +54,32 @@ const termsAndConditions = `
     parentsCover: ""
   })
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+  const formatCurrencyInput = (raw: string) => {
+    const num = parseFloat(raw.replace(/[^0-9.]/g, ""))
+    if (isNaN(num)) return ""
+    return "BWP " + num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
   }
+
+  const unformatCurrencyInput = (val: string) => val.replace(/[^0-9.]/g, "")
+
+  const handleInputChange = (field: string, value: string) => {
+    const updated = { ...formData, [field]: value }
+
+    // If updating principal cover, auto-populate the rest
+    if (field === "principalMemberCover") {
+      const principal = parseFloat(value) || 0
+
+      updated.spouseCover = String(principal.toFixed(2))
+      updated.children16toMax = String((principal * 1).toFixed(2))
+      updated.children6to15 = String((principal * 0.75).toFixed(2))
+      updated.children1to5 = String((principal * 0.5).toFixed(2))
+      updated.children0to1 = String((principal * 0.25).toFixed(2))
+      updated.extendedFamilyCover = String(principal.toFixed(2))
+    }
+
+    setFormData(updated)
+  }
+
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -155,7 +176,7 @@ const termsAndConditions = `
   }
 
   const handleCreateQuote = async () => {
-    const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
+    const requiredFields = ['companyName', 'registrationNumber', 'companyContact', 'companyEmail']
     const missingFields = requiredFields.filter((field) => !customerDetails[field])
     if (missingFields.length > 0) {
       toast.error(`Please fill in: ${missingFields.join(', ')}`)
@@ -236,8 +257,8 @@ const termsAndConditions = `
                         <tbody>
                           <tr className="border-b">
                             <td className="px-2 py-1">P1168</td>
-                            <td className="px-2 py-1">Nkuatsama</td>
-                            <td className="px-2 py-1">A.</td>
+                            <td className="px-2 py-1">Sipho</td>
+                            <td className="px-2 py-1"></td>
                             <td className="px-2 py-1">22/05/1953</td>
                             <td className="px-2 py-1">Adult Dependent</td>
                             <td className="px-2 py-1">M</td>
@@ -289,7 +310,7 @@ const termsAndConditions = `
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
               {/* Form Inputs */}
               <div className="space-y-1">
-                <Label htmlFor="profitTarget">Profit Target (%)</Label>
+                <Label htmlFor="profitTarget">Profit Target (%)<span className="text-red-500">*</span></Label>
                 <Input
                   id="profitTarget"
                   type="number"
@@ -300,7 +321,7 @@ const termsAndConditions = `
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="societyName">Society Name</Label>
+                <Label htmlFor="societyName">Society Name<span className="text-red-500">*</span></Label>
                 <Input
                   id="societyName"
                   type="text"
@@ -310,7 +331,7 @@ const termsAndConditions = `
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="asAndWhenCommission">As-and-When Commission (%)</Label>
+                <Label htmlFor="asAndWhenCommission">As-and-When Commission (%)<span className="text-red-500">*</span></Label>
                 <Input
                   id="asAndWhenCommission"
                   type="number"
@@ -321,7 +342,7 @@ const termsAndConditions = `
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="schemeType">Scheme Type</Label>
+                <Label htmlFor="schemeType">Scheme Type<span className="text-red-500">*</span></Label>
                 <Select
                   value={formData.schemeType}
                   onValueChange={(value) => handleInputChange("schemeType", value)}
@@ -341,7 +362,7 @@ const termsAndConditions = `
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="numberOfLives">Number of Lives in Scheme</Label>
+                <Label htmlFor="numberOfLives">Number of Lives in Scheme<span className="text-red-500">*</span></Label>
                 <Input
                   id="numberOfLives"
                   type="number"
@@ -352,7 +373,7 @@ const termsAndConditions = `
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="maxExtendedFamilyMembers">Max Extended Family Members</Label>
+                <Label htmlFor="maxExtendedFamilyMembers">Max Extended Family Members<span className="text-red-500">*</span></Label>
                 <Input
                   id="maxExtendedFamilyMembers"
                   type="number"
@@ -362,7 +383,7 @@ const termsAndConditions = `
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="maxAgeChildren">Max Age of Children Covered</Label>
+                <Label htmlFor="maxAgeChildren">Max Age of Children Covered<span className="text-red-500">*</span></Label>
                 <Input
                   id="maxAgeChildren"
                   type="number"
@@ -372,7 +393,7 @@ const termsAndConditions = `
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="currentMaxAgeChild">Current Max Age of Child in Data</Label>
+                <Label htmlFor="currentMaxAgeChild">Current Max Age of Child in Data<span className="text-red-500">*</span></Label>
                 <Input
                   id="currentMaxAgeChild"
                   type="number"
@@ -384,7 +405,7 @@ const termsAndConditions = `
 
               {/* Cover Levels Dropdown */}
               <div className="space-y-1 col-span-1 md:col-span-2">
-                <Label htmlFor="coverLevelType">Cover Levels</Label>
+                <Label htmlFor="coverLevelType">Cover Levels<span className="text-red-500">*</span></Label>
                 <Select
                   value={formData.coverLevelType}
                   onValueChange={(value) => handleInputChange("coverLevelType", value)}
@@ -403,95 +424,90 @@ const termsAndConditions = `
                 </div>
               </div>
 
-              {/* Scheme Rules Cover Levels (if selected) */}
-              {isSchemeRules && (
-                <>
-                  <div className="space-y-1">
-                    <Label htmlFor="principalMemberCover">Principal Member Cover </Label>
-                    <Input
-                      id="principalMemberCover"
-                      type="number"
-                      value={formData.principalMemberCover}
-                      onChange={(e) => handleInputChange("principalMemberCover", e.target.value)}
-                    />
-                  </div>
+              <div className="space-y-1">
+                <Label htmlFor="principalMemberCover">Principal Member Cover<span className="text-red-500">*</span> </Label>
+                <Input
+                  id="principalMemberCover"
+                  type="text"
+                  value={formatCurrencyInput(formData.principalMemberCover)}
+                  onChange={(e) => handleInputChange("principalMemberCover", unformatCurrencyInput(e.target.value))}
+                />
+              </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="spouseCover">Spouse Cover (Same as Principal)</Label>
-                    <Input
-                      id="spouseCover"
-                      type="number"
-                      value={formData.spouseCover || formData.principalMemberCover}
-                      onChange={(e) => handleInputChange("spouseCover", e.target.value)}
-                    />
+              <div className="space-y-1">
+                <Label htmlFor="spouseCover">Spouse Cover (Same as Principal)</Label>
+                <Input
+                  id="spouseCover"
+                  type="text"
+                  value={formatCurrencyInput(formData.spouseCover || formData.principalMemberCover)}
+                  onChange={(e) => handleInputChange("spouseCover", unformatCurrencyInput(e.target.value))}
+                />
 
-                  </div>
+              </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="children16toMax">
-                      Children age 16 to {formData.currentMaxAgeChild || "XX"}
-                    </Label>
+              <div className="space-y-1">
+                <Label htmlFor="children16toMax">
+                  Children age 16 to {formData.currentMaxAgeChild || "XX"}
+                </Label>
 
-                    <Input
-                      id="children16toMax"
-                      type="number"
-                      value={formData.children16toMax}
-                      onChange={(e) => handleInputChange("children16toMax", e.target.value)}
-                    />
-                  </div>
+                <Input
+                  id="children16toMax"
+                  type="text"
+                  value={formatCurrencyInput(formData.children16toMax)}
+                  onChange={(e) => handleInputChange("children16toMax", unformatCurrencyInput(e.target.value))}
+                />
+              </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="children6to15">Children age 6 to 15</Label>
-                    <Input
-                      id="children6to15"
-                      type="number"
-                      value={formData.children6to15}
-                      onChange={(e) => handleInputChange("children6to15", e.target.value)}
-                    />
-                  </div>
+              <div className="space-y-1">
+                <Label htmlFor="children6to15">Children age 6 to 15</Label>
+                <Input
+                  id="children6to15"
+                  type="text"
+                  value={formatCurrencyInput(formData.children6to15)}
+                  onChange={(e) => handleInputChange("children6to15", unformatCurrencyInput(e.target.value))}
+                />
+              </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="children1to5">Children age 1 to 5</Label>
-                    <Input
-                      id="children1to5"
-                      type="number"
-                      value={formData.children1to5}
-                      onChange={(e) => handleInputChange("children1to5", e.target.value)}
-                    />
-                  </div>
+              <div className="space-y-1">
+                <Label htmlFor="children1to5">Children age 1 to 5</Label>
+                <Input
+                  id="children1to5"
+                  type="text"
+                  value={formatCurrencyInput(formData.children1to5)}
+                  onChange={(e) => handleInputChange("children1to5", unformatCurrencyInput(e.target.value))}
+                />
+              </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="children0to1">Children age 0 to 1</Label>
-                    <Input
-                      id="children0to1"
-                      type="number"
-                      value={formData.children0to1}
-                      onChange={(e) => handleInputChange("children0to1", e.target.value)}
-                    />
-                  </div>
+              <div className="space-y-1">
+                <Label htmlFor="children0to1">Children age 0 to 1</Label>
+                <Input
+                  id="children0to1"
+                  type="text"
+                  value={formatCurrencyInput(formData.children0to1)}
+                  onChange={(e) => handleInputChange("children0to1", unformatCurrencyInput(e.target.value))}
+                />
+              </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="extendedFamilyCover">Extended Family Cover (Same as Principal)</Label>
-                    <Input
-                      id="extendedFamilyCover"
-                      type="number"
-                      value={formData.extendedFamilyCover || formData.principalMemberCover}
-                      onChange={(e) => handleInputChange("extendedFamilyCover", e.target.value)}
-                    />
+              <div className="space-y-1">
+                <Label htmlFor="extendedFamilyCover">Extended Family Cover</Label>
+                <Input
+                  id="extendedFamilyCover"
+                  type="text"
+                  value={formatCurrencyInput(formData.extendedFamilyCover)}
+                  onChange={(e) => handleInputChange("extendedFamilyCover", unformatCurrencyInput(e.target.value))}
+                />
 
-                  </div>
+              </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="parentsCover">Parents Cover</Label>
-                    <Input
-                      id="parentsCover"
-                      type="number"
-                      value={formData.parentsCover}
-                      onChange={(e) => handleInputChange("parentsCover", e.target.value)}
-                    />
-                  </div>
-                </>
-              )}
+              <div className="space-y-1">
+                <Label htmlFor="parentsCover">Parents Cover</Label>
+                <Input
+                  id="parentsCover"
+                  type="text"
+                  value={formatCurrencyInput(formData.parentsCover)}
+                  onChange={(e) => handleInputChange("parentsCover", unformatCurrencyInput(e.target.value))}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -520,29 +536,52 @@ const termsAndConditions = `
               )}
 
               <Separator />
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {premiumResult?.rows?.map((row: any, index: number) => (
-                  <div key={index} className="border rounded-lg p-4 bg-background space-y-2">
-                    <h4 className="font-semibold capitalize text-primary">{row.status}</h4>
-                    <Separator className="my-2" />
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Total:</span>
-                        <span className="font-medium">{row.total != null ? `BWP ${row.total.toFixed(2)}` : "–"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Count:</span>
-                        <span className="font-medium">{row.count ?? "–"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Per Member:</span>
-                        <span className="font-medium">{row.perMember != null ? `BWP ${row.perMember.toFixed(2)}` : "–"}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              ...
+              ...
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead className="bg-muted">
+                    <tr className="text-left">
+                      <th className="p-2 font-semibold">Member Status</th>
+                      <th className="p-2 font-semibold">Total Premium</th>
+                      <th className="p-2 font-semibold">Number of Beneficiaries</th>
+                      <th className="p-2 font-semibold">Premium per month per beneficiary type</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {premiumResult.rows?.map((row: any, index: number) => (
+                      <>
+                        <tr key={index} className="border-b">
+                          <td className="p-2">{row.memberStatus}</td>
+                          <td className="p-2">
+                            {row.totalPremium != null
+                              ? `BWP ${row.totalPremium.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                              : "–"}
+                          </td>
+                          <td className="p-2">{row.numberOfBeneficiaries ?? "–"}</td>
+                          <td className="p-2 bg-yellow-100 font-medium">
+                            {row.premiumPerBeneficiary != null
+                              ? `BWP ${row.premiumPerBeneficiary.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                              : "–"}
+                          </td>
+                        </tr>
+                        {row.memberStatus === "Premium Per Family" && (
+                          <tr>
+                            <td colSpan={4} className="text-xs text-muted-foreground italic px-2 pb-2">
+                              (Includes spouse and children)
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+              ...
+
+              ...
+
+
 
               <div className="flex justify-end pt-4">
                 <Button onClick={() => setShowQuoteDialog(true)}>Create Quote</Button>
@@ -569,68 +608,43 @@ const termsAndConditions = `
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Full Name</Label>
+                    <Label>Scheme / Corporate Name</Label>
                     <Input
-                      value={customerDetails.fullName}
-                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, fullName: e.target.value }))}
-                      placeholder="Enter full name"
+                      value={customerDetails.companyName}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, companyName: e.target.value }))}
+                      placeholder="e.g. Exclusive Life Holdings"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Date of Birth</Label>
+                    <Label>Registration Number</Label>
                     <Input
-                      type="date"
-                      value={customerDetails.dateOfBirth}
-                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, dateOfBirth: e.target.value }))}
+                      value={customerDetails.registrationNumber}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, registrationNumber: e.target.value }))}
+                      placeholder="e.g. BW0000012345"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Gender</Label>
-                    <RadioGroup
-                      value={customerDetails.gender}
-                      onValueChange={(value) => setCustomerDetails((prev) => ({ ...prev, gender: value }))}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Male" id="male" />
-                        <Label htmlFor="male">Male</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Female" id="female" />
-                        <Label htmlFor="female">Female</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>ID/Passport Number</Label>
+                    <Label>Company Contact Number</Label>
                     <Input
-                      value={customerDetails.idNumber}
-                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, idNumber: e.target.value }))}
-                      placeholder="Enter ID number"
+                      value={customerDetails.companyContact}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, companyContact: e.target.value }))}
+                      placeholder="e.g. +267 395 0000"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Contact Number</Label>
-                    <Input
-                      value={customerDetails.contactNumber}
-                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, contactNumber: e.target.value }))}
-                      placeholder="Enter contact number"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Email Address</Label>
+                    <Label>Company Email</Label>
                     <Input
                       type="email"
-                      value={customerDetails.email}
-                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, email: e.target.value }))}
-                      placeholder="Enter email address"
+                      value={customerDetails.companyEmail}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, companyEmail: e.target.value }))}
+                      placeholder="e.g. admin@exclusivelife.co.bw"
                     />
                   </div>
                 </CardContent>
+
               </Card>
 
               {/* Quotation Summary Card */}
@@ -647,27 +661,48 @@ const termsAndConditions = `
 
                       <Separator />
 
-                      <div className="space-y-3">
-                        {premiumResult.rows?.map((row: any, index: number) => (
-                          <div key={index} className="border rounded-lg p-3 bg-muted/30 space-y-1">
-                            <h4 className="font-semibold capitalize text-sm">{row.status}</h4>
-                            <div className="text-xs space-y-0.5">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Total:</span>
-                                <span>{row.total != null ? `BWP ${row.total.toFixed(2)}` : "–"}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Count:</span>
-                                <span>{row.count ?? "–"}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Per Member:</span>
-                                <span>{row.perMember != null ? `BWP ${row.perMember.toFixed(2)}` : "–"}</span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                      ...
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm border-collapse">
+                          <thead className="bg-muted">
+                            <tr className="text-left">
+                              <th className="p-2 font-semibold">Member Status</th>
+                              <th className="p-2 font-semibold">Total Premium</th>
+                              <th className="p-2 font-semibold">Number of Beneficiaries</th>
+                              <th className="p-2 font-semibold">Premium per month per beneficiary type</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {premiumResult.rows?.map((row: any, index: number) => (
+                              <>
+                                <tr key={index} className="border-b">
+                                  <td className="p-2">{row.memberStatus}</td>
+                                  <td className="p-2">
+                                    {row.totalPremium != null
+                                      ? `BWP ${row.totalPremium.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                      : "–"}
+                                  </td>
+                                  <td className="p-2">{row.numberOfBeneficiaries ?? "–"}</td>
+                                  <td className="p-2 bg-yellow-100 font-medium">
+                                    {row.premiumPerBeneficiary != null
+                                      ? `BWP ${row.premiumPerBeneficiary.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                      : "–"}
+                                  </td>
+                                </tr>
+                                {row.memberStatus === "Premium Per Family" && (
+                                  <tr>
+                                    <td colSpan={4} className="text-xs text-muted-foreground italic px-2 pb-2">
+                                      (Includes spouse and children)
+                                    </td>
+                                  </tr>
+                                )}
+                              </>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
+                      ...
+
                     </>
                   ) : (
                     <div className="text-muted-foreground text-sm">No quotation results available</div>

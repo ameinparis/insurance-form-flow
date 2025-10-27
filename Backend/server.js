@@ -71,19 +71,18 @@ const quoteSchema = new mongoose.Schema({
 }, { timestamps: true });
 const Quote = mongoose.model("Quotations", quoteSchema);
 
-//New schema (for scalable design)
+// New schema
 const newQuoteSchema = new mongoose.Schema({
-  productType: { type: String, enum: ["Exclusive Annuity", "Exclusive Funeral", "life"], required: true },
-
-  client: {
-    fullName: String,
-    dateOfBirth: String,
-    idNumber: String,
-    contactNumber: String,
-    email: String,
+  productType: {
+    type: String,
+    enum: ["Exclusive Annuity", "Exclusive Funeral", "life"],
+    required: true
   },
 
-  // Dynamic payload → store calculations/output based on product type
+  // xFlexible client field: individual OR corporate details allowed
+  client: mongoose.Schema.Types.Mixed,
+
+  // Dynamic payload → stores calculations/output from annuity or funeral models
   inputs: mongoose.Schema.Types.Mixed,
   outputs: mongoose.Schema.Types.Mixed,
 
@@ -94,6 +93,7 @@ const newQuoteSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const Quotes = mongoose.model("Quotes", newQuoteSchema);
+
 
 
 /* ---------------------------- Auth helpers --------------------------- */
@@ -325,24 +325,37 @@ const members = rows.map(row => ({
 app.post("/api/new-quotes", authenticateToken, async (req, res) => {
   try {
     const now = new Date();
-const yy = String(now.getFullYear()).slice(-2);
+    const yy = String(now.getFullYear()).slice(-2);
+    const START_NUMBER = 140;
+    const start = new Date(`${now.getFullYear()}-01-01T00:00:00Z`);
+    const end = new Date(`${now.getFullYear()}-12-31T23:59:59Z`);
 
-// Set the transition start number
-const START_NUMBER = 140;
+    const count = await Quotes.countDocuments({
+      createdAt: { $gte: start, $lte: end },
+      quoteId: { $regex: /^EXQ-/ },
+    });
 
-// Only count quotes created this year AND starting from EXQ-
-const start = new Date(`${now.getFullYear()}-01-01T00:00:00Z`);
-const end = new Date(`${now.getFullYear()}-12-31T23:59:59Z`);
+    const next = String(START_NUMBER + count).padStart(4, "0");
+    const quoteId = `EXQ-${next}/${yy}`;
 
-const count = await Quotes.countDocuments({
-  createdAt: { $gte: start, $lte: end },
-  quoteId: { $regex: /^EXQ-/ }, // optional: only count new-format annuity quotes
-});
+    // ✅ Step 2: Validation logic based on productType
+    const { productType, client } = req.body;
 
-const next = String(START_NUMBER + count).padStart(4, "0");
-const quoteId = `EXQ-${next}/${yy}`;
+    if (productType === "Exclusive Funeral") {
+      if (!client?.companyName || !client?.registrationNumber || !client?.companyEmail) {
+        return res.status(400).json({
+          message: "Missing companyName, registrationNumber, or companyEmail for funeral quote",
+        });
+      }
+    } else if (productType === "Exclusive Annuity") {
+      if (!client?.fullName || !client?.idNumber || !client?.email) {
+        return res.status(400).json({
+          message: "Missing fullName, ID number, or email for annuity quote",
+        });
+      }
+    }
 
-
+    // ✅ Step 3: Save the quote
     const quote = await Quotes.create({
       ...req.body,
       quoteId,

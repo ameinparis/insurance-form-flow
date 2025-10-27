@@ -93,27 +93,29 @@ def handle_combined_annuity(wb, data):
     sheet = wb.sheets['LivingAnnuity']
     age = data['age']
     amount = data['purchaseAmount']
-    drawdown = data.get('drawdown', 5)  # Default 5%
-    guaranteed_age = data.get('guaranteedStartAge', 75)  # Default 75
+    drawdown = data.get('drawdown', 5)
+    guaranteed_age = data.get('guaranteedStartAge', 75)
     frequency = data.get('frequency', 'Monthly')
 
-    # Set inputs
+    upfront_commission = data.get('upfrontCommission', 0)
+    ongoing_commission = data.get('ongoingCommission', 0)
+
+    # === WRITE INPUTS TO EXCEL ===
     sheet.range('C3').value = age
     sheet.range('C4').value = amount
-    sheet.range('C5').value = drawdown / 100  # Convert 5 to 0.05
+    sheet.range('C5').value = drawdown / 100
     sheet.range('C6').value = guaranteed_age
     sheet.range('C7').value = frequency
+    sheet.range('C15').value = upfront_commission / 100   # convert to decimal
+    sheet.range('C18').value = ongoing_commission / 100   # convert to decimal
 
-    print("Running Macro: GoalSeek_RAAfterLA")
-    print(f"Inputs → Age: {age}, Amount: {amount}, Drawdown: {drawdown}%")
-    print(f"Guaranteed Age: {guaranteed_age}, Frequency: {frequency}")
+    print(f"Running Macro: GoalSeek_RAAfterLA")
+    print(f"Inputs → Age: {age}, Amount: {amount}, Drawdown: {drawdown}%, Upfront: {upfront_commission}%, Ongoing: {ongoing_commission}%")
 
-    # Run macro and recalculate
     wb.macro("GoalSeek_RAAfterLA")()
     wb.app.calculate()
-    time.sleep(1)  # Allow Excel to process
+    time.sleep(1)
 
-    # Get outputs
     result = {
         "guarantee_period": int(sheet.range('C9').value),
         "guaranteed_annuity": round(float(sheet.range('C10').value), 2),
@@ -123,6 +125,7 @@ def handle_combined_annuity(wb, data):
 
     print("Results:", result)
     return jsonify({"output": result})
+
 
 def handle_life_annuity(wb, data):
     sheet = wb.sheets['LifeAnnuity']

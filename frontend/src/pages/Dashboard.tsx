@@ -27,64 +27,63 @@ const Dashboard = () => {
     categoryData: []
   }
 
-useEffect(() => {
-  const fetchQuotes = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
+  useEffect(() => {
+    const fetchQuotes = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
 
-      const [oldRes, newRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-      ]);
+        const [oldRes, newRes] = await Promise.all([
+          fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        ]);
 
-      if (!oldRes.ok || !newRes.ok) throw new Error("Failed to fetch quotes");
+        if (!oldRes.ok || !newRes.ok) throw new Error("Failed to fetch quotes");
 
-      const oldQuotes = await oldRes.json();
-      const newQuotes = await newRes.json();
+        const oldQuotes = await oldRes.json();
+        const newQuotes = await newRes.json();
 
-      const mappedOld = oldQuotes.map((q: any) => ({
-        id: q._id,
-        quoteId: q.quoteId,
-        fullName: q.fullName,
-        email: q.email,
-        contactNumber: q.contactNumber,
-        type: "Exclusive Annuity",
-        createdByName: q.createdByName || q.createdBy?.firstName || "",
-        createdAt: q.createdAt,
-        isLegacy: true,
-      }));
+        const mappedOld = oldQuotes.map((q: any) => ({
+          id: q._id,
+          quoteId: q.quoteId,
+          fullName: q.fullName,
+          email: q.email,
+          contactNumber: q.contactNumber,
+          type: "Exclusive Annuity",
+          createdByName: q.createdByName || q.createdBy?.firstName || "",
+          createdAt: q.createdAt,
+          isLegacy: true,
+        }));
 
-      const mappedNew = newQuotes.map((q: any) => ({
-        id: q._id,
-        quoteId: q.quoteId,
-        fullName: q.client?.fullName,
-        email: q.client?.email,
-        contactNumber: q.client?.contactNumber,
-        type: q.productType,
-        createdByName: q.createdBy?.firstName || "",
-        createdAt: q.createdAt,
-        isLegacy: false,
-      }));
+        const mappedNew = newQuotes.map((q: any) => ({
+          id: q._id,
+          quoteId: q.quoteId || "—",
+          clientName: q.client?.fullName || q.client?.companyName || "Unnamed",
+          email: q.client?.email || q.client?.companyEmail || "—",
+          type: q.productType,
+          createdByName: q.createdBy?.firstName || "",
+          createdAt: q.createdAt,
+        }));
 
-      setRecentQuotes([...mappedOld, ...mappedNew].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      ));
-    } catch (err) {
-      console.error("Error fetching quotes:", err);
-      toast.error("Failed to load quotes");
-      setRecentQuotes([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  fetchQuotes();
-}, []);
+        setRecentQuotes([...mappedOld, ...mappedNew].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        ));
+      } catch (err) {
+        console.error("Error fetching quotes:", err);
+        toast.error("Failed to load quotes");
+        setRecentQuotes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuotes();
+  }, []);
 
 
   const handleDeleteQuote = async (quoteId: string) => {
@@ -152,40 +151,40 @@ useEffect(() => {
                   <TableRow className="bg-muted/50">
                     <TableHead>Quote ID</TableHead>
                     <TableHead>Client Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead>Quote Type</TableHead>
                     <TableHead>Created By</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Date Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
+
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {recentQuotes.map((quote, idx) => (
                     <TableRow key={quote.id} className={idx % 2 === 0 ? "bg-background" : "bg-muted/20"}>
-                      <TableCell className="font-medium">#{quote.quoteId}</TableCell>
-                      <TableCell>{quote.fullName || "Unnamed"}</TableCell>
-                      <TableCell className="text-primary underline">{quote.email || "—"}</TableCell>
-                      <TableCell>{quote.contactNumber || "—"}</TableCell>
+                      <TableCell className="font-medium">{quote.quoteId}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{quote.type || ""}</Badge>
+                        {quote.clientName || quote.fullName || "Unnamed"}
                       </TableCell>
-                      <TableCell>{quote.createdByName}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{quote.type}</Badge>
+                      </TableCell>
+                      <TableCell>{quote.createdByName || "—"}</TableCell>
                       <TableCell>{new Date(quote.createdAt).toLocaleDateString()}</TableCell>
+
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8"
                             onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
                             title="View Quote"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8"
                             onClick={() => toast.info("Download feature coming soon")}
                             title="Download Quote"
