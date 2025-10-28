@@ -80,8 +80,19 @@ const Landing = () => {
       document.head.appendChild(link)
     }
   }, [])
+
+
+  useEffect(() => {
+  document.documentElement.classList.remove("dark")
+  return () => {
+    if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark")
+  }
+}, [])
+
   return (
-    <div>
+
+
+    <div className="min-h-screen bg-white text-black dark:!bg-white dark:!text-black">
       <header className="relative z-10">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
           <div className="flex items-center gap-2">
@@ -94,7 +105,8 @@ const Landing = () => {
           <div className="flex items-center gap-3">
             <Button
               onClick={() => setShowAuthDialog(true)}
-              className="rounded-full px-5 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="rounded-full bg-[#031d42] hover:bg-[#052851] text-white px-6  font-semibold transition-colors"
+
             >
               Sign in
             </Button>
@@ -102,36 +114,24 @@ const Landing = () => {
         </nav>
       </header>
 
+      <section className="relative flex flex-col items-center justify-center text-center px-6 py-24">
+        <h1 className="font-montserrat  text-[clamp(2rem,5vw,5rem)] text-[#1b1b1b] leading-tight">
+          Streamlining Insurance Quotations
+        </h1>
 
-      <main className="relative z-10 mx-auto max-w-7xl px-6 pt-16 pb-24">
-        <section className="max-w-2xl">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight">
-            Exclusive Life Insurance<br />Quote Management
-          </h1>
-          <p className="mt-6 text-lg text-muted-foreground max-w-xl">
-            Smart coverage, clear pricing, and rapid quotes—built to protect what matters with confidence.
-          </p>
+        <p className="mt-6 text-sm sm:text-base md:text-lg text-gray-500 tracking-wide">
+          Professional tool to calculate, manage, and deliver accurate quotes — faster and smarter.  </p>
 
-          {/* <div className="mt-10 flex flex-col sm:flex-row gap-4">
-            <Button
-              size="lg"
-              className="rounded-full px-7 bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={() => navigate('/quote/personal-details')}
-            >
-              Get a Quote
-              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="rounded-full px-7 border-border hover:bg-accent hover:text-accent-foreground"
-              onClick={() => navigate('/calculator')}
-            >
-              Explore Calculator
-            </Button>
-          </div> */}
-        </section>
-      </main>
+        <div className="mt-16 w-full flex justify-center">
+          <img
+            src="/dash-image.jpg"
+            alt="Dashboard preview"
+            className="rounded-xl shadow-md w-[80%] max-w-5xl aspect-[3/1] object-cover border-4 border-[#ffffff]"
+          />
+        </div>
+
+      </section>
+
 
       {/* subtle background motif */}
       <div className="pointer-events-none absolute inset-0">
@@ -143,7 +143,7 @@ const Landing = () => {
 
       {/* Authentication Dialog */}
       <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-        <DialogContent className="sm:max-w-md bg-card border-border text-foreground">
+<DialogContent className="sm:max-w-md bg-white text-black border border-gray-200 dark:!bg-white dark:!text-black dark:!border-gray-200">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center">Sign In</DialogTitle>
           </DialogHeader>
@@ -184,10 +184,9 @@ const Landing = () => {
                 Forgot Password?
               </Button>
             </div>
-
             <Button
               type="submit"
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-6 rounded-full font-semibold text-base transition-all duration-300"
+              className="w-full bg-[#031d42] hover:bg-[#052851] text-white py-6 rounded-full font-semibold text-base transition-all duration-300"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -199,6 +198,7 @@ const Landing = () => {
                 "Login"
               )}
             </Button>
+
 
             <div className="text-center">
               <div className="text-muted-foreground mb-4">OR</div>
@@ -227,6 +227,8 @@ const Landing = () => {
         </div>
       )}
     </div>
+
+
   )
 }
 

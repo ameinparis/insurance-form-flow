@@ -22,6 +22,10 @@ export default {
 			fontFamily: {
 				sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
 				heading: ['Avenir', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+				  montserrat: ['Montserrat', 'sans-serif'], 
+				  Inter: ['Inter']
+
+
 			},
 			colors: {
 				border: 'hsl(var(--border))',

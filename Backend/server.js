@@ -394,6 +394,18 @@ app.get("/api/new-quotes/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// Get users
+
+app.get("/api/users", authenticateToken, async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+    res.json(users);
+  } catch (e) {
+    console.error("Fetch users error:", e);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
+});
+
 
 
 

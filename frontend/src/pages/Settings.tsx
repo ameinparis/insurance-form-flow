@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react"
+import axios from "axios"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -10,56 +12,76 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 
 const Settings = () => {
-  const teamMembers = [
-    {
-      id: 1,
-      name: "ame busang",
-      email: "amebusang@gmail.com",
-      role: "superuser",
-      initials: "AB",
-      bgColor: "bg-green-500"
-    },
-    {
-      id: 2,
-      name: "Oratile Busang",
-      email: "oratile@ling.co.bw",
-      role: "user",
-      initials: "OB",
-      bgColor: "bg-yellow-500"
-    },
-    {
-      id: 3,
-      name: "Oratile Busang",
-      email: "gaottotweame@gmail.com",
-      role: "user",
-      initials: "OB",
-      bgColor: "bg-yellow-500"
-    },
-    {
-      id: 4,
-      name: "Nthami Moseki",
-      email: "nmoseki@exclusivelife.co.bw",
-      role: "superuser",
-      initials: "NM",
-      bgColor: "bg-green-500"
-    },
-    {
-      id: 5,
-      name: "Thabang Ramatsiripa",
-      email: "thabangr@exclusivelife.co.bw",
-      role: "superuser",
-      initials: "TR",
-      bgColor: "bg-yellow-700"
-    },
-    {
-      id: 6,
-      name: "Kesego Gosata-Mosweu",
-      email: "kmosweu@exclusivelife.co.bw",
-      role: "superuser",
-      initials: "KG",
-      bgColor: "bg-red-500"
+  const [teamMembers, setTeamMembers] = useState([])
+  const [showAddUserModal, setShowAddUserModal] = useState(false)
+
+  const [newUser, setNewUser] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    role: "user",
+  })
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setNewUser((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setNewUser((prev) => ({ ...prev, role: e.target.value }))
+  }
+
+  const handleAddUser = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      await axios.post("http://localhost:5002/api/users/register", newUser, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setShowAddUserModal(false)
+      setNewUser({ firstName: "", lastName: "", email: "", role: "user" })
+      // Refresh user list
+      const res = await axios.get("http://localhost:5002/api/users", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const mapped = res.data.map((user: any, idx: number) => ({
+        id: user._id,
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        role: user.role,
+        initials: `${user.firstName[0] || ""}${user.lastName[0] || ""}`,
+        bgColor: ["bg-green-500", "bg-yellow-500", "bg-red-500", "bg-blue-500"][idx % 4],
+      }))
+      setTeamMembers(mapped)
+    } catch (err) {
+      console.error("Add user error", err)
     }
-  ]
+  }
+
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem("token") // adjust if stored differently
+        const res = await axios.get("http://localhost:5002/api/users", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const mapped = res.data.map((user: any, idx: number) => ({
+          id: user._id,
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          role: user.role,
+          initials: `${user.firstName[0] || ""}${user.lastName[0] || ""}`,
+          bgColor: ["bg-green-500", "bg-yellow-500", "bg-red-500", "bg-blue-500"][idx % 4],
+        }))
+        setTeamMembers(mapped)
+      } catch (err) {
+        console.error("Failed to fetch users", err)
+      }
+    }
+
+    fetchUsers()
+  }, [])
+
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -71,7 +93,7 @@ const Settings = () => {
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile">Profile Info</TabsTrigger>
           <TabsTrigger value="team">Team</TabsTrigger>
-          <TabsTrigger value="access">Access Control</TabsTrigger>
+          {/* <TabsTrigger value="access">Access Control</TabsTrigger> */}
           <TabsTrigger value="audit">Audit Trail</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
@@ -151,6 +173,13 @@ const Settings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Button visible to superusers only */}
+              {teamMembers.find(member => member.email === localStorage.getItem("email") && member.role === "superuser") && (
+                <div className="flex justify-end">
+                  <Button onClick={() => setShowAddUserModal(true)}>+ Add User</Button>
+                </div>
+              )}
+
               <div className="space-y-4">
                 {teamMembers.map((member) => (
                   <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg">
@@ -174,8 +203,47 @@ const Settings = () => {
             </CardContent>
           </Card>
         </TabsContent>
+        {showAddUserModal && (
+  <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+    <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-md space-y-4">
+      <h2 className="text-xl font-semibold">Add New User</h2>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>First Name</Label>
+          <Input name="firstName" value={newUser.firstName} onChange={handleInputChange} />
+        </div>
+        <div>
+          <Label>Last Name</Label>
+          <Input name="lastName" value={newUser.lastName} onChange={handleInputChange} />
+        </div>
+      </div>
+      <div>
+        <Label>Email</Label>
+        <Input name="email" type="email" value={newUser.email} onChange={handleInputChange} />
+      </div>
 
-        <TabsContent value="access" className="space-y-6 mt-6">
+      <div>
+        <Label>Role</Label>
+        <select
+          value={newUser.role}
+          onChange={handleRoleChange}
+          className="w-full border px-3 py-2 rounded-md text-sm dark:bg-gray-800"
+        >
+          <option value="user">User</option>
+          <option value="superuser">Superuser</option>
+        </select>
+      </div>
+      <div className="flex justify-end space-x-2">
+        <Button variant="outline" onClick={() => setShowAddUserModal(false)}>Cancel</Button>
+        <Button onClick={handleAddUser}>Add User</Button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+        {/* <TabsContent value="access" className="space-y-6 mt-6">
           <Card>
             <CardHeader>
               <CardTitle>Access Control</CardTitle>
@@ -217,7 +285,7 @@ const Settings = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
 
         <TabsContent value="audit" className="space-y-6 mt-6">
           <Card>
