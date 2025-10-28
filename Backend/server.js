@@ -11,6 +11,10 @@ const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage() });
 const Papa = require("papaparse");
 const XLSX = require("xlsx");
+const puppeteer = require("puppeteer");
+const fs = require("fs");
+const path = require("path");
+
 
 const app = express();
 const PORT = process.env.PORT || 5002;
@@ -406,6 +410,149 @@ app.get("/api/users", authenticateToken, async (req, res) => {
   }
 });
 
+
+
+
+// Utility function to fetch quote by ID
+async function getQuoteById(id, isLegacy = false) {
+  if (isLegacy) {
+    return await Quote.findById(id).lean();
+  } else {
+    return await Quotes.findById(id).lean();
+  }
+}
+
+// Download PDF
+async function renderQuoteHTML(quote) {
+  // Basic HTML render — improve this later using your React structure
+  const logo = "https://sociallightbw.s3.af-south-1.amazonaws.com/socialDark.png";
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Quote PDF</title>
+        <link href="https://fonts.googleapis.com/css2?family=Raleway&display=swap" rel="stylesheet">
+        <style>
+          body {
+            font-family: 'Raleway', sans-serif;
+            font-size: 14px;
+            padding: 20px;
+            background: white;
+          }
+          .logo {
+            height: 50px;
+            margin-bottom: 20px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          th, td {
+            padding: 6px;
+            border: 1px solid #ddd;
+          }
+          h2 {
+            margin-top: 30px;
+            font-size: 18px;
+          }
+        </style>
+      </head>
+      <body>
+        <img src="${logo}" class="logo" alt="Logo" />
+        <h2>Quote #${quote.quoteId}</h2>
+        <p>Date: ${new Date(quote.createdAt).toLocaleDateString()}</p>
+        <p><strong>Client:</strong> ${quote.client?.fullName || quote.client?.companyName}</p>
+        <p><strong>Product:</strong> ${quote.productType || "Annuity"}</p>
+
+        <h2>Inputs</h2>
+        <pre>${JSON.stringify(quote.inputs || {}, null, 2)}</pre>
+
+        <h2>Outputs</h2>
+        <pre>${JSON.stringify(quote.outputs || {}, null, 2)}</pre>
+      </body>
+    </html>
+  `;
+}
+app.get("/api/quotes/:id/generate-pdf", async (req, res) => {
+  const { id } = req.params;
+  const isLegacy = req.query.legacy === "true";
+
+  try {
+    const quote = await getQuoteById(id, isLegacy);
+    if (!quote) {
+      return res.status(404).json({ error: "Quote not found" });
+    }
+
+    const html = await renderQuoteHTML(quote);
+
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+
+    const page = await browser.newPage();
+    page.on("console", msg => console.log("Page console:", msg.text()));
+
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    await new Promise(r => setTimeout(r, 500)); // tiny settle
+
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "20mm", bottom: "20mm", left: "10mm", right: "10mm" },
+    });
+
+    await browser.close();
+
+    // 🧪 Server-side sanity log
+    console.log("PDF bytes:", pdfBuffer.length, "head:", pdfBuffer.slice(0,5).toString());
+
+    // Preview inline while testing
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename=quote-${id}.pdf`,
+      "Content-Length": pdfBuffer.length,
+    });
+    return res.end(pdfBuffer);
+  } catch (err) {
+    console.error("PDF generation error:", err);
+    return res.status(500).json({ error: "Failed to generate PDF", detail: String(err?.message || err) });
+  }
+});
+
+app.post("/api/quotes/html-to-pdf", async (req, res) => {
+  try {
+    const { html } = req.body;
+    if (!html) return res.status(400).json({ error: "Missing HTML content" });
+
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    await new Promise(r => setTimeout(r, 800)); // small delay for fonts/images
+
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "20mm", bottom: "20mm", left: "10mm", right: "10mm" },
+    });
+
+    await browser.close();
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename=quote.pdf`,
+      "Content-Length": pdfBuffer.length,
+    });
+    res.end(pdfBuffer);
+  } catch (err) {
+    console.error("❌ html-to-pdf failed:", err);
+    res.status(500).json({ error: "Failed to generate PDF" });
+  }
+});
 
 
 

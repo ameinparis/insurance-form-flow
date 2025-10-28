@@ -26,13 +26,13 @@ const LifeFuneralQuotationForm = () => {
   })
 
 
-  const termsAndConditions = `
-    This quotation outlines projected premiums for the selected funeral cover scheme. Premiums are based on the age, relationship, and cover amounts submitted, and are subject to change pending underwriting and validation of all data.
+  // const termsAndConditions = `
+  //   This quotation outlines projected premiums for the selected funeral cover scheme. Premiums are based on the age, relationship, and cover amounts submitted, and are subject to change pending underwriting and validation of all data.
 
-    Exclusive Life reserves the right to review and adjust these premiums at policy issuance. This quotation does not constitute a binding contract. Actual policy terms and conditions will be provided upon application approval.
+  //   Exclusive Life reserves the right to review and adjust these premiums at policy issuance. This quotation does not constitute a binding contract. Actual policy terms and conditions will be provided upon application approval.
 
-    This quotation is confidential and may not be altered. Any unauthorized modifications will render this quote invalid.
-  `
+  //   This quotation is confidential and may not be altered. Any unauthorized modifications will render this quote invalid.
+  // `
 
   const [formData, setFormData] = useState({
     profitTarget: "",
@@ -195,7 +195,6 @@ const LifeFuneralQuotationForm = () => {
           client: customerDetails,
           inputs: formData,
           outputs: premiumResult,
-          termsAndConditions
 
         }),
       })
@@ -711,23 +710,7 @@ const LifeFuneralQuotationForm = () => {
               </Card>
             </div>
 
-            {/* Terms Card */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Terms and Conditions</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm space-y-3">
-                <p>
-                  This quotation outlines projected premiums for the selected funeral cover scheme. Premiums are based on the age, relationship, and cover amounts submitted, and are subject to change pending underwriting and validation of all data.
-                </p>
-                <p>
-                  Exclusive Life reserves the right to review and adjust these premiums at policy issuance. This quotation does not constitute a binding contract. Actual policy terms and conditions will be provided upon application approval.
-                </p>
-                <p>
-                  This quotation is confidential and may not be altered. Any unauthorized modifications will render this quote invalid.
-                </p>
-              </CardContent>
-            </Card>
+
 
             {/* Actions */}
             <div className="flex justify-between mt-6">

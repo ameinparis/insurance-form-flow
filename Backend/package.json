@@ -34,6 +34,7 @@
     "node-cache": "^5.1.2",
     "papaparse": "^5.5.3",
     "pdf-poppler": "^0.2.1",
+    "puppeteer": "^24.26.1",
     "socket.io": "^4.7.5",
     "xlsx": "^0.18.5"
   },

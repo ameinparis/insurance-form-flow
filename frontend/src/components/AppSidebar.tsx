@@ -19,7 +19,7 @@ const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Calculator", url: "/calculator", icon: Calculator },
   { title: "Quotation Management", url: "/quotes", icon: FileText },
-  { title: "Basic Details", url: "/quote/personal-details", icon: User },
+  // { title: "Basic Details", url: "/quote/personal-details", icon: User },
 ]
 
 const settingsItems = [
@@ -55,12 +55,14 @@ return (
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
-                        className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-muted-foreground/60 hover:text-primary hover:bg-muted/40"
-                          }`
-                        }
+                      className={({ isActive }) =>
+  `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+    isActive
+      ? "bg-muted text-sidebar-foreground font-semibold"
+      : "text-sidebar-foreground hover:bg-muted/40"
+  }`
+}
+
                       >
                         <item.icon className="h-5 w-5 flex-shrink-0" />
                         {open && <span className="text-sm">{item.title}</span>}
@@ -113,12 +115,14 @@ return (
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
-                        className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-muted-foreground/60 hover:text-primary hover:bg-muted/40"
-                          }`
-                        }
+                       className={({ isActive }) =>
+  `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+    isActive
+      ? "bg-muted text-sidebar-foreground font-semibold"
+      : "text-sidebar-foreground hover:bg-muted/40"
+  }`
+}
+
                       >
                         <item.icon className="h-5 w-5 flex-shrink-0" />
                         {open && <span className="text-sm">{item.title}</span>}

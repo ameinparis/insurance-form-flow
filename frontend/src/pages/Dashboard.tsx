@@ -110,7 +110,7 @@ const Dashboard = () => {
       </div>
 
       {/* Chart Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="font-heading">Performance Overview</CardTitle>
@@ -130,7 +130,7 @@ const Dashboard = () => {
             <SimpleChart data={dummyChartData.categoryData} type="pie" className="h-[300px]" />
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
       {/* Recent Quotes Table */}
       <Card>

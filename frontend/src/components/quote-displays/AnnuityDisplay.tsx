@@ -36,6 +36,11 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
   return (
     <div className="bg-white dark:bg-slate-900 p-8 space-y-8">
       {/* Personal & Annuity Details */}
+           <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 inline-block">
+            Quotation for {clientData?.fullName || "Client Name"}
+          </h2>
+        </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
         <div className="flex justify-between border-b border-gray-300 dark:border-gray-700 py-2">
           <span className="font-medium text-gray-700 dark:text-gray-300">Date of Birth:</span>
@@ -148,7 +153,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Name:
+            Signature:
             </label>
             <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
           </div>
@@ -159,12 +164,12 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
             <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
           </div>
         </div>
-        <div className="mt-6">
+        {/* <div className="mt-6">
           <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-            Signature:
+          
           </label>
           <div className="border-b-2 border-gray-400 dark:border-gray-600 h-16" />
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -260,7 +260,7 @@ Insurance will not accept liability for any losses incurred as a result of using
       {/* Step 1: Living Annuity */}
       <Card>
         <CardHeader>
-          <CardTitle>Living Annuity Setup</CardTitle>
+          <CardTitle>Living Annuity</CardTitle>
           <CardDescription>Step 1: calculate living annuity and funds remaining.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -509,16 +509,16 @@ Insurance will not accept liability for any losses incurred as a result of using
               <CardContent className="space-y-4">
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="font-medium">Age at Start:</span>
+                    <span className="font-medium">Age at start of Living Annuity</span>
                     <span>{age} years</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-medium">Purchase Amount:</span>
+                    <span className="font-medium">Purchase Amount</span>
                     <span>{fmtMoney(toNum(amountRaw))}</span>
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="font-medium">Drawdown Rate:</span>
+                    <span className="font-medium">Living Annuity Drawdown Percentage (%)</span>
                     <span>{drawdown}%</span>
                   </div>
 
@@ -527,7 +527,7 @@ Insurance will not accept liability for any losses incurred as a result of using
                   {livingResult && (
                     <>
                       <div className="space-y-2">
-                        <h4 className="font-semibold text-primary">Living Annuity Phase</h4>
+                        <h4 className="font-semibold text-primary">Living Annuity</h4>
                         <div className="flex justify-between">
                           <span>Guarantee Period:</span>
                           <span>{livingResult.guarantee_period} years</span>
@@ -561,7 +561,7 @@ Insurance will not accept liability for any losses incurred as a result of using
 
                   {lifeResult && (
                     <div className="space-y-2">
-                      <h4 className="font-semibold text-primary">Life Annuity Phase</h4>
+                      <h4 className="font-semibold text-primary">Life Annuity</h4>
                       <div className="flex justify-between">
                         <span>Monthly Life Annuity:</span>
                         <span>{fmtMoney(lifeResult.monthly_annuity)}</span>
