@@ -1,4 +1,3 @@
-import sys
 from waitress import serve
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from calculations.livingannuity import app as living_annuity_app

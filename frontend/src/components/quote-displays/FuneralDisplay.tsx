@@ -3,8 +3,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from "@/components/ui/table";
 
@@ -13,15 +11,24 @@ interface FuneralDisplayProps {
 }
 
 export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
-  const { client, inputs, outputs } = quote;
+  const { client, inputs, outputs } = quote || {};
 
-  const getRow = (status: string) => outputs?.rows?.find((row: any) => row.memberStatus === status);
+  // 🧭 Fuzzy matching helper — case-insensitive, partial match
+  const getRow = (keyword: string) =>
+    outputs?.rows?.find(
+      (row: any) =>
+        row?.memberStatus &&
+        row.memberStatus.toLowerCase().includes(keyword.toLowerCase())
+    );
 
-const premiumPerFamily = getRow("Premium Per Family")?.totalPremium;
-const premiumPerMember = getRow("Premium Per Member")?.totalPremium; // (optional)
-const premiumPerParent = getRow("Parents")?.totalPremium;
-const premiumPerExtended = getRow("Extended Family")?.totalPremium;
+  // 🧩 Log what’s coming from backend — so you can confirm Excel labels
+  console.log("🧾 FuneralDisplay outputs:", outputs?.rows);
 
+  // 🧮 Extract the relevant premiums safely
+  const premiumPerFamily = getRow("family")?.totalPremium;
+  const premiumPerMember = getRow("member")?.totalPremium;
+  const premiumPerParent = getRow("parent")?.totalPremium;
+  const premiumPerExtended = getRow("extended")?.totalPremium;
 
   return (
     <div className="bg-white dark:bg-slate-900 p-8 space-y-10">
@@ -29,7 +36,7 @@ const premiumPerExtended = getRow("Extended Family")?.totalPremium;
       <section className="space-y-4">
         <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 inline-block">
-            Quotation for {client?.companyName || "Client Name"}
+           Group Funeral Scheme Quotation for {client?.companyName || "Client Name"}
           </h2>
         </div>
         <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -42,58 +49,50 @@ const premiumPerExtended = getRow("Extended Family")?.totalPremium;
 
       {/* General Conditions */}
       <section className="space-y-2">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">GENERAL CONDITIONS</h3>
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+          GENERAL CONDITIONS
+        </h3>
         <ul className="list-disc ml-6 text-sm text-gray-700 dark:text-gray-300 space-y-1">
           <li>The standard group funeral insurance wording terms and conditions will apply unless otherwise agreed.</li>
           <li>Any additional covers or extensions will be subject to additional premium.</li>
           <li>All values quoted are inclusive of VAT unless otherwise stated.</li>
           <li>This quote is valid for 30 days.</li>
-          <li>The quoted premium is inclusive of commission at 10% +VAT</li>
+          <li>The quoted premium is inclusive of commission at 10% + VAT.</li>
         </ul>
       </section>
 
       {/* Pricing Summary */}
       <section className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">PRICING SUMMARY</h3>
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+          PRICING SUMMARY
+        </h3>
 
-        {/* Member and Family */}
+        {/* 1. Member and Family */}
         <div className="space-y-1">
-          <h4 className="font-medium text-gray-700 dark:text-gray-300">1. Member and Family</h4>
+          <h4 className="font-medium text-gray-700 dark:text-gray-300">
+            1. Member and Family
+          </h4>
           <Table className="border border-gray-300 dark:border-gray-700">
-            <TableHeader>
-              <TableRow className="bg-gray-100 dark:bg-slate-800">
-                <TableHead>Relationship</TableHead>
-                <TableHead>Benefit Level</TableHead>
-                <TableHead className="text-right">% Cover</TableHead>
-              </TableRow>
-            </TableHeader>
             <TableBody>
-              <TableRow><TableCell>Main member</TableCell><TableCell>{formatCurrency(inputs?.principalMemberCover)}</TableCell><TableCell className="text-right">100%</TableCell></TableRow>
-              <TableRow><TableCell>Spouse</TableCell><TableCell>{formatCurrency(inputs?.spouseCover)}</TableCell><TableCell className="text-right">100%</TableCell></TableRow>
-              <TableRow><TableCell>Child 16-21</TableCell><TableCell>{formatCurrency(inputs?.children16toMax)}</TableCell><TableCell className="text-right">100%</TableCell></TableRow>
-              <TableRow><TableCell>Child 6-15</TableCell><TableCell>{formatCurrency(inputs?.children6to15)}</TableCell><TableCell className="text-right">75%</TableCell></TableRow>
-              <TableRow><TableCell>Child 1-5</TableCell><TableCell>{formatCurrency(inputs?.children1to5)}</TableCell><TableCell className="text-right">50%</TableCell></TableRow>
-              <TableRow><TableCell>Child &lt;1</TableCell><TableCell>{formatCurrency(inputs?.children0to1)}</TableCell><TableCell className="text-right">25%</TableCell></TableRow>
               <TableRow className="font-bold bg-gray-100 dark:bg-slate-800">
                 <TableCell>Monthly Premium Per Family</TableCell>
                 <TableCell>{formatCurrency(premiumPerFamily)}</TableCell>
-                <TableCell></TableCell>
               </TableRow>
               <TableRow className="font-bold bg-gray-100 dark:bg-slate-800">
                 <TableCell>Monthly Premium Per Member</TableCell>
                 <TableCell>{formatCurrency(premiumPerMember)}</TableCell>
-                <TableCell></TableCell>
               </TableRow>
             </TableBody>
           </Table>
         </div>
 
-        {/* Parents */}
+        {/* 2. Parents */}
         <div className="space-y-1">
-          <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">2. Parents and Parents-in-Law</h4>
+          <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">
+            2. Parents and Parents-in-Law
+          </h4>
           <Table className="border border-gray-300 dark:border-gray-700">
             <TableBody>
-              <TableRow><TableCell>Parents</TableCell><TableCell>{formatCurrency(inputs?.parentsCover)}</TableCell></TableRow>
               <TableRow className="font-bold bg-gray-100 dark:bg-slate-800">
                 <TableCell>Monthly Premium Per Parent</TableCell>
                 <TableCell>{formatCurrency(premiumPerParent)}</TableCell>
@@ -102,12 +101,13 @@ const premiumPerExtended = getRow("Extended Family")?.totalPremium;
           </Table>
         </div>
 
-        {/* Extended Family */}
+        {/* 3. Extended Family */}
         <div className="space-y-1">
-          <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">3. Extended Family Members</h4>
+          <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">
+            3. Extended Family Members
+          </h4>
           <Table className="border border-gray-300 dark:border-gray-700">
             <TableBody>
-              <TableRow><TableCell>Extended Family</TableCell><TableCell>{formatCurrency(inputs?.extendedFamilyCover)}</TableCell></TableRow>
               <TableRow className="font-bold bg-gray-100 dark:bg-slate-800">
                 <TableCell>Monthly Premium Per Member</TableCell>
                 <TableCell>{formatCurrency(premiumPerExtended)}</TableCell>
@@ -117,9 +117,11 @@ const premiumPerExtended = getRow("Extended Family")?.totalPremium;
         </div>
       </section>
 
-      {/* Policy Specifications */}
+      {/* Policy Specs */}
       <section className="space-y-2">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mt-6">C: Broad Policy Specifications</h3>
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mt-6">
+          C: Broad Policy Specifications
+        </h3>
         <Table className="border border-gray-300 dark:border-gray-700">
           <TableBody>
             <TableRow>
@@ -151,14 +153,11 @@ const premiumPerExtended = getRow("Extended Family")?.totalPremium;
                 </ul>
               </TableCell>
             </TableRow>
-            {/* <TableRow>
-              <TableCell className="font-medium">Waiting Period</TableCell>
-              <TableCell></TableCell>
-            </TableRow> */}
           </TableBody>
         </Table>
       </section>
-            {/* Customer Acceptance Signature Section */}
+
+      {/* Customer Acceptance */}
       <div className="mt-12 pt-8 border-t-2 border-gray-300 dark:border-gray-700">
         <h3 className="text-lg font-semibold mb-6 text-gray-800 dark:text-gray-100">
           Customer Acceptance
@@ -166,7 +165,7 @@ const premiumPerExtended = getRow("Extended Family")?.totalPremium;
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-            Signature:
+              Signature:
             </label>
             <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
           </div>
@@ -177,12 +176,6 @@ const premiumPerExtended = getRow("Extended Family")?.totalPremium;
             <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
           </div>
         </div>
-        {/* <div className="mt-6">
-          <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-          
-          </label>
-          <div className="border-b-2 border-gray-400 dark:border-gray-600 h-16" />
-        </div> */}
       </div>
     </div>
   );

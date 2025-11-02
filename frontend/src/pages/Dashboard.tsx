@@ -147,17 +147,16 @@ const Dashboard = () => {
           ) : (
             <>
               <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead>Quote ID</TableHead>
-                    <TableHead>Client Name</TableHead>
-                    <TableHead>Quote Type</TableHead>
-                    <TableHead>Created By</TableHead>
-                    <TableHead>Date Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-
-                  </TableRow>
-                </TableHeader>
+             <TableHeader>
+              <TableRow className="bg-stone-100 border-stone-200 hover:bg-stone-100 dark:bg-stone-700 dark:border-stone-600 dark:hover:bg-stone-700">
+                <TableHead className="font-semibold text-stone-700 dark:text-stone-300">Quote ID</TableHead>
+                <TableHead className="font-semibold text-stone-700 dark:text-stone-300">Client Name</TableHead>
+                <TableHead className="font-semibold text-stone-700 dark:text-stone-300">Quote Type</TableHead>
+                <TableHead className="font-semibold text-stone-700 dark:text-stone-300">Created By</TableHead>
+                <TableHead className="font-semibold text-stone-700 dark:text-stone-300">Date Created</TableHead>
+                <TableHead className="text-right font-semibold text-stone-700 dark:text-stone-300">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
                 <TableBody>
                   {recentQuotes.map((quote, idx) => (
                     <TableRow key={quote.id} className={idx % 2 === 0 ? "bg-background" : "bg-muted/20"}>
