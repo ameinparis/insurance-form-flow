@@ -145,7 +145,7 @@ Insurance will not accept liability for any losses incurred as a result of using
         ongoingCommission: safeNum(ongoingNum),
       }
 
-      const { data } = await axios.post("http://localhost:5002/api/quotes/calculate-annuity", payload)
+      const { data } = await axios.post("https://njs.exclusivelife.co.bw/api/quotes/calculate-annuity", payload)
       const res = data.output
 
       setLivingResult(res)
@@ -173,7 +173,7 @@ Insurance will not accept liability for any losses incurred as a result of using
         age: gsaNum,
         purchaseAmount: toNum(lifePurchaseAmount),
       }
-      const { data } = await axios.post("http://localhost:5002/api/quotes/calculate-annuity", payload)
+      const { data } = await axios.post("https://njs.exclusivelife.co.bw/api/quotes/calculate-annuity", payload)
       const res = data.output
 
       setLifeResult(res)
@@ -236,7 +236,7 @@ Insurance will not accept liability for any losses incurred as a result of using
 
       // 🔹 Send to the backend
       const { data } = await axios.post(
-        "http://localhost:5002/api/new-quotes",
+        "https://njs.exclusivelife.co.bw/api/new-quotes",
         payload,
         {
           headers: {

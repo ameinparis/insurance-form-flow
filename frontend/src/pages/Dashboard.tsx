@@ -34,10 +34,10 @@ const Dashboard = () => {
         const token = localStorage.getItem("token");
 
         const [oldRes, newRes] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes`, {
+          fetch(`${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/quotes`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes`, {
+          fetch(`${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/new-quotes`, {
             headers: { Authorization: `Bearer ${token}` },
           })
         ]);
@@ -89,7 +89,7 @@ const Dashboard = () => {
   const handleDeleteQuote = async (quoteId: string) => {
     try {
       const token = localStorage.getItem("token")
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes/${quoteId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/quotes/${quoteId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       })
