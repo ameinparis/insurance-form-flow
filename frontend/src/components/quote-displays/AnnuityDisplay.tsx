@@ -71,7 +71,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
             Living Annuity per Month{inputData?.age && inputData?.guaranteedStartAge ? ` (Age ${inputData.age} to ${inputData.guaranteedStartAge})` : ''}:
           </span>
           <span className="font-semibold text-gray-800 dark:text-gray-100">
-            {formatCurrency(outputData?.living?.retirement_annuity)}
+            {formatCurrency(outputData?.living?.guaranteed_annuity)}
           </span>
         </div>
         <div className="flex justify-between border-b border-gray-300 dark:border-gray-700 py-2">

@@ -124,6 +124,7 @@ Insurance will not accept liability for any losses incurred as a result of using
 
   const lifeDisabled = !livingResult || !Number.isFinite(toNum(lifePurchaseAmount)) || toNum(lifePurchaseAmount) <= 0
 
+  
   // === BACKEND CALLS ===
   const handleLivingCalc = async () => {
     if (livingDisabled) {
@@ -534,7 +535,8 @@ Insurance will not accept liability for any losses incurred as a result of using
                         </div>
                         <div className="flex justify-between">
                           <span>{frequency} Payment:</span>
-                          <span>{fmtMoney(livingResult.guaranteed_annuity)}</span>
+                          {/* focus here match to actual quote */}
+                          <span>{fmtMoney(livingResult.guaranteed_annuity)}</span> 
                         </div>
                         <div className="flex justify-between">
                           <span>Funds Remaining at {guaranteedStartAge}:</span>
