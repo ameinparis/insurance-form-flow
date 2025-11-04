@@ -233,39 +233,27 @@ useEffect(() => {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-100 dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800">
+                  <TableRow className="bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800">
                     <TableHead className="font-semibold text-gray-700 dark:text-gray-200 py-4">
-                      <div className="flex items-center gap-1">
-                        SL <ArrowUpDown className="h-3 w-3" />
-                      </div>
+                      SL
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 dark:text-gray-200">
-                      <div className="flex items-center gap-1">
-                        Quote ID <ArrowUpDown className="h-3 w-3" />
-                      </div>
+                      Quote ID
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 dark:text-gray-200">
-                      <div className="flex items-center gap-1">
-                        Client Name <ArrowUpDown className="h-3 w-3" />
-                      </div>
+                      Client Name
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 dark:text-gray-200">Email</TableHead>
                     <TableHead className="font-semibold text-gray-700 dark:text-gray-200">Phone</TableHead>
                     <TableHead className="font-semibold text-gray-700 dark:text-gray-200">Type</TableHead>
                     <TableHead className="font-semibold text-gray-700 dark:text-gray-200">
-                      <div className="flex items-center gap-1">
-                        Created By <ArrowUpDown className="h-3 w-3" />
-                      </div>
+                      Created By
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700 dark:text-gray-200">
-                      <div className="flex items-center gap-1">
-                        Date <ArrowUpDown className="h-3 w-3" />
-                      </div>
+                      Date
                     </TableHead>
                     <TableHead className="text-right font-semibold text-gray-700 dark:text-gray-200">
-                      <div className="flex items-center justify-end gap-1">
-                        Action <ArrowUpDown className="h-3 w-3" />
-                      </div>
+                      Action
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -273,7 +261,7 @@ useEffect(() => {
                   {filteredAndSortedQuotes.map((quote, idx) => (
                     <TableRow 
                       key={quote.id} 
-                      className={idx % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-gray-50 dark:bg-slate-900/50"}
+                      className={idx % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-gray-50/50 dark:bg-slate-900/50"}
                     >
                       <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                         {String(idx + 1).padStart(2, '0')}
