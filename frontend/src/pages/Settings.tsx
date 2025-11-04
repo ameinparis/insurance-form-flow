@@ -34,13 +34,13 @@ const Settings = () => {
   const handleAddUser = async () => {
     try {
       const token = localStorage.getItem("token")
-      await axios.post("https://njs.exclusivelife.co.bw/api/users/register", newUser, {
+      await axios.post("http://localhost:5002/api/users/register", newUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setShowAddUserModal(false)
       setNewUser({ firstName: "", lastName: "", email: "", role: "user" })
       // Refresh user list
-      const res = await axios.get("https://njs.exclusivelife.co.bw/api/users", {
+      const res = await axios.get("http://localhost:5002/api/users", {
         headers: { Authorization: `Bearer ${token}` }
       })
       const mapped = res.data.map((user: any, idx: number) => ({
@@ -62,7 +62,7 @@ const Settings = () => {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem("token") // adjust if stored differently
-        const res = await axios.get("https://njs.exclusivelife.co.bw/api/users", {
+        const res = await axios.get("http://localhost:5002/api/users", {
           headers: { Authorization: `Bearer ${token}` }
         })
         const mapped = res.data.map((user: any, idx: number) => ({
