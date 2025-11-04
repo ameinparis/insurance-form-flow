@@ -43,7 +43,8 @@ All colors MUST be HSL.
     --popover-foreground: 240 10% 15%;
 
     --brand-accent: 207 100% 62%;     /* Blue accent #418dff */
-    --primary: 207 100% 62%;          /* Blue primary #418dff */
+    --primary: 210 95% 13%;           /* Navy blue #031d42 */
+    --primary-hover: 210 95% 16%;     /* Navy blue hover #052851 */
     --primary-foreground: 0 0% 100%;
     
     --primary-gradient-from: 207 100% 62%;
@@ -91,7 +92,8 @@ All colors MUST be HSL.
     --popover-foreground: 0 0% 95%;
 
     --brand-accent: 207 100% 62%;     /* Blue accent #418dff */
-    --primary: 207 100% 62%;          /* Blue primary #418dff */
+    --primary: 210 95% 13%;           /* Navy blue #031d42 */
+    --primary-hover: 210 95% 16%;     /* Navy blue hover #052851 */
     --primary-foreground: 0 0% 100%;
     
     --primary-gradient-from: 207 100% 62%;
