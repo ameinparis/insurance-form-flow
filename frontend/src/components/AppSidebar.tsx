@@ -37,7 +37,7 @@ export function AppSidebar() {
   }
 
 return (
-<Sidebar className="bg-blue  w-64 rounded-2xl shadow-md ml-2 sticky top-28 h-[85vh] overflow-hidden">
+<Sidebar className="w-64 rounded-2xl shadow-md sticky top-0 h-[calc(100vh-10rem)] overflow-hidden">
   <SidebarContent className="px-4 pt-6 pb-12 flex flex-col gap-4 bg-transparent">
     <div className="text-center text-muted-foreground text-sm">
           <SidebarGroup>
