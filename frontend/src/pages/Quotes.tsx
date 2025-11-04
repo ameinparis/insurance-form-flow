@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Calculator, Download, Eye, Trash2, FileText, Search, Filter } from "lucide-react"
+import { Calculator, Download, Eye, Trash2, FileText, Search, Filter, ArrowUpDown } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
@@ -17,6 +17,25 @@ const Quotes = () => {
   const [quotes, setQuotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const { userRole } = useAuth()
+
+  // Helper function to get badge color based on quote type
+  const getQuoteTypeBadgeClass = (type: string) => {
+    const normalizedType = type.toLowerCase()
+    if (normalizedType.includes("annuity")) {
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-300 dark:border-blue-700"
+    } else if (normalizedType.includes("funeral")) {
+      return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-300 dark:border-purple-700"
+    } else if (normalizedType.includes("life")) {
+      return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-300 dark:border-green-700"
+    } else if (normalizedType.includes("credit")) {
+      return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-300 dark:border-orange-700"
+    } else if (normalizedType.includes("disability")) {
+      return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700"
+    } else if (normalizedType.includes("critical")) {
+      return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-300 dark:border-red-700"
+    }
+    return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-300 dark:border-gray-700"
+  }
 
 useEffect(() => {
   const fetchQuotes = async () => {
@@ -211,68 +230,118 @@ useEffect(() => {
       ) : (
         <Card>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Quote ID</TableHead>
-                  <TableHead>Client Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Created By</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAndSortedQuotes.map((quote, idx) => (
-                  <TableRow key={quote.id} className={idx % 2 === 0 ? "bg-background" : "bg-muted/20"}>
-                    <TableCell className="font-medium">#{quote.quoteId}</TableCell>
-                    <TableCell>{quote.fullName || "Unnamed"}</TableCell>
-                    <TableCell className="text-primary underline">{quote.email || "—"}</TableCell>
-                    <TableCell>{quote.contactNumber || "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{quote.type || "Funeral"}</Badge>
-                    </TableCell>
-                    <TableCell>{quote.createdByName}</TableCell>
-                    <TableCell>{new Date(quote.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
-                          title="View Quote"
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-100 dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-slate-800">
+                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200 py-4">
+                      <div className="flex items-center gap-1">
+                        SL <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">
+                      <div className="flex items-center gap-1">
+                        Quote ID <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">
+                      <div className="flex items-center gap-1">
+                        Client Name <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">Email</TableHead>
+                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">Phone</TableHead>
+                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">Type</TableHead>
+                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">
+                      <div className="flex items-center gap-1">
+                        Created By <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">
+                      <div className="flex items-center gap-1">
+                        Date <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-right font-semibold text-gray-700 dark:text-gray-200">
+                      <div className="flex items-center justify-end gap-1">
+                        Action <ArrowUpDown className="h-3 w-3" />
+                      </div>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAndSortedQuotes.map((quote, idx) => (
+                    <TableRow 
+                      key={quote.id} 
+                      className={idx % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-gray-50 dark:bg-slate-900/50"}
+                    >
+                      <TableCell className="font-medium text-gray-900 dark:text-gray-100">
+                        {String(idx + 1).padStart(2, '0')}
+                      </TableCell>
+                      <TableCell className="font-medium text-gray-900 dark:text-gray-100">
+                        {quote.quoteId}
+                      </TableCell>
+                      <TableCell className="text-gray-900 dark:text-gray-100">
+                        {quote.fullName || "Unnamed"}
+                      </TableCell>
+                      <TableCell className="text-gray-600 dark:text-gray-400">
+                        {quote.email || "—"}
+                      </TableCell>
+                      <TableCell className="text-gray-900 dark:text-gray-100">
+                        {quote.contactNumber || "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="outline" 
+                          className={`rounded-full px-3 py-1 text-xs font-medium ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
                         >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8"
-                          onClick={() => toast.info("Download feature coming soon")}
-                          title="Download Quote"
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        {userRole === "superuser" && (
+                          {quote.type || "Unknown"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-gray-900 dark:text-gray-100">
+                        {quote.createdByName}
+                      </TableCell>
+                      <TableCell className="text-gray-900 dark:text-gray-100">
+                        {new Date(quote.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDeleteQuote(quote.id)}
-                            title="Delete Quote"
+                            className="h-8 w-8 hover:bg-gray-200 dark:hover:bg-slate-700"
+                            onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
+                            title="View Quote"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Eye className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                           </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 hover:bg-gray-200 dark:hover:bg-slate-700"
+                            onClick={() => toast.info("Download feature coming soon")}
+                            title="Download Quote"
+                          >
+                            <Download className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                          </Button>
+                          {userRole === "superuser" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              onClick={() => handleDeleteQuote(quote.id)}
+                              title="Delete Quote"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
             <div className="flex items-center justify-between p-4 border-t">
               <p className="text-sm text-muted-foreground">
