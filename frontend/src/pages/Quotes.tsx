@@ -241,101 +241,95 @@ useEffect(() => {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="p-6">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50/80 dark:bg-slate-800/50 border-b-2 border-gray-200/60 dark:border-gray-700/60 hover:bg-gray-50/80 dark:hover:bg-slate-800/50">
-                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 py-4 text-sm">SL</TableHead>
-                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Quote ID</TableHead>
-                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Client Name</TableHead>
-                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Email</TableHead>
-                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Phone</TableHead>
-                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Type</TableHead>
-                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Created By</TableHead>
-                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Date</TableHead>
-                    <TableHead className="text-right font-medium text-gray-600 dark:text-gray-300 text-sm">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="space-y-2">
-                  {currentQuotes.map((quote, idx) => (
-                    <TableRow 
-                      key={quote.id} 
-                      className={`
-                        ${idx % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-gray-50/30 dark:bg-slate-900/30"}
-                        border-b border-gray-100 dark:border-gray-800
-                        hover:shadow-md hover:scale-[1.01] transition-all duration-200
-                        rounded-lg my-1
-                      `}
-                    >
-                      <TableCell className="py-5 text-gray-700 dark:text-gray-300 font-normal">
-                        {String(startIndex + idx + 1).padStart(2, '0')}
-                      </TableCell>
-                      <TableCell className="py-5 font-medium text-gray-900 dark:text-gray-100">
-                        {quote.quoteId}
-                      </TableCell>
-                      <TableCell className="py-5 text-gray-700 dark:text-gray-300 font-normal">
-                        {quote.fullName || "Unnamed"}
-                      </TableCell>
-                      <TableCell className="py-5 text-gray-600 dark:text-gray-400 font-normal">
-                        {quote.email || "—"}
-                      </TableCell>
-                      <TableCell className="py-5 text-gray-700 dark:text-gray-300 font-normal">
-                        {quote.contactNumber || "—"}
-                      </TableCell>
-                      <TableCell className="py-5">
-                        <Badge 
-                          variant="outline" 
-                          className={`rounded-full px-3 py-1.5 text-xs font-medium border ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
+        <div className="bg-gray-50/30 dark:bg-slate-900/30 rounded-xl p-6">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50/80 dark:bg-slate-800/50 border-none hover:bg-gray-50/80 dark:hover:bg-slate-800/50">
+                  <TableHead className="font-medium text-gray-600 dark:text-gray-300 py-4 text-sm">SL</TableHead>
+                  <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Quote ID</TableHead>
+                  <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Client Name</TableHead>
+                  <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Email</TableHead>
+                  <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Phone</TableHead>
+                  <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Type</TableHead>
+                  <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Created By</TableHead>
+                  <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Date</TableHead>
+                  <TableHead className="text-right font-medium text-gray-600 dark:text-gray-300 text-sm">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentQuotes.map((quote, idx) => (
+                  <TableRow 
+                    key={quote.id} 
+                    className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 mb-3"
+                  >
+                    <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal rounded-l-xl">
+                      {String(startIndex + idx + 1).padStart(2, '0')}
+                    </TableCell>
+                    <TableCell className="py-5 px-6 font-medium text-gray-900 dark:text-gray-100">
+                      {quote.quoteId}
+                    </TableCell>
+                    <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
+                      {quote.fullName || "Unnamed"}
+                    </TableCell>
+                    <TableCell className="py-5 px-6 text-gray-600 dark:text-gray-400 font-normal">
+                      {quote.email || "—"}
+                    </TableCell>
+                    <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
+                      {quote.contactNumber || "—"}
+                    </TableCell>
+                    <TableCell className="py-5 px-6">
+                      <Badge 
+                        variant="outline" 
+                        className={`rounded-full px-3 py-1.5 text-xs font-medium border ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
+                      >
+                        {quote.type || "Unknown"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
+                      {quote.createdByName}
+                    </TableCell>
+                    <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
+                      {new Date(quote.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="py-5 px-6 text-right rounded-r-xl">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 transition-all"
+                          onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
+                          title="View Quote"
                         >
-                          {quote.type || "Unknown"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-5 text-gray-700 dark:text-gray-300 font-normal">
-                        {quote.createdByName}
-                      </TableCell>
-                      <TableCell className="py-5 text-gray-700 dark:text-gray-300 font-normal">
-                        {new Date(quote.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="py-5 text-right">
-                        <div className="flex justify-end gap-2">
+                          <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-9 w-9 rounded-lg bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800 transition-all"
+                          onClick={() => toast.info("Edit feature coming soon")}
+                          title="Edit Quote"
+                        >
+                          <Edit className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        </Button>
+                        {userRole === "superuser" && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-9 w-9 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 transition-all"
-                            onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
-                            title="View Quote"
+                            className="h-9 w-9 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 transition-all"
+                            onClick={() => handleDeleteQuote(quote.id)}
+                            title="Delete Quote"
                           >
-                            <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-9 w-9 rounded-full bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800 transition-all"
-                            onClick={() => toast.info("Edit feature coming soon")}
-                            title="Edit Quote"
-                          >
-                            <Edit className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          </Button>
-                          {userRole === "superuser" && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 rounded-full bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 transition-all"
-                              onClick={() => handleDeleteQuote(quote.id)}
-                              title="Delete Quote"
-                            >
-                              <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
