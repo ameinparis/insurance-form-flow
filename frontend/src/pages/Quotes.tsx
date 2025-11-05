@@ -5,7 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Calculator, Download, Eye, Trash2, FileText, Search, Filter, ArrowUpDown } from "lucide-react"
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
+import { Calculator, Download, Eye, Trash2, FileText, Search, Filter, Edit } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
@@ -16,7 +17,9 @@ const Quotes = () => {
   const [sortBy, setSortBy] = useState("date")
   const [quotes, setQuotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
   const { userRole } = useAuth()
+  const itemsPerPage = 100
 
   // Helper function to get badge color based on quote type
   const getQuoteTypeBadgeClass = (type: string) => {
@@ -149,6 +152,16 @@ useEffect(() => {
     return filtered
   }, [quotes, searchTerm, sortBy])
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredAndSortedQuotes.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentQuotes = filteredAndSortedQuotes.slice(startIndex, endIndex)
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)))
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -229,98 +242,91 @@ useEffect(() => {
         </Card>
       ) : (
         <Card>
-          <CardContent className="p-0">
+          <CardContent className="p-6">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800">
-                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200 py-4">
-                      SL
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">
-                      Quote ID
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">
-                      Client Name
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">Email</TableHead>
-                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">Phone</TableHead>
-                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">Type</TableHead>
-                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">
-                      Created By
-                    </TableHead>
-                    <TableHead className="font-semibold text-gray-700 dark:text-gray-200">
-                      Date
-                    </TableHead>
-                    <TableHead className="text-right font-semibold text-gray-700 dark:text-gray-200">
-                      Action
-                    </TableHead>
+                  <TableRow className="bg-gray-50/80 dark:bg-slate-800/50 border-b-2 border-gray-200/60 dark:border-gray-700/60 hover:bg-gray-50/80 dark:hover:bg-slate-800/50">
+                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 py-4 text-sm">SL</TableHead>
+                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Quote ID</TableHead>
+                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Client Name</TableHead>
+                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Email</TableHead>
+                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Phone</TableHead>
+                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Type</TableHead>
+                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Created By</TableHead>
+                    <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Date</TableHead>
+                    <TableHead className="text-right font-medium text-gray-600 dark:text-gray-300 text-sm">Action</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {filteredAndSortedQuotes.map((quote, idx) => (
+                <TableBody className="space-y-2">
+                  {currentQuotes.map((quote, idx) => (
                     <TableRow 
                       key={quote.id} 
-                      className={idx % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-gray-50/50 dark:bg-slate-900/50"}
+                      className={`
+                        ${idx % 2 === 0 ? "bg-white dark:bg-slate-900" : "bg-gray-50/30 dark:bg-slate-900/30"}
+                        border-b border-gray-100 dark:border-gray-800
+                        hover:shadow-md hover:scale-[1.01] transition-all duration-200
+                        rounded-lg my-1
+                      `}
                     >
-                      <TableCell className="font-medium text-gray-900 dark:text-gray-100">
-                        {String(idx + 1).padStart(2, '0')}
+                      <TableCell className="py-5 text-gray-700 dark:text-gray-300 font-normal">
+                        {String(startIndex + idx + 1).padStart(2, '0')}
                       </TableCell>
-                      <TableCell className="font-medium text-gray-900 dark:text-gray-100">
+                      <TableCell className="py-5 font-medium text-gray-900 dark:text-gray-100">
                         {quote.quoteId}
                       </TableCell>
-                      <TableCell className="text-gray-900 dark:text-gray-100">
+                      <TableCell className="py-5 text-gray-700 dark:text-gray-300 font-normal">
                         {quote.fullName || "Unnamed"}
                       </TableCell>
-                      <TableCell className="text-gray-600 dark:text-gray-400">
+                      <TableCell className="py-5 text-gray-600 dark:text-gray-400 font-normal">
                         {quote.email || "—"}
                       </TableCell>
-                      <TableCell className="text-gray-900 dark:text-gray-100">
+                      <TableCell className="py-5 text-gray-700 dark:text-gray-300 font-normal">
                         {quote.contactNumber || "—"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-5">
                         <Badge 
                           variant="outline" 
-                          className={`rounded-full px-3 py-1 text-xs font-medium ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
+                          className={`rounded-full px-3 py-1.5 text-xs font-medium border ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
                         >
                           {quote.type || "Unknown"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-gray-900 dark:text-gray-100">
+                      <TableCell className="py-5 text-gray-700 dark:text-gray-300 font-normal">
                         {quote.createdByName}
                       </TableCell>
-                      <TableCell className="text-gray-900 dark:text-gray-100">
+                      <TableCell className="py-5 text-gray-700 dark:text-gray-300 font-normal">
                         {new Date(quote.createdAt).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="py-5 text-right">
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 hover:bg-gray-200 dark:hover:bg-slate-700"
+                            className="h-9 w-9 rounded-full bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 transition-all"
                             onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
                             title="View Quote"
                           >
-                            <Eye className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                            <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                           </Button>
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 hover:bg-gray-200 dark:hover:bg-slate-700"
-                            onClick={() => toast.info("Download feature coming soon")}
-                            title="Download Quote"
+                            className="h-9 w-9 rounded-full bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800 transition-all"
+                            onClick={() => toast.info("Edit feature coming soon")}
+                            title="Edit Quote"
                           >
-                            <Download className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                            <Edit className="h-4 w-4 text-green-600 dark:text-green-400" />
                           </Button>
                           {userRole === "superuser" && (
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              className="h-9 w-9 rounded-full bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 transition-all"
                               onClick={() => handleDeleteQuote(quote.id)}
                               title="Delete Quote"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
                             </Button>
                           )}
                         </div>
@@ -331,9 +337,67 @@ useEffect(() => {
               </Table>
             </div>
 
-            <div className="flex items-center justify-between p-4 border-t">
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex justify-center">
+                <Pagination>
+                  <PaginationContent className="gap-1">
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => goToPage(currentPage - 1)}
+                        className={`rounded-lg ${currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800'}`}
+                      />
+                    </PaginationItem>
+                    
+                    {[...Array(totalPages)].map((_, i) => {
+                      const pageNum = i + 1
+                      if (
+                        pageNum === 1 ||
+                        pageNum === totalPages ||
+                        (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                      ) {
+                        return (
+                          <PaginationItem key={pageNum}>
+                            <PaginationLink
+                              onClick={() => goToPage(pageNum)}
+                              isActive={currentPage === pageNum}
+                              className={`rounded-lg cursor-pointer min-w-10 ${
+                                currentPage === pageNum
+                                  ? 'bg-emerald-500 text-white hover:bg-emerald-600 border-emerald-500'
+                                  : 'hover:bg-gray-100 dark:hover:bg-slate-800'
+                              }`}
+                            >
+                              {pageNum}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )
+                      } else if (
+                        pageNum === currentPage - 2 ||
+                        pageNum === currentPage + 2
+                      ) {
+                        return (
+                          <PaginationItem key={pageNum}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        )
+                      }
+                      return null
+                    })}
+
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => goToPage(currentPage + 1)}
+                        className={`rounded-lg ${currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800'}`}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
               <p className="text-sm text-muted-foreground">
-                Showing {filteredAndSortedQuotes.length} out of {quotes.length} quotes
+                Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedQuotes.length)} of {filteredAndSortedQuotes.length} quotes
               </p>
             </div>
           </CardContent>
