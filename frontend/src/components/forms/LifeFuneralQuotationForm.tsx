@@ -207,7 +207,7 @@ const handleInputChange = (field: string, value: string) => {
   Object.entries(cleanedFormData).forEach(([key, value]) => payload.append(key, value));
 
   try {
-    const res = await fetch("http://localhost:5002/api/quotes/calculate-funeral", {
+    const res = await fetch("https://njs.exclusivelife.co.bw/api/quotes/calculate-funeral", {
       method: "POST",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       body: payload
@@ -236,7 +236,7 @@ const handleInputChange = (field: string, value: string) => {
     }
 
     try {
-      const res = await fetch("http://localhost:5002/api/new-quotes", {
+      const res = await fetch("https://njs.exclusivelife.co.bw/api/new-quotes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
