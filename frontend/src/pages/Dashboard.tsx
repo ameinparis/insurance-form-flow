@@ -179,37 +179,51 @@ const Dashboard = () => {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50/80 dark:bg-slate-800/50 border-none hover:bg-gray-50/80 dark:hover:bg-slate-800/50">
-                      <TableHead className="font-medium text-gray-600 dark:text-gray-300 py-4 text-sm">SL</TableHead>
-                      <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Quote ID</TableHead>
-                      <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Client Name</TableHead>
-                      <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Type</TableHead>
-                      <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Created By</TableHead>
-                      <TableHead className="font-medium text-gray-600 dark:text-gray-300 text-sm">Date</TableHead>
-                      <TableHead className="text-right font-medium text-gray-600 dark:text-gray-300 text-sm">Action</TableHead>
+                <Table className="border-separate border-spacing-y-3 w-full">
+
+                  <TableHeader className="sticky top-0 z-10">
+                    <TableRow className="bg-gray-200 dark:bg-slate-800 border-gray-200 dark:border-gray-700">
+                      <TableHead className="font-medium text-gray-500 dark:text-gray-200 py-5 px-6 text-sm rounded-l-xl">
+                        Quote ID
+                      </TableHead>
+                      <TableHead className="font-medium text-gray-500 dark:text-gray-200 py-5 px-6 text-sm">
+                        Client Name
+                      </TableHead>
+                      <TableHead className="font-medium text-gray-500 dark:text-gray-200 py-5 px-6 text-sm">
+                        Type
+                      </TableHead>
+                      <TableHead className="font-medium text-gray-500 dark:text-gray-200 py-5 px-6 text-sm">
+                        Created By
+                      </TableHead>
+                      <TableHead className="font-medium text-gray-500 dark:text-gray-200 py-5 px-6 text-sm">
+                        Date
+                      </TableHead>
+                      <TableHead className="text-right font-medium text-gray-500 dark:text-gray-200 py-5 px-6 text-sm rounded-r-xl">
+                        Action
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
+
                   <TableBody>
                     {currentQuotes.map((quote, idx) => (
-                      <TableRow 
-                        key={quote.id} 
-                        className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 mb-3"
+                      <TableRow
+                        key={quote.id}
+                        className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-gray-200 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 my-2 overflow-hidden"
                       >
-                        <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal rounded-l-xl">
+
+                        {/* <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal rounded-l-xl">
                           {String(startIndex + idx + 1).padStart(2, '0')}
-                        </TableCell>
-                        <TableCell className="py-5 px-6 font-medium text-gray-900 dark:text-gray-100">
+                        </TableCell> */}
+                        <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-small rounded-l-xl">
                           {quote.quoteId}
                         </TableCell>
                         <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
                           {quote.clientName || quote.fullName || "Unnamed"}
                         </TableCell>
                         <TableCell className="py-5 px-6">
-                          <Badge 
-                            variant="outline" 
-                            className={`rounded-full px-3 py-1.5 text-xs font-medium border ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
+                          <Badge
+                            variant="outline"
+                            className={`rounded-full px-2 py-1.5 text-xs font-medium border ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
                           >
                             {quote.type || "Unknown"}
                           </Badge>
@@ -265,12 +279,12 @@ const Dashboard = () => {
                   <Pagination>
                     <PaginationContent className="gap-1">
                       <PaginationItem>
-                        <PaginationPrevious 
+                        <PaginationPrevious
                           onClick={() => goToPage(currentPage - 1)}
                           className={`rounded-lg ${currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800'}`}
                         />
                       </PaginationItem>
-                      
+
                       {[...Array(totalPages)].map((_, i) => {
                         const pageNum = i + 1
                         if (
@@ -283,11 +297,10 @@ const Dashboard = () => {
                               <PaginationLink
                                 onClick={() => goToPage(pageNum)}
                                 isActive={currentPage === pageNum}
-                                className={`rounded-lg cursor-pointer min-w-10 ${
-                                  currentPage === pageNum
-                                    ? 'bg-emerald-500 text-white hover:bg-emerald-600 border-emerald-500'
-                                    : 'hover:bg-gray-100 dark:hover:bg-slate-800'
-                                }`}
+                                className={`rounded-lg cursor-pointer min-w-10 ${currentPage === pageNum
+                                  ? 'bg-emerald-500 text-white hover:bg-emerald-600 border-emerald-500'
+                                  : 'hover:bg-gray-100 dark:hover:bg-slate-800'
+                                  }`}
                               >
                                 {pageNum}
                               </PaginationLink>
@@ -307,7 +320,7 @@ const Dashboard = () => {
                       })}
 
                       <PaginationItem>
-                        <PaginationNext 
+                        <PaginationNext
                           onClick={() => goToPage(currentPage + 1)}
                           className={`rounded-lg ${currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800'}`}
                         />
