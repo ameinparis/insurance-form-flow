@@ -62,9 +62,9 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="w-full bg-background px-6 pt-6">
+      <div className="w-full min-h-screen bg-background px-6 pt-6">
         {/* Header */}
-        <header className="sticky top-0 z-50 h-20 flex items-center px-6 justify-between border border-border bg-card rounded-2xl shadow-sm mb-6">
+        <header className="sticky top-6 z-50 h-20 flex items-center px-6 justify-between bg-card rounded-2xl shadow-sm mb-6">
           <div className="flex items-center gap-2">
             <div className="h-[150px] w-[150px] rounded-xl bg-transparent flex items-center justify-center">
               <img
@@ -106,8 +106,10 @@ export function Layout({ children }: LayoutProps) {
         </header>
 
         {/* Sidebar and Main Content */}
-        <div className="flex gap-6">
-          <AppSidebar />
+        <div className="flex gap-6 pb-6">
+          <div className="sticky top-32 h-[calc(100vh-10rem)] self-start">
+            <AppSidebar />
+          </div>
           <main className="flex-1 overflow-auto">
             {children}
           </main>
