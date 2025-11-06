@@ -7,8 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Loader2 } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
+import { Loader2, CalendarIcon } from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 import axios from "axios"
 
 type LivingResult = {
@@ -448,11 +452,34 @@ Insurance will not accept liability for any losses incurred as a result of using
                 </div>
                 <div className="space-y-2">
                   <Label>Date of Birth</Label>
-                  <Input
-                    type="date"
-                    value={customerDetails.dateOfBirth}
-                    onChange={(e) => handleCustomerDetailsChange("dateOfBirth", e.target.value)}
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !customerDetails.dateOfBirth && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customerDetails.dateOfBirth ? (
+                          format(new Date(customerDetails.dateOfBirth), "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customerDetails.dateOfBirth ? new Date(customerDetails.dateOfBirth) : undefined}
+                        onSelect={(date) => handleCustomerDetailsChange("dateOfBirth", date ? format(date, "yyyy-MM-dd") : "")}
+                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="space-y-2">

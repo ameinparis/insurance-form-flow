@@ -4,7 +4,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Upload, Plus, Trash2, HelpCircle } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
+import { Upload, Plus, Trash2, HelpCircle, CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
 import { toast } from "sonner"
@@ -210,11 +214,30 @@ const GroupLifeAssuranceForm = () => {
                         />
                       </td>
                       <td className="p-2">
-                        <Input
-                          type="date"
-                          value={row.dob}
-                          onChange={(e) => handleInputChange(index, "dob", e.target.value)}
-                        />
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal h-10",
+                                !row.dob && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {row.dob ? format(new Date(row.dob), "PP") : <span>Pick date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={row.dob ? new Date(row.dob) : undefined}
+                              onSelect={(date) => handleInputChange(index, "dob", date ? format(date, "yyyy-MM-dd") : "")}
+                              disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                              initialFocus
+                              className="p-3 pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
                       </td>
                       <td className="p-2">
                         <Input
