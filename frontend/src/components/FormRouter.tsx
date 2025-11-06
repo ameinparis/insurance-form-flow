@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react"
 import LifeFuneralQuotationForm from "./forms/LifeFuneralQuotationForm"
 import LivingAnnuitiesQuotationForm from "./forms/LivingAnnuitiesQuotationForm"
 import CreditLifeCoverForm from "./forms/CreditLifeCoverForm"
+import GroupLifeAssuranceForm from "./forms/GroupLifeAssuranceForm"
 
 const FormRouter = () => {
   const { type } = useParams()
@@ -15,8 +16,8 @@ const FormRouter = () => {
         return "Life Funeral Insurance"
       case "living-annuities":
         return "Living Annuities"
-      case "credit-life":
-        return "Credit Life Cover"
+      case "group-life-assurance":
+        return "Group Life Assurance"
       case "auto":
         return "Auto Insurance"
       case "home":
@@ -34,8 +35,8 @@ const FormRouter = () => {
         return <LifeFuneralQuotationForm />
       case "living-annuities":
         return <LivingAnnuitiesQuotationForm />
-      case "credit-life":
-        return <CreditLifeCoverForm />
+      case "group-life-assurance":
+        return <GroupLifeAssuranceForm />
       default:
         return (
           <div className="text-center py-8">
