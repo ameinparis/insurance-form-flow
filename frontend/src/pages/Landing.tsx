@@ -122,13 +122,13 @@ const Landing = () => {
         <p className="mt-6 text-sm sm:text-base md:text-lg text-gray-500 tracking-wide">
           Professional tool to calculate, manage, and deliver accurate quotes — faster and smarter.  </p>
 
-        <div className="mt-16 w-full flex justify-center">
+        {/* <div className="mt-16 w-full flex justify-center">
           <img
             src="/dash-image.jpg"
             alt="Dashboard preview"
             className="rounded-xl shadow-md w-[80%] max-w-5xl aspect-[3/1] object-cover border-4 border-[#ffffff]"
           />
-        </div>
+        </div> */}
 
       </section>
 

@@ -323,6 +323,22 @@ app.post("/api/quotes/calculate-funeral", authenticateToken, upload.single("file
 });
 
 
+/** Life Assurance calculator proxy → Python */
+app.post("/api/quotes/calculate-assurance", async (req, res) => {
+  try {
+    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/assurance/calculate";
+    const { data } = await axios.post(PY_URL, req.body);
+    res.status(200).json({
+      message: "Life Assurance quotation calculated successfully",
+      result: data.output || {},
+    });
+  } catch (e) {
+    console.error("Life Assurance proxy error:", e.response?.data || e.message);
+    res.status(500).json({ message: "Failed to calculate Life Assurance" });
+  }
+});
+
+
 
 
 // Create a new quote

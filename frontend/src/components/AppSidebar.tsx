@@ -36,21 +36,21 @@ export function AppSidebar() {
     document.documentElement.classList.toggle('dark')
   }
 
-return (
-<Sidebar className={`rounded-2xl shadow-md sticky top-0 h-[calc(100vh-10rem)] overflow-hidden transition-all duration-300 ${open ? 'w-64' : 'w-20'}`}>
-  {/* Toggle Button */}
-  <div className="absolute -right-3 top-8 z-50">
-    <button
-      onClick={toggleSidebar}
-      className="h-6 w-6 rounded-full bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center"
-      aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
-    >
-      {open ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-    </button>
-  </div>
+  return (
+    <Sidebar className={`rounded-2xl shadow-md sticky top-0 h-[calc(100vh-10rem)] overflow-hidden transition-all duration-300 ${open ? 'w-64' : 'w-20'}`}>
+      {/* Toggle Button */}
+      {/* <div className="absolute -right-3 top-8 z-50">
+        <button
+          onClick={toggleSidebar}
+          className="h-6 w-6 rounded-full bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center"
+          aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          {open ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </button>
+      </div> */}
 
-  <SidebarContent className="px-4 pt-6 pb-12 flex flex-col gap-4 bg-transparent">
-    <div className="text-center text-muted-foreground text-sm">
+      <SidebarContent className="px-4 pt-6 pb-12 flex flex-col gap-4 bg-transparent">
+        <div className="text-center text-muted-foreground text-sm">
           <SidebarGroup>
             {open && (
               <div className="flex items-center gap-3 px-3 mb-4">
@@ -66,18 +66,23 @@ return (
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
-                      className={({ isActive }) =>
-  `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
-    isActive
-      ? "bg-primary text-primary-foreground font-semibold"
-      : "text-foreground hover:bg-muted"
-  } ${!open ? 'justify-center' : ''}`
-}
-
+                        className={({ isActive }) =>
+                          `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
+     ${isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "text-foreground hover:bg-muted"}
+     ${!open ? "justify-center" : ""}`
+                        }
                       >
+                        {/* Inherit color from parent */}
                         <item.icon className="h-5 w-5 flex-shrink-0" />
-                        {open && <span className="text-sm transition-opacity duration-200">{item.title}</span>}
+                        {open && (
+                          <span className="text-sm transition-opacity duration-200">
+                            {item.title}
+                          </span>
+                        )}
                       </NavLink>
+
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -128,13 +133,12 @@ return (
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
-                       className={({ isActive }) =>
-  `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
-    isActive
-      ? "bg-muted text-foreground font-semibold"
-      : "text-foreground hover:bg-muted"
-  } ${!open ? 'justify-center' : ''}`
-}
+                        className={({ isActive }) =>
+                          `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${isActive
+                            ? "bg-muted text-foreground font-semibold"
+                            : "text-foreground hover:bg-muted"
+                          } ${!open ? 'justify-center' : ''}`
+                        }
 
                       >
                         <item.icon className="h-5 w-5 flex-shrink-0" />
@@ -147,12 +151,12 @@ return (
             </SidebarGroupContent>
           </SidebarGroup>
 
-    </div>
-  </SidebarContent>
-</Sidebar>
+        </div>
+      </SidebarContent>
+    </Sidebar>
 
 
 
-)
+  )
 
 }

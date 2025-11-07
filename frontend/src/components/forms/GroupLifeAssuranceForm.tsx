@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
-import { Upload, Plus, Trash2, HelpCircle, CalendarIcon } from "lucide-react"
+import { Upload, Plus, Trash2, HelpCircle, CalendarIcon, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
@@ -27,12 +27,11 @@ const GroupLifeAssuranceForm = () => {
     maxAge: 0,
     percentMale: 0
   })
+  const [isCalculating, setIsCalculating] = useState(false)
+  const [result, setResult] = useState<any | null>(null)
 
   const handleAddRow = () => {
-    setMembers((prev) => [
-      ...prev,
-      { member: "", gender: "", dob: "", annualSalary: "" },
-    ])
+    setMembers((prev) => [...prev, { member: "", gender: "", dob: "", annualSalary: "" }])
   }
 
   const handleRemoveRow = (index: number) => {
@@ -82,15 +81,16 @@ const GroupLifeAssuranceForm = () => {
     }
   }
 
-  const calculateAge = (dob: string) => {
-    if (!dob) return 0
-    const birth = new Date(dob)
-    const today = new Date()
-    let age = today.getFullYear() - birth.getFullYear()
-    const m = today.getMonth() - birth.getMonth()
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
-    return age
-  }
+const calculateAge = (dob: string) => {
+  if (!dob) return 0
+  const birth = new Date(dob)
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+  return age + 1 
+}
+
 
   useEffect(() => {
     if (members.length === 0) {
@@ -137,10 +137,37 @@ const GroupLifeAssuranceForm = () => {
     })
   }, [members])
 
+  // 🔹 Call backend API to calculate GLA quote
+  const handleCalculate = async () => {
+    try {
+      setIsCalculating(true)
+      setResult(null)
+      const token = localStorage.getItem("token")
+      const res = await fetch("https://njs.exclusivelife.co.bw/api/quotes/calculate-assurance", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ members }),
+      })
+
+      if (!res.ok) throw new Error(`Status ${res.status}`)
+      const data = await res.json()
+      setResult(data.result)
+      toast.success("Life Assurance quotation calculated")
+    } catch (err: any) {
+      console.error("Calculation error:", err)
+      toast.error(`Calculation failed: ${err.message}`)
+    } finally {
+      setIsCalculating(false)
+    }
+  }
+
   return (
     <TooltipProvider>
       <div className="w-full max-w-6xl mx-auto space-y-8">
-        {/* Upload Section */}
+         {/* Upload Section */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -214,30 +241,11 @@ const GroupLifeAssuranceForm = () => {
                         />
                       </td>
                       <td className="p-2">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full justify-start text-left font-normal h-10",
-                                !row.dob && "text-muted-foreground"
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {row.dob ? format(new Date(row.dob), "PP") : <span>Pick date</span>}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={row.dob ? new Date(row.dob) : undefined}
-                              onSelect={(date) => handleInputChange(index, "dob", date ? format(date, "yyyy-MM-dd") : "")}
-                              disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                              initialFocus
-                              className="p-3 pointer-events-auto"
-                            />
-                          </PopoverContent>
-                        </Popover>
+                        <Input
+                          type="date"
+                          value={row.dob}
+                          onChange={(e) => handleInputChange(index, "dob", e.target.value)}
+                        />
                       </td>
                       <td className="p-2">
                         <Input
@@ -269,8 +277,6 @@ const GroupLifeAssuranceForm = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Summary Stats */}
         <Card>
           <CardHeader>
             <CardTitle>Summary Statistics</CardTitle>
@@ -298,8 +304,43 @@ const GroupLifeAssuranceForm = () => {
 
         {/* Calculate Button */}
         <div className="flex justify-end">
-          <Button disabled={members.length === 0}>Calculate GLA Quote</Button>
+          <Button onClick={handleCalculate} disabled={members.length === 0 || isCalculating}>
+            {isCalculating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Calculating...
+              </>
+            ) : (
+              "Calculate GLA Quote"
+            )}
+          </Button>
         </div>
+
+        {/* Results Section */}
+        {result && (
+          <Card className="bg-muted/50 mt-6">
+            <CardHeader>
+              <CardTitle>Life Assurance Results</CardTitle>
+              <CardDescription>Based on average age and gender mix</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {Object.entries({
+                "GLA Rate": result.glaRate,
+                "Weighted Avg Rate": result.weightedAverageRate,
+                "Total Expected Cost": `BWP ${result.totalExpectedCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+                "Total Salary": `BWP ${result.totalSalary.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+                "Average Age": result.averageAge,
+                "Average Salary": `BWP ${result.averageSalary.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+                "% Male": `${result.percentMale}%`,
+                "Members": result.membership,
+              }).map(([label, val]) => (
+                <div key={label} className="p-3 rounded-lg border bg-white text-center shadow-sm">
+                  <p className="text-sm text-muted-foreground">{label}</p>
+                  <p className="font-semibold text-lg">{val}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </TooltipProvider>
   )

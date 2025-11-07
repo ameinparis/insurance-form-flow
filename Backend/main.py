@@ -3,6 +3,7 @@ from waitress import serve
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from calculations.livingannuity import app as living_annuity_app
 from calculations.lifefuneral import app as life_funeral_app
+from calculations.lifeassurance import app as life_assurance_app
 import logging
 
 def create_combined_app():
@@ -11,6 +12,7 @@ def create_combined_app():
         {
             '/annuity': living_annuity_app,
             '/funeral': life_funeral_app,
+            '/assurance': life_assurance_app,
         }
     )
 
