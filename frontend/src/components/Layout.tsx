@@ -62,43 +62,44 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="w-full min-h-screen bg-background px-6 pt-6">
+      <div className="w-full min-h-screen bg-background px-8 pt-6">
         {/* Header */}
-        <header className="sticky top-6 z-50 h-20 flex items-center px-6 justify-between bg-card rounded-2xl shadow-sm mb-6">
-          <div className="flex items-center gap-2">
-            <div className="h-[150px] w-[150px] rounded-xl bg-transparent flex items-center justify-center">
+        <header className="sticky top-6 z-50 h-[72px] flex items-center px-8 justify-between bg-card rounded-[40px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-border/40 mb-6">
+          {/* Logo */}
+          <div className="flex items-center min-w-[200px]">
+            <div className="h-[120px] w-[120px] flex items-center justify-center -ml-2">
               <img
                 src={isDarkMode ? "/logo-darkmode.png" : "/exclusive.png"}
-                alt="Logo"
-                className="h-[150px] w-[150px] object-contain transition-opacity duration-300"
+                alt="Exclusive Life Insurance"
+                className="h-[120px] w-[120px] object-contain transition-opacity duration-300"
               />
             </div>
           </div>
 
           {/* Center Search */}
-          <div className="flex-1 max-w-3xl mx-12">
+          <div className="flex-1 max-w-2xl mx-8">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-[18px] w-[18px] text-muted-foreground/60" />
               <Input
                 placeholder="Search"
-                className="pl-12 h-12 bg-muted/70 border-0 rounded-full focus-visible:ring-1 focus-visible:ring-primary"
+                className="pl-11 h-11 bg-muted/50 border-0 rounded-full focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:bg-muted/70 transition-colors text-sm placeholder:text-muted-foreground/50"
               />
             </div>
           </div>
 
           {/* Avatar + User Info */}
-          <div className="flex items-center gap-4">
-            <Avatar className="h-12 w-12">
+          <div className="flex items-center gap-3 min-w-[200px] justify-end">
+            <Avatar className="h-11 w-11 ring-2 ring-background shadow-sm">
               <AvatarImage src="" alt={userName} />
               <AvatarFallback className={`${getAvatarColor(userName)} text-white text-sm font-medium`}>
                 {getInitials(userName)}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-foreground">
+              <span className="text-sm font-semibold text-foreground leading-tight">
                 {userName.split(" ").map(word => word[0].toUpperCase() + word.slice(1)).join(" ")}
               </span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground leading-tight">
                 {userRole ? userRole.charAt(0).toUpperCase() + userRole.slice(1) : ""}
               </span>
             </div>
