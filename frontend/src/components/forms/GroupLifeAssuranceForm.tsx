@@ -4,11 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { format } from "date-fns"
-import { Upload, Plus, Trash2, HelpCircle, CalendarIcon, Loader2 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Upload, Plus, Trash2, HelpCircle, Loader2 } from "lucide-react"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
 import { toast } from "sonner"
@@ -25,10 +21,10 @@ const GroupLifeAssuranceForm = () => {
     averageAge: 0,
     minAge: 0,
     maxAge: 0,
-    percentMale: 0
+    percentMale: 0,
   })
-  const [isCalculating, setIsCalculating] = useState(false)
   const [result, setResult] = useState<any | null>(null)
+  const [isCalculating, setIsCalculating] = useState(false)
 
   const handleAddRow = () => {
     setMembers((prev) => [...prev, { member: "", gender: "", dob: "", annualSalary: "" }])
@@ -81,16 +77,15 @@ const GroupLifeAssuranceForm = () => {
     }
   }
 
-const calculateAge = (dob: string) => {
-  if (!dob) return 0
-  const birth = new Date(dob)
-  const today = new Date()
-  let age = today.getFullYear() - birth.getFullYear()
-  const m = today.getMonth() - birth.getMonth()
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
-  return age + 1 
-}
-
+  const calculateAge = (dob: string) => {
+    if (!dob) return 0
+    const birth = new Date(dob)
+    const today = new Date()
+    let age = today.getFullYear() - birth.getFullYear()
+    const m = today.getMonth() - birth.getMonth()
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+    return age
+  }
 
   useEffect(() => {
     if (members.length === 0) {
@@ -120,9 +115,7 @@ const calculateAge = (dob: string) => {
     const averageAge = ages.length ? ages.reduce((a, b) => a + b, 0) / ages.length : 0
     const minAge = ages.length ? Math.min(...ages) : 0
     const maxAge = ages.length ? Math.max(...ages) : 0
-    const percentMale = membership
-      ? (genders.filter((g) => g === "M").length / membership) * 100
-      : 0
+    const percentMale = membership ? (genders.filter((g) => g === "M").length / membership) * 100 : 0
 
     setSummary({
       membership,
@@ -137,38 +130,45 @@ const calculateAge = (dob: string) => {
     })
   }, [members])
 
-  // 🔹 Call backend API to calculate GLA quote
-  const handleCalculate = async () => {
-    try {
-      setIsCalculating(true)
-      setResult(null)
-      const token = localStorage.getItem("token")
-      const res = await fetch("https://njs.exclusivelife.co.bw/api/quotes/calculate-assurance", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ members }),
-      })
+const handleCalculate = async () => {
+  try {
+    setIsCalculating(true)
+    setResult(null)
 
-      if (!res.ok) throw new Error(`Status ${res.status}`)
-      const data = await res.json()
-      setResult(data.result)
-      toast.success("Life Assurance quotation calculated")
-    } catch (err: any) {
-      console.error("Calculation error:", err)
-      toast.error(`Calculation failed: ${err.message}`)
-    } finally {
-      setIsCalculating(false)
-    }
+    const token = localStorage.getItem("token")
+
+    const res = await fetch("http://localhost:5002/api/quotes/calculate-assurance", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ members }),
+    })
+
+    const data = await res.json()
+    console.log("🔥 RAW RESPONSE FROM BACKEND:", data)
+
+    if (!res.ok) throw new Error(data.error || `Status ${res.status}`)
+
+    // some backends return { output: {...} }, others return {...}
+const output = data.result || data.output || data
+    setResult(output)
+
+    toast.success("Life Assurance quotation calculated")
+  } catch (err: any) {
+    console.error("Calculation error:", err)
+    toast.error(`Calculation failed: ${err.message}`)
+  } finally {
+    setIsCalculating(false)
   }
+}
+
 
   return (
     <TooltipProvider>
       <div className="w-full max-w-6xl mx-auto space-y-8">
-         {/* Upload Section */}
-        <Card>
+          <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -277,32 +277,8 @@ const calculateAge = (dob: string) => {
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Summary Statistics</CardTitle>
-            <CardDescription>Automatically calculated from member data</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {Object.entries({
-              Membership: summary.membership,
-              "Total Salary": summary.totalSalary.toLocaleString(undefined, { maximumFractionDigits: 2 }),
-              "Average Salary": summary.averageSalary.toFixed(2),
-              "Min Salary": summary.minSalary.toFixed(2),
-              "Max Salary": summary.maxSalary.toFixed(2),
-              "Average Age": summary.averageAge.toFixed(1),
-              "Min Age": summary.minAge.toFixed(0),
-              "Max Age": summary.maxAge.toFixed(0),
-              "% Male": `${summary.percentMale.toFixed(1)}%`,
-            }).map(([label, val]) => (
-              <div key={label} className="p-3 rounded-lg border bg-muted/30 text-center">
-                <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="font-semibold text-lg">{val}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+  
 
-        {/* Calculate Button */}
         <div className="flex justify-end">
           <Button onClick={handleCalculate} disabled={members.length === 0 || isCalculating}>
             {isCalculating ? (
@@ -313,34 +289,48 @@ const calculateAge = (dob: string) => {
               "Calculate GLA Quote"
             )}
           </Button>
+          
         </div>
-
         {/* Results Section */}
-        {result && (
-          <Card className="bg-muted/50 mt-6">
-            <CardHeader>
-              <CardTitle>Life Assurance Results</CardTitle>
-              <CardDescription>Based on average age and gender mix</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {Object.entries({
-                "GLA Rate": result.glaRate,
-                "Weighted Avg Rate": result.weightedAverageRate,
-                "Total Expected Cost": `BWP ${result.totalExpectedCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
-                "Total Salary": `BWP ${result.totalSalary.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
-                "Average Age": result.averageAge,
-                "Average Salary": `BWP ${result.averageSalary.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
-                "% Male": `${result.percentMale}%`,
-                "Members": result.membership,
-              }).map(([label, val]) => (
-                <div key={label} className="p-3 rounded-lg border bg-white text-center shadow-sm">
-                  <p className="text-sm text-muted-foreground">{label}</p>
-                  <p className="font-semibold text-lg">{val}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+{result && (
+  <Card className="mt-8">
+    <CardHeader>
+      <CardTitle>GLA Calculation Results</CardTitle>
+      <CardDescription>Summary of group life assurance results</CardDescription>
+    </CardHeader>
+
+    <CardContent>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[
+          { label: "Membership", value: result.membership },
+          { label: "Total Salary (BWP)", value: result.totalSalary.toLocaleString() },
+          { label: "Average Salary (BWP)", value: result.averageSalary.toLocaleString() },
+          { label: "Average Age", value: result.averageAge },
+          { label: "Min Age", value: result.minAge },
+          { label: "Max Age", value: result.maxAge },
+          { label: "% Male", value: `${result.percentMale}%` },
+          { label: "GLA Rate", value: result.glaRate },
+          { label: "Weighted Avg Rate", value: result.weightedAverageRate },
+          { label: "Total Expected Cost (BWP)", value: result.totalExpectedCost.toLocaleString() },
+          { label: "Min DOB", value: result.minDOB },
+          { label: "Max DOB", value: result.maxDOB },
+        ].map((item, idx) => (
+          <div
+            key={idx}
+            className="p-4 rounded-lg border border-muted bg-muted/30 flex flex-col items-start justify-center shadow-sm"
+          >
+            <p className="text-xs uppercase text-muted-foreground tracking-wider">{item.label}</p>
+            <p className="text-lg font-semibold text-foreground mt-1">{item.value ?? "-"}</p>
+          </div>
+        ))}
+      </div>
+    </CardContent>
+  </Card>
+)}
+
+
+
+
       </div>
     </TooltipProvider>
   )

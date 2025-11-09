@@ -121,7 +121,6 @@ def calculate_life_assurance():
         max_age = df["age"].max()
         pct_male = (df["gender"].str.upper().eq("M").sum() / membership) if membership else 0
 
-        # ---- DOB serials (Min/Max AS in Excel) ----
         min_dob_dt = df["dob"].min()
         max_dob_dt = df["dob"].max()
         min_as = int(excel_serial(min_dob_dt.date())) if pd.notna(min_dob_dt) else None
@@ -152,13 +151,15 @@ def calculate_life_assurance():
             "weightedAverageRate": round(weighted_avg_rate, 6),
             "totalExpectedCost": round(total_expected_cost),
         }
+        print("\n📤 Output Summary:")
+        for k, v in summary.items():
+            print(f"{k}: {v}")
 
         return jsonify({"output": summary})
 
     except Exception as e:
         logging.exception("Life Assurance calculation failed")
         return jsonify({"error": str(e)}), 500
-
 
 # ---------------------- Run Server ----------------------
 if __name__ == "__main__":
