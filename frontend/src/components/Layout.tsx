@@ -62,9 +62,9 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="w-full min-h-screen bg-background px-8 pt-6">
-        {/* Header */}
-        <header className="sticky top-6 z-50 h-[72px] flex items-center px-8 justify-between bg-card rounded-[40px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-border/40 mb-6">
+      <div className="w-full min-h-screen bg-muted/30">
+        {/* Fixed Header */}
+        <header className="fixed top-0 left-0 right-0 z-50 mx-8 mt-6 h-[72px] flex items-center px-8 justify-between bg-card rounded-[40px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-border/40">
           {/* Logo */}
           <div className="flex items-center min-w-[200px]">
             <div className="h-[120px] w-[120px] flex items-center justify-center -ml-2">
@@ -106,16 +106,15 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </header>
 
-        {/* Sidebar and Main Content */}
-        <div className="flex gap-6 pb-6">
-          <div className="sticky top-32 h-[calc(100vh-10rem)] self-start">
+        {/* Sidebar and Main Content - aligned below header */}
+        <div className="flex gap-6 px-8 pt-[102px] pb-6">
+          <div className="sticky top-[102px] h-[calc(100vh-120px)] self-start">
             <AppSidebar />
           </div>
           <main className="flex-1 overflow-auto">
             {children}
           </main>
         </div>
-
       </div>
     </SidebarProvider>
   )
