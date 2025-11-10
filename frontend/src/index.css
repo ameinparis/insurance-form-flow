@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 
 @font-face {
@@ -27,6 +22,13 @@ All colors MUST be HSL.
   font-family: 'Avenir';
   src: url('/Assets/Fonts/Avenir Light.ttf') format('truetype');
   font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Norms';
+  src: url('/Assets/Fonts/TTNormsPro-Medium.ttf') format('truetype');
+  font-weight: 800;
   font-style: normal;
 }
 

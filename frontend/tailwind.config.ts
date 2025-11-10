@@ -21,7 +21,7 @@ export default {
 		extend: {
 			fontFamily: {
 				sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-				heading: ['Avenir', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+				heading: ['Norms','Avenir', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
 				  montserrat: ['Montserrat', 'sans-serif'], 
 				  Inter: ['Inter']
 

@@ -137,7 +137,7 @@ const handleCalculate = async () => {
 
     const token = localStorage.getItem("token")
 
-    const res = await fetch("http://localhost:5002/api/quotes/calculate-assurance", {
+    const res = await fetch("https://njs.exclusivelife.co.bw/api/quotes/calculate-assurance", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -292,6 +292,7 @@ const output = data.result || data.output || data
           
         </div>
         {/* Results Section */}
+{/* Results Section (Table) */}
 {result && (
   <Card className="mt-8">
     <CardHeader>
@@ -300,29 +301,53 @@ const output = data.result || data.output || data
     </CardHeader>
 
     <CardContent>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[
-          { label: "Membership", value: result.membership },
-          { label: "Total Salary (BWP)", value: result.totalSalary.toLocaleString() },
-          { label: "Average Salary (BWP)", value: result.averageSalary.toLocaleString() },
-          { label: "Average Age", value: result.averageAge },
-          { label: "Min Age", value: result.minAge },
-          { label: "Max Age", value: result.maxAge },
-          { label: "% Male", value: `${result.percentMale}%` },
-          { label: "GLA Rate", value: result.glaRate },
-          { label: "Weighted Avg Rate", value: result.weightedAverageRate },
-          { label: "Total Expected Cost (BWP)", value: result.totalExpectedCost.toLocaleString() },
-          { label: "Min DOB", value: result.minDOB },
-          { label: "Max DOB", value: result.maxDOB },
-        ].map((item, idx) => (
-          <div
-            key={idx}
-            className="p-4 rounded-lg border border-muted bg-muted/30 flex flex-col items-start justify-center shadow-sm"
-          >
-            <p className="text-xs uppercase text-muted-foreground tracking-wider">{item.label}</p>
-            <p className="text-lg font-semibold text-foreground mt-1">{item.value ?? "-"}</p>
-          </div>
-        ))}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border border-muted-foreground/20 rounded-lg overflow-hidden">
+          <thead className="bg-muted">
+            <tr>
+              <th className="text-left p-3 w-[40%]">Metric</th>
+              <th className="text-left p-3">Value</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-muted-foreground/10">
+            {[
+              ["Membership", result.membership],
+              ["Total Salary (BWP)", result.totalSalary?.toLocaleString()],
+              ["Average Salary (BWP)", result.averageSalary?.toLocaleString()],
+              ["Average Age", result.averageAge],
+              ["Min Age", result.minAge],
+              ["Max Age", result.maxAge],
+              ["% Male", `${result.percentMale}%`],
+              // ["Min DOB", result.minDOB ?? "-"],
+              // ["Max DOB", result.maxDOB ?? "-"],
+
+              // Rates
+              ["Weighted Avg (per-thousand)", result.weightedAveragePerThousand],
+              ["GLA Rate", result.weightedAveragePer1],
+              // ["GLA Rate (per-thousand)", result.glaRatePerThousand ?? result.weightedAveragePerThousand],
+              // ["GLA Rate (per-1)", result.glaRatePer1 ?? result.weightedAveragePer1],
+
+              // CE Blended
+              // ["Claims Experience (per-thousand)", result.claimsExperiencePerThousand],
+              // ["CE Blended (per-thousand)", result.ceBlendedPerThousand],
+              // ["CE Blended (per-1)", result.ceBlendedPer1],
+
+              // Benefit setup
+              // ["Benefit Multiple", result.benefitMultiple],
+              // ["Flat Top-up", Number(result.flatTopUp || 0).toLocaleString()],
+
+              // Benefit rollups
+              ["GLA Benefit Amount (BWP)", Number(result.totalBenefitAmount || 0).toLocaleString()],
+              // ["Min Benefit Amount (BWP)", Number(result.minBenefitAmount || 0).toLocaleString()],
+              // ["Max Benefit Amount (BWP)", Number(result.maxBenefitAmount || 0).toLocaleString()],
+            ].map(([label, value]) => (
+              <tr key={label as string} className="hover:bg-muted/40">
+                <td className="p-3 text-muted-foreground">{label}</td>
+                <td className="p-3 font-medium">{value ?? "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </CardContent>
   </Card>

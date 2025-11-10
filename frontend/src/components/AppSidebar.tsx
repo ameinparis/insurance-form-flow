@@ -28,24 +28,23 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className="w-64 bg-card rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-border/40 overflow-hidden">
+    <Sidebar className=" w-64 bg-white dark:bg-slate-200 rounded-[32px] shadow-md sticky top-0 h-[calc(100vh-7rem)] overflow-hidden ">
       <SidebarContent className="flex flex-col h-full">
         {/* MENU Section */}
         <div className="px-6 pt-6 pb-4">
           <div className="mb-6">
             <span className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Menu</span>
           </div>
-          
+
           <nav className="space-y-1">
             {menuItems.map((item) => (
               <NavLink
                 key={item.title}
                 to={item.url}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 group ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-foreground/70 hover:bg-muted/60 hover:text-foreground"
+                  `flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 group ${isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-foreground/70 hover:bg-muted/60 hover:text-foreground"
                   }`
                 }
               >
@@ -88,10 +87,9 @@ export function AppSidebar() {
                 key={item.title}
                 to={item.url}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 group ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-foreground/70 hover:bg-muted/60 hover:text-foreground"
+                  `flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all duration-200 group ${isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-foreground/70 hover:bg-muted/60 hover:text-foreground"
                   }`
                 }
               >

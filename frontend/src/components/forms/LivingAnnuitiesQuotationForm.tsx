@@ -24,7 +24,7 @@ type LivingResult = {
 
 type LifeResult = { monthly_annuity: number }
 
-const MIN_AGE = 50
+const MIN_AGE = 45
 const MAX_AGE = 85
 const MIN_INVEST = 300000
 
@@ -106,8 +106,8 @@ Insurance will not accept liability for any losses incurred as a result of using
     ? `Life start age must be greater than current age.`
     : ""
 
-  const drawError = drawdown !== "" && (drawNum < 2.5 || drawNum > 17.5)
-    ? "Drawdown must be between 2.5% and 17.5%."
+  const drawError = drawdown !== "" && (drawNum < 2.5 || drawNum > 12)
+    ? "Drawdown must be between 2.5% and 12%."
     : ""
 
   const upfrontError =

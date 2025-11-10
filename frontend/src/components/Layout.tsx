@@ -107,14 +107,15 @@ export function Layout({ children }: LayoutProps) {
         </header>
 
         {/* Sidebar and Main Content - aligned below header */}
-        <div className="flex gap-6 px-8 pt-[102px] pb-6">
-          <div className="sticky top-[102px] h-[calc(100vh-120px)] self-start">
+        <div className="flex gap-6 px-8 pt-[130px] pb-6">
+          <div className="sticky top-[102px] self-start">
             <AppSidebar />
           </div>
           <main className="flex-1 overflow-auto">
             {children}
           </main>
         </div>
+
       </div>
     </SidebarProvider>
   )
