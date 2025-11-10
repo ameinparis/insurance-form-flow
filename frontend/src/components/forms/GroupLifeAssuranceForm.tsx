@@ -137,7 +137,7 @@ const handleCalculate = async () => {
 
     const token = localStorage.getItem("token")
 
-    const res = await fetch("https://njs.exclusivelife.co.bw/api/quotes/calculate-assurance", {
+    const res = await fetch("http://localhost:5002/api/quotes/calculate-assurance", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

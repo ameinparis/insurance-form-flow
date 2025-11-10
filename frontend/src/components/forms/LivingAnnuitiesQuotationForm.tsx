@@ -106,8 +106,8 @@ Insurance will not accept liability for any losses incurred as a result of using
     ? `Life start age must be greater than current age.`
     : ""
 
-  const drawError = drawdown !== "" && (drawNum < 2.5 || drawNum > 12)
-    ? "Drawdown must be between 2.5% and 12%."
+  const drawError = drawdown !== "" && (drawNum < 0 || drawNum > 12)
+    ? "Maximun drawdown rate is 12%."
     : ""
 
   const upfrontError =
