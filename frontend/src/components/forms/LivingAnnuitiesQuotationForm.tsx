@@ -56,6 +56,7 @@ const AnnuityQuotationForm = () => {
   const [upfrontCommission, setUpfrontCommission] = useState("")
   const [ongoingCommission, setOngoingCommission] = useState("")
 
+
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [customerDetails, setCustomerDetails] = useState({
     fullName: "",
@@ -128,7 +129,7 @@ Insurance will not accept liability for any losses incurred as a result of using
 
   const lifeDisabled = !livingResult || !Number.isFinite(toNum(lifePurchaseAmount)) || toNum(lifePurchaseAmount) <= 0
 
-  
+
   // === BACKEND CALLS ===
   const handleLivingCalc = async () => {
     if (livingDisabled) {
@@ -150,7 +151,7 @@ Insurance will not accept liability for any losses incurred as a result of using
         ongoingCommission: safeNum(ongoingNum),
       }
 
-      const { data } = await axios.post("https://njs.exclusivelife.co.bw/api/quotes/calculate-annuity", payload)
+      const { data } = await axios.post("http://localhost:5002/api/quotes/calculate-annuity", payload)
       const res = data.output
 
       setLivingResult(res)
@@ -178,7 +179,7 @@ Insurance will not accept liability for any losses incurred as a result of using
         age: gsaNum,
         purchaseAmount: toNum(lifePurchaseAmount),
       }
-      const { data } = await axios.post("https://njs.exclusivelife.co.bw/api/quotes/calculate-annuity", payload)
+      const { data } = await axios.post("http://localhost:5002/api/quotes/calculate-annuity", payload)
       const res = data.output
 
       setLifeResult(res)
@@ -241,7 +242,7 @@ Insurance will not accept liability for any losses incurred as a result of using
 
       // 🔹 Send to the backend
       const { data } = await axios.post(
-        "https://njs.exclusivelife.co.bw/api/new-quotes",
+        "http://localhost:5002/api/new-quotes",
         payload,
         {
           headers: {
@@ -452,7 +453,20 @@ Insurance will not accept liability for any losses incurred as a result of using
                 </div>
                 <div className="space-y-2">
                   <Label>Date of Birth</Label>
-                  <Popover>
+                  <div className="space-y-2">
+                    <Input
+                      type="date"
+                      value={customerDetails.dateOfBirth}
+                      onChange={(e) =>
+                        handleCustomerDetailsChange("dateOfBirth", e.target.value)
+                      }
+                      min="1900-01-01"
+                      max={new Date().toISOString().split("T")[0]} // no future dates
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -479,7 +493,7 @@ Insurance will not accept liability for any losses incurred as a result of using
                         className="p-3 pointer-events-auto"
                       />
                     </PopoverContent>
-                  </Popover>
+                  </Popover> */}
                 </div>
 
                 <div className="space-y-2">
@@ -563,7 +577,7 @@ Insurance will not accept liability for any losses incurred as a result of using
                         <div className="flex justify-between">
                           <span>{frequency} Payment:</span>
                           {/* focus here match to actual quote */}
-                          <span>{fmtMoney(livingResult.guaranteed_annuity)}</span> 
+                          <span>{fmtMoney(livingResult.guaranteed_annuity)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Funds Remaining at {guaranteedStartAge}:</span>
