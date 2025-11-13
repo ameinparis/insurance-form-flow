@@ -8,16 +8,71 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Upload, Info, HelpCircle, Loader2 } from "lucide-react"
+import { Upload, Info, HelpCircle, Hourglass } from "lucide-react"
 import { toast } from "sonner"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
+
+// Hybrid Circular Progress Indicator Component
+interface HybridIndicatorProps {
+  progress: number
+}
+
+const HybridIndicator = ({ progress }: HybridIndicatorProps) => {
+  const radius = 54
+  const strokeWidth = 8
+  const normalizedRadius = radius - strokeWidth / 2
+  const circumference = normalizedRadius * 2 * Math.PI
+  const strokeDashoffset = circumference - (progress / 100) * circumference
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative w-32 h-32">
+        <svg height={radius * 2} width={radius * 2} className="transform -rotate-90">
+          {/* Background ring */}
+          <circle
+            stroke="hsl(var(--muted))"
+            fill="transparent"
+            strokeWidth={strokeWidth}
+            r={normalizedRadius}
+            cx={radius}
+            cy={radius}
+          />
+          {/* Progress ring */}
+          <circle
+            stroke="hsl(var(--primary))"
+            fill="transparent"
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference + ' ' + circumference}
+            style={{
+              strokeDashoffset,
+              transition: 'stroke-dashoffset 0.5s ease-in-out'
+            }}
+            strokeLinecap="round"
+            r={normalizedRadius}
+            cx={radius}
+            cy={radius}
+          />
+        </svg>
+        {/* Center content */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <Hourglass className="h-6 w-6 text-primary mb-1" />
+          <span className="text-2xl font-bold text-foreground">
+            {Math.round(progress)}%
+          </span>
+        </div>
+      </div>
+      <p className="text-sm font-medium text-muted-foreground">Loading...</p>
+    </div>
+  )
+}
 
 const LifeFuneralQuotationForm = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [premiumResult, setPremiumResult] = useState<any | null>(null)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [isCalculating, setIsCalculating] = useState(false)
+  const [jobProgress, setJobProgress] = useState(0)
   const [customerDetails, setCustomerDetails] = useState({
     companyName: "",
     registrationNumber: "",
@@ -181,8 +236,14 @@ const LifeFuneralQuotationForm = () => {
         const data = await res.json();
         console.log("Polling job:", data);
 
+        // Update progress if available
+        if (data.progress !== undefined) {
+          setJobProgress(data.progress);
+        }
+
         if (data.status === "done") {
           clearInterval(interval);
+          setJobProgress(100);
           setIsCalculating(false);
           toast.success("Quotation calculated!");
           setPremiumResult(data.result);
@@ -191,12 +252,14 @@ const LifeFuneralQuotationForm = () => {
 
         if (data.status === "error") {
           clearInterval(interval);
+          setJobProgress(0);
           setIsCalculating(false);
           toast.error(data.error || "Calculation failed");
         }
 
       } catch (err) {
         clearInterval(interval);
+        setJobProgress(0);
         setIsCalculating(false);
         toast.error("Polling failed");
       }
@@ -211,6 +274,7 @@ const LifeFuneralQuotationForm = () => {
     }
 
     setIsCalculating(true);
+    setJobProgress(0);
 
     const syncedFormData = {
       ...formData,
@@ -622,16 +686,17 @@ const LifeFuneralQuotationForm = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Hybrid Circular Progress Indicator */}
+        {isCalculating && (
+          <div className="flex justify-center py-6">
+            <HybridIndicator progress={jobProgress} />
+          </div>
+        )}
+
         <div className="flex justify-end">
           <Button onClick={handleSubmit} disabled={!uploadedFile || isCalculating}>
-            {isCalculating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Calculating...
-              </>
-            ) : (
-              "Calculate Quotation"
-            )}
+            {isCalculating ? "Calculating..." : "Calculate Quotation"}
           </Button>
         </div>
 
