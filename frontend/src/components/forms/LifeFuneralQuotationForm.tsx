@@ -53,51 +53,51 @@ const LifeFuneralQuotationForm = () => {
     children0to1: "",
     parentsCover: ""
   })
-// replace both formatCurrencyInput / unformatCurrencyInput with this:
-const toNumericString = (val: string) => {
-  if (val == null) return "";
-  const cleaned = String(val).replace(/[^0-9.]/g, "");
-  return cleaned;
-};
+  // replace both formatCurrencyInput / unformatCurrencyInput with this:
+  const toNumericString = (val: string) => {
+    if (val == null) return "";
+    const cleaned = String(val).replace(/[^0-9.]/g, "");
+    return cleaned;
+  };
 
-// put near your other constants
-const NUMERIC_FIELDS = new Set([
-  "profitTarget",
-  "asAndWhenCommission",
-  "numberOfLives",
-  "maxExtendedFamilyMembers",
-  "maxAgeChildren",
-  "currentMaxAgeChild",
-  "principalMemberCover",
-  "spouseCover",
-  "extendedFamilyCover",
-  "children16toMax",
-  "children6to15",
-  "children1to5",
-  "children0to1",
-  "parentsCover",
-]);
+  // put near your other constants
+  const NUMERIC_FIELDS = new Set([
+    "profitTarget",
+    "asAndWhenCommission",
+    "numberOfLives",
+    "maxExtendedFamilyMembers",
+    "maxAgeChildren",
+    "currentMaxAgeChild",
+    "principalMemberCover",
+    "spouseCover",
+    "extendedFamilyCover",
+    "children16toMax",
+    "children6to15",
+    "children1to5",
+    "children0to1",
+    "parentsCover",
+  ]);
 
-const handleInputChange = (field: string, value: string) => {
-  // only numeric fields get cleaned
-  const isNumeric = NUMERIC_FIELDS.has(field);
-  const clean = isNumeric ? toNumericString(value) : value;
+  const handleInputChange = (field: string, value: string) => {
+    // only numeric fields get cleaned
+    const isNumeric = NUMERIC_FIELDS.has(field);
+    const clean = isNumeric ? toNumericString(value) : value;
 
-  const updated: any = { ...formData, [field]: clean };
+    const updated: any = { ...formData, [field]: clean };
 
-  // auto-fill covers only when principal changes (numeric)
-  if (field === "principalMemberCover") {
-    const principal = parseFloat(toNumericString(value)) || 0;
-    updated.spouseCover         = String(principal.toFixed(2));
-    updated.children16toMax     = String((principal * 1).toFixed(2));
-    updated.children6to15       = String((principal * 0.75).toFixed(2));
-    updated.children1to5        = String((principal * 0.5).toFixed(2));
-    updated.children0to1        = String((principal * 0.25).toFixed(2));
-    updated.extendedFamilyCover = String(principal.toFixed(2));
-  }
+    // auto-fill covers only when principal changes (numeric)
+    if (field === "principalMemberCover") {
+      const principal = parseFloat(toNumericString(value)) || 0;
+      updated.spouseCover = String(principal.toFixed(2));
+      updated.children16toMax = String((principal * 1).toFixed(2));
+      updated.children6to15 = String((principal * 0.75).toFixed(2));
+      updated.children1to5 = String((principal * 0.5).toFixed(2));
+      updated.children0to1 = String((principal * 0.25).toFixed(2));
+      updated.extendedFamilyCover = String(principal.toFixed(2));
+    }
 
-  setFormData(updated);
-};
+    setFormData(updated);
+  };
 
 
   // const formatCurrencyInput = (raw: string) => {
@@ -171,60 +171,102 @@ const handleInputChange = (field: string, value: string) => {
     }
   }
 
- const handleSubmit = async () => {
-  if (!uploadedFile) {
-    toast.error("Please upload a member file first.");
-    return;
-  }
+  // 🔄 Poll job status until done
+  const pollJob = (jobId: string) => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5002/api/quotes/funeral/status/${jobId}`
+        );
+        const data = await res.json();
+        console.log("Polling job:", data);
 
-  setIsCalculating(true);
+        if (data.status === "done") {
+          clearInterval(interval);
+          setIsCalculating(false);
+          toast.success("Quotation calculated!");
+          setPremiumResult(data.result);
+          setShowQuoteDialog(true);
+        }
 
-  const syncedFormData = {
-    ...formData,
-    spouseCover: formData.spouseCover || formData.principalMemberCover || "0",
-    extendedFamilyCover: formData.extendedFamilyCover || formData.principalMemberCover || "0",
+        if (data.status === "error") {
+          clearInterval(interval);
+          setIsCalculating(false);
+          toast.error(data.error || "Calculation failed");
+        }
+
+      } catch (err) {
+        clearInterval(interval);
+        setIsCalculating(false);
+        toast.error("Polling failed");
+      }
+    }, 1000);
   };
 
-  // 🔒 sanitize ALL fields to numeric strings (or keep plain text where applicable)
-  const numericKeys = [
-    "profitTarget","asAndWhenCommission","numberOfLives","maxExtendedFamilyMembers",
-    "maxAgeChildren","currentMaxAgeChild","principalMemberCover","spouseCover",
-    "extendedFamilyCover","children16toMax","children6to15","children1to5","children0to1","parentsCover"
-  ];
 
-  const cleanedFormData: Record<string,string> = {};
-  Object.entries(syncedFormData).forEach(([k,v]) => {
-    if (numericKeys.includes(k)) {
-      const s = toNumericString(String(v ?? ""));
-      cleanedFormData[k] = s === "" ? "0" : s;
-    } else {
-      cleanedFormData[k] = String(v ?? "");
+  const handleSubmit = async () => {
+    if (!uploadedFile) {
+      toast.error("Please upload a member file first.");
+      return;
     }
-  });
 
-  const payload = new FormData();
-  payload.append("file", uploadedFile);
-  Object.entries(cleanedFormData).forEach(([key, value]) => payload.append(key, value));
+    setIsCalculating(true);
 
-  try {
-    const res = await fetch("http://localhost:5002/api/quotes/calculate-funeral", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      body: payload
+    const syncedFormData = {
+      ...formData,
+      spouseCover: formData.spouseCover || formData.principalMemberCover || "0",
+      extendedFamilyCover: formData.extendedFamilyCover || formData.principalMemberCover || "0",
+    };
+
+    //sanitize ALL fields to numeric strings (or keep plain text where applicable)
+    const numericKeys = [
+      "profitTarget", "asAndWhenCommission", "numberOfLives", "maxExtendedFamilyMembers",
+      "maxAgeChildren", "currentMaxAgeChild", "principalMemberCover", "spouseCover",
+      "extendedFamilyCover", "children16toMax", "children6to15", "children1to5", "children0to1", "parentsCover"
+    ];
+
+    const cleanedFormData: Record<string, string> = {};
+    Object.entries(syncedFormData).forEach(([k, v]) => {
+      if (numericKeys.includes(k)) {
+        const s = toNumericString(String(v ?? ""));
+        cleanedFormData[k] = s === "" ? "0" : s;
+      } else {
+        cleanedFormData[k] = String(v ?? "");
+      }
     });
-    if (!res.ok) throw new Error(`Status ${res.status}`);
 
-    const result = await res.json();
-    toast.success("Quotation calculated");
-    setPremiumResult(result.result);
-    setShowQuoteDialog(true);
-  } catch (err: any) {
-    console.error("Quote error", err);
-    toast.error(`Failed to calculate: ${err.message}`);
-  } finally {
-    setIsCalculating(false);
-  }
-};
+    const payload = new FormData();
+    payload.append("file", uploadedFile);
+    Object.entries(cleanedFormData).forEach(([key, value]) => payload.append(key, value));
+
+    try {
+      // Start background job instead of waiting for full calculation
+      const res = await fetch("http://localhost:5002/api/quotes/funeral/start", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        body: payload
+      });
+
+      if (!res.ok) {
+        setIsCalculating(false);
+        throw new Error("Failed to start calculation");
+      }
+
+      const { jobId } = await res.json();
+      console.log("Started job:", jobId);
+
+      // Start polling for progress
+      pollJob(jobId);
+
+    } catch (err: any) {
+      console.error("Quote error", err);
+      toast.error(`Failed to calculate: ${err.message}`);
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
+
 
 
   const handleCreateQuote = async () => {
@@ -477,26 +519,26 @@ const handleInputChange = (field: string, value: string) => {
 
               <div className="space-y-1">
                 <Label htmlFor="principalMemberCover">Principal Member Cover<span className="text-red-500">*</span> </Label>
-            <Input
-  id="principalMemberCover"
-  type="number"
-  step="1"
-  inputMode="decimal"
-  value={formData.principalMemberCover}
-  onChange={(e) => handleInputChange("principalMemberCover", e.target.value)}
-/>
+                <Input
+                  id="principalMemberCover"
+                  type="number"
+                  step="1"
+                  inputMode="decimal"
+                  value={formData.principalMemberCover}
+                  onChange={(e) => handleInputChange("principalMemberCover", e.target.value)}
+                />
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="spouseCover">Spouse Cover (Same as Principal)</Label>
-               <Input
-  id="spouseCover"
-  type="number"
-  step="1"
-  inputMode="decimal"
-  value={formData.spouseCover}
-  onChange={(e) => handleInputChange("spouseCover", e.target.value)}
-/>
+                <Input
+                  id="spouseCover"
+                  type="number"
+                  step="1"
+                  inputMode="decimal"
+                  value={formData.spouseCover}
+                  onChange={(e) => handleInputChange("spouseCover", e.target.value)}
+                />
 
               </div>
 
@@ -505,77 +547,77 @@ const handleInputChange = (field: string, value: string) => {
                   Children age 16 to {formData.currentMaxAgeChild || "XX"}
                 </Label>
 
-               <Input
-  id="children16toMax"
-  type="number"
-  step="1"
-  inputMode="decimal"
-  value={formData.children16toMax}
-  onChange={(e) => handleInputChange("children16toMax", e.target.value)}
-/>
+                <Input
+                  id="children16toMax"
+                  type="number"
+                  step="1"
+                  inputMode="decimal"
+                  value={formData.children16toMax}
+                  onChange={(e) => handleInputChange("children16toMax", e.target.value)}
+                />
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="children6to15">Children age 6 to 15</Label>
                 <Input
-  id="children6to15"
-  type="number"
-  step="1"
-  inputMode="decimal"
-  value={formData.children6to15}
-  onChange={(e) => handleInputChange("children6to15", e.target.value)}
-/>
+                  id="children6to15"
+                  type="number"
+                  step="1"
+                  inputMode="decimal"
+                  value={formData.children6to15}
+                  onChange={(e) => handleInputChange("children6to15", e.target.value)}
+                />
 
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="children1to5">Children age 1 to 5</Label>
-               <Input
-  id="children1to5"
-  type="number"
-  step="1"
-  inputMode="decimal"
-  value={formData.children1to5}
-  onChange={(e) => handleInputChange("children1to5", e.target.value)}
-/>
+                <Input
+                  id="children1to5"
+                  type="number"
+                  step="1"
+                  inputMode="decimal"
+                  value={formData.children1to5}
+                  onChange={(e) => handleInputChange("children1to5", e.target.value)}
+                />
 
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="children0to1">Children age 0 to 1</Label>
                 <Input
-  id="children0to1"
-  type="number"
-  step="1"
-  inputMode="decimal"
-  value={formData.children0to1}
-  onChange={(e) => handleInputChange("children0to1", e.target.value)}
-/>
+                  id="children0to1"
+                  type="number"
+                  step="1"
+                  inputMode="decimal"
+                  value={formData.children0to1}
+                  onChange={(e) => handleInputChange("children0to1", e.target.value)}
+                />
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="extendedFamilyCover">Extended Family Cover</Label>
-               <Input
-  id="extendedFamilyCover"
-  type="number"
-  step="1"
-  inputMode="decimal"
-  value={formData.extendedFamilyCover}
-  onChange={(e) => handleInputChange("extendedFamilyCover", e.target.value)}
-/>
+                <Input
+                  id="extendedFamilyCover"
+                  type="number"
+                  step="1"
+                  inputMode="decimal"
+                  value={formData.extendedFamilyCover}
+                  onChange={(e) => handleInputChange("extendedFamilyCover", e.target.value)}
+                />
 
               </div>
 
               <div className="space-y-1">
                 <Label htmlFor="parentsCover">Parents Cover</Label>
-               <Input
-  id="parentsCover"
-  type="number"
-  step="1"
-  inputMode="decimal"
-  value={formData.parentsCover}
-  onChange={(e) => handleInputChange("parentsCover", e.target.value)}
-/>
+                <Input
+                  id="parentsCover"
+                  type="number"
+                  step="1"
+                  inputMode="decimal"
+                  value={formData.parentsCover}
+                  onChange={(e) => handleInputChange("parentsCover", e.target.value)}
+                />
               </div>
             </div>
           </CardContent>

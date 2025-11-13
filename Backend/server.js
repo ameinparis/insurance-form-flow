@@ -14,7 +14,8 @@ const XLSX = require("xlsx");
 const puppeteer = require("puppeteer");
 const fs = require("fs");
 const path = require("path");
-
+const { v4: uuidv4 } = require("uuid");
+const jobs = {};
 
 const app = express();
 const PORT = process.env.PORT || 5002;
@@ -323,6 +324,123 @@ app.post("/api/quotes/calculate-funeral", authenticateToken, upload.single("file
 });
 
 
+/** ---------------- NEW FUNERAL JOB SYSTEM: START JOB ---------------- */
+app.post("/api/quotes/funeral/start", authenticateToken, upload.single("file"), (req, res) => {
+  const jobId = uuidv4();
+
+  if (!req.file) {
+    return res.status(400).json({ message: "Missing file" });
+  }
+
+  // Extract form fields (everything except file)
+  const formData = req.body;
+
+  jobs[jobId] = {
+    status: "queued",
+    progress: 0,
+    message: "Waiting to begin calculation...",
+    result: null,
+    error: null,
+
+    // Store raw data for worker
+    fileBuffer: req.file.buffer,
+    fileName: req.file.originalname.toLowerCase(),
+    formData: formData,
+  };
+
+  console.log("Funeral job created:", jobId);
+
+  res.json({ jobId });
+});
+
+
+/** ---------------- FUNERAL JOB STATUS CHECK ---------------- */
+app.get("/api/quotes/funeral/status/:jobId", (req, res) => {
+  const job = jobs[req.params.jobId];
+  if (!job) return res.status(404).json({ message: "Job not found" });
+
+  res.json(job);
+});
+
+/** ---------------- FUNERAL JOB WORKER LOOP ---------------- */
+async function processFuneralJobs() {
+  for (const [jobId, job] of Object.entries(jobs)) {
+    if (job.status !== "queued") continue;
+
+    console.log("Starting funeral job:", jobId);
+    job.status = "processing";
+    job.progress = 10;
+    job.message = "Processing member file...";
+
+    try {
+      // We stored uploaded file + formData inside job temporarily
+      const { fileBuffer, fileName, formData } = job;
+      if (!fileBuffer) {
+        job.status = "error";
+        job.error = "Missing file buffer";
+        continue;
+      }
+
+      // ---------------- Parse File ----------------
+      let rows = [];
+
+      if (fileName.endsWith(".csv")) {
+        const csv = fileBuffer.toString("utf8");
+        const parsed = Papa.parse(csv, { header: true });
+        rows = parsed.data.filter(r => Object.values(r).some(Boolean));
+      } else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
+        const workbook = XLSX.read(fileBuffer, { type: "buffer" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+      } else {
+        job.status = "error";
+        job.error = "Unsupported file type";
+        continue;
+      }
+
+      job.progress = 40;
+      job.message = "Mapping member data...";
+
+      const members = rows.map(row => ({
+        memberNumber: row["Member Number"] || row["Member number"] || "",
+        surname: row["Member Surname"] || row["Surname"] || "",
+        firstName: row["First Name"] || row["Firstname"] || "",
+        dob: row["Date of Birth"],
+        relationship: row["Relationship"],
+        gender: row["Gender"],
+        coverAmount: parseFloat(row["Sum assured"] || row["Sum Assured"] || 0),
+        premium: 0,
+        age: 0,
+      }));
+
+      job.progress = 60;
+      job.message = "Sending to Python calculator...";
+
+      // ---------------- CALL PYTHON ----------------
+      const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/funeral/calculate";
+      const { data } = await axios.post(PY_URL, { members, inputs: formData });
+
+      job.progress = 100;
+      job.status = "done";
+      job.message = "Calculation completed successfully";
+      job.result = data.output || {};
+
+      console.log("Funeral job completed:", jobId);
+
+    } catch (err) {
+      console.error("Worker error:", err);
+      job.status = "error";
+      job.error = err.message;
+    }
+  }
+}
+
+// Run worker loop every 1 second
+setInterval(processFuneralJobs, 1000);
+
+
+
+
 /** Life Assurance calculator proxy → Python */
 app.post("/api/quotes/calculate-assurance", async (req, res) => {
   try {
@@ -337,7 +455,6 @@ app.post("/api/quotes/calculate-assurance", async (req, res) => {
     res.status(500).json({ message: "Failed to calculate Life Assurance" });
   }
 });
-
 
 
 
@@ -425,8 +542,6 @@ app.get("/api/users", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch users" });
   }
 });
-
-
 
 
 // Utility function to fetch quote by ID
