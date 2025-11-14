@@ -380,6 +380,13 @@ const LifeFuneralQuotationForm = () => {
 
   return (
     <TooltipProvider>
+      {/* Full-screen dimming overlay with centered progress indicator */}
+      {isCalculating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <HybridIndicator progress={jobProgress} />
+        </div>
+      )}
+      
       <div className="w-full max-w-4xl mx-auto space-y-6">
         {/* Upload Card */}
         <Card>
@@ -686,13 +693,6 @@ const LifeFuneralQuotationForm = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Hybrid Circular Progress Indicator */}
-        {isCalculating && (
-          <div className="flex justify-center py-6">
-            <HybridIndicator progress={jobProgress} />
-          </div>
-        )}
 
         <div className="flex justify-end">
           <Button onClick={handleSubmit} disabled={!uploadedFile || isCalculating}>
