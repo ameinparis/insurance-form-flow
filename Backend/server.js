@@ -113,7 +113,7 @@ const authenticateToken = (req, _res, next) => {
   if (!token) return _res.status(401).json({ message: "No token provided" });
 
   jwt.verify(token, JWT_SECRET, (err, payload) => {
-    if (err) return _res.status(403).json({ message: "Invalid token" });
+    if (err) return _res.status(401).json({ message: "Token expired or invalid" });
     req.user = payload; // { userId, role }
     next();
   });
@@ -158,7 +158,7 @@ app.post("/api/users/login", async (req, res) => {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ message: "Invalid password" });
 
-    const token = jwt.sign({ userId: user._id.toString(), role: user.role }, JWT_SECRET, { expiresIn: "2h" });
+    const token = jwt.sign({ userId: user._id.toString(), role: user.role }, JWT_SECRET);
 
     const { password: _pw, ...safe } = user.toObject();
     res.json({ ...safe, token, userId: user._id.toString() });
