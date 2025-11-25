@@ -8,6 +8,14 @@ import { Upload, Plus, Trash2, HelpCircle, Loader2 } from "lucide-react"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
 import { toast } from "sonner"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
 
 const GroupLifeAssuranceForm = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -25,6 +33,16 @@ const GroupLifeAssuranceForm = () => {
   })
   const [result, setResult] = useState<any | null>(null)
   const [isCalculating, setIsCalculating] = useState(false)
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false)
+
+  const [customerDetails, setCustomerDetails] = useState({
+    schemeName: "",
+    registrationNumber: "",
+    contactPerson: "",
+    contactEmail: "",
+    contactPhone: "",
+  })
+
 
   const handleAddRow = () => {
     setMembers((prev) => [...prev, { member: "", gender: "", dob: "", annualSalary: "" }])
@@ -130,45 +148,56 @@ const GroupLifeAssuranceForm = () => {
     })
   }, [members])
 
-const handleCalculate = async () => {
-  try {
-    setIsCalculating(true)
-    setResult(null)
+  const handleCalculate = async () => {
+    try {
+      setIsCalculating(true)
+      setResult(null)
 
-    const token = localStorage.getItem("token")
+      const token = localStorage.getItem("token")
 
-    const res = await fetch("http://localhost:5002/api/quotes/calculate-assurance", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ members }),
-    })
+      const res = await fetch("http://localhost:5002/api/quotes/calculate-assurance", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ members }),
+      })
 
-    const data = await res.json()
-    console.log("🔥 RAW RESPONSE FROM BACKEND:", data)
+      const data = await res.json()
+      console.log("🔥 RAW RESPONSE FROM BACKEND:", data)
 
-    if (!res.ok) throw new Error(data.error || `Status ${res.status}`)
+      if (!res.ok) throw new Error(data.error || `Status ${res.status}`)
 
-    // some backends return { output: {...} }, others return {...}
-const output = data.result || data.output || data
-    setResult(output)
+      // some backends return { output: {...} }, others return {...}
+      const output = data.result || data.output || data
+      setResult(output)
+      setShowQuoteDialog(true)
 
-    toast.success("Life Assurance quotation calculated")
-  } catch (err: any) {
-    console.error("Calculation error:", err)
-    toast.error(`Calculation failed: ${err.message}`)
-  } finally {
-    setIsCalculating(false)
+      toast.success("Life Assurance quotation calculated")
+    } catch (err: any) {
+      console.error("Calculation error:", err)
+      toast.error(`Calculation failed: ${err.message}`)
+    } finally {
+      setIsCalculating(false)
+    }
   }
-}
+const formatMoney = (v: number | null | undefined) =>
+  v == null
+    ? "-"
+    : v.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+
+const formatPercentFromFraction = (v: number | null | undefined) =>
+  v == null ? "-" : `${(v * 100).toFixed(3)}%`
 
 
   return (
     <TooltipProvider>
       <div className="w-full max-w-6xl mx-auto space-y-8">
-          <Card>
+        <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -277,7 +306,7 @@ const output = data.result || data.output || data
             </div>
           </CardContent>
         </Card>
-  
+
 
         <div className="flex justify-end">
           <Button onClick={handleCalculate} disabled={members.length === 0 || isCalculating}>
@@ -286,75 +315,89 @@ const output = data.result || data.output || data
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Calculating...
               </>
             ) : (
-              "Calculate GLA Quote"
+              "Calculate"
             )}
           </Button>
-          
+
         </div>
-        {/* Results Section */}
-{/* Results Section (Table) */}
-{result && (
-  <Card className="mt-8">
-    <CardHeader>
-      <CardTitle>GLA Calculation Results</CardTitle>
-      <CardDescription>Summary of group life assurance results</CardDescription>
-    </CardHeader>
+        <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>GLA Calculation Results</DialogTitle>
+              <DialogDescription>
+                Summary of group life assurance results
+              </DialogDescription>
+            </DialogHeader>
 
-    <CardContent>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border border-muted-foreground/20 rounded-lg overflow-hidden">
-          <thead className="bg-muted">
-            <tr>
-              <th className="text-left p-3 w-[40%]">Metric</th>
-              <th className="text-left p-3">Value</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-muted-foreground/10">
-            {[
-              ["Membership", result.membership],
-              ["Total Salary (BWP)", result.totalSalary?.toLocaleString()],
-              ["Average Salary (BWP)", result.averageSalary?.toLocaleString()],
-              ["Average Age", result.averageAge],
-              ["Min Age", result.minAge],
-              ["Max Age", result.maxAge],
-              ["% Male", `${result.percentMale}%`],
-              // ["Min DOB", result.minDOB ?? "-"],
-              // ["Max DOB", result.maxDOB ?? "-"],
+     {result && (
+  <div className="mt-4 overflow-x-auto">
+    <table className="w-full text-sm border border-muted-foreground/20 rounded-lg overflow-hidden">
+      <thead className="bg-muted">
+        <tr>
+          <th className="text-left p-3 w-[40%]">Metric</th>
+          <th className="text-left p-3">Value</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-muted-foreground/10">
+        {[
+          // existing basics
+          ["Membership", result.membership],
+          ["Total Salary (BWP)", `BWP ${formatMoney(result.totalSalary)}`],
+          ["Average Salary (BWP)", `BWP ${formatMoney(result.averageSalary)}`],
+          ["Average Age", result.averageAge],
+          ["Min AS (Excel serial)", result.minAS],
+          ["Max AS (Excel serial)", result.maxAS],
+          ["Min Age", result.minAge],
+          ["Max Age", result.maxAge],
+          ["% Male", result.percentMale != null ? `${result.percentMale}%` : "-"],
 
-              // Rates
-              ["Weighted Avg (per-thousand)", result.weightedAveragePerThousand],
-              ["GLA Rate", result.weightedAveragePer1],
-              // ["GLA Rate (per-thousand)", result.glaRatePerThousand ?? result.weightedAveragePerThousand],
-              // ["GLA Rate (per-1)", result.glaRatePer1 ?? result.weightedAveragePer1],
-
-              // CE Blended
-              // ["Claims Experience (per-thousand)", result.claimsExperiencePerThousand],
-              // ["CE Blended (per-thousand)", result.ceBlendedPerThousand],
-              // ["CE Blended (per-1)", result.ceBlendedPer1],
-
-              // Benefit setup
-              // ["Benefit Multiple", result.benefitMultiple],
-              // ["Flat Top-up", Number(result.flatTopUp || 0).toLocaleString()],
-
-              // Benefit rollups
-              ["GLA Benefit Amount (BWP)", Number(result.totalBenefitAmount || 0).toLocaleString()],
-              // ["Min Benefit Amount (BWP)", Number(result.minBenefitAmount || 0).toLocaleString()],
-              // ["Max Benefit Amount (BWP)", Number(result.maxBenefitAmount || 0).toLocaleString()],
-            ].map(([label, value]) => (
-              <tr key={label as string} className="hover:bg-muted/40">
-                <td className="p-3 text-muted-foreground">{label}</td>
-                <td className="p-3 font-medium">{value ?? "-"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </CardContent>
-  </Card>
+          // // extra technical fields from Python summary
+          // ["Weighted Avg / 1000", result.weightedAveragePerThousand],
+          // ["GLA Rate per 1", result.glaRatePer1],
+          // ["CE Blended / 1000", result.ceBlendedPerThousand],
+          // [
+          //   "First GLA Benefit Amount",
+          //   `BWP ${formatMoney(result.firstGLABenefitAmount)}`,
+          // ],
+          // [
+          //   "First Expected Claims Cost",
+          //   `BWP ${formatMoney(result.firstExpectedClaimsCost)}`,
+          // ],
+          ["FCL", `BWP ${formatMoney(result.fcl)}`],
+          [
+            "Total Expected Claims Cost",
+            `BWP ${formatMoney(result.totalExpectedClaimsCost)}`,
+          ],
+          ["Net Premium", `BWP ${formatMoney(result.netPremium)}`],
+          ["Commission", `BWP ${formatMoney(result.commission)}`],
+          ["Gross Premium", `BWP ${formatMoney(result.grossPremium)}`],
+          [
+            "Total Annual Salary (from 4 × salary + top-up)",
+            `BWP ${formatMoney(result.totalAnnualSalary)}`,
+          ],
+          ["Gross Rate GLA", formatPercentFromFraction(result.grossRateGLA)],
+          ["Gross Rate PHI", formatPercentFromFraction(result.grossRatePHI)],
+        ].map(([label, value]) => (
+          <tr key={label as string} className="hover:bg-muted/40">
+            <td className="p-3 text-muted-foreground">{label}</td>
+            <td className="p-3 font-medium">{value ?? "-"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
 )}
 
-
-
+            <div className="flex justify-end mt-6">
+              <Button
+                variant="secondary"
+                onClick={() => setShowQuoteDialog(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
       </div>
     </TooltipProvider>

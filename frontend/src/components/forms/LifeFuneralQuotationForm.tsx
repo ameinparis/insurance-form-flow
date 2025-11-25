@@ -56,7 +56,7 @@ const HybridIndicator = ({ progress }: HybridIndicatorProps) => {
         </svg>
         {/* Center content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <Hourglass className="h-6 w-6 text-primary mb-1" />
+          {/* <Hourglass className="h-6 w-6 text-primary mb-1" /> */}
           <span className="text-2xl font-bold text-foreground">
             {Math.round(progress)}%
           </span>
@@ -266,70 +266,70 @@ const LifeFuneralQuotationForm = () => {
     }, 1000);
   };
 
+const handleSubmit = async () => {
+  if (!uploadedFile) {
+    toast.error("Please upload a member file first.");
+    return;
+  }
 
-  const handleSubmit = async () => {
-    if (!uploadedFile) {
-      toast.error("Please upload a member file first.");
-      return;
-    }
+  setIsCalculating(true);
+  setJobProgress(0);
 
-    setIsCalculating(true);
-    setJobProgress(0);
-
-    const syncedFormData = {
-      ...formData,
-      spouseCover: formData.spouseCover || formData.principalMemberCover || "0",
-      extendedFamilyCover: formData.extendedFamilyCover || formData.principalMemberCover || "0",
-    };
-
-    //sanitize ALL fields to numeric strings (or keep plain text where applicable)
-    const numericKeys = [
-      "profitTarget", "asAndWhenCommission", "numberOfLives", "maxExtendedFamilyMembers",
-      "maxAgeChildren", "currentMaxAgeChild", "principalMemberCover", "spouseCover",
-      "extendedFamilyCover", "children16toMax", "children6to15", "children1to5", "children0to1", "parentsCover"
-    ];
-
-    const cleanedFormData: Record<string, string> = {};
-    Object.entries(syncedFormData).forEach(([k, v]) => {
-      if (numericKeys.includes(k)) {
-        const s = toNumericString(String(v ?? ""));
-        cleanedFormData[k] = s === "" ? "0" : s;
-      } else {
-        cleanedFormData[k] = String(v ?? "");
-      }
-    });
-
-    const payload = new FormData();
-    payload.append("file", uploadedFile);
-    Object.entries(cleanedFormData).forEach(([key, value]) => payload.append(key, value));
-
-    try {
-      // Start background job instead of waiting for full calculation
-      const res = await fetch("http://localhost:5002/api/quotes/funeral/start", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        body: payload
-      });
-
-      if (!res.ok) {
-        setIsCalculating(false);
-        throw new Error("Failed to start calculation");
-      }
-
-      const { jobId } = await res.json();
-      console.log("Started job:", jobId);
-
-      // Start polling for progress
-      pollJob(jobId);
-
-    } catch (err: any) {
-      console.error("Quote error", err);
-      toast.error(`Failed to calculate: ${err.message}`);
-    } finally {
-      setIsCalculating(false);
-    }
+  const syncedFormData = {
+    ...formData,
+    spouseCover: formData.spouseCover || formData.principalMemberCover || "0",
+    extendedFamilyCover: formData.extendedFamilyCover || formData.principalMemberCover || "0",
   };
 
+  //sanitize ALL fields to numeric strings (or keep plain text where applicable)
+  const numericKeys = [
+    "profitTarget", "asAndWhenCommission", "numberOfLives", "maxExtendedFamilyMembers",
+    "maxAgeChildren", "currentMaxAgeChild", "principalMemberCover", "spouseCover",
+    "extendedFamilyCover", "children16toMax", "children6to15", "children1to5", "children0to1", "parentsCover"
+  ];
+
+  const cleanedFormData: Record<string, string> = {};
+  Object.entries(syncedFormData).forEach(([k, v]) => {
+    if (numericKeys.includes(k)) {
+      const s = toNumericString(String(v ?? ""));
+      cleanedFormData[k] = s === "" ? "0" : s;
+    } else {
+      cleanedFormData[k] = String(v ?? "");
+    }
+  });
+
+  const payload = new FormData();
+  payload.append("file", uploadedFile);
+  Object.entries(cleanedFormData).forEach(([key, value]) => payload.append(key, value));
+
+  try {
+    // Start background job instead of waiting for full calculation
+    const res = await fetch("http://localhost:5002/api/quotes/funeral/start", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      body: payload
+    });
+
+    if (!res.ok) {
+      setIsCalculating(false);
+      setJobProgress(0);
+      throw new Error("Failed to start calculation");
+    }
+
+    const { jobId } = await res.json();
+    console.log("Started job:", jobId);
+
+    // Start polling for progress - progress indicator stays visible!
+    pollJob(jobId);
+
+  } catch (err: any) {
+    console.error("Quote error", err);
+    setIsCalculating(false);
+    setJobProgress(0);
+    toast.error(`Failed to calculate: ${err.message}`);
+  }
+  // ❌ REMOVED the finally block that was hiding the progress indicator
+};
 
 
 

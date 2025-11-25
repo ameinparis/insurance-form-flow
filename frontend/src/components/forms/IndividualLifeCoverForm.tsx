@@ -116,7 +116,7 @@ const IndividualLifeCoverForm = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="never">Never Smoked</SelectItem>
-                <SelectItem value="former">Former Smoker (Quit > 12 months)</SelectItem>
+                <SelectItem value="former">Former Smoker (Quit 12 months)</SelectItem>
                 <SelectItem value="current">Current Smoker</SelectItem>
                 <SelectItem value="occasional">Occasional Smoker</SelectItem>
               </SelectContent>

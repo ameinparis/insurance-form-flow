@@ -87,11 +87,9 @@ def calculate_life_assurance():
         wa_pt = (male_pt * pct_male) + (female_pt * (1 - pct_male))  # per-thousand
         wa_per1 = wa_pt / 1000.0
 
-        # Alias (clarity): WA is our GLA pricing rate
         gla_rate_pt = wa_pt
         gla_rate_per1 = wa_per1
 
-        # ---- CE Blended (Excel-style) ----
         ce_pt = data.get("claimsExperiencePerThousand", 0.64)
         try:
             ce_pt = float(ce_pt)
@@ -100,40 +98,45 @@ def calculate_life_assurance():
         ce_blended_pt = 0.5 * wa_pt + 0.5 * ce_pt
         ce_blended_per1 = ce_blended_pt / 1000.0
 
-        # ---- Benefit Amount (Excel-style: D * LEFT(E9,1) + E11) ----
-        # Accept either numeric multiple or text like "4 X Annual Salary"
-        benefit_multiple = data.get("benefitMultiple", None)
-        benefit_multiple_text = data.get("benefitMultipleText", None)
-        flat_topup = data.get("flatTopUp", 0)
+       
 
-        # Resolve base multiple
-        if benefit_multiple is None:
-            if isinstance(benefit_multiple_text, str):
-                m = re.search(r"(\d+(\.\d+)?)", benefit_multiple_text)
-                benefit_multiple = float(m.group(1)) if m else 4.0
-            else:
-                benefit_multiple = 4.0
-        else:
-            try:
-                benefit_multiple = float(benefit_multiple)
-            except Exception:
-                benefit_multiple = 4.0
-
-        # Resolve flat top-up
-        try:
-            flat_topup = float(flat_topup)
-        except Exception:
-            flat_topup = 0.0
-
-        # Per-member benefit amount (mirrors Excel)
-        df["glaBenefitAmount"] = (df["annualSalary"] * benefit_multiple) + flat_topup
+        df["glaBenefitAmount"] = (df["annualSalary"] * 4.0) + 20000.0 
+        df["glaExpectedClaimsCost"] = df["glaBenefitAmount"] * gla_rate_per1
+        first_benefit = float(df["glaBenefitAmount"].iloc[0])
+        first_claim_cost = float(df["glaExpectedClaimsCost"].iloc[0])
+        fcl = avg_salary * 4
 
         # Rollups
-        total_benefit_amount = float(df["glaBenefitAmount"].sum())
-        min_benefit = float(df["glaBenefitAmount"].min()) if membership else 0.0
-        max_benefit = float(df["glaBenefitAmount"].max()) if membership else 0.0
+        total_expected_claims_cost = float(df["glaExpectedClaimsCost"].sum())
+        print("🧮 Total Expected Claims Cost:", total_expected_claims_cost)
+        print(df[["annualSalary", "glaBenefitAmount", "glaExpectedClaimsCost"]].head(15).to_string())
 
-        # ---- Summary ----
+
+        # ---- Predefined Constants ----
+        admin_expense = 0.12         # O1
+        commission = 0.114           # O2
+        profit_load = 0.05           # O3
+        safety_margin = 0.20         # O4
+        discount_rate = 0.05         # O5
+        
+        
+
+    
+        discount_factor = (1 + discount_rate) ** (-0.5)
+        denominator = 1 - admin_expense - profit_load - safety_margin
+
+        net_premium = (total_expected_claims_cost * discount_factor) / denominator
+        
+        gross_premium = net_premium / (1 - commission)
+        
+        total_gla_benefit_amount = float(df["glaBenefitAmount"].sum())
+        total_annual_salary = (total_gla_benefit_amount) / 4
+        commission_amount = gross_premium - net_premium
+        gross_rate_gla = gross_premium / total_annual_salary
+        gross_rate_phi = 0.35 * gross_rate_gla
+        
+        
+        # ---- Update Summary ----
         summary = {
             "membership": membership,
             "totalSalary": round(total_salary),
@@ -144,29 +147,20 @@ def calculate_life_assurance():
             "percentMale": int(round(pct_male * 100)),
             "minAS": min_as,
             "maxAS": max_as,
-            "minDOB": min_dob_dt.strftime("%Y-%m-%d") if pd.notna(min_dob_dt) else None,
-            "maxDOB": max_dob_dt.strftime("%Y-%m-%d") if pd.notna(max_dob_dt) else None,
-
-            # WA / GLA Rate outputs
-            "glaAgeKey": age_key,
-            "glaMaleRatePerThousand": round(male_pt, 6),
-            "glaFemaleRatePerThousand": round(female_pt, 6),
             "weightedAveragePerThousand": round(wa_pt, 6),
-            "weightedAveragePer1": round(wa_per1, 8),
-            "glaRatePerThousand": round(gla_rate_pt, 6),
-            "glaRatePer1": round(gla_rate_per1, 8),
-
-            # CE blended (optional)
-            "claimsExperiencePerThousand": round(ce_pt, 6),
+            "glaRatePer1": round(gla_rate_per1, 9),
             "ceBlendedPerThousand": round(ce_blended_pt, 6),
-            "ceBlendedPer1": round(ce_blended_per1, 8),
-
-            # Benefit
-            # "benefitMultiple": benefit_multiple,
-            # "flatTopUp": flat_topup,
-            "totalBenefitAmount": round(total_benefit_amount, 2),
-            "minBenefitAmount": round(min_benefit, 2),
-            "maxBenefitAmount": round(max_benefit, 2),
+            "firstGLABenefitAmount": round(first_benefit, 2),
+            "firstExpectedClaimsCost": round(first_claim_cost, 2),
+            "fcl": round(fcl, 2),
+            "totalExpectedClaimsCost": round(total_expected_claims_cost, 2),
+            "netPremium": round(net_premium, 2),
+            "commission": round(commission_amount, 2),  # NEW: Commission amount
+            "grossPremium": round(gross_premium, 2),  # NEW: Gross Premium
+            "totalAnnualSalary": round(total_annual_salary, 2), # NEW: Total Annual Salary
+            "grossRateGLA": round(gross_rate_gla, 4),
+            "grossRatePHI": round(gross_rate_phi, 4)
+            
         }
 
         print("\n📤 Output Summary:")
