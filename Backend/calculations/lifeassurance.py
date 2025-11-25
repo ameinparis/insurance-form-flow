@@ -134,7 +134,9 @@ def calculate_life_assurance():
         commission_amount = gross_premium - net_premium
         gross_rate_gla = gross_premium / total_annual_salary
         gross_rate_phi = 0.35 * gross_rate_gla
-        
+        death = total_annual_salary * gross_rate_gla
+        odb = total_annual_salary * gross_rate_phi
+        total_premiums = death + odb
         
         # ---- Update Summary ----
         summary = {
@@ -159,7 +161,11 @@ def calculate_life_assurance():
             "grossPremium": round(gross_premium, 2),  # NEW: Gross Premium
             "totalAnnualSalary": round(total_annual_salary, 2), # NEW: Total Annual Salary
             "grossRateGLA": round(gross_rate_gla, 4),
-            "grossRatePHI": round(gross_rate_phi, 4)
+            "grossRatePHI": round(gross_rate_phi, 4),
+            "deathPremium":round(death),
+            "ODB": round(odb),
+            "totalPremiums":round(total_premiums)
+            
             
         }
 

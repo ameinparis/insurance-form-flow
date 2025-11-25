@@ -1,6 +1,6 @@
-const API_BASE_URL = 'http://localhost:5002
+const API_BASE_URL = 'https://njs.exclusivelife.co.bw
 /api'
-const BASE_URL = "http://localhost:5002
+const BASE_URL = "https://njs.exclusivelife.co.bw
 /api"
 
 export interface Quote {

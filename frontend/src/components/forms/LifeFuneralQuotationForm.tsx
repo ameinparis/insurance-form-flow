@@ -13,59 +13,28 @@ import { toast } from "sonner"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
 
-// Hybrid Circular Progress Indicator Component
-interface HybridIndicatorProps {
-  progress: number
+// Simple Loading Overlay Component
+interface LoadingOverlayProps {
+  message?: string
 }
 
-const HybridIndicator = ({ progress }: HybridIndicatorProps) => {
-  const radius = 54
-  const strokeWidth = 8
-  const normalizedRadius = radius - strokeWidth / 2
-  const circumference = normalizedRadius * 2 * Math.PI
-  const strokeDashoffset = circumference - (progress / 100) * circumference
-
+const LoadingOverlay = ({ message }: LoadingOverlayProps) => {
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="relative w-32 h-32">
-        <svg height={radius * 2} width={radius * 2} className="transform -rotate-90">
-          {/* Background ring */}
-          <circle
-            stroke="hsl(var(--muted))"
-            fill="transparent"
-            strokeWidth={strokeWidth}
-            r={normalizedRadius}
-            cx={radius}
-            cy={radius}
-          />
-          {/* Progress ring */}
-          <circle
-            stroke="hsl(var(--primary))"
-            fill="transparent"
-            strokeWidth={strokeWidth}
-            strokeDasharray={circumference + ' ' + circumference}
-            style={{
-              strokeDashoffset,
-              transition: 'stroke-dashoffset 0.5s ease-in-out'
-            }}
-            strokeLinecap="round"
-            r={normalizedRadius}
-            cx={radius}
-            cy={radius}
-          />
-        </svg>
-        {/* Center content */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {/* <Hourglass className="h-6 w-6 text-primary mb-1" /> */}
-          <span className="text-2xl font-bold text-foreground">
-            {Math.round(progress)}%
-          </span>
-        </div>
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative">
+        {/* Spinner circle */}
+        <div className="h-16 w-16 rounded-full border-4 border-muted border-t-primary animate-spin" />
+        {/* Hourglass icon in the middle */}
+        <Hourglass className="h-6 w-6 text-primary absolute inset-0 m-auto" />
       </div>
-      <p className="text-sm font-medium text-muted-foreground">Loading...</p>
+      <p className="text-sm font-medium text-muted-foreground">
+  {message || "This might take a while. Please don’t close this window."}
+</p>
+
     </div>
   )
 }
+
 
 const LifeFuneralQuotationForm = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -231,7 +200,7 @@ const LifeFuneralQuotationForm = () => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(
-          `http://localhost:5002/api/quotes/funeral/status/${jobId}`
+          `https://njs.exclusivelife.co.bw/api/quotes/funeral/status/${jobId}`
         );
         const data = await res.json();
         console.log("Polling job:", data);
@@ -304,7 +273,7 @@ const handleSubmit = async () => {
 
   try {
     // Start background job instead of waiting for full calculation
-    const res = await fetch("http://localhost:5002/api/quotes/funeral/start", {
+    const res = await fetch("https://njs.exclusivelife.co.bw/api/quotes/funeral/start", {
       method: "POST",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       body: payload
@@ -342,7 +311,7 @@ const handleSubmit = async () => {
     }
 
     try {
-      const res = await fetch("http://localhost:5002/api/new-quotes", {
+      const res = await fetch("https://njs.exclusivelife.co.bw/api/new-quotes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -383,7 +352,7 @@ const handleSubmit = async () => {
       {/* Full-screen dimming overlay with centered progress indicator */}
       {isCalculating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <HybridIndicator progress={jobProgress} />
+          <LoadingOverlay/>
         </div>
       )}
       
@@ -712,8 +681,7 @@ const handleSubmit = async () => {
               )}
 
               <Separator />
-              ...
-              ...
+            
               <div className="overflow-x-auto">
                 <table className="w-full text-sm border-collapse">
                   <thead className="bg-muted">
@@ -753,12 +721,7 @@ const handleSubmit = async () => {
                   </tbody>
                 </table>
               </div>
-              ...
-
-              ...
-
-
-
+          
               <div className="flex justify-end pt-4">
                 <Button onClick={() => setShowQuoteDialog(true)}>Create Quote</Button>
               </div>
@@ -836,8 +799,6 @@ const handleSubmit = async () => {
                       )}
 
                       <Separator />
-
-                      ...
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm border-collapse">
                           <thead className="bg-muted">
@@ -859,7 +820,7 @@ const handleSubmit = async () => {
                                       : "–"}
                                   </td>
                                   <td className="p-2">{row.numberOfBeneficiaries ?? "–"}</td>
-                                  <td className="p-2 bg-yellow-100 font-medium">
+                                  <td className="p-2  font-medium">
                                     {row.premiumPerBeneficiary != null
                                       ? `BWP ${row.premiumPerBeneficiary.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                                       : "–"}
@@ -877,7 +838,7 @@ const handleSubmit = async () => {
                           </tbody>
                         </table>
                       </div>
-                      ...
+                 
 
                     </>
                   ) : (

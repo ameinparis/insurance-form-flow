@@ -13,7 +13,7 @@ interface FuneralDisplayProps {
 export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
   const { client, inputs, outputs } = quote || {};
 
-  // 🧭 Fuzzy matching helper — case-insensitive, partial match
+  //Fuzzy matching helper — case-insensitive, partial match
   const getRow = (keyword: string) =>
     outputs?.rows?.find(
       (row: any) =>
@@ -21,10 +21,10 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
         row.memberStatus.toLowerCase().includes(keyword.toLowerCase())
     );
 
-  // 🧩 Log what’s coming from backend — so you can confirm Excel labels
-  console.log("🧾 FuneralDisplay outputs:", outputs?.rows);
+  //Log what’s coming from backend — so you can confirm Excel labels
+  console.log("FuneralDisplay outputs:", outputs?.rows);
 
-  // 🧮 Extract the relevant premiums safely
+  // Extract the relevant premiums safely
   const premiumPerFamily = getRow("family")?.totalPremium;
   const premiumPerMember = getRow("member")?.totalPremium;
   const premiumPerParent = getRow("parent")?.totalPremium;

@@ -80,7 +80,7 @@ const Quote = mongoose.model("Quotations", quoteSchema);
 const newQuoteSchema = new mongoose.Schema({
   productType: {
     type: String,
-    enum: ["Exclusive Annuity", "Exclusive Funeral", "life"],
+    enum: ["Exclusive Annuity", "Exclusive Funeral", "Exclusive Life Assurance"],
     required: true
   },
 
@@ -369,11 +369,10 @@ async function processFuneralJobs() {
 
     console.log("Starting funeral job:", jobId);
     job.status = "processing";
-    job.progress = 10;
-    job.message = "Processing member file...";
+    job.progress = 5;
+    job.message = "Starting funeral quotation...";
 
     try {
-      // We stored uploaded file + formData inside job temporarily
       const { fileBuffer, fileName, formData } = job;
       if (!fileBuffer) {
         job.status = "error";
@@ -382,12 +381,15 @@ async function processFuneralJobs() {
       }
 
       // ---------------- Parse File ----------------
+      job.progress = 15;
+      job.message = "Reading uploaded member file...";
+
       let rows = [];
 
       if (fileName.endsWith(".csv")) {
         const csv = fileBuffer.toString("utf8");
         const parsed = Papa.parse(csv, { header: true });
-        rows = parsed.data.filter(r => Object.values(r).some(Boolean));
+        rows = parsed.data.filter((r) => Object.values(r).some(Boolean));
       } else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
         const workbook = XLSX.read(fileBuffer, { type: "buffer" });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -398,10 +400,11 @@ async function processFuneralJobs() {
         continue;
       }
 
-      job.progress = 40;
-      job.message = "Mapping member data...";
+      job.progress = 30;
+      job.message = "Validating and cleaning member data...";
 
-      const members = rows.map(row => ({
+      // ---------------- Map members ----------------
+      const members = rows.map((row) => ({
         memberNumber: row["Member Number"] || row["Member number"] || "",
         surname: row["Member Surname"] || row["Surname"] || "",
         firstName: row["First Name"] || row["Firstname"] || "",
@@ -413,27 +416,52 @@ async function processFuneralJobs() {
         age: 0,
       }));
 
+      job.progress = 50;
+      job.message = "Preparing data for Excel model...";
+
+      // ---------------- CALL PYTHON (long-running) ----------------
       job.progress = 60;
-      job.message = "Sending to Python calculator...";
+      job.message = "Running Excel pricing model...";
 
-      // ---------------- CALL PYTHON ----------------
-      const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/funeral/calculate";
-      const { data } = await axios.post(PY_URL, { members, inputs: formData });
+      // 🔁 Smooth progress while Python is working
+      let smoothingTimer = setInterval(() => {
+        if (job.status !== "processing") {
+          clearInterval(smoothingTimer);
+          return;
+        }
+        // creep slowly towards 95% while waiting
+        if (job.progress < 95) {
+          job.progress += 1;
+        }
+      }, 1000); // every second
 
-      job.progress = 100;
-      job.status = "done";
-      job.message = "Calculation completed successfully";
-      job.result = data.output || {};
+      try {
+        const PY_URL =
+          process.env.PY_CALC_URL || "http://localhost:5005/funeral/calculate";
+        const { data } = await axios.post(PY_URL, { members, inputs: formData });
 
-      console.log("Funeral job completed:", jobId);
+        clearInterval(smoothingTimer);
 
+        job.progress = 100;
+        job.status = "done";
+        job.message = "Calculation completed successfully";
+        job.result = data.output || {};
+
+        console.log("Funeral job completed:", jobId);
+      } catch (err) {
+        clearInterval(smoothingTimer);
+        console.error("Worker error (Python):", err);
+        job.status = "error";
+        job.error = err.message || "Python calculation failed";
+      }
     } catch (err) {
       console.error("Worker error:", err);
       job.status = "error";
-      job.error = err.message;
+      job.error = err.message || "Unexpected error";
     }
   }
 }
+
 
 // Run worker loop every 1 second
 setInterval(processFuneralJobs, 1000);

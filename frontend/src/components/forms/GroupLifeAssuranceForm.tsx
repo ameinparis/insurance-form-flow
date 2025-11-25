@@ -155,7 +155,7 @@ const GroupLifeAssuranceForm = () => {
 
       const token = localStorage.getItem("token")
 
-      const res = await fetch("http://localhost:5002/api/quotes/calculate-assurance", {
+      const res = await fetch("https://njs.exclusivelife.co.bw/api/quotes/calculate-assurance", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -182,17 +182,90 @@ const GroupLifeAssuranceForm = () => {
       setIsCalculating(false)
     }
   }
-const formatMoney = (v: number | null | undefined) =>
-  v == null
-    ? "-"
-    : v.toLocaleString(undefined, {
+  const formatMoney = (v: number | null | undefined) =>
+    v == null
+      ? "-"
+      : v.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })
 
-const formatPercentFromFraction = (v: number | null | undefined) =>
-  v == null ? "-" : `${(v * 100).toFixed(3)}%`
+  const formatPercentFromFraction = (v: number | null | undefined) =>
+    v == null ? "-" : `${(v * 100).toFixed(3)}%`
 
+
+  const handleCreateQuote = async () => {
+    // Basic validation – you can tweak which fields are “required”
+    const requiredFields: (keyof typeof customerDetails)[] = [
+      "schemeName",
+      "registrationNumber",
+      "contactEmail",
+    ];
+
+    const missing = requiredFields.filter((field) => !customerDetails[field]);
+    if (missing.length > 0) {
+      toast.error(
+        `Please fill in: ${missing
+          .map((f) =>
+            f === "schemeName"
+              ? "Scheme / Corporate Name"
+              : f === "registrationNumber"
+                ? "Registration Number"
+                : f === "contactEmail"
+                  ? "Contact Email"
+                  : f
+          )
+          .join(", ")}`
+      );
+      return;
+    }
+
+    if (!result) {
+      toast.error("No calculation results available to save as a quote.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch("https://njs.exclusivelife.co.bw/api/new-quotes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({
+          productType: "Exclusive Life Assurance",         
+          client: {
+            schemeName: customerDetails.schemeName,
+            registrationNumber: customerDetails.registrationNumber,
+            contactPerson: customerDetails.contactPerson,
+            contactEmail: customerDetails.contactEmail,
+            contactPhone: customerDetails.contactPhone,
+          },
+          // you can tweak what you consider "inputs"
+          inputs: {
+            members,
+            summary,                    // the frontend summary you already compute
+          },
+          // outputs = full result coming back from Python calc
+          outputs: result,
+        }),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.message || "Failed to save quote");
+      }
+
+      const data = await res.json();
+      toast.success(`Quote ${data.quoteId} saved successfully!`);
+      setShowQuoteDialog(false);
+    } catch (err: any) {
+      console.error("Save quote error:", err);
+      toast.error(err.message || "Failed to save quote");
+    }
+  };
 
   return (
     <TooltipProvider>
@@ -416,6 +489,9 @@ const formatPercentFromFraction = (v: number | null | undefined) =>
                             ["Total Annual Salary", `BWP ${formatMoney(result.totalAnnualSalary)}`],
                             ["Gross Rate GLA", formatPercentFromFraction(result.grossRateGLA)],
                             ["Gross Rate PHI", formatPercentFromFraction(result.grossRatePHI)],
+                            ["Death", `BWP ${formatMoney(result.deathPremium)}`],
+                            ["OBD", `BWP ${formatMoney(result.ODB)}`],
+                            ["Total Premium", `BWP ${formatMoney(result.totalPremiums)}`],
                           ].map(([label, value]) => (
                             <tr key={label as string} className="hover:bg-muted/40">
                               <td className="p-3 text-muted-foreground">{label}</td>
@@ -437,9 +513,10 @@ const formatPercentFromFraction = (v: number | null | undefined) =>
               <Button variant="secondary" onClick={() => setShowQuoteDialog(false)}>
                 Cancel
               </Button>
-              <Button onClick={() => toast.success("Quote generated successfully!")}>
+              <Button onClick={handleCreateQuote}>
                 Generate Quote
               </Button>
+
             </div>
           </DialogContent>
         </Dialog>
