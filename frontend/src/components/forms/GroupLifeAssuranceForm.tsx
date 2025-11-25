@@ -321,79 +321,124 @@ const formatPercentFromFraction = (v: number | null | undefined) =>
 
         </div>
         <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>GLA Calculation Results</DialogTitle>
+              <DialogTitle>Create Customer GLA Quotation</DialogTitle>
               <DialogDescription>
-                Summary of group life assurance results
+                Enter customer details and review calculation results
               </DialogDescription>
             </DialogHeader>
 
-     {result && (
-  <div className="mt-4 overflow-x-auto">
-    <table className="w-full text-sm border border-muted-foreground/20 rounded-lg overflow-hidden">
-      <thead className="bg-muted">
-        <tr>
-          <th className="text-left p-3 w-[40%]">Metric</th>
-          <th className="text-left p-3">Value</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-muted-foreground/10">
-        {[
-          // existing basics
-          ["Membership", result.membership],
-          ["Total Salary (BWP)", `BWP ${formatMoney(result.totalSalary)}`],
-          ["Average Salary (BWP)", `BWP ${formatMoney(result.averageSalary)}`],
-          ["Average Age", result.averageAge],
-          ["Min AS (Excel serial)", result.minAS],
-          ["Max AS (Excel serial)", result.maxAS],
-          ["Min Age", result.minAge],
-          ["Max Age", result.maxAge],
-          ["% Male", result.percentMale != null ? `${result.percentMale}%` : "-"],
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Customer Details Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Customer Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Scheme / Corporate Name</Label>
+                    <Input
+                      value={customerDetails.schemeName}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, schemeName: e.target.value }))}
+                      placeholder="e.g. Exclusive Life Holdings"
+                    />
+                  </div>
 
-          // // extra technical fields from Python summary
-          // ["Weighted Avg / 1000", result.weightedAveragePerThousand],
-          // ["GLA Rate per 1", result.glaRatePer1],
-          // ["CE Blended / 1000", result.ceBlendedPerThousand],
-          // [
-          //   "First GLA Benefit Amount",
-          //   `BWP ${formatMoney(result.firstGLABenefitAmount)}`,
-          // ],
-          // [
-          //   "First Expected Claims Cost",
-          //   `BWP ${formatMoney(result.firstExpectedClaimsCost)}`,
-          // ],
-          ["FCL", `BWP ${formatMoney(result.fcl)}`],
-          [
-            "Total Expected Claims Cost",
-            `BWP ${formatMoney(result.totalExpectedClaimsCost)}`,
-          ],
-          ["Net Premium", `BWP ${formatMoney(result.netPremium)}`],
-          ["Commission", `BWP ${formatMoney(result.commission)}`],
-          ["Gross Premium", `BWP ${formatMoney(result.grossPremium)}`],
-          [
-            "Total Annual Salary (from 4 × salary + top-up)",
-            `BWP ${formatMoney(result.totalAnnualSalary)}`,
-          ],
-          ["Gross Rate GLA", formatPercentFromFraction(result.grossRateGLA)],
-          ["Gross Rate PHI", formatPercentFromFraction(result.grossRatePHI)],
-        ].map(([label, value]) => (
-          <tr key={label as string} className="hover:bg-muted/40">
-            <td className="p-3 text-muted-foreground">{label}</td>
-            <td className="p-3 font-medium">{value ?? "-"}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-)}
+                  <div className="space-y-2">
+                    <Label>Registration Number</Label>
+                    <Input
+                      value={customerDetails.registrationNumber}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, registrationNumber: e.target.value }))}
+                      placeholder="e.g. BW0000012345"
+                    />
+                  </div>
 
-            <div className="flex justify-end mt-6">
-              <Button
-                variant="secondary"
-                onClick={() => setShowQuoteDialog(false)}
-              >
-                Close
+                  <div className="space-y-2">
+                    <Label>Contact Person</Label>
+                    <Input
+                      value={customerDetails.contactPerson}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, contactPerson: e.target.value }))}
+                      placeholder="e.g. John Doe"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Contact Number</Label>
+                    <Input
+                      value={customerDetails.contactPhone}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, contactPhone: e.target.value }))}
+                      placeholder="e.g. +267 395 0000"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Contact Email</Label>
+                    <Input
+                      type="email"
+                      value={customerDetails.contactEmail}
+                      onChange={(e) => setCustomerDetails((prev) => ({ ...prev, contactEmail: e.target.value }))}
+                      placeholder="e.g. contact@exclusivelife.co.bw"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Calculation Results Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Calculation Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {result ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm border-collapse">
+                        <thead className="bg-muted">
+                          <tr>
+                            <th className="text-left p-3 w-[50%]">Metric</th>
+                            <th className="text-left p-3">Value</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-muted-foreground/10">
+                          {[
+                            ["Membership", result.membership],
+                            ["Total Salary (BWP)", `BWP ${formatMoney(result.totalSalary)}`],
+                            ["Average Salary (BWP)", `BWP ${formatMoney(result.averageSalary)}`],
+                            ["Average Age", result.averageAge],
+                            ["Min Age", result.minAge],
+                            ["Max Age", result.maxAge],
+                            ["% Male", result.percentMale != null ? `${result.percentMale}%` : "-"],
+                            ["FCL", `BWP ${formatMoney(result.fcl)}`],
+                            ["Total Expected Claims Cost", `BWP ${formatMoney(result.totalExpectedClaimsCost)}`],
+                            ["Net Premium", `BWP ${formatMoney(result.netPremium)}`],
+                            ["Commission", `BWP ${formatMoney(result.commission)}`],
+                            ["Gross Premium", `BWP ${formatMoney(result.grossPremium)}`],
+                            ["Total Annual Salary", `BWP ${formatMoney(result.totalAnnualSalary)}`],
+                            ["Gross Rate GLA", formatPercentFromFraction(result.grossRateGLA)],
+                            ["Gross Rate PHI", formatPercentFromFraction(result.grossRatePHI)],
+                          ].map(([label, value]) => (
+                            <tr key={label as string} className="hover:bg-muted/40">
+                              <td className="p-3 text-muted-foreground">{label}</td>
+                              <td className="p-3 font-medium">{value ?? "-"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground text-sm">No calculation results available</div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-between mt-6">
+              <Button variant="secondary" onClick={() => setShowQuoteDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => toast.success("Quote generated successfully!")}>
+                Generate Quote
               </Button>
             </div>
           </DialogContent>
