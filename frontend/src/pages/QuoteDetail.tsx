@@ -291,7 +291,7 @@ section.space-y-4 > div + p {
       case "Exclusive Funeral":
       case "funeral":
         return <FuneralDisplay quote={quote} />;
-      case "life":
+      case "Exclusive Life Assurance":
         return <LifeDisplay quote={quote} />;
       default:
         return <GenericDisplay quote={quote} />;
