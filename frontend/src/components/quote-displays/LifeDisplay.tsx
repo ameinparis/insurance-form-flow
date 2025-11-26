@@ -16,16 +16,13 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
     <div className="bg-white dark:bg-slate-900 p-8 space-y-8 text-sm text-gray-800 dark:text-gray-100">
       {/* HEADER */}
       <section>
-        <div className="font-semibold">BPO</div>
+        <div className="font-semibold"><span>{client?.schemeName || client?.companyName || "-"}</span></div>
         <div className="font-semibold">QUOTATION FOR GROUP LIFE ASSURANCE</div>
         <div className="flex justify-between mt-2">
           <span>PERIOD</span>
           <span className="font-semibold">2025/2026</span>
         </div>
-        <div className="mt-1 flex justify-between">
-          <span>Current Insurer:</span>
-          <span>{client?.schemeName || client?.companyName || "-"}</span>
-        </div>
+  
       </section>
 
       <Card className="border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900">
@@ -38,6 +35,7 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
               <div className="font-semibold text-xs uppercase tracking-wide mb-1">
                 Covers (2025–2026)
               </div>
+              {/* simple 2-column version of the “yellow highlighted” table */}
               <div className="overflow-x-auto">
                 <table className="w-full text-xs border-collapse">
                   <tbody>
@@ -87,6 +85,7 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
               B&nbsp;&nbsp;Renewal Rate – 2025/2026
             </div>
 
+            {/* Renewal rate table */}
             <div className="border border-gray-300 dark:border-gray-700 rounded-md p-4 space-y-2">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs border-collapse">
@@ -117,6 +116,7 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
                 Premium workings:
               </div>
 
+              {/* Gross Premium table – like the middle of your screenshot */}
               <div className="overflow-x-auto">
                 <table className="w-full text-xs border-collapse">
                   <thead>
@@ -154,7 +154,7 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
             </div>
           </section>
 
-          {/* C. BROAD POLICY SPECIFICATIONS */}
+          {/* C. BROAD POLICY SPECIFICATIONS (static text like your Excel) */}
           <section className="space-y-3">
             <div className="font-semibold">
               C&nbsp;&nbsp;Broad Policy Specifications – Renewal
@@ -226,41 +226,13 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
             </div>
           </section>
 
-          {/* (Optional) D. Members Excluded box */}
-          {/* 
-          <section className="space-y-2">
+          {/* D. MEMBERS EXCLUDED – just an empty box area */}
+          {/* <section className="space-y-2">
             <div className="font-semibold">D&nbsp;&nbsp;Members Excluded</div>
             <div className="border border-gray-300 dark:border-gray-700 rounded-md h-24" />
-          </section>
-          */}
+          </section> */}
         </CardContent>
       </Card>
-
-      {/* CUSTOMER ACCEPTANCE */}
-      <div className="mt-8 pt-6 border-t-2 border-gray-300 dark:border-gray-700">
-        <h3 className="text-base font-semibold mb-4 text-gray-800 dark:text-gray-100">
-          Customer Acceptance
-        </h3>
-        <p className="text-xs mb-4 text-gray-700 dark:text-gray-300">
-          I/We hereby accept the above terms and conditions for the Group Life
-          Assurance cover and confirm that the information supplied is true and
-          correct.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
-              Authorised Signatory:
-            </label>
-            <div className="border-b-2 border-gray-400 dark:border-gray-600 h-8" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-gray-300">
-              Date:
-            </label>
-            <div className="border-b-2 border-gray-400 dark:border-gray-600 h-8" />
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
