@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { FileText, Users, TrendingUp, Calendar } from "lucide-react"
+import { FileText, Users, TrendingUp, Calendar, ArrowUp, ArrowDown } from "lucide-react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 
 interface Quote {
@@ -14,6 +14,8 @@ interface Quote {
 interface StatsCardsProps {
   quotes: Quote[]
   loading: boolean
+  onTypeFilter?: (type: string | null) => void
+  activeFilter?: string | null
 }
 
 const COLORS = [
@@ -25,7 +27,15 @@ const COLORS = [
   "hsl(0, 60%, 70%)",    // Light Red
 ]
 
-export const StatsCards = ({ quotes, loading }: StatsCardsProps) => {
+// Pastel card backgrounds matching the reference image
+const CARD_STYLES = [
+  { bg: "bg-blue-100 dark:bg-blue-900/30", iconBg: "bg-blue-200/80 dark:bg-blue-800/50", iconColor: "text-blue-700 dark:text-blue-300" },
+  { bg: "bg-emerald-100 dark:bg-emerald-900/30", iconBg: "bg-emerald-200/80 dark:bg-emerald-800/50", iconColor: "text-emerald-700 dark:text-emerald-300" },
+  { bg: "bg-purple-100 dark:bg-purple-900/30", iconBg: "bg-purple-200/80 dark:bg-purple-800/50", iconColor: "text-purple-700 dark:text-purple-300" },
+  { bg: "bg-orange-100 dark:bg-orange-900/30", iconBg: "bg-orange-200/80 dark:bg-orange-800/50", iconColor: "text-orange-700 dark:text-orange-300" },
+]
+
+export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: StatsCardsProps) => {
   const stats = useMemo(() => {
     const totalQuotes = quotes.length
     
@@ -40,11 +50,47 @@ export const StatsCards = ({ quotes, loading }: StatsCardsProps) => {
       q => new Date(q.createdAt) >= startOfMonth
     ).length
     
+    // This week (last 7 days)
     const startOfWeek = new Date()
     startOfWeek.setDate(startOfWeek.getDate() - 7)
     const quotesThisWeek = quotes.filter(
       q => new Date(q.createdAt) >= startOfWeek
     ).length
+    
+    // Last week (7-14 days ago) for comparison
+    const startOfLastWeek = new Date()
+    startOfLastWeek.setDate(startOfLastWeek.getDate() - 14)
+    const quotesLastWeek = quotes.filter(
+      q => {
+        const date = new Date(q.createdAt)
+        return date >= startOfLastWeek && date < startOfWeek
+      }
+    ).length
+
+    // Calculate week-over-week changes
+    const calcChange = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? 100 : 0
+      return Math.round(((current - previous) / previous) * 100)
+    }
+
+    // For total quotes/clients, compare this week's additions vs last week
+    const quotesAddedThisWeek = quotes.filter(q => new Date(q.createdAt) >= startOfWeek).length
+    const quotesAddedLastWeek = quotes.filter(q => {
+      const date = new Date(q.createdAt)
+      return date >= startOfLastWeek && date < startOfWeek
+    }).length
+
+    const clientsThisWeek = new Set(
+      quotes.filter(q => new Date(q.createdAt) >= startOfWeek)
+        .map(q => (q.clientName || q.fullName || "").toLowerCase())
+        .filter(Boolean)
+    ).size
+    const clientsLastWeek = new Set(
+      quotes.filter(q => {
+        const date = new Date(q.createdAt)
+        return date >= startOfLastWeek && date < startOfWeek
+      }).map(q => (q.clientName || q.fullName || "").toLowerCase()).filter(Boolean)
+    ).size
     
     const typeGroups: Record<string, number> = {}
     quotes.forEach(q => {
@@ -63,15 +109,27 @@ export const StatsCards = ({ quotes, loading }: StatsCardsProps) => {
       quotesThisMonth,
       quotesThisWeek,
       pieData,
+      changes: {
+        quotes: calcChange(quotesAddedThisWeek, quotesAddedLastWeek),
+        clients: calcChange(clientsThisWeek, clientsLastWeek),
+        month: calcChange(quotesThisMonth, quotesLastWeek),
+        week: calcChange(quotesThisWeek, quotesLastWeek),
+      }
     }
   }, [quotes])
+
+  const handlePieClick = (data: { name: string }) => {
+    if (onTypeFilter) {
+      onTypeFilter(activeFilter === data.name ? null : data.name)
+    }
+  }
 
   if (loading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2 grid grid-cols-2 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="bg-card rounded-2xl border-0 animate-pulse">
+            <Card key={i} className="rounded-2xl border-0 animate-pulse">
               <CardContent className="p-6">
                 <div className="h-24 bg-muted rounded"></div>
               </CardContent>
@@ -87,65 +145,73 @@ export const StatsCards = ({ quotes, loading }: StatsCardsProps) => {
     )
   }
 
+  const statCards = [
+    { 
+      title: "Total Quotes", 
+      subtitle: "All time",
+      value: stats.totalQuotes, 
+      icon: FileText,
+      change: stats.changes.quotes,
+      style: CARD_STYLES[0]
+    },
+    { 
+      title: "Total Clients", 
+      subtitle: "Unique clients",
+      value: stats.totalClients, 
+      icon: Users,
+      change: stats.changes.clients,
+      style: CARD_STYLES[1]
+    },
+    { 
+      title: "This Month", 
+      subtitle: "Quotes created",
+      value: stats.quotesThisMonth, 
+      icon: Calendar,
+      change: stats.changes.month,
+      style: CARD_STYLES[2]
+    },
+    { 
+      title: "This Week", 
+      subtitle: "Recent activity",
+      value: stats.quotesThisWeek, 
+      icon: TrendingUp,
+      change: stats.changes.week,
+      style: CARD_STYLES[3]
+    },
+  ]
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
       {/* Left side - 2x2 Stats Grid */}
       <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-        {/* Total Quotes */}
-        <Card className="bg-card rounded-2xl border-0 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20">
-                <FileText className="h-5 w-5 text-blue-500" />
+        {statCards.map((card, index) => (
+          <Card key={index} className={`${card.style.bg} rounded-2xl border-0 shadow-sm`}>
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`p-2.5 rounded-full ${card.style.iconBg}`}>
+                  <card.icon className={`h-5 w-5 ${card.style.iconColor}`} />
+                </div>
               </div>
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">Total Quotes</p>
-            <p className="text-3xl font-bold text-foreground">{stats.totalQuotes}</p>
-            <p className="text-xs text-muted-foreground mt-2">All time</p>
-          </CardContent>
-        </Card>
-
-        {/* Total Clients */}
-        <Card className="bg-card rounded-2xl border-0 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2.5 rounded-xl bg-green-50 dark:bg-green-900/20">
-                <Users className="h-5 w-5 text-green-500" />
+              <p className="text-sm font-medium text-foreground mb-0.5">{card.title}</p>
+              <p className="text-xs text-muted-foreground mb-3">{card.subtitle}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-3xl font-bold text-foreground">{card.value}</p>
+                <div className="flex items-center gap-1">
+                  <div className={`p-1 rounded-full ${card.change >= 0 ? 'bg-foreground' : 'bg-destructive'}`}>
+                    {card.change >= 0 ? (
+                      <ArrowUp className="h-3 w-3 text-background" />
+                    ) : (
+                      <ArrowDown className="h-3 w-3 text-white" />
+                    )}
+                  </div>
+                  <span className={`text-xs font-medium ${card.change >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                    {card.change >= 0 ? '+' : ''}{card.change}%
+                  </span>
+                </div>
               </div>
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">Total Clients</p>
-            <p className="text-3xl font-bold text-foreground">{stats.totalClients}</p>
-            <p className="text-xs text-muted-foreground mt-2">Unique clients</p>
-          </CardContent>
-        </Card>
-
-        {/* Quotes This Month */}
-        <Card className="bg-card rounded-2xl border-0 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-900/20">
-                <Calendar className="h-5 w-5 text-purple-500" />
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">This Month</p>
-            <p className="text-3xl font-bold text-foreground">{stats.quotesThisMonth}</p>
-            <p className="text-xs text-muted-foreground mt-2">Quotes created</p>
-          </CardContent>
-        </Card>
-
-        {/* Quotes This Week */}
-        <Card className="bg-card rounded-2xl border-0 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-900/20">
-                <TrendingUp className="h-5 w-5 text-orange-500" />
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">This Week</p>
-            <p className="text-3xl font-bold text-foreground">{stats.quotesThisWeek}</p>
-            <p className="text-xs text-muted-foreground mt-2">Recent activity</p>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Right side - Pie Chart */}
@@ -166,9 +232,15 @@ export const StatsCards = ({ quotes, loading }: StatsCardsProps) => {
                     dataKey="value"
                     strokeWidth={0}
                     cornerRadius={8}
+                    onClick={(_, index) => handlePieClick(stats.pieData[index])}
+                    style={{ cursor: 'pointer' }}
                   >
-                    {stats.pieData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    {stats.pieData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={COLORS[index % COLORS.length]} 
+                        opacity={activeFilter && activeFilter !== entry.name ? 0.4 : 1}
+                      />
                     ))}
                   </Pie>
                   <Tooltip 
@@ -184,20 +256,39 @@ export const StatsCards = ({ quotes, loading }: StatsCardsProps) => {
               </ResponsiveContainer>
               <div className="text-center mb-2">
                 <p className="text-2xl font-bold text-foreground">{stats.totalQuotes}</p>
-                <p className="text-xs text-muted-foreground">Total Quotes</p>
+                <p className="text-xs text-muted-foreground">
+                  {activeFilter ? `Filtered: ${activeFilter}` : 'Total Quotes'}
+                </p>
               </div>
               {/* Legend */}
               <div className="flex flex-wrap justify-center gap-3 mt-2">
                 {stats.pieData.map((entry, index) => (
-                  <div key={entry.name} className="flex items-center gap-1.5">
+                  <button
+                    key={entry.name}
+                    onClick={() => handlePieClick(entry)}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all hover:bg-muted ${
+                      activeFilter === entry.name ? 'bg-muted ring-1 ring-border' : ''
+                    }`}
+                  >
                     <div 
                       className="w-3 h-3 rounded-sm" 
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                      style={{ 
+                        backgroundColor: COLORS[index % COLORS.length],
+                        opacity: activeFilter && activeFilter !== entry.name ? 0.4 : 1
+                      }}
                     />
                     <span className="text-xs text-muted-foreground">{entry.name}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
+              {activeFilter && (
+                <button
+                  onClick={() => onTypeFilter?.(null)}
+                  className="mt-3 text-xs text-muted-foreground hover:text-foreground underline"
+                >
+                  Clear filter
+                </button>
+              )}
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
