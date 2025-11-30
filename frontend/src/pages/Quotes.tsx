@@ -209,7 +209,7 @@ useEffect(() => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold mb-2">Quotation Management</h2>
           <p className="text-muted-foreground">Manage and view all your insurance quotes.</p>
@@ -222,7 +222,7 @@ useEffect(() => {
         </Button>
       </div>
 
-      <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
+      <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
@@ -262,9 +262,9 @@ useEffect(() => {
       </Card>
 
       {loading ? (
-        <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm"><CardContent className="py-12 text-center text-muted-foreground">Loading quotes...</CardContent></Card>
+        <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0"><CardContent className="py-12 text-center text-muted-foreground">Loading quotes...</CardContent></Card>
       ) : filteredAndSortedQuotes.length === 0 ? (
-        <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
+        <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
           <CardContent className="text-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">
@@ -286,7 +286,7 @@ useEffect(() => {
           </CardContent>
         </Card>
       ) : (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm">
+        <div className="bg-gray-50 dark:bg-slate-800 rounded-3xl p-6">
          <div className="overflow-x-auto">
                 <Table className="border-separate border-spacing-y-3 w-full">
 
