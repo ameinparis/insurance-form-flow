@@ -1,8 +1,9 @@
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "./AppSidebar"
-import { Search } from "lucide-react"
+import { Search, Sun, Moon } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/authlibrary"
 import { useGlobalSearch } from "@/lib/searchContext"
@@ -30,20 +31,24 @@ export function Layout({ children }: LayoutProps) {
     }
   }
 
-  // Generate consistent color based on user name
-  const getAvatarColor = (name: string) => {
+  // Generate consistent pastel color based on user name
+  const getAvatarStyles = (name: string) => {
     const colors = [
-      'bg-blue-500',
-      'bg-green-500',
-      'bg-purple-500',
-      'bg-pink-500',
-      'bg-orange-500',
-      'bg-teal-500',
-      'bg-indigo-500',
-      'bg-rose-500'
+      { bg: 'bg-blue-50', text: 'text-blue-500', border: 'border-blue-200' },
+      { bg: 'bg-green-50', text: 'text-green-500', border: 'border-green-200' },
+      { bg: 'bg-purple-50', text: 'text-purple-500', border: 'border-purple-200' },
+      { bg: 'bg-pink-50', text: 'text-pink-500', border: 'border-pink-200' },
+      { bg: 'bg-orange-50', text: 'text-orange-500', border: 'border-orange-200' },
+      { bg: 'bg-teal-50', text: 'text-teal-500', border: 'border-teal-200' },
+      { bg: 'bg-indigo-50', text: 'text-indigo-500', border: 'border-indigo-200' },
+      { bg: 'bg-rose-50', text: 'text-rose-500', border: 'border-rose-200' }
     ]
     const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
     return colors[index]
+  }
+
+  const toggleDarkMode = () => {
+    document.documentElement.classList.toggle('dark')
   }
 
   // Get initials from name
@@ -102,11 +107,23 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </div>
 
-          {/* Avatar + User Info */}
-          <div className="flex items-center gap-3 min-w-[200px] justify-end">
-            <Avatar className="h-11 w-11 ring-2 ring-background shadow-sm">
+          {/* Dark Mode Toggle + Avatar + User Info */}
+          <div className="flex items-center gap-4 min-w-[280px] justify-end">
+            {/* Dark/Light Toggle */}
+            <div className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-2">
+              <Sun className="h-4 w-4 text-muted-foreground" />
+              <Switch
+                checked={isDarkMode}
+                onCheckedChange={toggleDarkMode}
+                className="data-[state=checked]:bg-primary scale-90"
+              />
+              <Moon className="h-4 w-4 text-muted-foreground" />
+            </div>
+
+            {/* Avatar */}
+            <Avatar className={`h-11 w-11 border-2 ${getAvatarStyles(userName).border}`}>
               <AvatarImage src="" alt={userName} />
-              <AvatarFallback className={`${getAvatarColor(userName)} text-white text-sm font-medium`}>
+              <AvatarFallback className={`${getAvatarStyles(userName).bg} ${getAvatarStyles(userName).text} text-sm font-semibold`}>
                 {getInitials(userName)}
               </AvatarFallback>
             </Avatar>

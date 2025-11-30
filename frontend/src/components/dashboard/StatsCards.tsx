@@ -215,7 +215,7 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
       </div>
 
       {/* Right side - Pie Chart */}
-      <Card className="lg:col-span-3 bg-card rounded-2xl border-0 shadow-sm">
+      <Card className="lg:col-span-3 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border-0 shadow-sm">
         <CardContent className="p-5 h-full flex flex-col">
           <h3 className="text-lg font-semibold text-foreground mb-4">Quotes by Type</h3>
           {stats.pieData.length > 0 ? (
