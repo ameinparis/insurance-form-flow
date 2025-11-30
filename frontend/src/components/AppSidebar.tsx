@@ -12,7 +12,7 @@ const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Calculator", url: "/calculator", icon: Calculator },
   { title: "Quotation Management", url: "/quotes", icon: FileText },
-  { title: "Team", url: "/team", icon: Users },
+  { title: "Team", url: "/settings?tab=team", icon: Users },
 ]
 
 const settingsItems = [

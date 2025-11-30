@@ -39,7 +39,7 @@ const QuotePreview = () => {
         </div>
       </div>
 
-      <Card>
+      <Card className="rounded-3xl border-0 shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
