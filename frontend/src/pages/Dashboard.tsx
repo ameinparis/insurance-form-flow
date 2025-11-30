@@ -147,6 +147,10 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold font-heading">Dashboard</h2>
+      </div>
+
       {/* Stats Cards */}
       <StatsCards 
         quotes={recentQuotes} 
@@ -154,10 +158,6 @@ const Dashboard = () => {
         onTypeFilter={setTypeFilter}
         activeFilter={typeFilter}
       />
-
-      <div>
-        <h2 className="text-3xl font-bold font-heading">Dashboard</h2>
-      </div>
 
       {/* Recent Quotes Table */}
       <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">

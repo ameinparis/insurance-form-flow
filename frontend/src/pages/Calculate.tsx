@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { 
   Heart, 
   Shield, 
@@ -73,31 +71,26 @@ const Calculate = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {options.map((option) => (
-          <Card key={option.id} className="group relative overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-card to-card/80">
-            <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
-              {/* Circular Icon */}
-              <div className={`h-20 w-20 rounded-full ${option.color} flex items-center justify-center shadow-lg`}>
-                <option.icon className="h-10 w-10 text-white" />
-              </div>
-              
-              {/* Title */}
-              <CardTitle className="text-lg font-bold text-foreground">
-                {option.title}
-              </CardTitle>
-              
-              {/* Description */}
-              <CardDescription className="text-sm text-muted-foreground">
-                {option.description}
-              </CardDescription>
-              
-              {/* Button */}
-              <Button asChild className="w-full mt-4 bg-primary hover:bg-primary/90 text-primary-foreground">
-                <Link to={`/calculator/${option.id}`}>
-                  Get Started
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <Link key={option.id} to={`/calculator/${option.id}`}>
+            <Card className="group relative overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-card to-card/80 cursor-pointer h-full">
+              <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
+                {/* Circular Icon */}
+                <div className={`h-20 w-20 rounded-full ${option.color} flex items-center justify-center shadow-lg`}>
+                  <option.icon className="h-10 w-10 text-white" />
+                </div>
+                
+                {/* Title */}
+                <CardTitle className="text-lg font-bold text-foreground">
+                  {option.title}
+                </CardTitle>
+                
+                {/* Description */}
+                <CardDescription className="text-sm text-muted-foreground">
+                  {option.description}
+                </CardDescription>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
     </div>

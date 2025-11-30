@@ -126,7 +126,7 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
         <div className="lg:col-span-2 grid grid-cols-2 gap-4">
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="rounded-2xl border-0 animate-pulse">
@@ -136,7 +136,7 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
             </Card>
           ))}
         </div>
-        <Card className="bg-card rounded-2xl border-0 animate-pulse">
+        <Card className="lg:col-span-3 bg-card rounded-2xl border-0 animate-pulse">
           <CardContent className="p-6">
             <div className="h-full bg-muted rounded"></div>
           </CardContent>
@@ -181,7 +181,7 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
   ]
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
       {/* Left side - 2x2 Stats Grid */}
       <div className="lg:col-span-2 grid grid-cols-2 gap-4">
         {statCards.map((card, index) => (
@@ -215,7 +215,7 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
       </div>
 
       {/* Right side - Pie Chart */}
-      <Card className="bg-card rounded-2xl border-0 shadow-sm">
+      <Card className="lg:col-span-3 bg-card rounded-2xl border-0 shadow-sm">
         <CardContent className="p-5 h-full flex flex-col">
           <h3 className="text-lg font-semibold text-foreground mb-4">Quotes by Type</h3>
           {stats.pieData.length > 0 ? (

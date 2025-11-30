@@ -85,52 +85,52 @@
   }
 
   .dark {
-    /* Dark mode - Deep dark with blue accents */
-    --background: 220 13% 12%;        /* Dark background */
-    --foreground: 0 0% 95%;           /* Light text */
+    /* Dark mode - Deep slate blue matching reference */
+    --background: 213 32% 14%;        /* #192231 - Deep slate blue */
+    --foreground: 210 40% 98%;        /* Light text */
 
-    --card: 220 13% 16%;              /* Dark cards */
-    --card-foreground: 0 0% 95%;
+    --card: 213 32% 17%;              /* #1e2a3b - Slightly lighter cards */
+    --card-foreground: 210 40% 98%;
 
-    --popover: 220 20% 12%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 213 32% 15%;
+    --popover-foreground: 210 40% 98%;
 
-    --brand-accent: 207 100% 62%;     /* Blue accent #418dff */
-    --primary: 210 95% 13%;           /* Navy blue #031d42 */
-    --primary-hover: 210 95% 16%;     /* Navy blue hover #052851 */
-    --primary-foreground: 0 0% 100%;
+    --brand-accent: 199 89% 48%;      /* Cyan blue #0ea5e9 */
+    --primary: 199 89% 48%;           /* Cyan blue for dark mode */
+    --primary-hover: 199 89% 55%;
+    --primary-foreground: 213 32% 14%;
     
-    --primary-gradient-from: 207 100% 62%;
-    --primary-gradient-to: 207 90% 55%;
+    --primary-gradient-from: 199 89% 48%;
+    --primary-gradient-to: 199 89% 55%;
 
-    --secondary: 220 15% 18%;
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 213 32% 20%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 220 15% 18%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 213 32% 20%;
+    --muted-foreground: 215 20% 55%;
 
-    --accent: 220 15% 18%;
-    --accent-foreground: 0 0% 95%;
+    --accent: 213 32% 22%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 220 10% 20%;
-    --input: 220 15% 18%;
-    --ring: 207 100% 62%;
+    --border: 213 25% 22%;
+    --input: 213 32% 20%;
+    --ring: 199 89% 48%;
     
-    /* Sidebar - Deep dark with blue */
-    --sidebar-background: 220 13% 14%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 207 100% 62%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 20%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-accent-hover: 207 60% 25%;
-    --sidebar-border: 220 15% 15%;
-    --sidebar-ring: 207 100% 62%;
-    --sidebar-active: 207 60% 25%;    /* Blue for dark mode active */
-    --sidebar-active-foreground: 207 100% 70%;  /* Light blue text */
+    /* Sidebar - Deep slate matching background */
+    --sidebar-background: 213 32% 15%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 213 32% 20%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-accent-hover: 199 50% 20%;
+    --sidebar-border: 213 25% 20%;
+    --sidebar-ring: 199 89% 48%;
+    --sidebar-active: 199 50% 20%;    /* Blue tint for active */
+    --sidebar-active-foreground: 199 89% 60%;  /* Cyan text */
   }
 }
 
