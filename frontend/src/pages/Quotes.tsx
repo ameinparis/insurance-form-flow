@@ -222,7 +222,7 @@ useEffect(() => {
         </Button>
       </div>
 
-      <Card>
+      <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
@@ -262,9 +262,9 @@ useEffect(() => {
       </Card>
 
       {loading ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground">Loading quotes...</CardContent></Card>
+        <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm"><CardContent className="py-12 text-center text-muted-foreground">Loading quotes...</CardContent></Card>
       ) : filteredAndSortedQuotes.length === 0 ? (
-        <Card>
+        <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
           <CardContent className="text-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">
@@ -286,7 +286,7 @@ useEffect(() => {
           </CardContent>
         </Card>
       ) : (
-        <div className="bg-gray-50/30 dark:bg-slate-900/30 rounded-xl p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm">
          <div className="overflow-x-auto">
                 <Table className="border-separate border-spacing-y-3 w-full">
 

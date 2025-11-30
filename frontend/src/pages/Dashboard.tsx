@@ -147,13 +147,13 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Quotes Table */}
-      <Card>
+      <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
         <CardHeader>
           <CardTitle className="font-heading">Recently Created</CardTitle>
           <CardDescription>Latest quotes created by your team</CardDescription>
         </CardHeader>
 
-        <CardContent className="p-6 bg-gray-50/30 dark:bg-slate-900/30">
+        <CardContent className="p-6 bg-white dark:bg-slate-900 rounded-3xl">
           {loading ? (
             <div className="text-center py-12 text-muted-foreground">Loading quotes...</div>
           ) : recentQuotes.length === 0 ? (
