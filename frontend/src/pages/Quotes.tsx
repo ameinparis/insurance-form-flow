@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { Calculator, Eye, Trash2, FileText, Search, Filter, Edit } from "lucide-react"
+import { Calculator, Download, Trash2, Search, Filter } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
 import { useGlobalSearch } from "@/lib/searchContext"
+import pdfIcon from "@/assets/pdf-icon.png"
 
 const Quotes = () => {
   const navigate = useNavigate()
@@ -120,7 +121,8 @@ useEffect(() => {
   fetchQuotes();
 }, []);
 
-  const handleDeleteQuote = async (quoteId: string) => {
+  const handleDeleteQuote = async (quoteId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     try {
       const token = localStorage.getItem("token")
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/quotes/${quoteId}`, {
@@ -134,6 +136,32 @@ useEffect(() => {
     } catch (err) {
       console.error("Error deleting quote:", err)
       toast.error("Failed to delete quote")
+    }
+  }
+
+  const handleDownloadPdf = async (e: React.MouseEvent, quoteId: string, id: string, isLegacy: boolean) => {
+    e.stopPropagation()
+    try {
+      const url = `https://njs.exclusivelife.co.bw/api/quotes/${id}/generate-pdf?legacy=${isLegacy}`
+      const res = await fetch(url, { method: "GET" })
+      if (!res.ok) throw new Error(`PDF generation failed: ${res.status}`)
+      const blob = await res.blob()
+      const objUrl = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = objUrl
+      a.download = `quote-${quoteId}.pdf`
+      a.target = "_blank"
+      a.style.display = "none"
+      document.body.appendChild(a)
+      a.click()
+      setTimeout(() => {
+        URL.revokeObjectURL(objUrl)
+        a.remove()
+      }, 3000)
+      toast.success("PDF downloaded successfully")
+    } catch (err) {
+      console.error("Error downloading PDF:", err)
+      toast.error("Failed to download PDF")
     }
   }
 
@@ -286,20 +314,15 @@ useEffect(() => {
                   </TableHeader>
 
                   <TableBody>
-                    {currentQuotes.map((quote, idx) => (
+                    {currentQuotes.map((quote) => (
                       <TableRow
                         key={quote.id}
-                        className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-gray-200 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 my-2 overflow-hidden"
+                        onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
+                        className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-gray-200 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 my-2 overflow-hidden cursor-pointer"
                       >
-
-                        {/* <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal rounded-l-xl">
-                          {String(startIndex + idx + 1).padStart(2, '0')}
-                        </TableCell> */}
                         <TableCell className="py-5 px-6 rounded-l-xl">
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-[#009fe3]/10 flex items-center justify-center flex-shrink-0">
-                              <FileText className="h-5 w-5 text-[#009fe3]" />
-                            </div>
+                            <img src={pdfIcon} alt="PDF" className="h-8 w-8 flex-shrink-0" />
                             <span className="text-gray-700 dark:text-gray-300 font-small">{quote.quoteId}</span>
                           </div>
                         </TableCell>
@@ -321,34 +344,25 @@ useEffect(() => {
                           {new Date(quote.createdAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="py-5 px-6 text-right rounded-r-xl">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-3">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-9 w-9 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 transition-all"
-                              onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
-                              title="View Quote"
+                              className="h-8 w-8"
+                              onClick={(e) => handleDownloadPdf(e, quote.quoteId, quote.id, quote.isLegacy || false)}
+                              title="Download PDF"
                             >
-                              <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 rounded-lg bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800 transition-all"
-                              onClick={() => toast.info("Edit feature coming soon")}
-                              title="Edit Quote"
-                            >
-                              <Edit className="h-4 w-4 text-green-600 dark:text-green-400" />
+                              <Download className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                             </Button>
                             {userRole === "superuser" && (
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-9 w-9 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 transition-all"
-                                onClick={() => handleDeleteQuote(quote.id)}
+                                className="h-8 w-8"
+                                onClick={(e) => handleDeleteQuote(quote.id, e)}
                                 title="Delete Quote"
                               >
-                                <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                <Trash2 className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                               </Button>
                             )}
                           </div>
