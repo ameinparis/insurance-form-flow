@@ -166,7 +166,7 @@ const Team = () => {
           <h2 className="text-3xl font-bold mb-2">Team</h2>
           <p className="text-muted-foreground">Manage your team members and their roles.</p>
         </div>
-        {currentUserRole === "superuser" && (
+      {currentUserRole?.toLowerCase() === "superuser" && (
           <Button onClick={() => setShowAddUserModal(true)}>
             <UserPlus className="h-4 w-4 mr-2" />
             Add Member
@@ -182,7 +182,7 @@ const Team = () => {
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No team members yet</h3>
             <p className="text-muted-foreground mb-4">Add your first team member to get started.</p>
-            {currentUserRole === "superuser" && (
+            {currentUserRole?.toLowerCase() === "superuser" && (
               <Button onClick={() => setShowAddUserModal(true)}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add First Member
@@ -208,7 +208,7 @@ const Team = () => {
                   <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
                     Status
                   </TableHead>
-                  {currentUserRole === "superuser" && (
+                    {currentUserRole?.toLowerCase() === "superuser" && (
                     <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm text-right rounded-r-xl">
                       Actions
                     </TableHead>
@@ -243,7 +243,7 @@ const Team = () => {
                         {member.role}
                       </Badge>
                     </TableCell>
-                    <TableCell className={`py-5 px-6 ${currentUserRole !== "superuser" ? "rounded-r-xl" : ""}`}>
+                    <TableCell className={`py-5 px-6 ${currentUserRole?.toLowerCase() !== "superuser" ? "rounded-r-xl" : ""}`}>
                       <Badge
                         variant="outline"
                         className={`rounded-full px-2 py-1.5 text-xs font-medium border ${getStatusBadgeClass(member.isActive !== false)}`}
@@ -251,7 +251,7 @@ const Team = () => {
                         {member.isActive !== false ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
-                    {currentUserRole === "superuser" && (
+                    {currentUserRole?.toLowerCase() === "superuser" && (
                       <TableCell className="py-5 px-6 text-right rounded-r-xl">
                         <Button
                           variant="ghost"
