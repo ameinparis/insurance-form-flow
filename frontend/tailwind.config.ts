@@ -70,7 +70,8 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					'accent-hover': 'hsl(var(--sidebar-accent-hover))',
 					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
+					ring: 'hsl(var(--sidebar-ring))',
+					active: 'hsl(var(--sidebar-active))'
 				}
 			},
 			borderRadius: {
