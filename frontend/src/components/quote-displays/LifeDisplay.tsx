@@ -1,4 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/quoteUtils";
 
 interface LifeDisplayProps {
@@ -25,13 +24,13 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
   
       </section>
 
-      <Card className="border-gray-300 dark:border-gray-700 bg-white dark:bg-slate-900">
-        <CardContent className="space-y-8 pt-6">
+      <div className="space-y-8">
+        <div className="space-y-8 pt-6">
           {/* A. POLICY PARAMETERS */}
           <section className="space-y-3">
             <div className="font-semibold">A&nbsp;&nbsp;Policy Parameters</div>
 
-            <div className="border border-gray-300 dark:border-gray-700 rounded-md p-4 space-y-4">
+            <div className="space-y-4">
               <div className="font-semibold text-xs uppercase tracking-wide mb-1">
                 Covers (2025–2026)
               </div>
@@ -86,23 +85,23 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
             </div>
 
             {/* Renewal rate table */}
-            <div className="border border-gray-300 dark:border-gray-700 rounded-md p-4 space-y-2">
+            <div className="space-y-2">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-gray-300 dark:border-gray-700">
+                    <tr className="border-b border-gray-200 dark:border-gray-800">
                       <th className="text-left py-1 pr-4">Benefit</th>
                       <th className="text-right py-1">% Rate</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
+                    <tr className="border-b border-gray-100 dark:border-gray-800">
                       <td className="py-1 pr-4">Death</td>
                       <td className="py-1 text-right">
                         {formatPercentFromFraction(o.grossRateGLA)}
                       </td>
                     </tr>
-                    <tr>
+                    <tr className="border-b border-gray-100 dark:border-gray-800">
                       <td className="py-1 pr-4">ODB</td>
                       <td className="py-1 text-right">
                         {formatPercentFromFraction(o.grossRatePHI)}
@@ -120,28 +119,28 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
               <div className="overflow-x-auto">
                 <table className="w-full text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-gray-300 dark:border-gray-700">
+                    <tr className="border-b border-gray-200 dark:border-gray-800">
                       <th className="text-left py-1 pr-4">Gross Premium</th>
                       <th className="text-left py-1 pr-2">BWP</th>
                       <th className="text-right py-1"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
+                    <tr className="border-b border-gray-100 dark:border-gray-800">
                       <td className="py-1 pr-4">Death</td>
                       <td className="py-1 pr-2">BWP</td>
                       <td className="py-1 text-right">
                         {formatCurrency(o.deathPremium)}
                       </td>
                     </tr>
-                    <tr>
+                    <tr className="border-b border-gray-100 dark:border-gray-800">
                       <td className="py-1 pr-4">ODB</td>
                       <td className="py-1 pr-2">BWP</td>
                       <td className="py-1 text-right">
                         {formatCurrency(o.ODB)}
                       </td>
                     </tr>
-                    <tr className="font-semibold border-t border-gray-300 dark:border-gray-700">
+                    <tr className="font-semibold border-t border-gray-200 dark:border-gray-800">
                       <td className="py-1 pr-4">Total</td>
                       <td className="py-1 pr-2">BWP</td>
                       <td className="py-1 text-right">
@@ -160,7 +159,7 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
               C&nbsp;&nbsp;Broad Policy Specifications – Renewal
             </div>
 
-            <div className="border border-gray-300 dark:border-gray-700 rounded-md overflow-hidden">
+            <div className="overflow-hidden">
               <table className="w-full text-xs border-collapse">
                 <tbody>
                   <tr>
@@ -229,10 +228,10 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
           {/* D. MEMBERS EXCLUDED – just an empty box area */}
           {/* <section className="space-y-2">
             <div className="font-semibold">D&nbsp;&nbsp;Members Excluded</div>
-            <div className="border border-gray-300 dark:border-gray-700 rounded-md h-24" />
+            <div className="h-24" />
           </section> */}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

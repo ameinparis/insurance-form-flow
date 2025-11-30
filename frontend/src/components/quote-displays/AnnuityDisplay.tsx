@@ -42,31 +42,31 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
           </h2>
         </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-        <div className="flex justify-between border-b border-gray-300 dark:border-gray-700 py-2">
+        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
           <span className="font-medium text-gray-700 dark:text-gray-300">Date of Birth:</span>
           <span className="text-gray-800 dark:text-gray-100">{clientData?.dateOfBirth || "N/A"}</span>
         </div>
-        <div className="flex justify-between border-b border-gray-300 dark:border-gray-700 py-2">
+        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
           <span className="font-medium text-gray-700 dark:text-gray-300">ID/Passport Number:</span>
           <span className="text-gray-800 dark:text-gray-100">{clientData?.idNumber || "N/A"}</span>
         </div>
-        <div className="flex justify-between border-b border-gray-300 dark:border-gray-700 py-2">
+        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
           <span className="font-medium text-gray-700 dark:text-gray-300">Contact:</span>
           <span className="text-gray-800 dark:text-gray-100">{clientData?.contactNumber || "N/A"}</span>
         </div>
-        <div className="flex justify-between border-b border-gray-300 dark:border-gray-700 py-2">
+        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
           <span className="font-medium text-gray-700 dark:text-gray-300">Email:</span>
           <span className="text-gray-800 dark:text-gray-100">{clientData?.email || "N/A"}</span>
         </div>
-        <div className="flex justify-between border-b border-gray-300 dark:border-gray-700 py-2">
+        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
           <span className="font-medium text-gray-700 dark:text-gray-300">Purchase Premium:</span>
           <span className="text-gray-800 dark:text-gray-100">{formatCurrency(inputData?.purchaseAmount)}</span>
         </div>
-        <div className="flex justify-between border-b border-gray-300 dark:border-gray-700 py-2">
+        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
           <span className="font-medium text-gray-700 dark:text-gray-300">Drawdown %:</span>
           <span className="text-gray-800 dark:text-gray-100">{inputData?.drawdown || "N/A"}%</span>
         </div>
-        <div className="flex justify-between border-b border-gray-300 dark:border-gray-700 py-2">
+        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
           <span className="font-medium text-gray-700 dark:text-gray-300">
             Living Annuity per Month{inputData?.age && inputData?.guaranteedStartAge ? ` (Age ${inputData.age} to ${inputData.guaranteedStartAge})` : ''}:
           </span>
@@ -74,11 +74,11 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
             {formatCurrency(outputData?.living?.guaranteed_annuity)}
           </span>
         </div>
-        <div className="flex justify-between border-b border-gray-300 dark:border-gray-700 py-2">
+        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
           <span className="font-medium text-gray-700 dark:text-gray-300">Funds Remaining:</span>
           <span className="text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.living?.funds_remaining)}</span>
         </div>
-        <div className="flex justify-between border-b border-gray-300 dark:border-gray-700 py-2">
+        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
           <span className="font-medium text-gray-700 dark:text-gray-300">Frequency:</span>
           <span className="text-gray-800 dark:text-gray-100">{inputData?.frequency || "N/A"}</span>
         </div>
@@ -86,10 +86,10 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
 
       {/* Life Annuity Section */}
       <div>
-        <div className="border-b-2 border-gray-300 dark:border-gray-700 pb-2 mb-4 mt-8">
+        <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
           <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Life Annuity</h3>
         </div>
-        <div className="flex justify-between border-b border-gray-300 dark:border-gray-700 py-3">
+        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-3">
           <span className="font-medium text-lg text-gray-700 dark:text-gray-300">Monthly Life Annuity:</span>
           <span className="font-bold text-lg text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.life?.monthly_annuity)}</span>
         </div>
@@ -102,41 +102,41 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
 
       {/* Fees Section */}
       <div>
-        <div className="border-b-2 border-gray-300 dark:border-gray-700 pb-2 mb-4 mt-8">
+        <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
           <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Living Annuity Fees</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full border border-gray-300 dark:border-gray-700 text-sm text-left">
-            <thead className="bg-gray-100 dark:bg-slate-800">
+          <table className="w-full text-sm text-left">
+            <thead>
               <tr>
-                <th colSpan={2} className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100">Upfront Fees</th>
+                <th colSpan={2} className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Upfront Fees</th>
               </tr>
             </thead>
             <tbody className="text-gray-700 dark:text-gray-300">
-              <tr className="border-t border-gray-300 dark:border-gray-700">
+              <tr className="border-b border-gray-100 dark:border-gray-800">
                 <td className="px-4 py-2">Purchase Premium</td>
                 <td className="px-4 py-2">2%</td>
               </tr>
-              <tr className="border-t border-gray-300 dark:border-gray-700">
+              <tr className="border-b border-gray-100 dark:border-gray-800">
                 <td className="px-4 py-2">Upfront Commission</td>
                 <td className="px-4 py-2">1%</td>
               </tr>
             </tbody>
-            <thead className="bg-gray-100 dark:bg-slate-800">
+            <thead>
               <tr>
-                <th colSpan={2} className="px-4 py-2 pt-4 font-semibold text-gray-800 dark:text-gray-100">Ongoing Fees</th>
+                <th colSpan={2} className="px-4 py-2 pt-4 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Ongoing Fees</th>
               </tr>
             </thead>
             <tbody className="text-gray-700 dark:text-gray-300">
-              <tr className="border-t border-gray-300 dark:border-gray-700">
+              <tr className="border-b border-gray-100 dark:border-gray-800">
                 <td className="px-4 py-2">Ongoing Commission</td>
                 <td className="px-4 py-2">1% p.a</td>
               </tr>
-              <tr className="border-t border-gray-300 dark:border-gray-700">
+              <tr className="border-b border-gray-100 dark:border-gray-800">
                 <td className="px-4 py-2">Administration Fee</td>
                 <td className="px-4 py-2">1% p.a</td>
               </tr>
-              <tr className="border-t border-gray-300 dark:border-gray-700">
+              <tr>
                 <td className="px-4 py-2">Assets Management Fee</td>
                 <td className="px-4 py-2">0.75% p.a</td>
               </tr>
@@ -146,7 +146,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
       </div>
 
       {/* Customer Acceptance Signature Section */}
-      <div className="mt-12 pt-8 border-t-2 border-gray-300 dark:border-gray-700">
+      <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
         <h3 className="text-lg font-semibold mb-6 text-gray-800 dark:text-gray-100">
           Customer Acceptance
         </h3>
