@@ -8,57 +8,65 @@ import {
   User 
 } from "lucide-react"
 import { Link } from "react-router-dom"
+import { Button } from "@/components/ui/button"
 
 const Calculate = () => {
   const options = [
-        {
+    {
       id: "living-annuities",
-      title: "Living Annuities Quotation",
-      description: "Retirement income planning solutions",
+      title: "Living Annuities",
+      description: "Retirement income planning",
       icon: Shield,
-      color: "bg-gradient-to-br from-green-500 to-green-600"
+      bgColor: "bg-emerald-100",
+      iconColor: "text-emerald-600"
     },
     {
       id: "life-funeral",
-      title: "Life Funeral Quotation",
-      description: "Comprehensive funeral insurance coverage",
+      title: "Life Funeral",
+      description: "Funeral insurance coverage",
       icon: Heart,
-      color: "bg-gradient-to-br from-blue-500 to-blue-600"
+      bgColor: "bg-rose-100",
+      iconColor: "text-rose-600"
     },
     {
       id: "group-life-assurance",
-      title: "Group Life Assurance (GLA)",
-      description: "Employee group life insurance coverage",
+      title: "Group Life (GLA)",
+      description: "Employee group coverage",
       icon: Users,
-      color: "bg-gradient-to-br from-purple-500 to-purple-600"
+      bgColor: "bg-purple-100",
+      iconColor: "text-purple-600"
     },
     {
       id: "credit-life",
-      title: "Credit Life Cover",
-      description: "Protection for outstanding credit balances",
+      title: "Credit Life",
+      description: "Credit balance protection",
       icon: CreditCard,
-      color: "bg-gradient-to-br from-orange-500 to-orange-600"
+      bgColor: "bg-amber-100",
+      iconColor: "text-amber-600"
     },
     {
       id: "critical-illness",
-      title: "Critical Illness Cover",
-      description: "Financial protection against serious illnesses",
+      title: "Critical Illness",
+      description: "Serious illness protection",
       icon: Activity,
-      color: "bg-gradient-to-br from-red-500 to-red-600"
+      bgColor: "bg-red-100",
+      iconColor: "text-red-600"
     },
     {
       id: "occupational-disability",
       title: "Occupational Disability",
-      description: "Income protection for work-related disabilities",
+      description: "Work disability income",
       icon: UserCheck,
-      color: "bg-gradient-to-br from-indigo-500 to-indigo-600"
+      bgColor: "bg-indigo-100",
+      iconColor: "text-indigo-600"
     },
     {
       id: "individual-life",
-      title: "Individual Life Cover",
-      description: "Personal life insurance protection",
+      title: "Individual Life",
+      description: "Personal life insurance",
       icon: User,
-      color: "bg-gradient-to-br from-teal-500 to-teal-600"
+      bgColor: "bg-teal-100",
+      iconColor: "text-teal-600"
     }
   ]
 
@@ -69,28 +77,34 @@ const Calculate = () => {
         <p className="text-muted-foreground">Choose an insurance type to get started with your calculation.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {options.map((option) => (
-          <Link key={option.id} to={`/calculator/${option.id}`}>
-            <Card className="group relative overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-card to-card/80 cursor-pointer h-full">
-              <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
-                {/* Circular Icon */}
-                <div className={`h-20 w-20 rounded-full ${option.color} flex items-center justify-center shadow-lg`}>
-                  <option.icon className="h-10 w-10 text-white" />
-                </div>
-                
-                {/* Title */}
-                <CardTitle className="text-lg font-bold text-foreground">
-                  {option.title}
-                </CardTitle>
-                
-                {/* Description */}
-                <CardDescription className="text-sm text-muted-foreground">
-                  {option.description}
-                </CardDescription>
-              </CardContent>
-            </Card>
-          </Link>
+          <div 
+            key={option.id} 
+            className="bg-muted/50 dark:bg-muted/20 rounded-2xl p-6 flex flex-col items-center text-center space-y-4 hover:shadow-lg transition-all duration-300"
+          >
+            {/* Icon Container */}
+            <div className={`h-16 w-16 rounded-xl ${option.bgColor} flex items-center justify-center`}>
+              <option.icon className={`h-8 w-8 ${option.iconColor}`} />
+            </div>
+            
+            {/* Title */}
+            <h3 className="text-base font-semibold text-foreground">
+              {option.title}
+            </h3>
+            
+            {/* Description */}
+            <p className="text-sm text-muted-foreground">
+              {option.description}
+            </p>
+
+            {/* View Button */}
+            <Link to={`/calculator/${option.id}`} className="w-full">
+              <Button variant="outline" className="w-full mt-2">
+                View Quote
+              </Button>
+            </Link>
+          </div>
         ))}
       </div>
     </div>
