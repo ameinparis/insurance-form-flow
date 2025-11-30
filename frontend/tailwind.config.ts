@@ -20,12 +20,11 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-				heading: ['Norms','Avenir', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-				  montserrat: ['Montserrat', 'sans-serif'], 
-				  Inter: ['Inter']
-
-
+				sans: ['Raleway', 'system-ui', 'sans-serif'],
+				heading: ['Norms', 'Avenir', 'Raleway', 'system-ui', 'sans-serif'],
+				montserrat: ['Montserrat', 'sans-serif'],
+				inter: ['Inter'],
+				raleway: ['Raleway', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
