@@ -35,6 +35,11 @@ const GroupLifeAssuranceForm = () => {
   const [isCalculating, setIsCalculating] = useState(false)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
 
+  // New inputs
+  const [maxDeathBenefit, setMaxDeathBenefit] = useState<string>("")
+  const [maxODB, setMaxODB] = useState<string>("")
+  const [salaryMultiplier, setSalaryMultiplier] = useState<number>(4)
+
   const [customerDetails, setCustomerDetails] = useState({
     schemeName: "",
     registrationNumber: "",
@@ -380,6 +385,59 @@ const GroupLifeAssuranceForm = () => {
           </CardContent>
         </Card>
 
+        {/* Benefit Inputs Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Benefit Configuration</CardTitle>
+            <CardDescription>
+              Set maximum benefits and salary multiplier for the calculation
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="maxDeathBenefit">Maximum Death Benefit</Label>
+                <Input
+                  id="maxDeathBenefit"
+                  type="number"
+                  placeholder="e.g. 500000"
+                  value={maxDeathBenefit}
+                  onChange={(e) => setMaxDeathBenefit(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxODB">Maximum ODB</Label>
+                <Input
+                  id="maxODB"
+                  type="number"
+                  placeholder="e.g. 250000"
+                  value={maxODB}
+                  onChange={(e) => setMaxODB(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Salary Multiplier Selection */}
+            <div className="space-y-2">
+              <Label>Salary Multiplier</Label>
+              <div className="flex gap-2">
+                {[4, 3, 2].map((multiplier) => (
+                  <Button
+                    key={multiplier}
+                    type="button"
+                    variant={salaryMultiplier === multiplier ? "default" : "outline"}
+                    className={salaryMultiplier === multiplier 
+                      ? "bg-yellow-400 hover:bg-yellow-500 text-black font-semibold" 
+                      : ""}
+                    onClick={() => setSalaryMultiplier(multiplier)}
+                  >
+                    {multiplier} X Annual Salary
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="flex justify-end">
           <Button onClick={handleCalculate} disabled={members.length === 0 || isCalculating}>
@@ -391,7 +449,6 @@ const GroupLifeAssuranceForm = () => {
               "Calculate"
             )}
           </Button>
-
         </div>
         <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -474,6 +531,9 @@ const GroupLifeAssuranceForm = () => {
                         </thead>
                         <tbody className="divide-y divide-muted-foreground/10">
                           {[
+                            ["Maximum Death Benefit", maxDeathBenefit ? `BWP ${formatMoney(parseFloat(maxDeathBenefit))}` : "-"],
+                            ["Maximum ODB", maxODB ? `BWP ${formatMoney(parseFloat(maxODB))}` : "-"],
+                            ["Salary Multiplier", `${salaryMultiplier} X Annual Salary`],
                             ["Membership", result.membership],
                             ["Total Salary (BWP)", `BWP ${formatMoney(result.totalSalary)}`],
                             ["Average Salary (BWP)", `BWP ${formatMoney(result.averageSalary)}`],

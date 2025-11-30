@@ -25,9 +25,9 @@ export function PdfIcon({ className = "", size = "md" }: PdfIconProps) {
   }
 
   return (
-    <div className={`${sizeClasses[size]} rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex flex-col items-center justify-center ${className}`}>
-      <FileText className={`${iconSizes[size]} text-indigo-500 dark:text-indigo-400`} />
-      <span className={`${textSizes[size]} font-bold text-indigo-500 dark:text-indigo-400 -mt-0.5`}>PDF</span>
+    <div className={`${sizeClasses[size]} rounded-full bg-sky-100 dark:bg-sky-900/30 flex flex-col items-center justify-center ${className}`}>
+      <FileText className={`${iconSizes[size]} text-[#009fe3] dark:text-sky-400`} />
+      <span className={`${textSizes[size]} font-bold text-[#009fe3] dark:text-sky-400 -mt-0.5`}>PDF</span>
     </div>
   )
 }
