@@ -5,6 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/authlibrary"
+import { useGlobalSearch } from "@/lib/searchContext"
+import { useNavigate, useLocation } from "react-router-dom"
 
 
 interface LayoutProps {
@@ -13,9 +15,20 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const { globalSearchTerm, setGlobalSearchTerm } = useGlobalSearch()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const { userRole, isLoggedIn, logout } = useAuth()
   const userName = localStorage.getItem("userName") || "User"
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setGlobalSearchTerm(e.target.value)
+    // Navigate to quotes page if not already there when searching
+    if (e.target.value && location.pathname !== "/quotes") {
+      navigate("/quotes")
+    }
+  }
 
   // Generate consistent color based on user name
   const getAvatarColor = (name: string) => {
@@ -81,7 +94,9 @@ export function Layout({ children }: LayoutProps) {
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-[18px] w-[18px] text-muted-foreground/60" />
               <Input
-                placeholder="Search"
+                placeholder="Search by client, type, quote ID, creator..."
+                value={globalSearchTerm}
+                onChange={handleSearchChange}
                 className="pl-11 h-11 bg-muted/50 border-0 rounded-full focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:bg-muted/70 transition-colors text-sm placeholder:text-muted-foreground/50"
               />
             </div>
