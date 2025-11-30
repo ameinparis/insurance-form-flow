@@ -147,7 +147,7 @@ const Dashboard = () => {
       <StatsCards quotes={recentQuotes} loading={loading} />
 
       <div>
-        <h2 className="text-3xl font-bold font-heading">Welcome back!</h2>
+        <h2 className="text-3xl font-bold font-heading">Dashboard</h2>
       </div>
 
       {/* Recent Quotes Table */}
