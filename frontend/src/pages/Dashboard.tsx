@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
 import { PdfIcon } from "@/components/PdfIcon"
 import { StatsCards } from "@/components/dashboard/StatsCards"
+import { PageLoader } from "@/components/PageLoader"
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -179,7 +180,7 @@ const Dashboard = () => {
 
         <CardContent className="p-6">
           {loading ? (
-            <div className="text-center py-12 text-muted-foreground">Loading quotes...</div>
+            <PageLoader />
           ) : recentQuotes.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">No quotes found.</div>
           ) : (
