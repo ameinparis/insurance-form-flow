@@ -72,13 +72,13 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
           <h4 className="font-medium text-gray-700 dark:text-gray-300">
             1. Member and Family
           </h4>
-          <Table className="border border-gray-300 dark:border-gray-700">
+          <Table>
             <TableBody>
-              <TableRow className="font-bold bg-gray-100 dark:bg-slate-800">
+              <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
                 <TableCell>Monthly Premium Per Family</TableCell>
                 <TableCell>{formatCurrency(premiumPerFamily)}</TableCell>
               </TableRow>
-              <TableRow className="font-bold bg-gray-100 dark:bg-slate-800">
+              <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
                 <TableCell>Monthly Premium Per Member</TableCell>
                 <TableCell>{formatCurrency(premiumPerMember)}</TableCell>
               </TableRow>
@@ -91,9 +91,9 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
           <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">
             2. Parents and Parents-in-Law
           </h4>
-          <Table className="border border-gray-300 dark:border-gray-700">
+          <Table>
             <TableBody>
-              <TableRow className="font-bold bg-gray-100 dark:bg-slate-800">
+              <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
                 <TableCell>Monthly Premium Per Parent</TableCell>
                 <TableCell>{formatCurrency(premiumPerParent)}</TableCell>
               </TableRow>
@@ -106,9 +106,9 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
           <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">
             3. Extended Family Members
           </h4>
-          <Table className="border border-gray-300 dark:border-gray-700">
+          <Table>
             <TableBody>
-              <TableRow className="font-bold bg-gray-100 dark:bg-slate-800">
+              <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
                 <TableCell>Monthly Premium Per Member</TableCell>
                 <TableCell>{formatCurrency(premiumPerExtended)}</TableCell>
               </TableRow>
@@ -122,17 +122,17 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mt-6">
           C: Broad Policy Specifications
         </h3>
-        <Table className="border border-gray-300 dark:border-gray-700">
+        <Table>
           <TableBody>
-            <TableRow>
+            <TableRow className="border-b border-gray-100 dark:border-gray-800">
               <TableCell className="font-medium">Eligibility</TableCell>
               <TableCell>All members who are eligible to join the scheme.</TableCell>
             </TableRow>
-            <TableRow>
+            <TableRow className="border-b border-gray-100 dark:border-gray-800">
               <TableCell className="font-medium">Minimum age entry (main member)</TableCell>
               <TableCell>18 years</TableCell>
             </TableRow>
-            <TableRow>
+            <TableRow className="border-b border-gray-100 dark:border-gray-800">
               <TableCell className="font-medium">Maximum age entry</TableCell>
               <TableCell>
                 <ul className="list-disc ml-4">
@@ -144,7 +144,7 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
                 </ul>
               </TableCell>
             </TableRow>
-            <TableRow>
+            <TableRow className="border-b border-gray-100 dark:border-gray-800">
               <TableCell className="font-medium">Cover termination</TableCell>
               <TableCell>
                 Cover will terminate upon:
@@ -158,7 +158,7 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
       </section>
 
       {/* Customer Acceptance */}
-      <div className="mt-12 pt-8 border-t-2 border-gray-300 dark:border-gray-700">
+      <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
         <h3 className="text-lg font-semibold mb-6 text-gray-800 dark:text-gray-100">
           Customer Acceptance
         </h3>

@@ -166,12 +166,10 @@ const Team = () => {
           <h2 className="text-3xl font-bold mb-2">Team</h2>
           <p className="text-muted-foreground">Manage your team members and their roles.</p>
         </div>
-      {currentUserRole?.toLowerCase() === "superuser" && (
-          <Button onClick={() => setShowAddUserModal(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add Member
-          </Button>
-        )}
+        <Button onClick={() => setShowAddUserModal(true)}>
+          <UserPlus className="h-4 w-4 mr-2" />
+          Add Member
+        </Button>
       </div>
 
       {loading ? (
