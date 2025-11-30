@@ -25,6 +25,7 @@ interface TeamMember {
   role: string
   initials: string
   bgColor: string
+  borderColor: string
   isActive?: boolean
 }
 
@@ -130,14 +131,14 @@ const Team = () => {
         headers: { Authorization: `Bearer ${token}` }
       })
       const pastelColors = [
-        "bg-blue-100 text-blue-600",
-        "bg-green-100 text-green-600",
-        "bg-purple-100 text-purple-600",
-        "bg-pink-100 text-pink-600",
-        "bg-orange-100 text-orange-600",
-        "bg-teal-100 text-teal-600",
-        "bg-indigo-100 text-indigo-600",
-        "bg-rose-100 text-rose-600"
+        { bg: "bg-blue-100 text-blue-600", border: "border-blue-400" },
+        { bg: "bg-green-100 text-green-600", border: "border-green-400" },
+        { bg: "bg-purple-100 text-purple-600", border: "border-purple-400" },
+        { bg: "bg-pink-100 text-pink-600", border: "border-pink-400" },
+        { bg: "bg-orange-100 text-orange-600", border: "border-orange-400" },
+        { bg: "bg-teal-100 text-teal-600", border: "border-teal-400" },
+        { bg: "bg-indigo-100 text-indigo-600", border: "border-indigo-400" },
+        { bg: "bg-rose-100 text-rose-600", border: "border-rose-400" }
       ]
       const mapped = res.data.map((user: any, idx: number) => ({
         id: user._id,
@@ -147,7 +148,8 @@ const Team = () => {
         email: user.email,
         role: user.role,
         initials: `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`,
-        bgColor: pastelColors[idx % pastelColors.length],
+        bgColor: pastelColors[idx % pastelColors.length].bg,
+        borderColor: pastelColors[idx % pastelColors.length].border,
         isActive: user.isActive !== false,
       }))
       setTeamMembers(mapped)
@@ -217,21 +219,21 @@ const Team = () => {
           <div className="overflow-x-auto">
             <Table className="border-separate border-spacing-y-3 w-full">
               <TableHeader className="sticky top-0 z-10">
-                <TableRow className="bg-gray-200 dark:bg-slate-700 border-b border-gray-300 dark:border-gray-600 rounded-xl">
-                  <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm rounded-l-xl">
+                <TableRow className="bg-gray-100 dark:bg-slate-700/50 border-0 rounded-full">
+                  <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs rounded-l-full">
                     Member
                   </TableHead>
-                  <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
+                  <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
                     Email
                   </TableHead>
-                  <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
+                  <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
                     Role
                   </TableHead>
-                  <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
+                  <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
                     Status
                   </TableHead>
-                    {currentUserRole?.toLowerCase() === "superuser" && (
-                    <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm text-right rounded-r-xl">
+                  {currentUserRole?.toLowerCase() === "superuser" && (
+                    <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs text-right rounded-r-full">
                       Actions
                     </TableHead>
                   )}
@@ -246,7 +248,7 @@ const Team = () => {
                   >
                     <TableCell className="py-5 px-6 rounded-l-xl">
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 border-2 border-current/20">
+                        <Avatar className={`h-10 w-10 border-2 ${member.borderColor}`}>
                           <AvatarFallback className={`${member.bgColor} font-semibold`}>
                             {member.initials}
                           </AvatarFallback>

@@ -116,6 +116,9 @@ export function Layout({ children }: LayoutProps) {
               <Moon className="h-4 w-4 text-muted-foreground" />
             </div>
 
+            {/* Separator Line */}
+            <div className="h-8 w-px bg-border/60" />
+
             {/* Avatar */}
             <Avatar className={`h-11 w-11 border-2 ${getAvatarStyles(userName).border}`}>
               <AvatarImage src="" alt={userName} />
