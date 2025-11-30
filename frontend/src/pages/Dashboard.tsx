@@ -164,24 +164,24 @@ const Dashboard = () => {
                 <Table className="border-separate border-spacing-y-3 w-full">
 
                   <TableHeader className="sticky top-0 z-10">
-                    <TableRow className="bg-gray-200 dark:bg-slate-800 border-gray-200 dark:border-gray-700">
-                      <TableHead className="font-medium text-gray-500 dark:text-gray-200 py-5 px-6 text-sm rounded-l-xl">
+                    <TableRow className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-700">
+                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
                         Quote ID
                       </TableHead>
-                      <TableHead className="font-medium text-gray-500 dark:text-gray-200 py-5 px-6 text-sm">
+                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
                         Client Name
                       </TableHead>
-                      <TableHead className="font-medium text-gray-500 dark:text-gray-200 py-5 px-6 text-sm">
+                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
                         Type
                       </TableHead>
-                      <TableHead className="font-medium text-gray-500 dark:text-gray-200 py-5 px-6 text-sm">
+                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
                         Created By
                       </TableHead>
-                      <TableHead className="font-medium text-gray-500 dark:text-gray-200 py-5 px-6 text-sm">
+                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
                         Date
                       </TableHead>
-                      <TableHead className="text-right font-medium text-gray-500 dark:text-gray-200 py-5 px-6 text-sm rounded-r-xl">
-                        Action
+                      <TableHead className="text-right font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
+                        Actions
                       </TableHead>
                     </TableRow>
                   </TableHeader>
