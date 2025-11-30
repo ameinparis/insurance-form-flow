@@ -6,12 +6,12 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { Calculator, Download, Trash2, Search, Filter } from "lucide-react"
+import { Calculator, Download, Trash2, Search, Filter, FileText } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
 import { useGlobalSearch } from "@/lib/searchContext"
-import pdfIcon from "@/assets/pdf-icon.png"
+import { PdfIcon } from "@/components/PdfIcon"
 
 const Quotes = () => {
   const navigate = useNavigate()
@@ -322,7 +322,7 @@ useEffect(() => {
                       >
                         <TableCell className="py-5 px-6 rounded-l-xl">
                           <div className="flex items-center gap-3">
-                            <img src={pdfIcon} alt="PDF" className="h-8 w-8 flex-shrink-0" />
+                            <PdfIcon size="sm" />
                             <span className="text-gray-700 dark:text-gray-300 font-small">{quote.quoteId}</span>
                           </div>
                         </TableCell>
