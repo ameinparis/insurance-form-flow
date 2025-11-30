@@ -209,7 +209,7 @@ useEffect(() => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold mb-2">Quotation Management</h2>
           <p className="text-muted-foreground">Manage and view all your insurance quotes.</p>
@@ -318,7 +318,7 @@ useEffect(() => {
                       <TableRow
                         key={quote.id}
                         onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
-                        className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-gray-200 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 my-2 overflow-hidden cursor-pointer"
+                        className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-sky-100 dark:hover:bg-sky-900/30 hover:border-sky-200 dark:hover:border-sky-700 transition-all duration-200 my-2 overflow-hidden cursor-pointer"
                       >
                         <TableCell className="py-5 px-6 rounded-l-xl">
                           <div className="flex items-center gap-3">
