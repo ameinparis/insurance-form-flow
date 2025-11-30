@@ -14,6 +14,7 @@ const Dashboard = () => {
   const navigate = useNavigate()
   const [recentQuotes, setRecentQuotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const { userRole } = useAuth()
   const maxDisplayQuotes = 50
 
@@ -138,13 +139,21 @@ const Dashboard = () => {
     }
   }
 
-  // Limit to 50 quotes for dashboard display
-  const displayQuotes = recentQuotes.slice(0, maxDisplayQuotes)
+  // Filter and limit quotes for dashboard display
+  const filteredQuotes = typeFilter 
+    ? recentQuotes.filter(q => q.type === typeFilter)
+    : recentQuotes
+  const displayQuotes = filteredQuotes.slice(0, maxDisplayQuotes)
 
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <StatsCards quotes={recentQuotes} loading={loading} />
+      <StatsCards 
+        quotes={recentQuotes} 
+        loading={loading} 
+        onTypeFilter={setTypeFilter}
+        activeFilter={typeFilter}
+      />
 
       <div>
         <h2 className="text-3xl font-bold font-heading">Dashboard</h2>
@@ -255,7 +264,7 @@ const Dashboard = () => {
 
               <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
                 <p className="text-sm text-muted-foreground">
-                  Showing {displayQuotes.length} of {recentQuotes.length} quotes
+                  Showing {displayQuotes.length} of {filteredQuotes.length} quotes{typeFilter && ` (filtered by ${typeFilter})`}
                 </p>
                 {recentQuotes.length > maxDisplayQuotes && (
                   <Button

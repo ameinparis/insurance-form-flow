@@ -29,7 +29,7 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className="w-56 bg-white dark:bg-sidebar-background rounded-[32px] shadow-md sticky top-0 h-[calc(100vh-7rem)] overflow-hidden">
+    <Sidebar className="w-56 bg-white dark:bg-sidebar-background rounded-2xl shadow-md sticky top-0 h-[calc(100vh-7rem)] overflow-hidden">
       <SidebarContent className="flex flex-col h-full">
         {/* MENU Section */}
         <div className="px-4 pt-5 pb-3">
@@ -43,16 +43,16 @@ export function AppSidebar() {
                 key={item.title}
                 to={item.url}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-2 py-2 rounded-full transition-all duration-200 group ${
+                  `flex items-center gap-3 px-2 py-2 rounded-xl transition-all duration-200 group ${
                     isActive
-                      ? "bg-sidebar-active text-white"
-                      : "text-foreground/70 dark:text-white hover:bg-muted/60 dark:hover:bg-sidebar-accent"
+                      ? "bg-sidebar-active text-sidebar-active-foreground"
+                      : "text-foreground/70 dark:text-white hover:bg-sidebar-accent-hover"
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 ${
                       isActive 
                         ? "bg-white/20" 
                         : "bg-muted/50 dark:bg-sidebar-accent"
@@ -79,9 +79,9 @@ export function AppSidebar() {
           </div>
 
           {/* Light Mode Toggle */}
-          <div className="flex items-center justify-between px-2 py-2 mb-1 rounded-full hover:bg-muted/60 dark:hover:bg-sidebar-accent transition-all duration-200">
+          <div className="flex items-center justify-between px-2 py-2 mb-1 rounded-xl hover:bg-sidebar-accent-hover transition-all duration-200">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted/50 dark:bg-sidebar-accent">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-muted/50 dark:bg-sidebar-accent">
                 {isDarkMode ? <Moon className="h-4 w-4 text-foreground/70 dark:text-white" /> : <Sun className="h-4 w-4 text-foreground/70 dark:text-white" />}
               </div>
               <span className="text-xs font-medium text-foreground/70 dark:text-white">
@@ -101,16 +101,16 @@ export function AppSidebar() {
                 key={item.title}
                 to={item.url}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-2 py-2 rounded-full transition-all duration-200 group ${
+                  `flex items-center gap-3 px-2 py-2 rounded-xl transition-all duration-200 group ${
                     isActive
-                      ? "bg-sidebar-active text-white"
-                      : "text-foreground/70 dark:text-white hover:bg-muted/60 dark:hover:bg-sidebar-accent"
+                      ? "bg-sidebar-active text-sidebar-active-foreground"
+                      : "text-foreground/70 dark:text-white hover:bg-sidebar-accent-hover"
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 ${
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 ${
                       isActive 
                         ? "bg-white/20" 
                         : "bg-muted/50 dark:bg-sidebar-accent"
