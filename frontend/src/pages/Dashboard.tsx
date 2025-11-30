@@ -142,18 +142,18 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm">
+      <div>
         <h2 className="text-3xl font-bold font-heading">Welcome back!</h2>
       </div>
 
       {/* Recent Quotes Table */}
-      <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
+      <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
         <CardHeader>
           <CardTitle className="font-heading">Recently Created</CardTitle>
           <CardDescription>Latest quotes created by your team</CardDescription>
         </CardHeader>
 
-        <CardContent className="p-6 bg-white dark:bg-slate-900 rounded-3xl">
+        <CardContent className="p-6">
           {loading ? (
             <div className="text-center py-12 text-muted-foreground">Loading quotes...</div>
           ) : recentQuotes.length === 0 ? (

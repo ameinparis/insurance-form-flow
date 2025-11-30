@@ -22,7 +22,7 @@ const Settings = () => {
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6 mt-6">
-          <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
+          <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
             <CardHeader>
               <CardTitle>Profile Information</CardTitle>
               <CardDescription>
@@ -56,7 +56,7 @@ const Settings = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
+          <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
             <CardHeader>
               <CardTitle>Preferences</CardTitle>
               <CardDescription>
@@ -88,7 +88,7 @@ const Settings = () => {
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-6 mt-6">
-          <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
+          <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
             <CardHeader>
               <CardTitle>Audit Trail</CardTitle>
               <CardDescription>
@@ -130,7 +130,7 @@ const Settings = () => {
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6 mt-6">
-          <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
+          <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
             <CardHeader>
               <CardTitle>Notification Settings</CardTitle>
               <CardDescription>

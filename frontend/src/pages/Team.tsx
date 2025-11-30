@@ -161,7 +161,7 @@ const Team = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold mb-2">Team</h2>
           <p className="text-muted-foreground">Manage your team members and their roles.</p>
@@ -175,9 +175,9 @@ const Team = () => {
       </div>
 
       {loading ? (
-        <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm"><CardContent className="py-12 text-center text-muted-foreground">Loading team members...</CardContent></Card>
+        <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0"><CardContent className="py-12 text-center text-muted-foreground">Loading team members...</CardContent></Card>
       ) : teamMembers.length === 0 ? (
-        <Card className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm">
+        <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
           <CardContent className="text-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No team members yet</h3>
@@ -191,7 +191,7 @@ const Team = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm">
+        <div className="bg-gray-50 dark:bg-slate-800 rounded-3xl p-6">
           <div className="overflow-x-auto">
             <Table className="border-separate border-spacing-y-3 w-full">
               <TableHeader className="sticky top-0 z-10">

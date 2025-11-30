@@ -126,7 +126,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="sticky top-[102px] self-start">
             <AppSidebar />
           </div>
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-auto bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm">
             {children}
           </main>
         </div>
