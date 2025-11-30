@@ -6,20 +6,37 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { Calculator, Download, Eye, Trash2, FileText, Search, Filter, Edit } from "lucide-react"
+import { Calculator, Eye, Trash2, FileText, Search, Filter, Edit } from "lucide-react"
 import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
+import { useGlobalSearch } from "@/lib/searchContext"
 
 const Quotes = () => {
   const navigate = useNavigate()
-  const [searchTerm, setSearchTerm] = useState("")
+  const { globalSearchTerm, setGlobalSearchTerm } = useGlobalSearch()
+  const [localSearchTerm, setLocalSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("date")
   const [quotes, setQuotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const { userRole } = useAuth()
   const itemsPerPage = 100
+
+  // Use global search term if available, otherwise use local
+  const searchTerm = globalSearchTerm || localSearchTerm
+  
+  // Sync local search with global when component mounts
+  useEffect(() => {
+    if (globalSearchTerm) {
+      setLocalSearchTerm(globalSearchTerm)
+    }
+  }, [globalSearchTerm])
+
+  const handleLocalSearchChange = (value: string) => {
+    setLocalSearchTerm(value)
+    setGlobalSearchTerm(value)
+  }
 
   // Helper function to get badge color based on quote type
   const getQuoteTypeBadgeClass = (type: string) => {
@@ -190,8 +207,8 @@ useEffect(() => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="Search quotes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={localSearchTerm}
+                onChange={(e) => handleLocalSearchChange(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -278,8 +295,13 @@ useEffect(() => {
                         {/* <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal rounded-l-xl">
                           {String(startIndex + idx + 1).padStart(2, '0')}
                         </TableCell> */}
-                        <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-small rounded-l-xl">
-                          {quote.quoteId}
+                        <TableCell className="py-5 px-6 rounded-l-xl">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-[#009fe3]/10 flex items-center justify-center flex-shrink-0">
+                              <FileText className="h-5 w-5 text-[#009fe3]" />
+                            </div>
+                            <span className="text-gray-700 dark:text-gray-300 font-small">{quote.quoteId}</span>
+                          </div>
                         </TableCell>
                         <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
                           {quote.clientName || quote.fullName || "Unnamed"}

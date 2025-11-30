@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { Eye, Download, Trash2, Edit } from "lucide-react"
-import { SimpleChart } from "@/components/SimpleChart"
+import { Eye, Trash2, Edit, FileText } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
 
@@ -14,21 +12,8 @@ const Dashboard = () => {
   const navigate = useNavigate()
   const [recentQuotes, setRecentQuotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [currentPage, setCurrentPage] = useState(1)
   const { userRole } = useAuth()
-  const itemsPerPage = 100
-
-  const dummyStats = {
-    totalQuotes: 0,
-    totalCalculations: 0,
-    successRate: 0,
-    revenue: 0
-  }
-
-  const dummyChartData = {
-    monthlyData: [],
-    categoryData: []
-  }
+  const maxDisplayQuotes = 50
 
   // Helper function to get badge color based on quote type
   const getQuoteTypeBadgeClass = (type: string) => {
@@ -125,44 +110,14 @@ const Dashboard = () => {
     }
   }
 
-  // Pagination logic
-  const totalPages = Math.ceil(recentQuotes.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const currentQuotes = recentQuotes.slice(startIndex, endIndex)
-
-  const goToPage = (page: number) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)))
-  }
+  // Limit to 50 quotes for dashboard display
+  const displayQuotes = recentQuotes.slice(0, maxDisplayQuotes)
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold mb-2 font-heading">Welcome back!</h2>
       </div>
-
-      {/* Chart Section */}
-      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">Performance Overview</CardTitle>
-            <CardDescription>Monthly quotes and calculations trend</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SimpleChart data={dummyChartData.monthlyData} type="area" className="h-[300px]" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">Quote Categories</CardTitle>
-            <CardDescription>Distribution by insurance type</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SimpleChart data={dummyChartData.categoryData} type="pie" className="h-[300px]" />
-          </CardContent>
-        </Card>
-      </div> */}
 
       {/* Recent Quotes Table */}
       <Card>
@@ -205,17 +160,18 @@ const Dashboard = () => {
                   </TableHeader>
 
                   <TableBody>
-                    {currentQuotes.map((quote, idx) => (
+                    {displayQuotes.map((quote, idx) => (
                       <TableRow
                         key={quote.id}
                         className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-gray-200 dark:hover:bg-slate-800 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 my-2 overflow-hidden"
                       >
-
-                        {/* <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal rounded-l-xl">
-                          {String(startIndex + idx + 1).padStart(2, '0')}
-                        </TableCell> */}
-                        <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-small rounded-l-xl">
-                          {quote.quoteId}
+                        <TableCell className="py-5 px-6 rounded-l-xl">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-[#009fe3]/10 flex items-center justify-center flex-shrink-0">
+                              <FileText className="h-5 w-5 text-[#009fe3]" />
+                            </div>
+                            <span className="text-gray-700 dark:text-gray-300 font-small">{quote.quoteId}</span>
+                          </div>
                         </TableCell>
                         <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
                           {quote.clientName || quote.fullName || "Unnamed"}
@@ -273,67 +229,19 @@ const Dashboard = () => {
                 </Table>
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="mt-8 flex justify-center">
-                  <Pagination>
-                    <PaginationContent className="gap-1">
-                      <PaginationItem>
-                        <PaginationPrevious
-                          onClick={() => goToPage(currentPage - 1)}
-                          className={`rounded-lg ${currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800'}`}
-                        />
-                      </PaginationItem>
-
-                      {[...Array(totalPages)].map((_, i) => {
-                        const pageNum = i + 1
-                        if (
-                          pageNum === 1 ||
-                          pageNum === totalPages ||
-                          (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-                        ) {
-                          return (
-                            <PaginationItem key={pageNum}>
-                              <PaginationLink
-                                onClick={() => goToPage(pageNum)}
-                                isActive={currentPage === pageNum}
-                                className={`rounded-lg cursor-pointer min-w-10 ${currentPage === pageNum
-                                  ? 'bg-emerald-500 text-white hover:bg-emerald-600 border-emerald-500'
-                                  : 'hover:bg-gray-100 dark:hover:bg-slate-800'
-                                  }`}
-                              >
-                                {pageNum}
-                              </PaginationLink>
-                            </PaginationItem>
-                          )
-                        } else if (
-                          pageNum === currentPage - 2 ||
-                          pageNum === currentPage + 2
-                        ) {
-                          return (
-                            <PaginationItem key={pageNum}>
-                              <PaginationEllipsis />
-                            </PaginationItem>
-                          )
-                        }
-                        return null
-                      })}
-
-                      <PaginationItem>
-                        <PaginationNext
-                          onClick={() => goToPage(currentPage + 1)}
-                          className={`rounded-lg ${currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800'}`}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              )}
-
               <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
                 <p className="text-sm text-muted-foreground">
-                  Showing {startIndex + 1} to {Math.min(endIndex, recentQuotes.length)} of {recentQuotes.length} quotes
+                  Showing {displayQuotes.length} of {recentQuotes.length} quotes
                 </p>
+                {recentQuotes.length > maxDisplayQuotes && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/quotes")}
+                    className="text-[#009fe3] border-[#009fe3] hover:bg-[#009fe3]/10"
+                  >
+                    Show All
+                  </Button>
+                )}
               </div>
             </>
           )}
