@@ -7,9 +7,9 @@ interface PdfIconProps {
 
 export function PdfIcon({ className = "", size = "md" }: PdfIconProps) {
   const sizeClasses = {
-    sm: "w-8 h-8",
-    md: "w-10 h-10",
-    lg: "w-12 h-12"
+    sm: "w-9 h-9",
+    md: "w-11 h-11",
+    lg: "w-14 h-14"
   }
 
   const iconSizes = {

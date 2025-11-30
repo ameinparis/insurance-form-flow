@@ -427,7 +427,7 @@ const GroupLifeAssuranceForm = () => {
                     type="button"
                     variant={salaryMultiplier === multiplier ? "default" : "outline"}
                     className={salaryMultiplier === multiplier 
-                      ? "bg-yellow-400 hover:bg-yellow-500 text-black font-semibold" 
+                      ? "bg-[#5bb5e0] hover:bg-[#4aa8d4] text-black font-semibold" 
                       : ""}
                     onClick={() => setSalaryMultiplier(multiplier)}
                   >

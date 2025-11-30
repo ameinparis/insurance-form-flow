@@ -115,6 +115,16 @@ const Team = () => {
       const res = await axios.get("https://njs.exclusivelife.co.bw/api/users", {
         headers: { Authorization: `Bearer ${token}` }
       })
+      const pastelColors = [
+        "bg-blue-100 text-blue-600",
+        "bg-green-100 text-green-600",
+        "bg-purple-100 text-purple-600",
+        "bg-pink-100 text-pink-600",
+        "bg-orange-100 text-orange-600",
+        "bg-teal-100 text-teal-600",
+        "bg-indigo-100 text-indigo-600",
+        "bg-rose-100 text-rose-600"
+      ]
       const mapped = res.data.map((user: any, idx: number) => ({
         id: user._id,
         name: `${user.firstName} ${user.lastName}`,
@@ -123,7 +133,7 @@ const Team = () => {
         email: user.email,
         role: user.role,
         initials: `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`,
-        bgColor: ["bg-green-500", "bg-yellow-500", "bg-red-500", "bg-blue-500"][idx % 4],
+        bgColor: pastelColors[idx % pastelColors.length],
         isActive: user.isActive !== false,
       }))
       setTeamMembers(mapped)
@@ -222,8 +232,8 @@ const Team = () => {
                   >
                     <TableCell className="py-5 px-6 rounded-l-xl">
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback className={`${member.bgColor} text-white font-semibold`}>
+                        <Avatar className="h-10 w-10 border-2 border-current/20">
+                          <AvatarFallback className={`${member.bgColor} font-semibold`}>
                             {member.initials}
                           </AvatarFallback>
                         </Avatar>
