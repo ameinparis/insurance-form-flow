@@ -8,6 +8,7 @@ import { Download, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
 import pdfIcon from "@/assets/pdf-icon.png"
+import { StatsCards } from "@/components/dashboard/StatsCards"
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -142,6 +143,9 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Stats Cards */}
+      <StatsCards quotes={recentQuotes} loading={loading} />
+
       <div>
         <h2 className="text-3xl font-bold font-heading">Welcome back!</h2>
       </div>
