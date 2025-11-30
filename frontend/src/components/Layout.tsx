@@ -83,15 +83,11 @@ export function Layout({ children }: LayoutProps) {
       <div className="w-full min-h-screen bg-muted/30">
         {/* Fixed Header */}
         <header className="fixed top-0 left-0 right-0 z-50 mx-8 mt-6 h-[72px] flex items-center px-8 justify-between bg-card rounded-[40px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-border/40">
-          {/* Logo */}
+          {/* Logo Text */}
           <div className="flex items-center min-w-[200px]">
-            <div className="h-[120px] w-[120px] flex items-center justify-center -ml-2">
-              <img
-                src={isDarkMode ? "/logo-darkmode.png" : "/exclusive.png"}
-                alt="Exclusive Life Insurance"
-                className="h-[120px] w-[120px] object-contain transition-opacity duration-300"
-              />
-            </div>
+            <span className="text-xl font-bold text-[#031d42] dark:text-white transition-colors duration-300">
+              Exclusive Life Insurance
+            </span>
           </div>
 
           {/* Center Search */}

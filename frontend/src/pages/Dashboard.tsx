@@ -16,7 +16,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const { userRole } = useAuth()
-  const maxDisplayQuotes = 50
+  const maxDisplayQuotes = 15
 
   // Helper function to get badge color based on quote type
   const getQuoteTypeBadgeClass = (type: string) => {
@@ -161,9 +161,20 @@ const Dashboard = () => {
 
       {/* Recent Quotes Table */}
       <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
-        <CardHeader>
-          <CardTitle className="font-heading">Recently Created</CardTitle>
-          <CardDescription>Latest quotes created by your team</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="font-heading">Recently Created</CardTitle>
+            <CardDescription>Latest quotes created by your team</CardDescription>
+          </div>
+          {recentQuotes.length > maxDisplayQuotes && (
+            <Button
+              variant="outline"
+              onClick={() => navigate("/quotes")}
+              className="text-[#009fe3] border-[#009fe3] hover:bg-[#009fe3]/10"
+            >
+              Show All
+            </Button>
+          )}
         </CardHeader>
 
         <CardContent className="p-6">
@@ -266,15 +277,6 @@ const Dashboard = () => {
                 <p className="text-sm text-muted-foreground">
                   Showing {displayQuotes.length} of {filteredQuotes.length} quotes{typeFilter && ` (filtered by ${typeFilter})`}
                 </p>
-                {recentQuotes.length > maxDisplayQuotes && (
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate("/quotes")}
-                    className="text-[#009fe3] border-[#009fe3] hover:bg-[#009fe3]/10"
-                  >
-                    Show All
-                  </Button>
-                )}
               </div>
             </>
           )}

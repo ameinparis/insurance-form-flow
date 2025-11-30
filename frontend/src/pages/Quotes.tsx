@@ -399,7 +399,7 @@ useEffect(() => {
                               isActive={currentPage === pageNum}
                               className={`rounded-lg cursor-pointer min-w-10 ${
                                 currentPage === pageNum
-                                  ? 'bg-emerald-500 text-white hover:bg-emerald-600 border-emerald-500'
+                                  ? 'bg-[#009fe3] text-white hover:bg-[#0088c6] border-[#009fe3]'
                                   : 'hover:bg-gray-100 dark:hover:bg-slate-800'
                               }`}
                             >
