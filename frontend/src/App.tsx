@@ -8,6 +8,7 @@ import { Layout } from "./components/Layout";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Calculate from "./pages/Calculate";
+import Team from "./pages/Team";
 import CalculateForm from "./pages/CalculateForm";
 import FormRouter from "./components/FormRouter";
 import Results from "./pages/Results";
@@ -79,6 +80,11 @@ const App = () => (
             <Route path="/settings" element={
               <Layout>
                 <Settings />
+              </Layout>
+            } />
+            <Route path="/team" element={
+              <Layout>
+                <Team />
               </Layout>
             } />
             <Route path="/logout" element={<LogoutHandler />} />
