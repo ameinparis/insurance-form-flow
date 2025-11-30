@@ -35,7 +35,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar className={cn(
-      "bg-white dark:bg-sidebar-background rounded-[32px] shadow-md sticky top-0 h-[calc(100vh-7rem)] overflow-hidden transition-all duration-300 relative",
+      "bg-white dark:bg-sidebar-background rounded-[32px] shadow-md h-[calc(100vh-7rem)] overflow-visible transition-all duration-300 relative flex-shrink-0",
       isCollapsed ? "w-[72px]" : "w-56"
     )}>
       {/* Collapse Toggle Button */}

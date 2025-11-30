@@ -108,9 +108,9 @@ export function Layout({ children }: LayoutProps) {
 
         {/* Sidebar and Main Content - aligned below header */}
         <div className="flex gap-6 px-8 pt-[130px] pb-6">
-          <div className="sticky top-[102px] self-start">
+          <aside className="sticky top-[102px] self-start flex-shrink-0">
             <AppSidebar />
-          </div>
+          </aside>
           <main className="flex-1 overflow-auto">
             {children}
           </main>
