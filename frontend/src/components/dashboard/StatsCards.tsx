@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { FileText, Users, TrendingUp, Calendar } from "lucide-react"
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts"
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 
 interface Quote {
   id: string
@@ -17,40 +17,35 @@ interface StatsCardsProps {
 }
 
 const COLORS = [
-  "hsl(207, 100%, 62%)", // Blue - Annuity
-  "hsl(270, 70%, 60%)",  // Purple - Funeral
-  "hsl(142, 70%, 45%)",  // Green - Life
-  "hsl(30, 90%, 55%)",   // Orange - Credit
-  "hsl(190, 80%, 50%)",  // Cyan - Disability
-  "hsl(0, 70%, 55%)",    // Red - Critical
-  "hsl(220, 15%, 50%)",  // Gray - Other
+  "hsl(207, 90%, 70%)",  // Light Blue
+  "hsl(270, 60%, 70%)",  // Light Purple
+  "hsl(142, 60%, 60%)",  // Light Green
+  "hsl(35, 85%, 65%)",   // Light Orange/Yellow
+  "hsl(190, 70%, 60%)",  // Light Cyan
+  "hsl(0, 60%, 70%)",    // Light Red
 ]
 
 export const StatsCards = ({ quotes, loading }: StatsCardsProps) => {
   const stats = useMemo(() => {
     const totalQuotes = quotes.length
     
-    // Get unique clients
     const uniqueClients = new Set(
       quotes.map(q => (q.clientName || q.fullName || "").toLowerCase()).filter(Boolean)
     )
     const totalClients = uniqueClients.size
     
-    // Quotes this month
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const quotesThisMonth = quotes.filter(
       q => new Date(q.createdAt) >= startOfMonth
     ).length
     
-    // Quotes this week
     const startOfWeek = new Date()
     startOfWeek.setDate(startOfWeek.getDate() - 7)
     const quotesThisWeek = quotes.filter(
       q => new Date(q.createdAt) >= startOfWeek
     ).length
     
-    // Group by type
     const typeGroups: Record<string, number> = {}
     quotes.forEach(q => {
       const type = q.type || "Unknown"
@@ -62,45 +57,46 @@ export const StatsCards = ({ quotes, loading }: StatsCardsProps) => {
       value,
     }))
     
-    // Most active type
-    const mostActiveType = pieData.length > 0 
-      ? pieData.reduce((a, b) => a.value > b.value ? a : b).name 
-      : "N/A"
-    
     return {
       totalQuotes,
       totalClients,
       quotesThisMonth,
       quotesThisWeek,
       pieData,
-      mostActiveType,
     }
   }, [quotes])
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i} className="bg-card rounded-2xl border-0 animate-pulse">
-            <CardContent className="p-6">
-              <div className="h-20 bg-muted rounded"></div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="bg-card rounded-2xl border-0 animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-24 bg-muted rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card className="bg-card rounded-2xl border-0 animate-pulse">
+          <CardContent className="p-6">
+            <div className="h-full bg-muted rounded"></div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4 mb-6">
-      {/* Stats Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      {/* Left side - 2x2 Stats Grid */}
+      <div className="lg:col-span-2 grid grid-cols-2 gap-4">
         {/* Total Quotes */}
         <Card className="bg-card rounded-2xl border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30">
-                <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20">
+                <FileText className="h-5 w-5 text-blue-500" />
               </div>
             </div>
             <p className="text-sm text-muted-foreground mb-1">Total Quotes</p>
@@ -111,10 +107,10 @@ export const StatsCards = ({ quotes, loading }: StatsCardsProps) => {
 
         {/* Total Clients */}
         <Card className="bg-card rounded-2xl border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-green-100 dark:bg-green-900/30">
-                <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2.5 rounded-xl bg-green-50 dark:bg-green-900/20">
+                <Users className="h-5 w-5 text-green-500" />
               </div>
             </div>
             <p className="text-sm text-muted-foreground mb-1">Total Clients</p>
@@ -125,10 +121,10 @@ export const StatsCards = ({ quotes, loading }: StatsCardsProps) => {
 
         {/* Quotes This Month */}
         <Card className="bg-card rounded-2xl border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-purple-100 dark:bg-purple-900/30">
-                <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-900/20">
+                <Calendar className="h-5 w-5 text-purple-500" />
               </div>
             </div>
             <p className="text-sm text-muted-foreground mb-1">This Month</p>
@@ -139,10 +135,10 @@ export const StatsCards = ({ quotes, loading }: StatsCardsProps) => {
 
         {/* Quotes This Week */}
         <Card className="bg-card rounded-2xl border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-orange-100 dark:bg-orange-900/30">
-                <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-900/20">
+                <TrendingUp className="h-5 w-5 text-orange-500" />
               </div>
             </div>
             <p className="text-sm text-muted-foreground mb-1">This Week</p>
@@ -152,24 +148,24 @@ export const StatsCards = ({ quotes, loading }: StatsCardsProps) => {
         </Card>
       </div>
 
-      {/* Pie Chart Section */}
-      {stats.pieData.length > 0 && (
-        <Card className="bg-card rounded-2xl border-0 shadow-sm">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Quotes by Type</h3>
-            <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
+      {/* Right side - Pie Chart */}
+      <Card className="bg-card rounded-2xl border-0 shadow-sm">
+        <CardContent className="p-5 h-full flex flex-col">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Quotes by Type</h3>
+          {stats.pieData.length > 0 ? (
+            <div className="flex-1 min-h-[220px] flex flex-col items-center justify-center">
+              <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
                   <Pie
                     data={stats.pieData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
+                    innerRadius={50}
+                    outerRadius={75}
+                    paddingAngle={3}
                     dataKey="value"
-                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                    labelLine={false}
+                    strokeWidth={0}
+                    cornerRadius={8}
                   >
                     {stats.pieData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -184,17 +180,32 @@ export const StatsCards = ({ quotes, loading }: StatsCardsProps) => {
                     }}
                     formatter={(value: number, name: string) => [`${value} quotes`, name]}
                   />
-                  <Legend 
-                    verticalAlign="bottom" 
-                    height={36}
-                    formatter={(value) => <span className="text-sm text-foreground">{value}</span>}
-                  />
                 </PieChart>
               </ResponsiveContainer>
+              <div className="text-center mb-2">
+                <p className="text-2xl font-bold text-foreground">{stats.totalQuotes}</p>
+                <p className="text-xs text-muted-foreground">Total Quotes</p>
+              </div>
+              {/* Legend */}
+              <div className="flex flex-wrap justify-center gap-3 mt-2">
+                {stats.pieData.map((entry, index) => (
+                  <div key={entry.name} className="flex items-center gap-1.5">
+                    <div 
+                      className="w-3 h-3 rounded-sm" 
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                    />
+                    <span className="text-xs text-muted-foreground">{entry.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+              No data available
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
