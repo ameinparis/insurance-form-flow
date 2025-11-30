@@ -59,7 +59,7 @@ export function AppSidebar() {
                     }`}>
                       <item.icon className="h-4 w-4 flex-shrink-0" />
                     </div>
-                    <span className="text-xs font-medium">{item.title}</span>
+                    <span className="text-sm font-medium">{item.title}</span>
                   </>
                 )}
               </NavLink>
@@ -84,7 +84,7 @@ export function AppSidebar() {
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-muted/50 dark:bg-sidebar-accent">
                 {isDarkMode ? <Moon className="h-4 w-4 text-foreground/70 dark:text-white" /> : <Sun className="h-4 w-4 text-foreground/70 dark:text-white" />}
               </div>
-              <span className="text-xs font-medium text-foreground/70 dark:text-white">
+              <span className="text-sm font-medium text-foreground/70 dark:text-white">
                 {isDarkMode ? "Dark Mode" : "Light Mode"}
               </span>
             </div>
@@ -117,7 +117,7 @@ export function AppSidebar() {
                     }`}>
                       <item.icon className="h-4 w-4 flex-shrink-0" />
                     </div>
-                    <span className="text-xs font-medium">{item.title}</span>
+                    <span className="text-sm font-medium">{item.title}</span>
                   </>
                 )}
               </NavLink>
