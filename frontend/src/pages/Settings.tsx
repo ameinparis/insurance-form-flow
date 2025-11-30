@@ -4,8 +4,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
 
 const Settings = () => {
   return (
@@ -15,10 +13,9 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="profile">Profile Info</TabsTrigger>
           <TabsTrigger value="audit">Audit Trail</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6 mt-6">
@@ -56,35 +53,6 @@ const Settings = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
-            <CardHeader>
-              <CardTitle>Preferences</CardTitle>
-              <CardDescription>
-                Customize your experience.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Email Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive email notifications about your account activity.
-                  </p>
-                </div>
-                <Switch />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Marketing Emails</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive emails about new features and promotions.
-                  </p>
-                </div>
-                <Switch />
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-6 mt-6">
@@ -129,49 +97,6 @@ const Settings = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="notifications" className="space-y-6 mt-6">
-          <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
-            <CardHeader>
-              <CardTitle>Notification Settings</CardTitle>
-              <CardDescription>
-                Configure how you receive notifications.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Push Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive push notifications in your browser.
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Quote Status Updates</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get notified when quote status changes.
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>System Maintenance</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive notifications about system maintenance.
-                    </p>
-                  </div>
-                  <Switch />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   )

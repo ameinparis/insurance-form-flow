@@ -7,13 +7,14 @@ import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { UserPlus, Users, Pencil } from "lucide-react"
+import { UserPlus, Users, Pencil, Trash2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { PageLoader } from "@/components/PageLoader"
 
 interface TeamMember {
   id: string
@@ -108,6 +109,19 @@ const Team = () => {
     setShowEditUserModal(true)
   }
 
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("Are you sure you want to delete this user?")) return
+    try {
+      const token = localStorage.getItem("token")
+      await axios.delete(`https://njs.exclusivelife.co.bw/api/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      fetchUsers()
+    } catch (err) {
+      console.error("Delete user error", err)
+    }
+  }
+
   const fetchUsers = async () => {
     try {
       setLoading(true)
@@ -183,7 +197,7 @@ const Team = () => {
       </div>
 
       {loading ? (
-        <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0"><CardContent className="py-12 text-center text-muted-foreground">Loading team members...</CardContent></Card>
+        <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0"><CardContent className="py-6"><PageLoader /></CardContent></Card>
       ) : teamMembers.length === 0 ? (
         <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
           <CardContent className="text-center py-12">
@@ -261,15 +275,26 @@ const Team = () => {
                     </TableCell>
                     {currentUserRole?.toLowerCase() === "superuser" && (
                       <TableCell className="py-5 px-6 text-right rounded-r-xl">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => openEditModal(member)}
-                          title="Edit User"
-                        >
-                          <Pencil className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => openEditModal(member)}
+                            title="Edit User"
+                          >
+                            <Pencil className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            onClick={() => handleDeleteUser(member.id)}
+                            title="Delete User"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>

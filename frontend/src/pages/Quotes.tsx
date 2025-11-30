@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
 import { useGlobalSearch } from "@/lib/searchContext"
 import { PdfIcon } from "@/components/PdfIcon"
+import { PageLoader } from "@/components/PageLoader"
 
 const Quotes = () => {
   const navigate = useNavigate()
@@ -262,7 +263,7 @@ useEffect(() => {
       </Card>
 
       {loading ? (
-        <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0"><CardContent className="py-12 text-center text-muted-foreground">Loading quotes...</CardContent></Card>
+        <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0"><CardContent className="py-6"><PageLoader /></CardContent></Card>
       ) : filteredAndSortedQuotes.length === 0 ? (
         <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
           <CardContent className="text-center py-12">
