@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,6 +19,7 @@ import {
 
 
 const GroupLifeAssuranceForm = () => {
+  const navigate = useNavigate()
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [members, setMembers] = useState<any[]>([])
   const [summary, setSummary] = useState({
@@ -277,6 +279,7 @@ const GroupLifeAssuranceForm = () => {
       const data = await res.json();
       toast.success(`Quote ${data.quoteId} saved successfully!`);
       setShowQuoteDialog(false);
+      navigate(`/quotes/${data._id}?legacy=false`);
     } catch (err: any) {
       console.error("Save quote error:", err);
       toast.error(err.message || "Failed to save quote");

@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,6 +17,7 @@ import { useBackgroundJob } from "@/contexts/BackgroundJobContext"
 
 
 const LifeFuneralQuotationForm = () => {
+  const navigate = useNavigate()
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [premiumResult, setPremiumResult] = useState<any | null>(null)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
@@ -324,8 +326,7 @@ const LifeFuneralQuotationForm = () => {
       const data = await res.json()
       toast.success(`Quote ${data.quoteId} saved successfully!`)
       setShowQuoteDialog(false)
-
-      // optionally redirect or offer PDF download next
+      navigate(`/quotes/${data._id}?legacy=false`)
 
     } catch (err: any) {
       toast.error(err.message || "Failed to save quote")
