@@ -8,32 +8,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Upload, Info, HelpCircle, Hourglass } from "lucide-react"
+import { Upload, Info, HelpCircle } from "lucide-react"
 import { toast } from "sonner"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
-
-// Simple Loading Overlay Component
-interface LoadingOverlayProps {
-  message?: string
-}
-
-const LoadingOverlay = ({ message }: LoadingOverlayProps) => {
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="relative">
-        {/* Spinner circle */}
-        <div className="h-16 w-16 rounded-full border-4 border-muted border-t-primary animate-spin" />
-        {/* Hourglass icon in the middle */}
-        <Hourglass className="h-6 w-6 text-primary absolute inset-0 m-auto" />
-      </div>
-      <p className="text-sm font-medium text-muted-foreground">
-        {message || "This might take a while. Please don’t close this window."}
-      </p>
-
-    </div>
-  )
-}
+import BackgroundJobWidget, { JobStatus } from "@/components/BackgroundJobWidget"
 
 
 const LifeFuneralQuotationForm = () => {
@@ -42,6 +21,8 @@ const LifeFuneralQuotationForm = () => {
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [isCalculating, setIsCalculating] = useState(false)
   const [jobProgress, setJobProgress] = useState(0)
+  const [jobStatus, setJobStatus] = useState<JobStatus>("hidden")
+  const [jobErrorMessage, setJobErrorMessage] = useState<string>("")
   const [customerDetails, setCustomerDetails] = useState({
     companyName: "",
     registrationNumber: "",
@@ -197,8 +178,6 @@ const LifeFuneralQuotationForm = () => {
 
   // 🔄 Poll job status until done
   const pollJob = (jobId: string) => {
-    const startTime = Date.now();
-    const MAX_POLL_TIME = 900000; // 15 minutes max (900,000 ms)
     const interval = setInterval(async () => {
       try {
         const res = await fetch(
@@ -216,23 +195,24 @@ const LifeFuneralQuotationForm = () => {
           clearInterval(interval);
           setJobProgress(100);
           setIsCalculating(false);
-          toast.success("Quotation calculated!");
+          setJobStatus("done");
           setPremiumResult(data.result);
-          setShowQuoteDialog(true);
         }
 
         if (data.status === "error") {
           clearInterval(interval);
           setJobProgress(0);
           setIsCalculating(false);
-          toast.error(data.error || "Calculation failed");
+          setJobStatus("error");
+          setJobErrorMessage(data.error || "Calculation failed");
         }
 
       } catch (err) {
         clearInterval(interval);
         setJobProgress(0);
         setIsCalculating(false);
-        toast.error("Polling failed");
+        setJobStatus("error");
+        setJobErrorMessage("Polling failed - please try again");
       }
     }, 1000);
   };
@@ -245,6 +225,8 @@ const LifeFuneralQuotationForm = () => {
 
     setIsCalculating(true);
     setJobProgress(0);
+    setJobStatus("running");
+    setJobErrorMessage("");
 
     const syncedFormData = {
       ...formData,
@@ -284,7 +266,9 @@ const LifeFuneralQuotationForm = () => {
       if (!res.ok) {
         setIsCalculating(false);
         setJobProgress(0);
-        throw new Error("Failed to start calculation");
+        setJobStatus("error");
+        setJobErrorMessage("Failed to start calculation");
+        return;
       }
 
       const { jobId } = await res.json();
@@ -297,7 +281,8 @@ const LifeFuneralQuotationForm = () => {
       console.error("Quote error", err);
       setIsCalculating(false);
       setJobProgress(0);
-      toast.error(`Failed to calculate: ${err.message}`);
+      setJobStatus("error");
+      setJobErrorMessage(err.message || "Failed to calculate");
     }
     // ❌ REMOVED the finally block that was hiding the progress indicator
   };
@@ -349,14 +334,26 @@ const LifeFuneralQuotationForm = () => {
   const schemeTooltip = `An open scheme allows new members and is reviewed yearly. A closed scheme maintains the same premium unless members change rules.`
   const coverLevelTooltip = `"Scheme rules" apply fixed benefit levels to all members. "Member specified" means each member has custom cover defined in the uploaded data.`
 
+  const handleViewResults = () => {
+    setShowQuoteDialog(true);
+    setJobStatus("hidden");
+  };
+
+  const handleDismissWidget = () => {
+    setJobStatus("hidden");
+    setJobErrorMessage("");
+  };
+
   return (
     <TooltipProvider>
-      {/* Full-screen dimming overlay with centered progress indicator */}
-      {isCalculating && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <LoadingOverlay />
-        </div>
-      )}
+      {/* Floating Background Job Widget */}
+      <BackgroundJobWidget
+        status={jobStatus}
+        progress={jobProgress}
+        errorMessage={jobErrorMessage}
+        onViewResults={handleViewResults}
+        onDismiss={handleDismissWidget}
+      />
 
       <div className="w-full max-w-4xl mx-auto space-y-6">
         {/* Upload Card */}
