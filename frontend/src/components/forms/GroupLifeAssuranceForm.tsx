@@ -257,13 +257,13 @@ const GroupLifeAssuranceForm = () => {
           inputs: {
             members,
             summary,
-            salaryMultiplier,                            // 👈 add
+            salaryMultiplier,                            
             maxDeathBenefit: maxDeathBenefit
               ? Number(maxDeathBenefit)
-              : null,                                    // 👈 add
+              : null,                                   
             maxODB: maxODB
               ? Number(maxODB)
-              : null,                                    // 👈 add
+              : null,                                   
           },
           outputs: result,
         }),
