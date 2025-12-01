@@ -27,7 +27,7 @@ const BackgroundJobWidget = ({
   if (status === "hidden" || isMinimized) return null
 
   return (
-    <div className="fixed top-4 right-4 z-50 animate-fade-in">
+    <div className="fixed top-20 right-4 z-50 animate-fade-in">
       <Card className="w-72 shadow-lg border border-border/50 bg-card/95 backdrop-blur-sm">
         <CardContent className="p-4">
           {/* Header with close button */}
