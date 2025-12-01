@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,8 @@ import { Loader2, CalendarIcon } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import axios from "axios"
+import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
+import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 
 type LivingResult = {
   guarantee_period: number
@@ -58,6 +60,7 @@ const AnnuityQuotationForm = () => {
   const [upfrontCommission, setUpfrontCommission] = useState("")
   const [ongoingCommission, setOngoingCommission] = useState("")
 
+  const { searchClients, loading: clientsLoading } = useClientSuggestions()
 
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [customerDetails, setCustomerDetails] = useState({
@@ -68,6 +71,27 @@ const AnnuityQuotationForm = () => {
     contactNumber: "",
     email: ""
   })
+
+  // Generate suggestions based on full name input
+  const nameSuggestions = useMemo((): AutocompleteSuggestion[] => {
+    return searchClients(customerDetails.fullName, "individual").map((client) => ({
+      label: client.fullName || "",
+      subtitle: client.idNumber || "",
+      data: client
+    }))
+  }, [customerDetails.fullName, searchClients])
+
+  const handleClientSelect = (suggestion: AutocompleteSuggestion) => {
+    const client = suggestion.data
+    setCustomerDetails({
+      fullName: client.fullName || "",
+      dateOfBirth: client.dateOfBirth || "",
+      gender: client.gender || "",
+      idNumber: client.idNumber || "",
+      contactNumber: client.contactNumber || "",
+      email: client.email || ""
+    })
+  }
   const termsAndConditions = `
 This quotation outlines the guaranteed monthly income you could receive from a conventional life annuity,
 as well as the projected monthly income from a living annuity based on various drawdown rates. The income
@@ -448,10 +472,14 @@ Insurance will not accept liability for any losses incurred as a result of using
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Full Name</Label>
-                  <Input
+                  <AutocompleteInput
                     value={customerDetails.fullName}
                     onChange={(e) => handleCustomerDetailsChange("fullName", e.target.value)}
                     placeholder="Enter full name"
+                    suggestions={nameSuggestions}
+                    onSelect={handleClientSelect}
+                    loading={clientsLoading}
+                    icon="individual"
                   />
                 </div>
                 <div className="space-y-2">

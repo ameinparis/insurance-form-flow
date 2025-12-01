@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,6 +14,8 @@ import { toast } from "sonner"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
 import { useBackgroundJob } from "@/contexts/BackgroundJobContext"
+import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
+import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 
 
 const LifeFuneralQuotationForm = () => {
@@ -28,12 +30,33 @@ const LifeFuneralQuotationForm = () => {
     setJobViewResultsCallback
   } = useBackgroundJob()
 
+  const { searchClients, loading: clientsLoading } = useClientSuggestions()
+
   const [customerDetails, setCustomerDetails] = useState({
     companyName: "",
     registrationNumber: "",
     companyContact: "",
     companyEmail: ""
   })
+
+  // Generate suggestions based on company name input
+  const companySuggestions = useMemo((): AutocompleteSuggestion[] => {
+    return searchClients(customerDetails.companyName, "corporate").map((client) => ({
+      label: client.companyName || client.schemeName || "",
+      subtitle: client.registrationNumber || "",
+      data: client
+    }))
+  }, [customerDetails.companyName, searchClients])
+
+  const handleCompanySelect = (suggestion: AutocompleteSuggestion) => {
+    const client = suggestion.data
+    setCustomerDetails({
+      companyName: client.companyName || client.schemeName || "",
+      registrationNumber: client.registrationNumber || "",
+      companyContact: client.companyContact || client.contactPhone || "",
+      companyEmail: client.companyEmail || client.contactEmail || ""
+    })
+  }
 
 
   // const termsAndConditions = `
@@ -737,10 +760,14 @@ const LifeFuneralQuotationForm = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Scheme / Corporate Name</Label>
-                    <Input
+                    <AutocompleteInput
                       value={customerDetails.companyName}
                       onChange={(e) => setCustomerDetails((prev) => ({ ...prev, companyName: e.target.value }))}
                       placeholder="e.g. Exclusive Life Holdings"
+                      suggestions={companySuggestions}
+                      onSelect={handleCompanySelect}
+                      loading={clientsLoading}
+                      icon="corporate"
                     />
                   </div>
 
