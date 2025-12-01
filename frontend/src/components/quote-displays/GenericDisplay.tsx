@@ -69,17 +69,17 @@ export const GenericDisplay = ({ quote }: GenericDisplayProps) => {
   const { client, inputs, outputs } = quote;
   
   return (
-    <div className="bg-white p-8 space-y-8">
+    <div className="bg-white dark:bg-slate-900 p-8 space-y-8 text-sm text-gray-800 dark:text-gray-100">
       {/* Product Header */}
-      <div className="border-b-2 border-gray-800 pb-2">
-        <h2 className="text-2xl font-semibold">Product: {quote.productType || "Insurance Quote"}</h2>
+      <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+        <h2 className="text-lg font-semibold">Product: {quote.productType || "Insurance Quote"}</h2>
       </div>
 
       {/* Client Details */}
       {client && Object.keys(client).length > 0 && (
         <div>
-          <div className="border-b-2 border-gray-800 pb-2 mb-4">
-            <h3 className="text-xl font-semibold">Client Information</h3>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
+            <h3 className="text-base font-semibold">Client Information</h3>
           </div>
           <CardContent className="p-0">
             {renderObject(client)}
@@ -90,8 +90,8 @@ export const GenericDisplay = ({ quote }: GenericDisplayProps) => {
       {/* Inputs Section */}
       {inputs && Object.keys(inputs).length > 0 && (
         <div>
-          <div className="border-b-2 border-gray-800 pb-2 mb-4">
-            <h3 className="text-xl font-semibold">Quote Details</h3>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
+            <h3 className="text-base font-semibold">Quote Details</h3>
           </div>
           <CardContent className="p-0">
             {renderObject(inputs)}
@@ -102,8 +102,8 @@ export const GenericDisplay = ({ quote }: GenericDisplayProps) => {
       {/* Outputs Section */}
       {outputs && Object.keys(outputs).length > 0 && (
         <div>
-          <div className="border-b-2 border-gray-800 pb-2 mb-4">
-            <h3 className="text-xl font-semibold">Calculation Results</h3>
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
+            <h3 className="text-base font-semibold">Calculation Results</h3>
           </div>
           <CardContent className="p-0">
             {renderObject(outputs)}

@@ -17,28 +17,27 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
     <div className="bg-white dark:bg-slate-900 p-8 space-y-8 text-sm text-gray-800 dark:text-gray-100">
       {/* HEADER */}
       <section>
-        <div className="font-semibold"><span>{client?.schemeName || client?.companyName || "-"}</span></div>
-        <div className="font-semibold">QUOTATION FOR GROUP LIFE ASSURANCE</div>
-        <div className="flex justify-between mt-2">
+        <div className="text-base font-semibold"><span>{client?.schemeName || client?.companyName || "-"}</span></div>
+        <div className="text-base font-semibold">QUOTATION FOR GROUP LIFE ASSURANCE</div>
+        <div className="flex justify-between mt-2 text-sm">
           <span>PERIOD</span>
           <span className="font-semibold">2025/2026</span>
         </div>
-  
       </section>
 
       <div className="space-y-8">
         <div className="space-y-8 pt-6">
           {/* A. POLICY PARAMETERS */}
           <section className="space-y-3">
-            <div className="font-semibold">A&nbsp;&nbsp;Policy Parameters</div>
+            <div className="text-base font-semibold">A&nbsp;&nbsp;Policy Parameters</div>
 
             <div className="space-y-4">
-              <div className="font-semibold text-xs uppercase tracking-wide mb-1">
+              <div className="font-semibold text-sm uppercase tracking-wide mb-1">
                 Covers (2025–2026)
               </div>
               {/* simple 2-column version of the “yellow highlighted” table */}
               <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
+                <table className="w-full text-sm border-collapse">
                   <tbody>
                     <tr>
                       <td className="py-1 pr-4 align-top">Death Benefit</td>
@@ -82,14 +81,14 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
 
           {/* B. RENEWAL RATE & PREMIUM WORKINGS */}
           <section className="space-y-3">
-            <div className="font-semibold">
+            <div className="text-base font-semibold">
               B&nbsp;&nbsp;Renewal Rate – 2025/2026
             </div>
 
             {/* Renewal rate table */}
             <div className="space-y-2">
               <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
+                <table className="w-full text-sm border-collapse">
                   <thead>
                     <tr className="border-b border-gray-200 dark:border-gray-800">
                       <th className="text-left py-1 pr-4">Benefit</th>
@@ -113,13 +112,13 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
                 </table>
               </div>
 
-              <div className="mt-3 font-semibold text-xs">
+              <div className="mt-3 font-semibold text-sm">
                 Premium workings:
               </div>
 
               {/* Gross Premium table – like the middle of your screenshot */}
               <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse">
+                <table className="w-full text-sm border-collapse">
                   <thead>
                     <tr className="border-b border-gray-200 dark:border-gray-800">
                       <th className="text-left py-1 pr-4">Gross Premium</th>
@@ -157,12 +156,12 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
 
           {/* C. BROAD POLICY SPECIFICATIONS (static text like your Excel) */}
           <section className="space-y-3">
-            <div className="font-semibold">
+            <div className="text-base font-semibold">
               C&nbsp;&nbsp;Broad Policy Specifications – Renewal
             </div>
 
             <div className="overflow-hidden">
-              <table className="w-full text-xs border-collapse">
+              <table className="w-full text-sm border-collapse">
                 <tbody>
                   <tr>
                     <td className="py-1 px-3 w-1/2">Free Cover Limit – Death</td>
