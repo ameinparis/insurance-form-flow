@@ -73,7 +73,7 @@ const Dashboard = () => {
         const mappedNew = newQuotes.map((q: any) => ({
           id: q._id,
           quoteId: q.quoteId || "—",
-          clientName: q.client?.fullName || q.client?.companyName || q.client?.schemeName ||"Unnamed",
+          clientName: q.client?.fullName || q.client?.companyName || q.client?.schemeName || "Unnamed",
           email: q.client?.email || q.client?.companyEmail || "—",
           type: q.productType,
           createdByName: q.createdBy?.firstName || "",

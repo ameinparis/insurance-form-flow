@@ -94,7 +94,7 @@ useEffect(() => {
       const mappedNew = newQuotes.map((q: any) => ({
         id: q._id,
         quoteId: q.quoteId,
-        fullName: q.client?.fullName || "Unnamed",
+        fullName: q.client?.fullName || q.client?.schemeName ||  "Unnamed",
         email: q.client?.email || "—",
         contactNumber: q.client?.contactNumber || "—",
         type: q.productType || "Unknown",
@@ -280,7 +280,7 @@ useEffect(() => {
               <Button asChild>
                 <Link to="/calculate">
                   <Calculator className="h-4 w-4 mr-2" />
-                  Create First Quote
+                  Create  Quote
                 </Link>
               </Button>
             )}
@@ -323,12 +323,12 @@ useEffect(() => {
                       >
                         <TableCell className="py-5 px-6 rounded-l-xl">
                           <div className="flex items-center gap-3">
-                            <PdfIcon size="sm" />
+                            <PdfIcon size="md" />
                             <span className="text-gray-700 dark:text-gray-300 font-small">{quote.quoteId}</span>
                           </div>
                         </TableCell>
                         <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
-                          {quote.clientName || quote.fullName || "Unnamed"}
+                          {quote.clientName || quote.fullName || quote.schemeName || "Unnamed"}
                         </TableCell>
                         <TableCell className="py-5 px-6">
                           <Badge
