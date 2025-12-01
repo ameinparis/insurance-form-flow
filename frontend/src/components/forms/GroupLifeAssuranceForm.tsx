@@ -304,17 +304,8 @@ const GroupLifeAssuranceForm = () => {
 
       const data = await res.json();
       
-      if (!data._id) {
-        throw new Error("Quote created but no ID returned");
-      }
-
       toast.success(`Quote ${data.quoteId} saved successfully!`);
       setShowQuoteDialog(false);
-      
-      // Small delay to show success message before navigation
-      setTimeout(() => {
-        navigate(`/quotes/${data._id}?legacy=false`);
-      }, 500);
     } catch (err: any) {
       console.error("Save quote error:", err);
       toast.error(err.message || "Failed to save quote");

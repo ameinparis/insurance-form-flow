@@ -278,17 +278,8 @@ Insurance will not accept liability for any losses incurred as a result of using
         }
       )
 
-      if (!data._id) {
-        throw new Error("Quote created but ID not returned")
-      }
-
       toast.success(`Quote ${data.quoteId} created successfully!`)
       setShowQuoteDialog(false)
-      
-      // Navigate after a brief moment to show success
-      setTimeout(() => {
-        navigate(`/quotes/${data._id}?legacy=false`)
-      }, 500)
 
     } catch (error: any) {
       console.error("Error saving quote:", error)
