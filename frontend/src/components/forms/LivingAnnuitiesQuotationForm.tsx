@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -40,6 +41,7 @@ const formatCurrencyInput = (raw: string) => {
 const unformatCurrencyInput = (val: string) => val.replace(/[^0-9.]/g, "")
 
 const AnnuityQuotationForm = () => {
+  const navigate = useNavigate()
   const [age, setAge] = useState("")
   const [amountRaw, setAmountRaw] = useState("")
   const [frequency, setFrequency] = useState<"Monthly" | "Annual">("Monthly")
@@ -253,6 +255,7 @@ Insurance will not accept liability for any losses incurred as a result of using
 
       toast.success(`Quote ${data.quoteId} created successfully!`)
       setShowQuoteDialog(false)
+      navigate(`/quotes/${data._id}?legacy=false`)
 
     } catch (error: any) {
       console.error("Error saving quote:", error)
