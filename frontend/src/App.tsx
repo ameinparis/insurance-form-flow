@@ -4,6 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SearchProvider } from "@/lib/searchContext";
+import { BackgroundJobProvider } from "@/contexts/BackgroundJobContext";
+import BackgroundJobWidget from "@/components/BackgroundJobWidget";
+import { useBackgroundJob } from "@/contexts/BackgroundJobContext";
 import { Layout } from "./components/Layout";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
@@ -23,76 +26,93 @@ import LogoutHandler from "./components/LogoutHandler";
 
 const queryClient = new QueryClient();
 
+const GlobalBackgroundJobWidget = () => {
+  const { jobStatus, jobProgress, jobErrorMessage, onViewResults, dismissJob } = useBackgroundJob();
+  
+  return (
+    <BackgroundJobWidget
+      status={jobStatus}
+      progress={jobProgress}
+      errorMessage={jobErrorMessage}
+      onViewResults={onViewResults}
+      onDismiss={dismissJob}
+    />
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <SearchProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/dashboard" element={
-            <Layout>
-              <Dashboard />
-            </Layout>
-          } />
-            <Route path="/calculator" element={
+      <BackgroundJobProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <GlobalBackgroundJobWidget />
+          <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/dashboard" element={
               <Layout>
-                <Calculate />
+                <Dashboard />
               </Layout>
             } />
-            <Route path="/calculator/:type" element={
-              <Layout>
-                <FormRouter />
-              </Layout>
-            } />
-            <Route path="/calculate/results" element={
-              <Layout>
-                <Results />
-              </Layout>
-            } />
-            <Route path="/quote/personal-details" element={
-              <Layout>
-                <PersonalDetails />
-              </Layout>
-            } />
-            <Route path="/quote/preview" element={
-              <Layout>
-                <QuotePreview />
-              </Layout>
-            } />
-            <Route path="/quotes" element={
-              <Layout>
-                <Quotes />
-              </Layout>
-            } />
-            <Route path="/quotes/:id" element={
-              <Layout>
-                <QuoteDetail />
-              </Layout>
-            } />
-            <Route path="/living-annuity-calculator" element={
-              <Layout>
-                <LivingAnnuityCalculator />
-              </Layout>
-            } />
-            <Route path="/settings" element={
-              <Layout>
-                <Settings />
-              </Layout>
-            } />
-            <Route path="/team" element={
-              <Layout>
-                <Team />
-              </Layout>
-            } />
-            <Route path="/logout" element={<LogoutHandler />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+              <Route path="/calculator" element={
+                <Layout>
+                  <Calculate />
+                </Layout>
+              } />
+              <Route path="/calculator/:type" element={
+                <Layout>
+                  <FormRouter />
+                </Layout>
+              } />
+              <Route path="/calculate/results" element={
+                <Layout>
+                  <Results />
+                </Layout>
+              } />
+              <Route path="/quote/personal-details" element={
+                <Layout>
+                  <PersonalDetails />
+                </Layout>
+              } />
+              <Route path="/quote/preview" element={
+                <Layout>
+                  <QuotePreview />
+                </Layout>
+              } />
+              <Route path="/quotes" element={
+                <Layout>
+                  <Quotes />
+                </Layout>
+              } />
+              <Route path="/quotes/:id" element={
+                <Layout>
+                  <QuoteDetail />
+                </Layout>
+              } />
+              <Route path="/living-annuity-calculator" element={
+                <Layout>
+                  <LivingAnnuityCalculator />
+                </Layout>
+              } />
+              <Route path="/settings" element={
+                <Layout>
+                  <Settings />
+                </Layout>
+              } />
+              <Route path="/team" element={
+                <Layout>
+                  <Team />
+                </Layout>
+              } />
+              <Route path="/logout" element={<LogoutHandler />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </BackgroundJobProvider>
     </SearchProvider>
   </QueryClientProvider>
 );

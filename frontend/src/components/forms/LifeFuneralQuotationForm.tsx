@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,7 +12,7 @@ import { Upload, Info, HelpCircle } from "lucide-react"
 import { toast } from "sonner"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
-import BackgroundJobWidget, { JobStatus } from "@/components/BackgroundJobWidget"
+import { useBackgroundJob } from "@/contexts/BackgroundJobContext"
 
 
 const LifeFuneralQuotationForm = () => {
@@ -20,9 +20,14 @@ const LifeFuneralQuotationForm = () => {
   const [premiumResult, setPremiumResult] = useState<any | null>(null)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [isCalculating, setIsCalculating] = useState(false)
-  const [jobProgress, setJobProgress] = useState(0)
-  const [jobStatus, setJobStatus] = useState<JobStatus>("hidden")
-  const [jobErrorMessage, setJobErrorMessage] = useState<string>("")
+  
+  const { 
+    setJobStatus, 
+    setJobProgress, 
+    setJobErrorMessage, 
+    setOnViewResults 
+  } = useBackgroundJob()
+
   const [customerDetails, setCustomerDetails] = useState({
     companyName: "",
     registrationNumber: "",
@@ -334,27 +339,15 @@ const LifeFuneralQuotationForm = () => {
   const schemeTooltip = `An open scheme allows new members and is reviewed yearly. A closed scheme maintains the same premium unless members change rules.`
   const coverLevelTooltip = `"Scheme rules" apply fixed benefit levels to all members. "Member specified" means each member has custom cover defined in the uploaded data.`
 
-  const handleViewResults = () => {
-    setShowQuoteDialog(true);
-    setJobStatus("hidden");
-  };
-
-  const handleDismissWidget = () => {
-    setJobStatus("hidden");
-    setJobErrorMessage("");
-  };
+  // Register the view results callback so the global widget can open our dialog
+  useEffect(() => {
+    setOnViewResults(() => {
+      setShowQuoteDialog(true)
+    })
+  }, [setOnViewResults])
 
   return (
     <TooltipProvider>
-      {/* Floating Background Job Widget */}
-      <BackgroundJobWidget
-        status={jobStatus}
-        progress={jobProgress}
-        errorMessage={jobErrorMessage}
-        onViewResults={handleViewResults}
-        onDismiss={handleDismissWidget}
-      />
-
       <div className="w-full max-w-4xl mx-auto space-y-6">
         {/* Upload Card */}
         <Card>
