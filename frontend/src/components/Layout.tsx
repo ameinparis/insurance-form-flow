@@ -1,6 +1,8 @@
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "./AppSidebar"
 import { Search, Sun, Moon } from "lucide-react"
+import lightModeLogo from "@/assets/lightmodelogo.png"
+import darkModeLogo from "@/assets/darkmodelogo.png"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -83,11 +85,13 @@ export function Layout({ children }: LayoutProps) {
       <div className="w-full min-h-screen bg-muted/30">
         {/* Fixed Header */}
         <header className="fixed top-0 left-0 right-0 z-50 mx-8 mt-6 h-[72px] flex items-center px-8 justify-between bg-card rounded-[40px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-border/40">
-          {/* Logo Text */}
+          {/* Logo */}
           <div className="flex items-center min-w-[200px]">
-            <span className="text-xl font-bold text-[#031d42] dark:text-white transition-colors duration-300">
-              Exclusive Life Insurance
-            </span>
+            <img 
+              src={isDarkMode ? darkModeLogo : lightModeLogo} 
+              alt="Exclusive Life Insurance" 
+              className="h-10 w-auto object-contain"
+            />
           </div>
 
           {/* Center Search */}
