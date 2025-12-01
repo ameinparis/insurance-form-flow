@@ -38,6 +38,7 @@ const GroupLifeAssuranceForm = () => {
   const [result, setResult] = useState<any | null>(null)
   const [isCalculating, setIsCalculating] = useState(false)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
+  const [isSavingQuote, setIsSavingQuote] = useState(false)
 
   // New inputs
   const [maxDeathBenefit, setMaxDeathBenefit] = useState<string>("")
@@ -263,6 +264,7 @@ const GroupLifeAssuranceForm = () => {
     }
 
     try {
+      setIsSavingQuote(true);
       const token = localStorage.getItem("token");
 
       const res = await fetch("http://localhost:5002/api/new-quotes", {
@@ -301,12 +303,23 @@ const GroupLifeAssuranceForm = () => {
       }
 
       const data = await res.json();
+      
+      if (!data._id) {
+        throw new Error("Quote created but no ID returned");
+      }
+
       toast.success(`Quote ${data.quoteId} saved successfully!`);
       setShowQuoteDialog(false);
-      navigate(`/quotes/${data._id}?legacy=false`);
+      
+      // Small delay to show success message before navigation
+      setTimeout(() => {
+        navigate(`/quotes/${data._id}?legacy=false`);
+      }, 500);
     } catch (err: any) {
       console.error("Save quote error:", err);
       toast.error(err.message || "Failed to save quote");
+    } finally {
+      setIsSavingQuote(false);
     }
   };
 
@@ -615,7 +628,7 @@ const GroupLifeAssuranceForm = () => {
               <Button variant="secondary" onClick={() => setShowQuoteDialog(false)}>
                 Cancel
               </Button>
-              {/* <Button onClick={handleCreateQuote} disabled={isSavingQuote}>
+              <Button onClick={handleCreateQuote} disabled={isSavingQuote}>
                 {isSavingQuote ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -624,8 +637,7 @@ const GroupLifeAssuranceForm = () => {
                 ) : (
                   "Generate Quote"
                 )}
-              </Button> */}
-
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
