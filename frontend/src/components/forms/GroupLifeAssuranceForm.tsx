@@ -615,8 +615,15 @@ const GroupLifeAssuranceForm = () => {
               <Button variant="secondary" onClick={() => setShowQuoteDialog(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateQuote}>
-                Generate Quote
+              <Button onClick={handleCreateQuote} disabled={isSavingQuote}>
+                {isSavingQuote ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Generate Quote"
+                )}
               </Button>
 
             </div>
