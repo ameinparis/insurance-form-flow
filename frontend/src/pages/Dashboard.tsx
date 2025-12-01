@@ -73,7 +73,7 @@ const Dashboard = () => {
         const mappedNew = newQuotes.map((q: any) => ({
           id: q._id,
           quoteId: q.quoteId || "—",
-          clientName: q.client?.fullName || q.client?.companyName || "Unnamed",
+          clientName: q.client?.fullName || q.client?.companyName || q.client?.schemeName ||"Unnamed",
           email: q.client?.email || q.client?.companyEmail || "—",
           type: q.productType,
           createdByName: q.createdBy?.firstName || "",
@@ -225,7 +225,7 @@ const Dashboard = () => {
                           </div>
                         </TableCell>
                         <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
-                          {quote.clientName || quote.fullName || "Unnamed"}
+                          {quote.clientName || quote.fullName || quote.schemeName || "Unnamed"}
                         </TableCell>
                         <TableCell className="py-5 px-6">
                           <Badge
