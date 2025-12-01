@@ -230,6 +230,8 @@ Insurance will not accept liability for any losses incurred as a result of using
     setCustomerDetails(prev => ({ ...prev, [field]: value }))
   }
 
+  const [isSavingQuote, setIsSavingQuote] = useState(false)
+
   const handleFinalQuoteSubmit = async () => {
     const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
     const missingFields = requiredFields.filter(field => !customerDetails[field])
@@ -239,6 +241,7 @@ Insurance will not accept liability for any losses incurred as a result of using
       return
     }
 
+    setIsSavingQuote(true)
     try {
       const safeNum = (n: number) => (Number.isFinite(n) ? n : undefined)
 
@@ -262,8 +265,6 @@ Insurance will not accept liability for any losses incurred as a result of using
           life: lifeResult,
         },
         termsAndConditions,
-
-
       }
 
       // 🔹 Send to the backend
@@ -277,13 +278,22 @@ Insurance will not accept liability for any losses incurred as a result of using
         }
       )
 
+      if (!data._id) {
+        throw new Error("Quote created but ID not returned")
+      }
+
       toast.success(`Quote ${data.quoteId} created successfully!`)
       setShowQuoteDialog(false)
-      navigate(`/quotes/${data._id}?legacy=false`)
+      
+      // Navigate after a brief moment to show success
+      setTimeout(() => {
+        navigate(`/quotes/${data._id}?legacy=false`)
+      }, 500)
 
     } catch (error: any) {
       console.error("Error saving quote:", error)
       toast.error("Failed to save quote. Please try again.")
+      setIsSavingQuote(false)
     }
   }
 
@@ -687,8 +697,16 @@ Insurance will not accept liability for any losses incurred as a result of using
               <Button variant="secondary" onClick={() => setShowQuoteDialog(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleFinalQuoteSubmit}>
-                Generate Quote
+              <Button onClick={handleFinalQuoteSubmit} disabled={isSavingQuote}>
+                {isSavingQuote ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Generate Quote"
+                )}
+              </Button>
               </Button>
             </div>
           </div>

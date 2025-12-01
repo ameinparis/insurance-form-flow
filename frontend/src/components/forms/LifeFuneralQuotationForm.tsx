@@ -320,6 +320,8 @@ const LifeFuneralQuotationForm = () => {
 
 
 
+  const [isSavingQuote, setIsSavingQuote] = useState(false)
+
   const handleCreateQuote = async () => {
     const requiredFields = ['companyName', 'registrationNumber', 'companyContact', 'companyEmail']
     const missingFields = requiredFields.filter((field) => !customerDetails[field])
@@ -328,6 +330,7 @@ const LifeFuneralQuotationForm = () => {
       return
     }
 
+    setIsSavingQuote(true)
     try {
       const res = await fetch("http://localhost:5002/api/new-quotes", {
         method: "POST",
@@ -340,19 +343,28 @@ const LifeFuneralQuotationForm = () => {
           client: customerDetails,
           inputs: formData,
           outputs: premiumResult,
-
         }),
       })
 
       if (!res.ok) throw new Error("Failed to save quote")
 
       const data = await res.json()
+      
+      if (!data._id) {
+        throw new Error("Quote created but ID not returned")
+      }
+
       toast.success(`Quote ${data.quoteId} saved successfully!`)
       setShowQuoteDialog(false)
-      navigate(`/quotes/${data._id}?legacy=false`)
+      
+      // Navigate after a brief moment to show success
+      setTimeout(() => {
+        navigate(`/quotes/${data._id}?legacy=false`)
+      }, 500)
 
     } catch (err: any) {
       toast.error(err.message || "Failed to save quote")
+      setIsSavingQuote(false)
     }
   }
 
@@ -871,7 +883,16 @@ const LifeFuneralQuotationForm = () => {
               <Button variant="secondary" onClick={() => setShowQuoteDialog(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateQuote}>Generate Quote</Button>
+              <Button onClick={handleCreateQuote} disabled={isSavingQuote}>
+                {isSavingQuote ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Generate Quote"
+                )}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
