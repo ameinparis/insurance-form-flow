@@ -35,6 +35,12 @@ def calculate_life_assurance():
         members = data.get("members", [])
         if not members:
             return jsonify({"error": "No member data received"}), 400
+        
+        # Read salary multiplier sent from frontend (default to 4 if missing/bad)
+        try:
+            salary_multiplier = float(data.get("salaryMultiplier", 4.0) or 4.0)
+        except Exception:
+            salary_multiplier = 4.0
 
         df = pd.DataFrame(members)
         df["annualSalary"] = pd.to_numeric(df.get("annualSalary", 0), errors="coerce").fillna(0.0)
@@ -100,7 +106,8 @@ def calculate_life_assurance():
 
        
 
-        df["glaBenefitAmount"] = (df["annualSalary"] * 4.0) + 20000.0 
+         # Use chosen salary multiplier from frontend (2x / 3x / 4x)
+        df["glaBenefitAmount"] = (df["annualSalary"] * salary_multiplier) + 20000.0
         df["glaExpectedClaimsCost"] = df["glaBenefitAmount"] * gla_rate_per1
         first_benefit = float(df["glaBenefitAmount"].iloc[0])
         first_claim_cost = float(df["glaExpectedClaimsCost"].iloc[0])
@@ -130,7 +137,7 @@ def calculate_life_assurance():
         gross_premium = net_premium / (1 - commission)
         
         total_gla_benefit_amount = float(df["glaBenefitAmount"].sum())
-        total_annual_salary = (total_gla_benefit_amount) / 4
+        total_annual_salary = (total_gla_benefit_amount) / salary_multiplier
         commission_amount = gross_premium - net_premium
         gross_rate_gla = gross_premium / total_annual_salary
         gross_rate_phi = 0.35 * gross_rate_gla

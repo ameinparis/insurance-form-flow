@@ -160,13 +160,19 @@ const GroupLifeAssuranceForm = () => {
 
       const token = localStorage.getItem("token")
 
-      const res = await fetch("https://njs.exclusivelife.co.bw/api/quotes/calculate-assurance", {
+      const res = await fetch("http://localhost:5002/api/quotes/calculate-assurance", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ members }),
+        body: JSON.stringify({
+          members,
+          salaryMultiplier,                                  // 2 / 3 / 4
+          maxDeathBenefit: maxDeathBenefit || null,         // optional
+          maxODB: maxODB || null,                           // optional
+        }),
+
       })
 
       const data = await res.json()
@@ -233,14 +239,14 @@ const GroupLifeAssuranceForm = () => {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch("https://njs.exclusivelife.co.bw/api/new-quotes", {
+      const res = await fetch("http://localhost:5002/api/new-quotes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: token ? `Bearer ${token}` : "",
         },
         body: JSON.stringify({
-          productType: "Exclusive Life Assurance",         
+          productType: "Exclusive Life Assurance",
           client: {
             schemeName: customerDetails.schemeName,
             registrationNumber: customerDetails.registrationNumber,
@@ -248,12 +254,17 @@ const GroupLifeAssuranceForm = () => {
             contactEmail: customerDetails.contactEmail,
             contactPhone: customerDetails.contactPhone,
           },
-          // you can tweak what you consider "inputs"
           inputs: {
             members,
-            summary,                    // the frontend summary you already compute
+            summary,
+            salaryMultiplier,                            // 👈 add
+            maxDeathBenefit: maxDeathBenefit
+              ? Number(maxDeathBenefit)
+              : null,                                    // 👈 add
+            maxODB: maxODB
+              ? Number(maxODB)
+              : null,                                    // 👈 add
           },
-          // outputs = full result coming back from Python calc
           outputs: result,
         }),
       });
@@ -388,9 +399,9 @@ const GroupLifeAssuranceForm = () => {
         {/* Benefit Inputs Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Benefit Configuration</CardTitle>
+            <CardTitle>Policy Specifications</CardTitle>
             <CardDescription>
-              Set maximum benefits and salary multiplier for the calculation
+              Set maximum benefits and salary multiplier for the client
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -426,8 +437,8 @@ const GroupLifeAssuranceForm = () => {
                     key={multiplier}
                     type="button"
                     variant={salaryMultiplier === multiplier ? "default" : "outline"}
-                    className={salaryMultiplier === multiplier 
-                      ? "bg-[#5bb5e0] hover:bg-[#4aa8d4] text-black font-semibold" 
+                    className={salaryMultiplier === multiplier
+                      ? "bg-[#5bb5e0] hover:bg-[#4aa8d4] text-black font-semibold"
                       : ""}
                     onClick={() => setSalaryMultiplier(multiplier)}
                   >

@@ -5,8 +5,10 @@ interface LifeDisplayProps {
 }
 
 export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
-  const { client, outputs } = quote || {};
+  const { client, inputs, outputs } = quote || {};
+  const i = inputs || {};
   const o = outputs || {};
+
 
   const formatPercentFromFraction = (v: number | null | undefined) =>
     v == null ? "-" : `${(v * 100).toFixed(3)}%`;
@@ -41,7 +43,7 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
                     <tr>
                       <td className="py-1 pr-4 align-top">Death Benefit</td>
                       <td className="py-1 font-semibold text-right">
-                        4 × Annual Salary
+                       {i.salaryMultiplier ? `${i.salaryMultiplier} × Annual Salary` : "–"}
                       </td>
                     </tr>
                     <tr>
@@ -121,28 +123,28 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
                   <thead>
                     <tr className="border-b border-gray-200 dark:border-gray-800">
                       <th className="text-left py-1 pr-4">Gross Premium</th>
-                      <th className="text-left py-1 pr-2">BWP</th>
+                      <th className="text-left py-1 pr-2"></th>
                       <th className="text-right py-1"></th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr className="border-b border-gray-100 dark:border-gray-800">
                       <td className="py-1 pr-4">Death</td>
-                      <td className="py-1 pr-2">BWP</td>
+                      <td className="py-1 pr-2"></td>
                       <td className="py-1 text-right">
                         {formatCurrency(o.deathPremium)}
                       </td>
                     </tr>
                     <tr className="border-b border-gray-100 dark:border-gray-800">
                       <td className="py-1 pr-4">ODB</td>
-                      <td className="py-1 pr-2">BWP</td>
+                      <td className="py-1 pr-2"></td>
                       <td className="py-1 text-right">
                         {formatCurrency(o.ODB)}
                       </td>
                     </tr>
                     <tr className="font-semibold border-t border-gray-200 dark:border-gray-800">
                       <td className="py-1 pr-4">Total</td>
-                      <td className="py-1 pr-2">BWP</td>
+                      <td className="py-1 pr-2"></td>
                       <td className="py-1 text-right">
                         {formatCurrency(o.totalPremiums)}
                       </td>
@@ -177,13 +179,13 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
                   <tr>
                     <td className="py-1 px-3">Maximum death benefit</td>
                     <td className="py-1 px-3 text-right">
-                      {formatCurrency(13000000)}
+                      {i.maxDeathBenefit != null ? formatCurrency(i.maxDeathBenefit) : "-" }
                     </td>
                   </tr>
                   <tr>
                     <td className="py-1 px-3">Maximum ODB</td>
                     <td className="py-1 px-3 text-right">
-                      {formatCurrency(13000000)}
+                      {i.maxODB != null ? formatCurrency(i.maxODB) : "-" }
                     </td>
                   </tr>
                   <tr>

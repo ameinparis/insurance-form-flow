@@ -101,7 +101,7 @@ const Calculate = () => {
             {/* View Button */}
             <Link to={`/calculator/${option.id}`} className="w-full">
               <Button variant="outline" className="w-full mt-2">
-                View Quote
+                Calculate 
               </Button>
             </Link>
           </div>
