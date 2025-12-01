@@ -1,52 +1,73 @@
-import { createContext, useContext, useState, ReactNode } from "react"
+import { createContext, useContext, useState, ReactNode, useCallback } from "react"
 import { JobStatus } from "@/components/BackgroundJobWidget"
 
+export interface BackgroundJob {
+  id: string
+  status: JobStatus
+  progress: number
+  errorMessage: string
+  label: string
+  onViewResults?: () => void
+}
+
 interface BackgroundJobContextType {
-  jobStatus: JobStatus
-  jobProgress: number
-  jobErrorMessage: string
-  setJobStatus: (status: JobStatus) => void
-  setJobProgress: (progress: number) => void
-  setJobErrorMessage: (message: string) => void
-  onViewResults: () => void
-  setOnViewResults: (callback: () => void) => void
-  dismissJob: () => void
+  jobs: BackgroundJob[]
+  addJob: (label?: string) => string
+  updateJob: (id: string, updates: Partial<Omit<BackgroundJob, 'id'>>) => void
+  removeJob: (id: string) => void
+  getJob: (id: string) => BackgroundJob | undefined
+  setJobViewResultsCallback: (id: string, callback: () => void) => void
 }
 
 const BackgroundJobContext = createContext<BackgroundJobContextType | undefined>(undefined)
 
+let jobIdCounter = 0
+
 export const BackgroundJobProvider = ({ children }: { children: ReactNode }) => {
-  const [jobStatus, setJobStatus] = useState<JobStatus>("hidden")
-  const [jobProgress, setJobProgress] = useState(0)
-  const [jobErrorMessage, setJobErrorMessage] = useState("")
-  const [viewResultsCallback, setViewResultsCallback] = useState<() => void>(() => () => {})
+  const [jobs, setJobs] = useState<BackgroundJob[]>([])
 
-  const onViewResults = () => {
-    viewResultsCallback()
-    setJobStatus("hidden")
-  }
+  const addJob = useCallback((label: string = "Calculation") => {
+    const id = `job-${++jobIdCounter}-${Date.now()}`
+    const newJob: BackgroundJob = {
+      id,
+      status: "running",
+      progress: 0,
+      errorMessage: "",
+      label,
+    }
+    setJobs(prev => [...prev, newJob])
+    return id
+  }, [])
 
-  const setOnViewResults = (callback: () => void) => {
-    setViewResultsCallback(() => callback)
-  }
+  const updateJob = useCallback((id: string, updates: Partial<Omit<BackgroundJob, 'id'>>) => {
+    setJobs(prev => prev.map(job => 
+      job.id === id ? { ...job, ...updates } : job
+    ))
+  }, [])
 
-  const dismissJob = () => {
-    setJobStatus("hidden")
-    setJobErrorMessage("")
-  }
+  const removeJob = useCallback((id: string) => {
+    setJobs(prev => prev.filter(job => job.id !== id))
+  }, [])
+
+  const getJob = useCallback((id: string) => {
+    return jobs.find(job => job.id === id)
+  }, [jobs])
+
+  const setJobViewResultsCallback = useCallback((id: string, callback: () => void) => {
+    setJobs(prev => prev.map(job =>
+      job.id === id ? { ...job, onViewResults: callback } : job
+    ))
+  }, [])
 
   return (
     <BackgroundJobContext.Provider
       value={{
-        jobStatus,
-        jobProgress,
-        jobErrorMessage,
-        setJobStatus,
-        setJobProgress,
-        setJobErrorMessage,
-        onViewResults,
-        setOnViewResults,
-        dismissJob,
+        jobs,
+        addJob,
+        updateJob,
+        removeJob,
+        getJob,
+        setJobViewResultsCallback,
       }}
     >
       {children}
