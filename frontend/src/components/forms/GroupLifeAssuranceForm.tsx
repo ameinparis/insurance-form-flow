@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
+import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 
 
 const GroupLifeAssuranceForm = () => {
@@ -42,6 +44,8 @@ const GroupLifeAssuranceForm = () => {
   const [maxODB, setMaxODB] = useState<string>("")
   const [salaryMultiplier, setSalaryMultiplier] = useState<number>(4)
 
+  const { searchClients, loading: clientsLoading } = useClientSuggestions()
+
   const [customerDetails, setCustomerDetails] = useState({
     schemeName: "",
     registrationNumber: "",
@@ -49,6 +53,26 @@ const GroupLifeAssuranceForm = () => {
     contactEmail: "",
     contactPhone: "",
   })
+
+  // Generate suggestions based on scheme name input
+  const schemeSuggestions = useMemo((): AutocompleteSuggestion[] => {
+    return searchClients(customerDetails.schemeName, "corporate").map((client) => ({
+      label: client.schemeName || client.companyName || "",
+      subtitle: client.registrationNumber || "",
+      data: client
+    }))
+  }, [customerDetails.schemeName, searchClients])
+
+  const handleSchemeSelect = (suggestion: AutocompleteSuggestion) => {
+    const client = suggestion.data
+    setCustomerDetails({
+      schemeName: client.schemeName || client.companyName || "",
+      registrationNumber: client.registrationNumber || "",
+      contactPerson: client.contactPerson || "",
+      contactEmail: client.contactEmail || client.companyEmail || "",
+      contactPhone: client.contactPhone || client.companyContact || ""
+    })
+  }
 
 
   const handleAddRow = () => {
@@ -482,10 +506,14 @@ const GroupLifeAssuranceForm = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Scheme / Corporate Name</Label>
-                    <Input
+                    <AutocompleteInput
                       value={customerDetails.schemeName}
                       onChange={(e) => setCustomerDetails((prev) => ({ ...prev, schemeName: e.target.value }))}
                       placeholder="e.g. Exclusive Life Holdings"
+                      suggestions={schemeSuggestions}
+                      onSelect={handleSchemeSelect}
+                      loading={clientsLoading}
+                      icon="corporate"
                     />
                   </div>
 
