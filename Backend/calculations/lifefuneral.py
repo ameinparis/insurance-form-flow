@@ -105,20 +105,30 @@ def calculate_funeral():
         app_excel.screen_updating = False
         wb = app_excel.books.open(EXCEL_FILE)
 
-        # ---------- Write MemberData ----------
+        # ---------- Write MemberData (BULK WRITE) ----------
         md = wb.sheets["MemberData"]
+        # Clear old data once
         md.range("A2:G100000").clear_contents()
 
-        written = 0
-        for i, m in enumerate(members, start=2):
-            md.range(f"A{i}").value = m.get("memberNumber")
-            md.range(f"B{i}").value = m.get("surname")
-            md.range(f"C{i}").value = m.get("firstName")
-            md.range(f"D{i}").value = m.get("dob")
-            md.range(f"E{i}").value = m.get("relationship")
-            md.range(f"F{i}").value = m.get("gender")
-            md.range(f"G{i}").api.Value = float(_to_float(m.get("coverAmount"), 0.0))
-            written += 1
+        # Build a 2D list of rows for Excel
+        values = []
+        for m in members:
+            values.append([
+                m.get("memberNumber"),
+                m.get("surname"),
+                m.get("firstName"),
+                m.get("dob"),
+                m.get("relationship"),
+                m.get("gender"),
+                float(_to_float(m.get("coverAmount"), 0.0)),
+            ])
+
+        # Write everything in one go starting at A2
+        if values:
+            md.range("A2").value = values
+
+        # number of rows written
+        written = len(values)
 
         # ---------- Write InputSheet ----------
         inp = wb.sheets["InputSheet"]
@@ -163,10 +173,10 @@ def calculate_funeral():
         # ---------- Activate InputSheet & run macro ----------
         inp.activate()
         wb.app.calculate()
-        wb.macro("Pricing")()   # ✅ Correctly runs macro
+        wb.macro("Pricing")()   # Correctly runs macro
         wb.app.calculate()
 
-        # ⛔️ FIXED: indentation of the following block
+        # FIXED: indentation of the following block
         # ---------- Extract results (C7:F7, C10:F10, C11:F11, C12:F12) ----------
         prs = wb.sheets["PremiumResults"]
 
@@ -200,11 +210,11 @@ def calculate_funeral():
             ],
         }
 
-        # ✅ best practice: respond only with `output`
+        # best practice: respond only with `output`
         return jsonify({"output": output})
 
     except Exception as e:
-        print("❌ Exception:", e, file=sys.stderr)
+        print("Exception:", e, file=sys.stderr)
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
     finally:
@@ -212,12 +222,12 @@ def calculate_funeral():
             if wb is not None:
                 wb.close()
         except Exception as _e:
-            print("⚠️ close wb:", _e, file=sys.stderr)
+            print("close wb:", _e, file=sys.stderr)
         try:
             if app_excel is not None:
                 app_excel.quit()
         except Exception as _e:
-            print("⚠️ quit app:", _e, file=sys.stderr)
+            print("quit app:", _e, file=sys.stderr)
 
 
 # ------------------------------------------------------------

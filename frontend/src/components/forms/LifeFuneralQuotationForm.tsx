@@ -202,7 +202,7 @@ const LifeFuneralQuotationForm = () => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(
-          `https://njs.exclusivelife.co.bw/api/quotes/funeral/status/${jobId}`
+          `http://localhost:5002/api/quotes/funeral/status/${jobId}`
         );
         const data = await res.json();
         console.log("Polling job:", data);
@@ -275,7 +275,7 @@ const LifeFuneralQuotationForm = () => {
 
     try {
       // Start background job instead of waiting for full calculation
-      const res = await fetch("https://njs.exclusivelife.co.bw/api/quotes/funeral/start", {
+      const res = await fetch("http://localhost:5002/api/quotes/funeral/start", {
         method: "POST",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         body: payload
@@ -313,7 +313,7 @@ const LifeFuneralQuotationForm = () => {
     }
 
     try {
-      const res = await fetch("https://njs.exclusivelife.co.bw/api/new-quotes", {
+      const res = await fetch("http://localhost:5002/api/new-quotes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -671,7 +671,7 @@ const LifeFuneralQuotationForm = () => {
           </Button>
         </div>
 
-        {premiumResult && (
+        {/* {premiumResult && (
           <Card className="bg-muted/50">
             <CardHeader>
               <CardTitle>Quotation Results</CardTitle>
@@ -729,7 +729,7 @@ const LifeFuneralQuotationForm = () => {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
 
         {/* Quote Dialog */}
         <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
@@ -796,9 +796,9 @@ const LifeFuneralQuotationForm = () => {
                 <CardContent className="space-y-4">
                   {premiumResult ? (
                     <>
-                      {premiumResult.quoteName && (
+                      {/* {premiumResult.quoteName && (
                         <div className="font-semibold text-primary">{premiumResult.quoteName}</div>
-                      )}
+                      )} */}
 
                       <Separator />
                       <div className="overflow-x-auto">
