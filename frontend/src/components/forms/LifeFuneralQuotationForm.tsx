@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,12 +20,12 @@ const LifeFuneralQuotationForm = () => {
   const [premiumResult, setPremiumResult] = useState<any | null>(null)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [isCalculating, setIsCalculating] = useState(false)
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null)
   
   const { 
-    setJobStatus, 
-    setJobProgress, 
-    setJobErrorMessage, 
-    setOnViewResults 
+    addJob,
+    updateJob,
+    setJobViewResultsCallback
   } = useBackgroundJob()
 
   const [customerDetails, setCustomerDetails] = useState({
@@ -182,42 +182,49 @@ const LifeFuneralQuotationForm = () => {
   }
 
   // 🔄 Poll job status until done
-  const pollJob = (jobId: string) => {
+  const pollJob = (backendJobId: string, widgetJobId: string) => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(
-          `http://localhost:5002/api/quotes/funeral/status/${jobId}`
+          `http://localhost:5002/api/quotes/funeral/status/${backendJobId}`
         );
         const data = await res.json();
         console.log("Polling job:", data);
 
         // Update progress if available
         if (data.progress !== undefined) {
-          setJobProgress(data.progress);
+          updateJob(widgetJobId, { progress: data.progress });
         }
 
         if (data.status === "done") {
           clearInterval(interval);
-          setJobProgress(100);
+          updateJob(widgetJobId, { progress: 100, status: "done" });
           setIsCalculating(false);
-          setJobStatus("done");
           setPremiumResult(data.result);
+          // Register callback to open dialog when "View Results" is clicked
+          setJobViewResultsCallback(widgetJobId, () => {
+            setShowQuoteDialog(true);
+          });
         }
 
         if (data.status === "error") {
           clearInterval(interval);
-          setJobProgress(0);
+          updateJob(widgetJobId, { 
+            progress: 0, 
+            status: "error", 
+            errorMessage: data.error || "Calculation failed" 
+          });
           setIsCalculating(false);
-          setJobStatus("error");
-          setJobErrorMessage(data.error || "Calculation failed");
         }
 
       } catch (err) {
         clearInterval(interval);
-        setJobProgress(0);
+        updateJob(widgetJobId, { 
+          progress: 0, 
+          status: "error", 
+          errorMessage: "Polling failed - please try again" 
+        });
         setIsCalculating(false);
-        setJobStatus("error");
-        setJobErrorMessage("Polling failed - please try again");
       }
     }, 1000);
   };
@@ -228,10 +235,10 @@ const LifeFuneralQuotationForm = () => {
       return;
     }
 
+    // Create a new background job for this calculation
+    const widgetJobId = addJob(`Funeral: ${formData.societyName || "Calculation"}`);
+    setCurrentJobId(widgetJobId);
     setIsCalculating(true);
-    setJobProgress(0);
-    setJobStatus("running");
-    setJobErrorMessage("");
 
     const syncedFormData = {
       ...formData,
@@ -270,26 +277,29 @@ const LifeFuneralQuotationForm = () => {
 
       if (!res.ok) {
         setIsCalculating(false);
-        setJobProgress(0);
-        setJobStatus("error");
-        setJobErrorMessage("Failed to start calculation");
+        updateJob(widgetJobId, { 
+          progress: 0, 
+          status: "error", 
+          errorMessage: "Failed to start calculation" 
+        });
         return;
       }
 
-      const { jobId } = await res.json();
-      console.log("Started job:", jobId);
+      const { jobId: backendJobId } = await res.json();
+      console.log("Started job:", backendJobId);
 
       // Start polling for progress - progress indicator stays visible!
-      pollJob(jobId);
+      pollJob(backendJobId, widgetJobId);
 
     } catch (err: any) {
       console.error("Quote error", err);
       setIsCalculating(false);
-      setJobProgress(0);
-      setJobStatus("error");
-      setJobErrorMessage(err.message || "Failed to calculate");
+      updateJob(widgetJobId, { 
+        progress: 0, 
+        status: "error", 
+        errorMessage: err.message || "Failed to calculate" 
+      });
     }
-    // ❌ REMOVED the finally block that was hiding the progress indicator
   };
 
 
@@ -339,12 +349,7 @@ const LifeFuneralQuotationForm = () => {
   const schemeTooltip = `An open scheme allows new members and is reviewed yearly. A closed scheme maintains the same premium unless members change rules.`
   const coverLevelTooltip = `"Scheme rules" apply fixed benefit levels to all members. "Member specified" means each member has custom cover defined in the uploaded data.`
 
-  // Register the view results callback so the global widget can open our dialog
-  useEffect(() => {
-    setOnViewResults(() => {
-      setShowQuoteDialog(true)
-    })
-  }, [setOnViewResults])
+  // Note: View results callback is now registered per-job in pollJob when calculation completes
 
   return (
     <TooltipProvider>

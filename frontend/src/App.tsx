@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SearchProvider } from "@/lib/searchContext";
 import { BackgroundJobProvider } from "@/contexts/BackgroundJobContext";
-import BackgroundJobWidget from "@/components/BackgroundJobWidget";
+import MultiJobWidget from "@/components/BackgroundJobWidget";
 import { useBackgroundJob } from "@/contexts/BackgroundJobContext";
 import { Layout } from "./components/Layout";
 import Landing from "./pages/Landing";
@@ -27,15 +27,12 @@ import LogoutHandler from "./components/LogoutHandler";
 const queryClient = new QueryClient();
 
 const GlobalBackgroundJobWidget = () => {
-  const { jobStatus, jobProgress, jobErrorMessage, onViewResults, dismissJob } = useBackgroundJob();
+  const { jobs, removeJob } = useBackgroundJob();
   
   return (
-    <BackgroundJobWidget
-      status={jobStatus}
-      progress={jobProgress}
-      errorMessage={jobErrorMessage}
-      onViewResults={onViewResults}
-      onDismiss={dismissJob}
+    <MultiJobWidget
+      jobs={jobs}
+      onDismissJob={removeJob}
     />
   );
 };
