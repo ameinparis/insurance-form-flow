@@ -48,7 +48,7 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
                     <tr>
                       <td className="py-1 pr-4 align-top">ODB</td>
                       <td className="py-1 font-semibold text-right">
-                        4 × Annual Salary
+                       {i.salaryMultiplier ? `${i.salaryMultiplier} × Annual Salary` : "–"}
                       </td>
                     </tr>
                     <tr>
