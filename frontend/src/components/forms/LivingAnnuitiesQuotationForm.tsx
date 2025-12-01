@@ -707,7 +707,6 @@ Insurance will not accept liability for any losses incurred as a result of using
                   "Generate Quote"
                 )}
               </Button>
-              </Button>
             </div>
           </div>
         </DialogContent>
