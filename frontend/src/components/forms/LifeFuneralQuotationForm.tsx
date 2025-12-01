@@ -19,8 +19,6 @@ const LifeFuneralQuotationForm = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [premiumResult, setPremiumResult] = useState<any | null>(null)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
-  const [isCalculating, setIsCalculating] = useState(false)
-  const [currentJobId, setCurrentJobId] = useState<string | null>(null)
   
   const { 
     addJob,
@@ -199,7 +197,6 @@ const LifeFuneralQuotationForm = () => {
         if (data.status === "done") {
           clearInterval(interval);
           updateJob(widgetJobId, { progress: 100, status: "done" });
-          setIsCalculating(false);
           setPremiumResult(data.result);
           // Register callback to open dialog when "View Results" is clicked
           setJobViewResultsCallback(widgetJobId, () => {
@@ -214,7 +211,6 @@ const LifeFuneralQuotationForm = () => {
             status: "error", 
             errorMessage: data.error || "Calculation failed" 
           });
-          setIsCalculating(false);
         }
 
       } catch (err) {
@@ -224,7 +220,6 @@ const LifeFuneralQuotationForm = () => {
           status: "error", 
           errorMessage: "Polling failed - please try again" 
         });
-        setIsCalculating(false);
       }
     }, 1000);
   };
@@ -237,8 +232,6 @@ const LifeFuneralQuotationForm = () => {
 
     // Create a new background job for this calculation
     const widgetJobId = addJob(`Funeral: ${formData.societyName || "Calculation"}`);
-    setCurrentJobId(widgetJobId);
-    setIsCalculating(true);
 
     const syncedFormData = {
       ...formData,
@@ -276,7 +269,6 @@ const LifeFuneralQuotationForm = () => {
       });
 
       if (!res.ok) {
-        setIsCalculating(false);
         updateJob(widgetJobId, { 
           progress: 0, 
           status: "error", 
@@ -293,7 +285,6 @@ const LifeFuneralQuotationForm = () => {
 
     } catch (err: any) {
       console.error("Quote error", err);
-      setIsCalculating(false);
       updateJob(widgetJobId, { 
         progress: 0, 
         status: "error", 
@@ -661,8 +652,8 @@ const LifeFuneralQuotationForm = () => {
         </Card>
 
         <div className="flex justify-end">
-          <Button onClick={handleSubmit} disabled={!uploadedFile || isCalculating}>
-            {isCalculating ? "Calculating..." : "Calculate Quotation"}
+          <Button onClick={handleSubmit} disabled={!uploadedFile}>
+            Calculate Quotation
           </Button>
         </div>
 
