@@ -1,14 +1,25 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import axios from "axios"
+import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
+import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 
 const IndividualLifeCoverForm = () => {
   const [isCalculating, setIsCalculating] = useState(false)
   const [result, setResult] = useState<any | null>(null)
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false)
+  const [isSavingQuote, setIsSavingQuote] = useState(false)
+
+  const { searchClients, loading: clientsLoading } = useClientSuggestions()
 
   const [formData, setFormData] = useState({
     // Demographic info
@@ -27,8 +38,42 @@ const IndividualLifeCoverForm = () => {
     ciCover: "",
   })
 
+  const [customerDetails, setCustomerDetails] = useState({
+    fullName: "",
+    dateOfBirth: "",
+    gender: "",
+    idNumber: "",
+    contactNumber: "",
+    email: ""
+  })
+
+  // Generate suggestions based on full name input
+  const nameSuggestions = useMemo((): AutocompleteSuggestion[] => {
+    return searchClients(customerDetails.fullName, "individual").map((client) => ({
+      label: client.fullName || "",
+      subtitle: client.idNumber || "",
+      data: client
+    }))
+  }, [customerDetails.fullName, searchClients])
+
+  const handleClientSelect = (suggestion: AutocompleteSuggestion) => {
+    const client = suggestion.data
+    setCustomerDetails({
+      fullName: client.fullName || "",
+      dateOfBirth: client.dateOfBirth || "",
+      gender: client.gender || "",
+      idNumber: client.idNumber || "",
+      contactNumber: client.contactNumber || "",
+      email: client.email || ""
+    })
+  }
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleCustomerDetailsChange = (field: string, value: string) => {
+    setCustomerDetails(prev => ({ ...prev, [field]: value }))
   }
 
   const handleCalculate = async (e: React.FormEvent) => {
@@ -63,6 +108,7 @@ const IndividualLifeCoverForm = () => {
       const output = data.result || data.output || data
 
       setResult(output)
+      setShowQuoteDialog(true)
       toast.success("Individual Life Cover calculated successfully")
     } catch (err: any) {
       console.error("❌ Calculation error:", err)
@@ -72,202 +118,440 @@ const IndividualLifeCoverForm = () => {
     }
   }
 
+  const handleFinalQuoteSubmit = async () => {
+    const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
+    const missingFields = requiredFields.filter(field => !customerDetails[field as keyof typeof customerDetails])
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    toast.success("Individual Life Cover quotation submitted successfully!")
-    console.log("Individual Life Cover Form Data:", formData)
+    if (missingFields.length > 0) {
+      toast.error(`Please fill in: ${missingFields.join(', ')}`)
+      return
+    }
+
+    setIsSavingQuote(true)
+    try {
+      const payload = {
+        productType: "Individual Life Cover",
+        client: customerDetails,
+        inputs: formData,
+        outputs: result,
+      }
+
+      const { data } = await axios.post(
+        "https://njs.exclusivelife.co.bw/api/new-quotes",
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      )
+
+      toast.success(`Quote ${data.quoteId} created successfully!`)
+      setShowQuoteDialog(false)
+      setIsSavingQuote(false)
+    } catch (error: any) {
+      console.error("Error saving quote:", error)
+      toast.error("Failed to save quote. Please try again.")
+      setIsSavingQuote(false)
+    }
+  }
+
+  const getDisplayValue = (field: string, value: string) => {
+    const mappings: Record<string, Record<string, string>> = {
+      gender: { male: "Male", female: "Female" },
+      smokerStatus: { smoker: "Smoker", "non-smoker": "Non-smoker" },
+      education: { degree: "Degree", "no-degree": "No Degree" },
+      income: { "above-10k": ">P10k", "below-10k": "<=P10k" },
+      marriageStatus: { married: "Married", single: "Single" },
+      product: { nomeduw: "NoMedUW", meduw: "MedUW" },
+      cashbackOption: { 
+        "no-cashback": "No cashback", 
+        "10-after-5": "10% after 5 years", 
+        "120-after-15": "120% after 15 years" 
+      }
+    }
+    return mappings[field]?.[value] || value
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">Individual Life Cover</CardTitle>
-        <CardDescription>
-          Comprehensive life insurance protection tailored to your individual needs
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleCalculate} className="space-y-6">
+    <>
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Individual Life Cover</CardTitle>
+          <CardDescription>
+            Comprehensive life insurance protection tailored to your individual needs
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleCalculate} className="space-y-6">
 
-          {/* Demographic Info Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Client Personal Information</h3>
+            {/* Demographic Info Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Client Personal Information</h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="age">Age</Label>
-                <Input
-                  id="age"
-                  type="number"
-                  value={formData.age}
-                  onChange={(e) => handleInputChange("age", e.target.value)}
-                  placeholder="Enter age"
-                  required
-                />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="age">Age</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    value={formData.age}
+                    onChange={(e) => handleInputChange("age", e.target.value)}
+                    placeholder="Enter age"
+                    required
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="gender">Gender</Label>
-                <Select onValueChange={(value) => handleInputChange("gender", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select value={formData.gender} onValueChange={(value) => handleInputChange("gender", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="smokerStatus">Smoker Status</Label>
-                <Select onValueChange={(value) => handleInputChange("smokerStatus", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select smoker status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="smoker">Smoker</SelectItem>
-                    <SelectItem value="non-smoker">Non-smoker</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="smokerStatus">Smoker Status</Label>
+                  <Select value={formData.smokerStatus} onValueChange={(value) => handleInputChange("smokerStatus", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select smoker status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="smoker">Smoker</SelectItem>
+                      <SelectItem value="non-smoker">Non-smoker</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="education">Education</Label>
-                <Select onValueChange={(value) => handleInputChange("education", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select education" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="degree">Degree</SelectItem>
-                    <SelectItem value="no-degree">No Degree</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="education">Education</Label>
+                  <Select value={formData.education} onValueChange={(value) => handleInputChange("education", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select education" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="degree">Degree</SelectItem>
+                      <SelectItem value="no-degree">No Degree</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="income">Income</Label>
-                <Select onValueChange={(value) => handleInputChange("income", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select income" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="above-10k">&gt;P10k</SelectItem>
-                    <SelectItem value="below-10k">&lt;=P10k</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="income">Income</Label>
+                  <Select value={formData.income} onValueChange={(value) => handleInputChange("income", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select income" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="above-10k">&gt;P10k</SelectItem>
+                      <SelectItem value="below-10k">&lt;=P10k</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="marriageStatus">Marriage Status</Label>
-                <Select onValueChange={(value) => handleInputChange("marriageStatus", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select marriage status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="married">Married</SelectItem>
-                    <SelectItem value="single">Single</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Product Info Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Product Info</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="product">Product</Label>
-                <Select onValueChange={(value) => handleInputChange("product", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select product" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nomeduw">NoMedUW</SelectItem>
-                    <SelectItem value="meduw">MedUW</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="term">Term</Label>
-                <Input
-                  id="term"
-                  type="number"
-                  value={formData.term}
-                  onChange={(e) => handleInputChange("term", e.target.value)}
-                  placeholder="Enter term (years)"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="cashbackOption">Cashback Option</Label>
-                <Select onValueChange={(value) => handleInputChange("cashbackOption", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select cashback option" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="no-cashback">No cashback</SelectItem>
-                    <SelectItem value="10-after-5">10% after 5 years</SelectItem>
-                    <SelectItem value="120-after-15">120% after 15 years</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="deathCover">Death Cover</Label>
-                <Input
-                  id="deathCover"
-                  type="number"
-                  value={formData.deathCover}
-                  onChange={(e) => handleInputChange("deathCover", e.target.value)}
-                  placeholder="Enter death cover amount"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="disabilityCover">Disability Cover</Label>
-                <Input
-                  id="disabilityCover"
-                  type="number"
-                  value={formData.disabilityCover}
-                  onChange={(e) => handleInputChange("disabilityCover", e.target.value)}
-                  placeholder="Enter disability cover amount"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="ciCover">Critical Illness Cover</Label>
-                <Input
-                  id="ciCover"
-                  type="number"
-                  value={formData.ciCover}
-                  onChange={(e) => handleInputChange("ciCover", e.target.value)}
-                  placeholder="Enter CI cover amount"
-                  required
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="marriageStatus">Marriage Status</Label>
+                  <Select value={formData.marriageStatus} onValueChange={(value) => handleInputChange("marriageStatus", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select marriage status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="married">Married</SelectItem>
+                      <SelectItem value="single">Single</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
+
+            {/* Product Info Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Product Info</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="product">Product</Label>
+                  <Select value={formData.product} onValueChange={(value) => handleInputChange("product", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select product" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nomeduw">NoMedUW</SelectItem>
+                      <SelectItem value="meduw">MedUW</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="term">Term</Label>
+                  <Input
+                    id="term"
+                    type="number"
+                    value={formData.term}
+                    onChange={(e) => handleInputChange("term", e.target.value)}
+                    placeholder="Enter term (years)"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cashbackOption">Cashback Option</Label>
+                  <Select value={formData.cashbackOption} onValueChange={(value) => handleInputChange("cashbackOption", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select cashback option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="no-cashback">No cashback</SelectItem>
+                      <SelectItem value="10-after-5">10% after 5 years</SelectItem>
+                      <SelectItem value="120-after-15">120% after 15 years</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deathCover">Death Cover</Label>
+                  <Input
+                    id="deathCover"
+                    type="number"
+                    value={formData.deathCover}
+                    onChange={(e) => handleInputChange("deathCover", e.target.value)}
+                    placeholder="Enter death cover amount"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="disabilityCover">Disability Cover</Label>
+                  <Input
+                    id="disabilityCover"
+                    type="number"
+                    value={formData.disabilityCover}
+                    onChange={(e) => handleInputChange("disabilityCover", e.target.value)}
+                    placeholder="Enter disability cover amount"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="ciCover">Critical Illness Cover</Label>
+                  <Input
+                    id="ciCover"
+                    type="number"
+                    value={formData.ciCover}
+                    onChange={(e) => handleInputChange("ciCover", e.target.value)}
+                    placeholder="Enter CI cover amount"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full" disabled={isCalculating}>
+              {isCalculating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Calculating...
+                </>
+              ) : (
+                "Calculate"
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Quote Dialog */}
+      <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Customer Quotation</DialogTitle>
+            <DialogDescription>
+              Enter customer details and review calculation results
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Customer Details Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Customer Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Full Name</Label>
+                  <AutocompleteInput
+                    value={customerDetails.fullName}
+                    onChange={(e) => handleCustomerDetailsChange("fullName", e.target.value)}
+                    placeholder="Enter full name"
+                    suggestions={nameSuggestions}
+                    onSelect={handleClientSelect}
+                    loading={clientsLoading}
+                    icon="individual"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Date of Birth</Label>
+                  <Input
+                    type="date"
+                    value={customerDetails.dateOfBirth}
+                    onChange={(e) => handleCustomerDetailsChange("dateOfBirth", e.target.value)}
+                    min="1900-01-01"
+                    max={new Date().toISOString().split("T")[0]}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Gender</Label>
+                  <RadioGroup
+                    value={customerDetails.gender}
+                    onValueChange={(value) => handleCustomerDetailsChange("gender", value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Male" id="dialog-male" />
+                      <Label htmlFor="dialog-male">Male</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Female" id="dialog-female" />
+                      <Label htmlFor="dialog-female">Female</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>ID/Passport Number</Label>
+                  <Input
+                    value={customerDetails.idNumber}
+                    onChange={(e) => handleCustomerDetailsChange("idNumber", e.target.value)}
+                    placeholder="Enter ID number"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Contact Number</Label>
+                  <Input
+                    value={customerDetails.contactNumber}
+                    onChange={(e) => handleCustomerDetailsChange("contactNumber", e.target.value)}
+                    placeholder="Enter contact number"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Email Address</Label>
+                  <Input
+                    type="email"
+                    value={customerDetails.email}
+                    onChange={(e) => handleCustomerDetailsChange("email", e.target.value)}
+                    placeholder="Enter email address"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Calculation Results */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quotation Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-primary">Demographic Info</h4>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Age</span>
+                    <span>{formData.age} years</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Gender</span>
+                    <span>{getDisplayValue("gender", formData.gender)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Smoker Status</span>
+                    <span>{getDisplayValue("smokerStatus", formData.smokerStatus)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Education</span>
+                    <span>{getDisplayValue("education", formData.education)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Income</span>
+                    <span>{getDisplayValue("income", formData.income)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Marriage Status</span>
+                    <span>{getDisplayValue("marriageStatus", formData.marriageStatus)}</span>
+                  </div>
+
+                  <Separator />
+
+                  <h4 className="font-semibold text-primary">Product Info</h4>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Product</span>
+                    <span>{getDisplayValue("product", formData.product)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Term</span>
+                    <span>{formData.term} years</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Cashback Option</span>
+                    <span>{getDisplayValue("cashbackOption", formData.cashbackOption)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Death Cover</span>
+                    <span>BWP {Number(formData.deathCover).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Disability Cover</span>
+                    <span>BWP {Number(formData.disabilityCover).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">CI Cover</span>
+                    <span>BWP {Number(formData.ciCover).toLocaleString()}</span>
+                  </div>
+
+                  {result && (
+                    <>
+                      <Separator />
+                      <h4 className="font-semibold text-primary">Calculation Results</h4>
+                      <pre className="bg-muted p-3 rounded text-xs overflow-auto">
+                        {JSON.stringify(result, null, 2)}
+                      </pre>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <Button type="submit" className="w-full">
-            Calculate
-          </Button>
-          {result && (
-            <pre className="mt-6 bg-muted p-4 rounded text-sm">
-              {JSON.stringify(result, null, 2)}
-            </pre>
-          )}
-
-        </form>
-      </CardContent>
-    </Card>
+          {/* Dialog Actions */}
+          <div className="flex justify-between mt-6">
+            <Button variant="outline" onClick={() => setShowQuoteDialog(false)}>
+              Return to Calculator
+            </Button>
+            <div className="space-x-2">
+              <Button variant="secondary" onClick={() => setShowQuoteDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleFinalQuoteSubmit} disabled={isSavingQuote}>
+                {isSavingQuote ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Generate Quote"
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
