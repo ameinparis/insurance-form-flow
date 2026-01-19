@@ -37,6 +37,14 @@ const Calculate = () => {
       iconColor: "text-purple-600"
     },
     {
+      id: "individual-life-cover",
+      title: "Individual Life Cover",
+      description: "Personal life insurance",
+      icon: User,
+      bgColor: "bg-teal-100",
+      iconColor: "text-teal-600"
+    },
+    {
       id: "credit-life",
       title: "Credit Life",
       description: "Credit balance protection",
@@ -60,14 +68,7 @@ const Calculate = () => {
       bgColor: "bg-indigo-100",
       iconColor: "text-indigo-600"
     },
-    {
-      id: "individual-life",
-      title: "Individual Life",
-      description: "Personal life insurance",
-      icon: User,
-      bgColor: "bg-teal-100",
-      iconColor: "text-teal-600"
-    }
+    
   ]
 
   return (

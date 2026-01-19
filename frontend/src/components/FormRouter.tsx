@@ -5,6 +5,7 @@ import LifeFuneralQuotationForm from "./forms/LifeFuneralQuotationForm"
 import LivingAnnuitiesQuotationForm from "./forms/LivingAnnuitiesQuotationForm"
 import CreditLifeCoverForm from "./forms/CreditLifeCoverForm"
 import GroupLifeAssuranceForm from "./forms/GroupLifeAssuranceForm"
+import IndividualLifeCoverForm from "./forms/IndividualLifeCoverForm"
 
 const FormRouter = () => {
   const { type } = useParams()
@@ -18,8 +19,8 @@ const FormRouter = () => {
         return "Living Annuities"
       case "group-life-assurance":
         return "Group Life Assurance"
-      case "auto":
-        return "Auto Insurance"
+      case "individual-life-cover":
+        return "Individual Life Cover"
       case "home":
         return "Home Insurance"
       case "health":
@@ -37,6 +38,8 @@ const FormRouter = () => {
         return <LivingAnnuitiesQuotationForm />
       case "group-life-assurance":
         return <GroupLifeAssuranceForm />
+        case "individual-life-cover":
+          return <IndividualLifeCoverForm/>
       default:
         return (
           <div className="text-center py-8">

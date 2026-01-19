@@ -7,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner"
 
 const IndividualLifeCoverForm = () => {
+  const [isCalculating, setIsCalculating] = useState(false)
+  const [result, setResult] = useState<any | null>(null)
+
   const [formData, setFormData] = useState({
     // Demographic info
     age: "",
@@ -28,6 +31,48 @@ const IndividualLifeCoverForm = () => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  const handleCalculate = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    try {
+      setIsCalculating(true)
+      setResult(null)
+
+      const token = localStorage.getItem("token")
+
+      const res = await fetch(
+        "http://localhost:5002/api/quotes/calculate-individual-life",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+          body: JSON.stringify(formData),
+        }
+      )
+
+      const data = await res.json()
+      console.log("🔥 RAW RESPONSE:", data)
+
+      if (!res.ok) {
+        throw new Error(data.error || data.message || `Status ${res.status}`)
+      }
+
+      // Node returns: { message, result, ok }
+      const output = data.result || data.output || data
+
+      setResult(output)
+      toast.success("Individual Life Cover calculated successfully")
+    } catch (err: any) {
+      console.error("❌ Calculation error:", err)
+      toast.error(err.message || "Calculation failed")
+    } finally {
+      setIsCalculating(false)
+    }
+  }
+
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     toast.success("Individual Life Cover quotation submitted successfully!")
@@ -43,11 +88,12 @@ const IndividualLifeCoverForm = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleCalculate} className="space-y-6">
+
           {/* Demographic Info Section */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Demographic Info</h3>
-            
+            <h3 className="text-lg font-semibold">Client Personal Information</h3>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="age">Age</Label>
@@ -131,7 +177,7 @@ const IndividualLifeCoverForm = () => {
           {/* Product Info Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Product Info</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="product">Product</Label>
@@ -197,7 +243,7 @@ const IndividualLifeCoverForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="ciCover">CI Cover</Label>
+                <Label htmlFor="ciCover">Critical Illness Cover</Label>
                 <Input
                   id="ciCover"
                   type="number"
@@ -211,8 +257,14 @@ const IndividualLifeCoverForm = () => {
           </div>
 
           <Button type="submit" className="w-full">
-            Get Individual Life Cover Quote
+            Calculate
           </Button>
+          {result && (
+            <pre className="mt-6 bg-muted p-4 rounded text-sm">
+              {JSON.stringify(result, null, 2)}
+            </pre>
+          )}
+
         </form>
       </CardContent>
     </Card>

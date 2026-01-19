@@ -41,7 +41,8 @@ const Team = () => {
     firstName: "",
     lastName: "",
     email: "",
-    role: "user",
+    role: "superuser",
+    password: "",
   })
 
   const [editUser, setEditUser] = useState({
@@ -72,11 +73,11 @@ const Team = () => {
   const handleAddUser = async () => {
     try {
       const token = localStorage.getItem("token")
-      await axios.post("https://njs.exclusivelife.co.bw/api/users/register", newUser, {
+      await axios.post("http://localhost:5002/api/users/register", newUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setShowAddUserModal(false)
-      setNewUser({ firstName: "", lastName: "", email: "", role: "user" })
+      setNewUser({ firstName: "", lastName: "", email: "", role: "superuser", password: "" })
       fetchUsers()
     } catch (err) {
       console.error("Add user error", err)
@@ -87,7 +88,7 @@ const Team = () => {
     if (!editingUser) return
     try {
       const token = localStorage.getItem("token")
-      await axios.put(`https://njs.exclusivelife.co.bw/api/users/${editingUser.id}`, editUser, {
+      await axios.put(`http://localhost:5002/api/users/${editingUser.id}`, editUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setShowEditUserModal(false)
@@ -114,7 +115,7 @@ const Team = () => {
     if (!confirm("Are you sure you want to delete this user?")) return
     try {
       const token = localStorage.getItem("token")
-      await axios.delete(`https://njs.exclusivelife.co.bw/api/users/${userId}`, {
+      await axios.delete(`http://localhost:5002/api/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       fetchUsers()
@@ -127,7 +128,7 @@ const Team = () => {
     try {
       setLoading(true)
       const token = localStorage.getItem("token")
-      const res = await axios.get("https://njs.exclusivelife.co.bw/api/users", {
+      const res = await axios.get("http://localhost:5002/api/users", {
         headers: { Authorization: `Bearer ${token}` }
       })
       const pastelColors = [
@@ -153,7 +154,7 @@ const Team = () => {
         isActive: user.isActive !== false,
       }))
       setTeamMembers(mapped)
-      
+
       // Check if current user is superuser
       const currentEmail = localStorage.getItem("email")
       const currentMember = mapped.find((m: TeamMember) => m.email === currentEmail)
@@ -328,6 +329,21 @@ const Team = () => {
               <Label>Email</Label>
               <Input name="email" type="email" value={newUser.email} onChange={handleInputChange} className="mt-1" />
             </div>
+            <div>
+              <Label>Temporary Password</Label>
+              <Input
+                name="password"
+                type="password"
+                value={newUser.password}
+                onChange={handleInputChange}
+                className="mt-1"
+                placeholder="Set a temporary password"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                User will login with this password for now. You can add “change password” later.
+              </p>
+            </div>
+
             <div>
               <Label>Role</Label>
               <select
