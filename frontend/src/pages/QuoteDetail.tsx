@@ -8,6 +8,7 @@ import { QuoteHeader } from "@/components/QuoteHeader";
 import { AnnuityDisplay } from "@/components/quote-displays/AnnuityDisplay";
 import { FuneralDisplay } from "@/components/quote-displays/FuneralDisplay";
 import { LifeDisplay } from "@/components/quote-displays/LifeDisplay";
+import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLifeDisplay";
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 import { fetchQuoteDetails, getClientInfo, formatDate, QuoteData } from "@/lib/quoteUtils";
 import { useToast } from "@/hooks/use-toast";
@@ -293,6 +294,8 @@ section.space-y-4 > div + p {
         return <FuneralDisplay quote={quote} />;
       case "Exclusive Life Assurance":
         return <LifeDisplay quote={quote} />;
+      case "Individual Life Cover":
+        return <IndividualLifeDisplay quote={quote} />;
       default:
         return <GenericDisplay quote={quote} />;
     }
