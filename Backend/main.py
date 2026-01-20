@@ -4,15 +4,17 @@ from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from calculations.livingannuity import app as living_annuity_app
 from calculations.lifefuneral import app as life_funeral_app
 from calculations.lifeassurance import app as life_assurance_app
+from calculations.individuallife import app as individual_life_app
 import logging
 
 def create_combined_app():
     return DispatcherMiddleware(
-        life_funeral_app,  # fallback/default app
+        life_funeral_app,  
         {
             '/annuity': living_annuity_app,
             '/funeral': life_funeral_app,
             '/assurance': life_assurance_app,
+            '/individual': individual_life_app,
         }
     )
 

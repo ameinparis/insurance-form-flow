@@ -80,7 +80,7 @@ const Quote = mongoose.model("Quotations", quoteSchema);
 const newQuoteSchema = new mongoose.Schema({
   productType: {
     type: String,
-    enum: ["Exclusive Annuity", "Exclusive Funeral", "Exclusive Life Assurance"],
+    enum: ["Exclusive Annuity", "Exclusive Funeral", "Exclusive Life Assurance", "Individual Life Cover"],
     required: true
   },
 
@@ -123,29 +123,62 @@ const authenticateToken = (req, _res, next) => {
 // Health (optional)
 app.get("/health", (_req, res) => res.send("OK"));
 
-/** Register */
-app.post("/api/users/register", async (req, res) => {
+/** Create user (admin creates from Team screen) */
+app.post("/api/users/register", authenticateToken, async (req, res) => {
   try {
-    const { email, firstName, lastName, password } = req.body;
+    // Only superuser can create users
+    if ((req.user?.role || "").toLowerCase() !== "superuser") {
+      return res.status(403).json({ message: "Forbidden: superuser only" });
+    }
 
-    // basic password policy (keep if you want)
+    let { email, firstName, lastName, password, role } = req.body;
+
+    // Basic required fields
+    if (!email || !firstName || !lastName || !password) {
+      return res.status(400).json({ message: "email, firstName, lastName, password are required" });
+    }
+
+    // Normalize input
+    email = String(email).toLowerCase().trim();
+    firstName = String(firstName).trim();
+    lastName = String(lastName).trim();
+    password = String(password);
+
+    // Password policy (your current rule)
     const strong = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!strong.test(password)) {
       return res.status(400).json({ message: "Password must be 8+ chars with upper, lower and a number" });
     }
 
+    // Role: allow only known roles, default to user
+    const allowedRoles = ["user", "superuser", "admin"];
+    role = allowedRoles.includes(String(role || "").toLowerCase())
+      ? String(role).toLowerCase()
+      : "user";
+
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: "User already exists" });
 
     const hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ email, firstName, lastName, password: hash, role: "user" });
 
-    res.status(201).json({ message: "User created", user: { id: user._id, email, firstName, lastName, role: user.role } });
+    const user = await User.create({
+      email,
+      firstName,
+      lastName,
+      password: hash,
+      role,
+    });
+
+    res.status(201).json({
+      message: "User created",
+      user: { id: user._id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role }
+    });
   } catch (e) {
     console.error("Register error:", e);
     res.status(500).json({ message: "Error creating user" });
   }
 });
+
 
 /** Login */
 app.post("/api/users/login", async (req, res) => {
@@ -462,8 +495,6 @@ async function processFuneralJobs() {
   }
 }
 
-
-// Run worker loop every 1 second
 setInterval(processFuneralJobs, 1000);
 
 
@@ -483,6 +514,35 @@ app.post("/api/quotes/calculate-assurance", async (req, res) => {
     res.status(500).json({ message: "Failed to calculate Life Assurance" });
   }
 });
+
+
+/** Individual Life Cover calculator proxy → Python (Excel sheet) */
+app.post("/api/quotes/calculate-individual-life", authenticateToken, async (req, res) => {
+  try {
+    
+    const PY_URL = (process.env.PY_CALC_URL || "http://localhost:5005") + "/individual/calculate";
+
+    const { data } = await axios.post(PY_URL, req.body, {
+      headers: { "Content-Type": "application/json" },
+      timeout: 120000, 
+    });
+
+    // Pass through Python result
+    return res.status(200).json({
+      message: "Individual Life Cover quotation calculated successfully",
+      result: data.output || {},
+      ok: data.ok ?? true,
+    });
+  } catch (e) {
+    console.error("Individual Life Cover proxy error:", e.response?.data || e.message);
+    return res.status(500).json({
+      message: "Failed to calculate Individual Life Cover",
+      error: e.response?.data || e.message,
+    });
+  }
+});
+
+
 
 
 

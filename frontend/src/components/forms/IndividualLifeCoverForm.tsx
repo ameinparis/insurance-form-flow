@@ -19,6 +19,26 @@ const IndividualLifeCoverForm = () => {
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [isSavingQuote, setIsSavingQuote] = useState(false)
 
+  const formatMoney = (v: any) => {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return "-"
+  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+const formatPercent = (v: any) => {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return "-"
+  // v is 105 (not 1.05) per our backend
+  return `${n.toFixed(0)}%`
+}
+
+const displayValue = (row: any) => {
+  if (row?.format === "percent") return formatPercent(row.value)
+  // currency
+  return formatMoney(row.value)
+}
+
+
   const { searchClients, loading: clientsLoading } = useClientSuggestions()
 
   const [formData, setFormData] = useState({
@@ -119,42 +139,62 @@ const IndividualLifeCoverForm = () => {
   }
 
   const handleFinalQuoteSubmit = async () => {
-    const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
-    const missingFields = requiredFields.filter(field => !customerDetails[field as keyof typeof customerDetails])
+  const requiredFields = ["fullName", "dateOfBirth", "idNumber", "contactNumber", "email"] as const
+  const missingFields = requiredFields.filter((f) => !customerDetails[f])
 
-    if (missingFields.length > 0) {
-      toast.error(`Please fill in: ${missingFields.join(', ')}`)
-      return
-    }
-
-    setIsSavingQuote(true)
-    try {
-      const payload = {
-        productType: "Individual Life Cover",
-        client: customerDetails,
-        inputs: formData,
-        outputs: result,
-      }
-
-      const { data } = await axios.post(
-        "https://njs.exclusivelife.co.bw/api/new-quotes",
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      )
-
-      toast.success(`Quote ${data.quoteId} created successfully!`)
-      setShowQuoteDialog(false)
-      setIsSavingQuote(false)
-    } catch (error: any) {
-      console.error("Error saving quote:", error)
-      toast.error("Failed to save quote. Please try again.")
-      setIsSavingQuote(false)
-    }
+  if (missingFields.length > 0) {
+    toast.error(`Please fill in: ${missingFields.join(", ")}`)
+    return
   }
+
+  if (!result) {
+    toast.error("No calculation results to save.")
+    return
+  }
+
+  setIsSavingQuote(true)
+
+  try {
+    const token = localStorage.getItem("token")
+
+    const payload = {
+      productType: "Individual Life Cover",
+      client: {
+        fullName: customerDetails.fullName,
+        dateOfBirth: customerDetails.dateOfBirth,
+        gender: customerDetails.gender,
+        idNumber: customerDetails.idNumber,
+        contactNumber: customerDetails.contactNumber,
+        email: customerDetails.email,
+      },
+      inputs: formData,
+      outputs: result, // or result.output if your API returns { output: {...} }
+    }
+
+    const res = await fetch("http://localhost:5002/api/new-quotes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+      body: JSON.stringify(payload),
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      throw new Error(data.message || data.error || "Failed to save quote")
+    }
+
+    toast.success(`Quote ${data.quoteId} saved successfully!`)
+    setShowQuoteDialog(false)
+  } catch (err: any) {
+    console.error("Save quote error:", err)
+    toast.error(err.message || "Failed to save quote")
+  } finally {
+    setIsSavingQuote(false)
+  }
+}
 
   const getDisplayValue = (field: string, value: string) => {
     const mappings: Record<string, Record<string, string>> = {
@@ -460,69 +500,53 @@ const IndividualLifeCoverForm = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <h4 className="font-semibold text-primary">Demographic Info</h4>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Age</span>
-                    <span>{formData.age} years</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Gender</span>
-                    <span>{getDisplayValue("gender", formData.gender)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Smoker Status</span>
-                    <span>{getDisplayValue("smokerStatus", formData.smokerStatus)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Education</span>
-                    <span>{getDisplayValue("education", formData.education)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Income</span>
-                    <span>{getDisplayValue("income", formData.income)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Marriage Status</span>
-                    <span>{getDisplayValue("marriageStatus", formData.marriageStatus)}</span>
-                  </div>
+{result?.rows?.length && (
+  <>
+    <Separator />
 
-                  <Separator />
+    <div className="space-y-4">
+      {/* Section title */}
+      <h3 className="text-lg font-semibold">
+        {result.section || "Premium"}
+      </h3>
 
-                  <h4 className="font-semibold text-primary">Product Info</h4>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Product</span>
-                    <span>{getDisplayValue("product", formData.product)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Term</span>
-                    <span>{formData.term} years</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Cashback Option</span>
-                    <span>{getDisplayValue("cashbackOption", formData.cashbackOption)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Death Cover</span>
-                    <span>BWP {Number(formData.deathCover).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Disability Cover</span>
-                    <span>BWP {Number(formData.disabilityCover).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">CI Cover</span>
-                    <span>BWP {Number(formData.ciCover).toLocaleString()}</span>
-                  </div>
+      {/* Rows */}
+      <div className="space-y-3">
+        {result.rows.map((row: any, idx: number) => {
+          const isTotal = !!row.isTotal
+          const isPercent = row.format === "percent"
 
-                  {result && (
-                    <>
-                      <Separator />
-                      <h4 className="font-semibold text-primary">Calculation Results</h4>
-                      <pre className="bg-muted p-3 rounded text-xs overflow-auto">
-                        {JSON.stringify(result, null, 2)}
-                      </pre>
-                    </>
-                  )}
+          const displayValue =
+            isPercent
+              ? `${Number(row.value).toFixed(0)}%`
+              : Number(row.value).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
+
+          return (
+            <div
+              key={`${row.label}-${idx}`}
+              className={`flex justify-between items-center text-sm ${
+                isTotal ? "font-bold text-base" : "text-muted-foreground"
+              }`}
+            >
+              <span className={isTotal ? "text-foreground" : ""}>
+                {row.label}
+              </span>
+
+              <span className="tabular-nums text-foreground">
+                {displayValue}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  </>
+)}
+
+
                 </div>
               </CardContent>
             </Card>
