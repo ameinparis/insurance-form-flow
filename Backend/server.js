@@ -16,7 +16,8 @@ const fs = require("fs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 const jobs = {};
-
+const { Resend } = require('resend');
+const crypto = require('crypto'); 
 const app = express();
 const PORT = process.env.PORT || 5002;
 
@@ -42,17 +43,47 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("MongoDB connected"))
   .catch(err => { console.error("MongoDB error", err); process.exit(1); });
 
+
+// Initialize Resend
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 /* ------------------------------- Models ------------------------------ */
+// Users Schema
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  password: { type: String, required: true },
+  password: { type: String },
   firstName: { type: String, required: true, trim: true },
   lastName: { type: String, required: true, trim: true },
   role: { type: String, enum: ["user", "superuser", "admin"], default: "user" },
+  status: { 
+    type: String,
+    enum: ["pending", "active", "suspended"],
+    default: "pending"
+  }
 }, { timestamps: true });
 const User = mongoose.model("User", userSchema);
 
-// 🔹 Old schema (keep for compatibility)
+//
+const tokenSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  token: { type: String, required: true }, 
+  type: { 
+    type: String, 
+    enum: ["password_setup", "password_reset"],
+    required: true 
+  },
+  email: { type: String, required: true },
+  expiresAt: { type: Date, required: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Index for faster lookups
+tokenSchema.index({ token: 1, type: 1 });
+tokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // Auto-delete expired
+
+const Token = mongoose.model("Token", tokenSchema);
+
+// Old schema (keep for compatibility)
 const quoteSchema = new mongoose.Schema({
   fullName: String,
   dateOfBirth: String,
@@ -119,10 +150,36 @@ const authenticateToken = (req, _res, next) => {
   });
 };
 
+
+
 /* ------------------------------ Routes ------------------------------- */
 // Health (optional)
 app.get("/health", (_req, res) => res.send("OK"));
 
+
+
+/* ------------------------------ Authentication ------------------------------- */
+// Simple email function
+async function sendPasswordSetupEmail(email, firstName, token) {
+  const magicLink = `${process.env.FRONTEND_URL}/set-password?token=${token}&email=${encodeURIComponent(email)}`;
+  
+  try {
+    await resend.emails.send({
+      from: 'exclusive-support@rev<auth@resend.dev>',
+      to: email,
+      subject: 'Set Up Your Account Password',
+      html: `
+        <h2>Welcome ${firstName}!</h2>
+        <p>Click the link below to set your password:</p>
+        <a href="${magicLink}">${magicLink}</a>
+        <p>This link expires in 24 hours.</p>
+      `
+    });
+    console.log(`Email sent to ${email}`);
+  } catch (error) {
+    console.error('Failed to send email:', error);
+  }
+}
 /** Create user (admin creates from Team screen) */
 app.post("/api/users/register", authenticateToken, async (req, res) => {
   try {
@@ -131,24 +188,17 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
       return res.status(403).json({ message: "Forbidden: superuser only" });
     }
 
-    let { email, firstName, lastName, password, role } = req.body;
-
-    // Basic required fields
-    if (!email || !firstName || !lastName || !password) {
-      return res.status(400).json({ message: "email, firstName, lastName, password are required" });
+    let { email, firstName, lastName, role } = req.body; 
+    if (!email || !firstName || !lastName) {
+      return res.status(400).json({ 
+        message: "email, firstName, lastName are required" 
+      });
     }
 
     // Normalize input
     email = String(email).toLowerCase().trim();
     firstName = String(firstName).trim();
     lastName = String(lastName).trim();
-    password = String(password);
-
-    // Password policy (your current rule)
-    const strong = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-    if (!strong.test(password)) {
-      return res.status(400).json({ message: "Password must be 8+ chars with upper, lower and a number" });
-    }
 
     // Role: allow only known roles, default to user
     const allowedRoles = ["user", "superuser", "admin"];
@@ -159,27 +209,40 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: "User already exists" });
 
-    const hash = await bcrypt.hash(password, 10);
-
+    // 1. Create user WITHOUT password
     const user = await User.create({
       email,
       firstName,
       lastName,
-      password: hash,
       role,
+      status: "pending", // Needs to set password
     });
 
+    // 2. Generate a secure token for the magic link
+    const token = crypto.randomBytes(32).toString('hex');
+    
+    console.log(`Token for ${email}: ${token}`);
+    
+    // 4. Send email with magic link
+    await sendPasswordSetupEmail(email, firstName, token);
+
+    // 5. Respond to superuser
     res.status(201).json({
-      message: "User created",
-      user: { id: user._id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role }
+      message: "User created. Password setup email sent.",
+      user: { 
+        id: user._id, 
+        email: user.email, 
+        firstName: user.firstName, 
+        lastName: user.lastName, 
+        role: user.role,
+        status: "pending"
+      }
     });
   } catch (e) {
     console.error("Register error:", e);
     res.status(500).json({ message: "Error creating user" });
   }
 });
-
-
 /** Login */
 app.post("/api/users/login", async (req, res) => {
   try {
@@ -201,17 +264,17 @@ app.post("/api/users/login", async (req, res) => {
   }
 });
 
-/** Me */
-app.get("/api/users/me", authenticateToken, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.userId).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
-  } catch (e) {
-    console.error("Me error:", e);
-    res.status(500).json({ message: "Error fetching user" });
-  }
-});
+// /** Me */
+// app.get("/api/users/me", authenticateToken, async (req, res) => {
+//   try {
+//     const user = await User.findById(req.user.userId).select("-password");
+//     if (!user) return res.status(404).json({ message: "User not found" });
+//     res.json(user);
+//   } catch (e) {
+//     console.error("Me error:", e);
+//     res.status(500).json({ message: "Error fetching user" });
+//   }
+// });
 
 /** Annuity calculator proxy → Python */
 app.post("/api/annuity", async (req, res) => {

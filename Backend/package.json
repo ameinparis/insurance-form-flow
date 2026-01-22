@@ -18,6 +18,7 @@
     "bson": "^4.2.0",
     "connect-multiparty": "^2.2.0",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "formidable": "^3.5.1",
@@ -35,6 +36,7 @@
     "papaparse": "^5.5.3",
     "pdf-poppler": "^0.2.1",
     "puppeteer": "^24.26.1",
+    "resend": "^6.8.0",
     "socket.io": "^4.7.5",
     "uuid": "^13.0.0",
     "xlsx": "^0.18.5"

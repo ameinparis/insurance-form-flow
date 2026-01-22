@@ -41,15 +41,14 @@ const Team = () => {
     firstName: "",
     lastName: "",
     email: "",
-    role: "superuser",
-    password: "",
+    role: "user",
   })
 
   const [editUser, setEditUser] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    role: "user",
+    role: "",
   })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,7 +76,7 @@ const Team = () => {
         headers: { Authorization: `Bearer ${token}` }
       })
       setShowAddUserModal(false)
-      setNewUser({ firstName: "", lastName: "", email: "", role: "superuser", password: "" })
+      setNewUser({ firstName: "", lastName: "", email: "", role: "" })
       fetchUsers()
     } catch (err) {
       console.error("Add user error", err)
@@ -330,27 +329,9 @@ const Team = () => {
               <Input name="email" type="email" value={newUser.email} onChange={handleInputChange} className="mt-1" />
             </div>
             <div>
-              <Label>Temporary Password</Label>
-              <Input
-                name="password"
-                type="password"
-                value={newUser.password}
-                onChange={handleInputChange}
-                className="mt-1"
-                placeholder="Set a temporary password"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                User will login with this password for now. You can add “change password” later.
-              </p>
-            </div>
-
-            <div>
               <Label>Role</Label>
-              <select
-                value={newUser.role}
-                onChange={handleRoleChange}
-                className="w-full border px-3 py-2 rounded-lg text-sm dark:bg-slate-800 mt-1"
-              >
+              <select value={newUser.role} onChange={handleRoleChange}>
+                <option value="">Select Role</option> 
                 <option value="user">User</option>
                 <option value="superuser">Superuser</option>
               </select>

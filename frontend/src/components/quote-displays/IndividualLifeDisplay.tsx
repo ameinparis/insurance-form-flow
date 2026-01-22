@@ -22,29 +22,8 @@ export const IndividualLifeDisplay = ({ quote }: IndividualLifeDisplayProps) => 
         </h2>
       </div>
 
-      {/* Personal Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-gray-700 dark:text-gray-300">Date of Birth:</span>
-          <span className="text-gray-800 dark:text-gray-100">{clientData?.dateOfBirth || "N/A"}</span>
-        </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-gray-700 dark:text-gray-300">ID/Passport Number:</span>
-          <span className="text-gray-800 dark:text-gray-100">{clientData?.idNumber || "N/A"}</span>
-        </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-gray-700 dark:text-gray-300">Contact:</span>
-          <span className="text-gray-800 dark:text-gray-100">{clientData?.contactNumber || "N/A"}</span>
-        </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-gray-700 dark:text-gray-300">Email:</span>
-          <span className="text-gray-800 dark:text-gray-100">{clientData?.email || "N/A"}</span>
-        </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-gray-700 dark:text-gray-300">Gender:</span>
-          <span className="text-gray-800 dark:text-gray-100">{clientData?.gender || i?.gender || "N/A"}</span>
-        </div>
-      </div>
+ 
+  
 
       {/* Premium Section */}
       <div>
