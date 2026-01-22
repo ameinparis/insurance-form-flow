@@ -6,10 +6,10 @@ import darkModeLogo from "@/assets/darkmodelogo.png"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/authlibrary"
 import { useGlobalSearch } from "@/lib/searchContext"
 import { useNavigate, useLocation } from "react-router-dom"
+import { useTheme } from "@/hooks/useTheme"
 
 
 interface LayoutProps {
@@ -17,12 +17,12 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { isDarkMode, toggleDarkMode } = useTheme()
   const { globalSearchTerm, setGlobalSearchTerm } = useGlobalSearch()
   const navigate = useNavigate()
   const location = useLocation()
 
-  const { userRole, isLoggedIn, logout } = useAuth()
+  const { userRole } = useAuth()
   const userName = localStorage.getItem("userName") || "User"
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,10 +49,6 @@ export function Layout({ children }: LayoutProps) {
     return colors[index]
   }
 
-  const toggleDarkMode = () => {
-    document.documentElement.classList.toggle('dark')
-  }
-
   // Get initials from name
   const getInitials = (name: string) => {
     return name
@@ -62,23 +58,6 @@ export function Layout({ children }: LayoutProps) {
       .toUpperCase()
       .slice(0, 2)
   }
-
-  // Monitor dark mode changes
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDarkMode(document.documentElement.classList.contains('dark'))
-    })
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    })
-
-    // Set initial state
-    setIsDarkMode(document.documentElement.classList.contains('dark'))
-
-    return () => observer.disconnect()
-  }, [])
 
   return (
     <SidebarProvider>
