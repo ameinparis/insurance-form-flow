@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/hooks/useTheme"
-import { Eye, EyeOff, Sun, Moon, Monitor, Shield, Clock, User, FileText } from "lucide-react"
+import { useAccentColor, accentColors } from "@/hooks/useAccentColor"
+import { Eye, EyeOff, Sun, Moon, Monitor, Shield, Clock, User, FileText, Check } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 const Settings = () => {
   const { theme, setTheme } = useTheme()
+  const { accentColor, setAccentColor } = useAccentColor()
   const { toast } = useToast()
   
   const userName = localStorage.getItem("userName") || "User"
@@ -126,20 +128,32 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="profile" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-4 bg-transparent p-0 h-auto gap-2">
+          <TabsTrigger 
+            value="profile" 
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-transparent data-[state=active]:bg-[hsl(var(--accent-bg))] data-[state=active]:text-[hsl(var(--accent-primary))] data-[state=active]:border-[hsl(var(--accent-primary))]/20 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-slate-800 data-[state=inactive]:text-muted-foreground hover:bg-muted/50 transition-all"
+          >
             <User className="h-4 w-4" />
             Profile
           </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="security" 
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-transparent data-[state=active]:bg-[hsl(var(--accent-bg))] data-[state=active]:text-[hsl(var(--accent-primary))] data-[state=active]:border-[hsl(var(--accent-primary))]/20 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-slate-800 data-[state=inactive]:text-muted-foreground hover:bg-muted/50 transition-all"
+          >
             <Shield className="h-4 w-4" />
             Security
           </TabsTrigger>
-          <TabsTrigger value="preferences" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="preferences" 
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-transparent data-[state=active]:bg-[hsl(var(--accent-bg))] data-[state=active]:text-[hsl(var(--accent-primary))] data-[state=active]:border-[hsl(var(--accent-primary))]/20 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-slate-800 data-[state=inactive]:text-muted-foreground hover:bg-muted/50 transition-all"
+          >
             <Sun className="h-4 w-4" />
             Preferences
           </TabsTrigger>
-          <TabsTrigger value="audit" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="audit" 
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-transparent data-[state=active]:bg-[hsl(var(--accent-bg))] data-[state=active]:text-[hsl(var(--accent-primary))] data-[state=active]:border-[hsl(var(--accent-primary))]/20 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-slate-800 data-[state=inactive]:text-muted-foreground hover:bg-muted/50 transition-all"
+          >
             <Clock className="h-4 w-4" />
             Audit Trail
           </TabsTrigger>
@@ -324,7 +338,8 @@ const Settings = () => {
                 Customize how the application looks.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-8">
+              {/* Theme Selection */}
               <div className="space-y-4">
                 <Label className="text-base">Theme</Label>
                 <div className="grid grid-cols-3 gap-4">
@@ -333,7 +348,7 @@ const Settings = () => {
                     onClick={() => setTheme('light')}
                     className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${
                       theme === 'light' 
-                        ? 'border-primary bg-primary/10 dark:bg-primary/20' 
+                        ? 'border-[hsl(var(--accent-primary))] bg-[hsl(var(--accent-bg))]' 
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                     }`}
                   >
@@ -346,7 +361,7 @@ const Settings = () => {
                     onClick={() => setTheme('dark')}
                     className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${
                       theme === 'dark' 
-                        ? 'border-primary bg-primary/10 dark:bg-primary/20' 
+                        ? 'border-[hsl(var(--accent-primary))] bg-[hsl(var(--accent-bg))]' 
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                     }`}
                   >
@@ -359,7 +374,7 @@ const Settings = () => {
                     onClick={() => setTheme('system')}
                     className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${
                       theme === 'system' 
-                        ? 'border-primary bg-primary/10 dark:bg-primary/20' 
+                        ? 'border-[hsl(var(--accent-primary))] bg-[hsl(var(--accent-bg))]' 
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                     }`}
                   >
@@ -367,6 +382,33 @@ const Settings = () => {
                     <span className="font-medium text-foreground">System</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Accent Color Selection */}
+              <div className="space-y-4">
+                <Label className="text-base">Accent Color</Label>
+                <div className="flex items-center gap-4">
+                  {accentColors.map((color) => (
+                    <button
+                      key={color.key}
+                      onClick={() => setAccentColor(color.key)}
+                      className={`relative w-12 h-12 rounded-full cursor-pointer transition-all hover:scale-110 ${
+                        accentColor === color.key 
+                          ? 'ring-2 ring-offset-2 ring-offset-background ring-[hsl(var(--accent-primary))]' 
+                          : ''
+                      }`}
+                      style={{ backgroundColor: `hsl(${color.light})` }}
+                      title={color.name}
+                    >
+                      {accentColor === color.key && (
+                        <Check className="absolute inset-0 m-auto h-5 w-5 text-white" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Selected: <span className="font-medium text-foreground">{accentColors.find(c => c.key === accentColor)?.name}</span>
+                </p>
               </div>
             </CardContent>
           </Card>
