@@ -5,44 +5,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/hooks/useTheme"
-import { useAccentColor, accentColors } from "@/hooks/useAccentColor"
-import { Eye, EyeOff, Sun, Moon, Monitor, Shield, Clock, User, FileText, Check } from "lucide-react"
+import { Eye, EyeOff, Sun, Moon, Monitor, Shield, Clock, User, FileText } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 const Settings = () => {
   const { theme, setTheme } = useTheme()
-  const { accentColor, setAccentColor } = useAccentColor()
   const { toast } = useToast()
-  
-  const userName = localStorage.getItem("userName") || "User"
-  
-  // Generate consistent pastel color based on user name (matches header avatar)
-  const getAvatarStyles = (name: string) => {
-    const colors = [
-      { bg: 'bg-blue-50', text: 'text-blue-500', border: 'border-blue-200', ring: 'ring-blue-200' },
-      { bg: 'bg-green-50', text: 'text-green-500', border: 'border-green-200', ring: 'ring-green-200' },
-      { bg: 'bg-purple-50', text: 'text-purple-500', border: 'border-purple-200', ring: 'ring-purple-200' },
-      { bg: 'bg-pink-50', text: 'text-pink-500', border: 'border-pink-200', ring: 'ring-pink-200' },
-      { bg: 'bg-orange-50', text: 'text-orange-500', border: 'border-orange-200', ring: 'ring-orange-200' },
-      { bg: 'bg-teal-50', text: 'text-teal-500', border: 'border-teal-200', ring: 'ring-teal-200' },
-      { bg: 'bg-indigo-50', text: 'text-indigo-500', border: 'border-indigo-200', ring: 'ring-indigo-200' },
-      { bg: 'bg-rose-50', text: 'text-rose-500', border: 'border-rose-200', ring: 'ring-rose-200' }
-    ]
-    const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
-    return colors[index]
-  }
-
-  // Get initials from name
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }
-
-  const avatarStyles = getAvatarStyles(userName)
   
   // Password change state
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
@@ -128,32 +96,20 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-transparent p-0 h-auto gap-2">
-          <TabsTrigger 
-            value="profile" 
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-transparent data-[state=active]:bg-[hsl(var(--accent-bg))] data-[state=active]:text-[hsl(var(--accent-primary))] data-[state=active]:border-[hsl(var(--accent-primary))]/20 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-slate-800 data-[state=inactive]:text-muted-foreground hover:bg-muted/50 transition-all"
-          >
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Profile
           </TabsTrigger>
-          <TabsTrigger 
-            value="security" 
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-transparent data-[state=active]:bg-[hsl(var(--accent-bg))] data-[state=active]:text-[hsl(var(--accent-primary))] data-[state=active]:border-[hsl(var(--accent-primary))]/20 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-slate-800 data-[state=inactive]:text-muted-foreground hover:bg-muted/50 transition-all"
-          >
+          <TabsTrigger value="security" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             Security
           </TabsTrigger>
-          <TabsTrigger 
-            value="preferences" 
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-transparent data-[state=active]:bg-[hsl(var(--accent-bg))] data-[state=active]:text-[hsl(var(--accent-primary))] data-[state=active]:border-[hsl(var(--accent-primary))]/20 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-slate-800 data-[state=inactive]:text-muted-foreground hover:bg-muted/50 transition-all"
-          >
+          <TabsTrigger value="preferences" className="flex items-center gap-2">
             <Sun className="h-4 w-4" />
             Preferences
           </TabsTrigger>
-          <TabsTrigger 
-            value="audit" 
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-transparent data-[state=active]:bg-[hsl(var(--accent-bg))] data-[state=active]:text-[hsl(var(--accent-primary))] data-[state=active]:border-[hsl(var(--accent-primary))]/20 data-[state=inactive]:bg-white dark:data-[state=inactive]:bg-slate-800 data-[state=inactive]:text-muted-foreground hover:bg-muted/50 transition-all"
-          >
+          <TabsTrigger value="audit" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Audit Trail
           </TabsTrigger>
@@ -166,12 +122,10 @@ const Settings = () => {
               <div className="flex flex-col md:flex-row gap-8">
                 {/* Left side - Avatar and display info */}
                 <div className="flex flex-col items-center md:border-r md:border-border md:pr-8">
-                  <div className={`w-32 h-32 rounded-full ${avatarStyles.bg} flex items-center justify-center mb-4 ring-4 ${avatarStyles.ring} border-2 ${avatarStyles.border}`}>
-                    <span className={`text-4xl font-bold ${avatarStyles.text}`}>{getInitials(userName)}</span>
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center mb-4 ring-4 ring-primary/20">
+                    <span className="text-4xl font-bold text-primary">AB</span>
                   </div>
-                  <h3 className="text-xl font-semibold text-foreground">
-                    {userName.split(" ").map(word => word[0].toUpperCase() + word.slice(1)).join(" ")}
-                  </h3>
+                  <h3 className="text-xl font-semibold text-foreground">Ame Busang</h3>
                   <p className="text-sm text-primary">Insurance Advisor</p>
                   <p className="text-xs text-muted-foreground mt-2 text-center">
                     Member since January 2024
@@ -338,8 +292,7 @@ const Settings = () => {
                 Customize how the application looks.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-8">
-              {/* Theme Selection */}
+            <CardContent>
               <div className="space-y-4">
                 <Label className="text-base">Theme</Label>
                 <div className="grid grid-cols-3 gap-4">
@@ -348,7 +301,7 @@ const Settings = () => {
                     onClick={() => setTheme('light')}
                     className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${
                       theme === 'light' 
-                        ? 'border-[hsl(var(--accent-primary))] bg-[hsl(var(--accent-bg))]' 
+                        ? 'border-primary bg-primary/10 dark:bg-primary/20' 
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                     }`}
                   >
@@ -361,7 +314,7 @@ const Settings = () => {
                     onClick={() => setTheme('dark')}
                     className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${
                       theme === 'dark' 
-                        ? 'border-[hsl(var(--accent-primary))] bg-[hsl(var(--accent-bg))]' 
+                        ? 'border-primary bg-primary/10 dark:bg-primary/20' 
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                     }`}
                   >
@@ -374,7 +327,7 @@ const Settings = () => {
                     onClick={() => setTheme('system')}
                     className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${
                       theme === 'system' 
-                        ? 'border-[hsl(var(--accent-primary))] bg-[hsl(var(--accent-bg))]' 
+                        ? 'border-primary bg-primary/10 dark:bg-primary/20' 
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                     }`}
                   >
@@ -382,33 +335,6 @@ const Settings = () => {
                     <span className="font-medium text-foreground">System</span>
                   </button>
                 </div>
-              </div>
-
-              {/* Accent Color Selection */}
-              <div className="space-y-4">
-                <Label className="text-base">Accent Color</Label>
-                <div className="flex items-center gap-4">
-                  {accentColors.map((color) => (
-                    <button
-                      key={color.key}
-                      onClick={() => setAccentColor(color.key)}
-                      className={`relative w-12 h-12 rounded-full cursor-pointer transition-all hover:scale-110 ${
-                        accentColor === color.key 
-                          ? 'ring-2 ring-offset-2 ring-offset-background ring-[hsl(var(--accent-primary))]' 
-                          : ''
-                      }`}
-                      style={{ backgroundColor: `hsl(${color.light})` }}
-                      title={color.name}
-                    >
-                      {accentColor === color.key && (
-                        <Check className="absolute inset-0 m-auto h-5 w-5 text-white" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Selected: <span className="font-medium text-foreground">{accentColors.find(c => c.key === accentColor)?.name}</span>
-                </p>
               </div>
             </CardContent>
           </Card>

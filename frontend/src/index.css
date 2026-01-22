@@ -52,11 +52,6 @@
     --primary-gradient-from: 207 100% 62%;
     --primary-gradient-to: 207 90% 55%;
 
-    /* Accent color system - defaults to cyan, can be changed via useAccentColor hook */
-    --accent-primary: 197 100% 45%;   /* #009fe3 - Default cyan */
-    --accent-primary-foreground: 0 0% 100%;
-    --accent-bg: 197 100% 95%;        /* Light tint for backgrounds */
-
     --secondary: 210 40% 96%;
     --secondary-foreground: 240 10% 15%;
 
@@ -107,11 +102,6 @@
     
     --primary-gradient-from: 199 89% 48%;
     --primary-gradient-to: 199 89% 55%;
-
-    /* Accent color system - defaults to cyan, adjusted for dark mode */
-    --accent-primary: 199 89% 48%;    /* #0ea5e9 - Default cyan dark */
-    --accent-primary-foreground: 213 32% 14%;
-    --accent-bg: 199 50% 20%;         /* Dark tint for backgrounds */
 
     --secondary: 213 32% 20%;
     --secondary-foreground: 210 40% 98%;

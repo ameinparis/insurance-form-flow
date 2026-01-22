@@ -244,7 +244,7 @@ const Team = () => {
                 {teamMembers.map((member) => (
                   <TableRow
                     key={member.id}
-                    className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-[hsl(var(--accent-bg))] dark:hover:bg-[hsl(var(--accent-bg))] hover:border-[hsl(var(--accent-primary))]/30 transition-all duration-200 my-2 overflow-hidden"
+                    className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-sky-100 dark:hover:bg-sky-900/30 hover:border-sky-200 dark:hover:border-sky-700 transition-all duration-200 my-2 overflow-hidden"
                   >
                     <TableCell className="py-5 px-6 rounded-l-xl">
                       <div className="flex items-center gap-3">
