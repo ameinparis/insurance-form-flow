@@ -4,8 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useTheme } from "@/hooks/useTheme"
 import { Eye, EyeOff, Sun, Moon, Monitor, Shield, Clock, User, FileText } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -120,38 +118,44 @@ const Settings = () => {
         {/* Profile Tab */}
         <TabsContent value="profile" className="space-y-6 mt-6">
           <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
-            <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>
-                Update your personal information and account settings.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" placeholder="Enter your first name" />
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row gap-8">
+                {/* Left side - Avatar and display info */}
+                <div className="flex flex-col items-center md:border-r md:border-border md:pr-8">
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center mb-4 ring-4 ring-primary/20">
+                    <span className="text-4xl font-bold text-primary">AB</span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground">Ame Busang</h3>
+                  <p className="text-sm text-primary">Insurance Advisor</p>
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    Member since January 2024
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" placeholder="Enter your last name" />
+
+                {/* Right side - Editable form */}
+                <div className="flex-1 space-y-6">
+                  <div>
+                    <h4 className="text-lg font-semibold mb-4">Edit Profile</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input id="firstName" placeholder="Enter your first name" defaultValue="Ame" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input id="lastName" placeholder="Enter your last name" defaultValue="Busang" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input id="email" type="email" placeholder="Enter your email" defaultValue="ame.busang@exclusive.co.bw" />
+                  </div>
+                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                    Save Changes
+                  </Button>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="Enter your email" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" placeholder="Enter your phone number" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea id="bio" placeholder="Tell us about yourself" />
-              </div>
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                Save Changes
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -288,65 +292,49 @@ const Settings = () => {
                 Customize how the application looks.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent>
               <div className="space-y-4">
-                <Label>Theme</Label>
-                <RadioGroup 
-                  value={theme} 
-                  onValueChange={(value) => setTheme(value as 'light' | 'dark' | 'system')}
-                  className="grid grid-cols-3 gap-4"
-                >
-                  <Label
-                    htmlFor="light"
-                    className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                <Label className="text-base">Theme</Label>
+                <div className="grid grid-cols-3 gap-4">
+                  {/* Light Theme Card */}
+                  <button
+                    onClick={() => setTheme('light')}
+                    className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${
                       theme === 'light' 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border bg-white dark:bg-slate-700 hover:border-primary/50'
+                        ? 'border-primary bg-primary/10 dark:bg-primary/20' 
+                        : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                     }`}
                   >
-                    <RadioGroupItem value="light" id="light" className="sr-only" />
-                    <div className="h-12 w-12 rounded-xl bg-white border-2 border-gray-200 flex items-center justify-center shadow-sm">
-                      <Sun className="h-6 w-6 text-orange-500" />
-                    </div>
-                    <span className="font-medium">Light</span>
-                  </Label>
+                    <Sun className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
+                    <span className="font-medium text-foreground">Light</span>
+                  </button>
 
-                  <Label
-                    htmlFor="dark"
-                    className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  {/* Dark Theme Card */}
+                  <button
+                    onClick={() => setTheme('dark')}
+                    className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${
                       theme === 'dark' 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border bg-white dark:bg-slate-700 hover:border-primary/50'
+                        ? 'border-primary bg-primary/10 dark:bg-primary/20' 
+                        : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                     }`}
                   >
-                    <RadioGroupItem value="dark" id="dark" className="sr-only" />
-                    <div className="h-12 w-12 rounded-xl bg-slate-800 border-2 border-slate-600 flex items-center justify-center shadow-sm">
-                      <Moon className="h-6 w-6 text-blue-400" />
-                    </div>
-                    <span className="font-medium">Dark</span>
-                  </Label>
+                    <Moon className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
+                    <span className="font-medium text-foreground">Dark</span>
+                  </button>
 
-                  <Label
-                    htmlFor="system"
-                    className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  {/* System Theme Card */}
+                  <button
+                    onClick={() => setTheme('system')}
+                    className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${
                       theme === 'system' 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border bg-white dark:bg-slate-700 hover:border-primary/50'
+                        ? 'border-primary bg-primary/10 dark:bg-primary/20' 
+                        : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                     }`}
                   >
-                    <RadioGroupItem value="system" id="system" className="sr-only" />
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-white to-slate-800 border-2 border-gray-300 flex items-center justify-center shadow-sm">
-                      <Monitor className="h-6 w-6 text-gray-600" />
-                    </div>
-                    <span className="font-medium">System</span>
-                  </Label>
-                </RadioGroup>
-                <p className="text-sm text-muted-foreground">
-                  {theme === 'system' 
-                    ? "Automatically matches your device's theme settings."
-                    : `Currently using ${theme} mode.`
-                  }
-                </p>
+                    <Monitor className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
+                    <span className="font-medium text-foreground">System</span>
+                  </button>
+                </div>
               </div>
             </CardContent>
           </Card>
