@@ -12,6 +12,36 @@ const Settings = () => {
   const { theme, setTheme } = useTheme()
   const { toast } = useToast()
   
+  const userName = localStorage.getItem("userName") || "User"
+  
+  // Generate consistent pastel color based on user name (matches header avatar)
+  const getAvatarStyles = (name: string) => {
+    const colors = [
+      { bg: 'bg-blue-50', text: 'text-blue-500', border: 'border-blue-200', ring: 'ring-blue-200' },
+      { bg: 'bg-green-50', text: 'text-green-500', border: 'border-green-200', ring: 'ring-green-200' },
+      { bg: 'bg-purple-50', text: 'text-purple-500', border: 'border-purple-200', ring: 'ring-purple-200' },
+      { bg: 'bg-pink-50', text: 'text-pink-500', border: 'border-pink-200', ring: 'ring-pink-200' },
+      { bg: 'bg-orange-50', text: 'text-orange-500', border: 'border-orange-200', ring: 'ring-orange-200' },
+      { bg: 'bg-teal-50', text: 'text-teal-500', border: 'border-teal-200', ring: 'ring-teal-200' },
+      { bg: 'bg-indigo-50', text: 'text-indigo-500', border: 'border-indigo-200', ring: 'ring-indigo-200' },
+      { bg: 'bg-rose-50', text: 'text-rose-500', border: 'border-rose-200', ring: 'ring-rose-200' }
+    ]
+    const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length
+    return colors[index]
+  }
+
+  // Get initials from name
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
+  const avatarStyles = getAvatarStyles(userName)
+  
   // Password change state
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
@@ -122,10 +152,12 @@ const Settings = () => {
               <div className="flex flex-col md:flex-row gap-8">
                 {/* Left side - Avatar and display info */}
                 <div className="flex flex-col items-center md:border-r md:border-border md:pr-8">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center mb-4 ring-4 ring-primary/20">
-                    <span className="text-4xl font-bold text-primary">AB</span>
+                  <div className={`w-32 h-32 rounded-full ${avatarStyles.bg} flex items-center justify-center mb-4 ring-4 ${avatarStyles.ring} border-2 ${avatarStyles.border}`}>
+                    <span className={`text-4xl font-bold ${avatarStyles.text}`}>{getInitials(userName)}</span>
                   </div>
-                  <h3 className="text-xl font-semibold text-foreground">Ame Busang</h3>
+                  <h3 className="text-xl font-semibold text-foreground">
+                    {userName.split(" ").map(word => word[0].toUpperCase() + word.slice(1)).join(" ")}
+                  </h3>
                   <p className="text-sm text-primary">Insurance Advisor</p>
                   <p className="text-xs text-muted-foreground mt-2 text-center">
                     Member since January 2024
