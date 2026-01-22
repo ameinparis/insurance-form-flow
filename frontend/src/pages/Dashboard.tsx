@@ -171,7 +171,7 @@ const Dashboard = () => {
             <Button
               variant="outline"
               onClick={() => navigate("/quotes")}
-              className="text-[#009fe3] border-[#009fe3] hover:bg-[#009fe3]/10"
+              className="text-[hsl(var(--accent-primary))] border-[hsl(var(--accent-primary))] hover:bg-[hsl(var(--accent-primary))]/10"
             >
               Show All
             </Button>
@@ -216,7 +216,7 @@ const Dashboard = () => {
                       <TableRow
                         key={quote.id}
                         onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
-                        className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-sky-100 dark:hover:bg-sky-900/30 hover:border-sky-200 dark:hover:border-sky-700 transition-all duration-200 my-2 overflow-hidden cursor-pointer"
+                        className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-[hsl(var(--accent-bg))] dark:hover:bg-[hsl(var(--accent-bg))] hover:border-[hsl(var(--accent-primary))]/30 transition-all duration-200 my-2 overflow-hidden cursor-pointer"
                       >
                         <TableCell className="py-5 px-6 rounded-l-xl">
                           <div className="flex items-center gap-3">
