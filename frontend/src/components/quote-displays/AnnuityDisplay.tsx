@@ -19,7 +19,10 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
     drawdown: quote.drawdown,
     frequency: quote.frequency,
     guaranteedStartAge: quote.guaranteedStartAge,
-    age: null
+    age: null,
+    upfrontCommission: quote.upfrontCommission,
+    ongoingCommission: quote.ongoingCommission,
+     guaranteePeriod: quote.guaranteePeriod
   };
 
   const outputData = quote.outputs || {
@@ -36,11 +39,11 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
   return (
     <div className="bg-white dark:bg-slate-900 p-8 space-y-8">
       {/* Personal & Annuity Details */}
-           <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 inline-block">
-            Quotation for {clientData?.fullName || "Client Name"}
-          </h2>
-        </div>
+      <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 inline-block">
+          Quotation for {clientData?.fullName || "Client Name"}
+        </h2>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
         <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
           <span className="font-medium text-gray-700 dark:text-gray-300">Date of Birth:</span>
@@ -96,49 +99,59 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
       </div>
 
       {/* Fees Section */}
-      <div>
-        <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Living Annuity Fees</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead>
-              <tr>
-                <th colSpan={2} className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Upfront Fees</th>
-              </tr>
-            </thead>
-            <tbody className="text-gray-700 dark:text-gray-300">
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="px-4 py-2">Purchase Premium</td>
-                <td className="px-4 py-2">2%</td>
-              </tr>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="px-4 py-2">Upfront Commission</td>
-                <td className="px-4 py-2">1%</td>
-              </tr>
-            </tbody>
-            <thead>
-              <tr>
-                <th colSpan={2} className="px-4 py-2 pt-4 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Ongoing Fees</th>
-              </tr>
-            </thead>
-            <tbody className="text-gray-700 dark:text-gray-300">
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="px-4 py-2">Ongoing Commission</td>
-                <td className="px-4 py-2">1% p.a</td>
-              </tr>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="px-4 py-2">Administration Fee</td>
-                <td className="px-4 py-2">1% p.a</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-2">Assets Management Fee</td>
-                <td className="px-4 py-2">0.75% p.a</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+  <div>
+  <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
+    <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Living Annuity Fees</h3>
+  </div>
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm text-left">
+      <thead>
+        <tr>
+          <th colSpan={2} className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Upfront Fees</th>
+        </tr>
+      </thead>
+      <tbody className="text-gray-700 dark:text-gray-300">
+        <tr className="border-b border-gray-100 dark:border-gray-800">
+          <td className="px-4 py-2">Purchase Premium</td>
+          <td className="px-4 py-2">2%</td>
+        </tr>
+        <tr className="border-b border-gray-100 dark:border-gray-800">
+          <td className="px-4 py-2">Upfront Commission</td>
+          <td className="px-4 py-2">
+            {/* Display dynamic value or default */}
+            {inputData?.upfrontCommission !== undefined && inputData?.upfrontCommission !== null 
+              ? `${inputData.upfrontCommission}%` 
+              : "0%"}
+          </td>
+        </tr>
+      </tbody>
+      <thead>
+        <tr>
+          <th colSpan={2} className="px-4 py-2 pt-4 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Ongoing Fees</th>
+        </tr>
+      </thead>
+      <tbody className="text-gray-700 dark:text-gray-300">
+        <tr className="border-b border-gray-100 dark:border-gray-800">
+          <td className="px-4 py-2">Ongoing Commission</td>
+          <td className="px-4 py-2">
+            {/* Display dynamic value or default */}
+            {inputData?.ongoingCommission !== undefined && inputData?.ongoingCommission !== null
+              ? `${inputData.ongoingCommission}% p.a`
+              : "0% p.a"}
+          </td>
+        </tr>
+        <tr className="border-b border-gray-100 dark:border-gray-800">
+          <td className="px-4 py-2">Administration Fee</td>
+          <td className="px-4 py-2">1% p.a</td>
+        </tr>
+        <tr>
+          <td className="px-4 py-2">Assets Management Fee</td>
+          <td className="px-4 py-2">0.75% p.a</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
       {/* Customer Acceptance Signature Section */}
       <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
@@ -148,7 +161,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-            Signature:
+              Signature:
             </label>
             <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
           </div>

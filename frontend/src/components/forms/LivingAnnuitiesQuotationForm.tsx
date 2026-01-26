@@ -59,7 +59,7 @@ const AnnuityQuotationForm = () => {
   const [lifeResult, setLifeResult] = useState<LifeResult | null>(null)
   const [upfrontCommission, setUpfrontCommission] = useState("")
   const [ongoingCommission, setOngoingCommission] = useState("")
-
+  const [guaranteePeriod, setGuaranteePeriod] = useState<string>("5")
   const { searchClients, loading: clientsLoading } = useClientSuggestions()
 
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
@@ -175,6 +175,7 @@ Insurance will not accept liability for any losses incurred as a result of using
         guaranteedStartAge: gsaNum,
         upfrontCommission: safeNum(upfrontNum),
         ongoingCommission: safeNum(ongoingNum),
+        guaranteePeriod: toNum(guaranteePeriod),
       }
 
       const { data } = await axios.post("https://njs.exclusivelife.co.bw/api/quotes/calculate-annuity", payload)
@@ -204,6 +205,7 @@ Insurance will not accept liability for any losses incurred as a result of using
         annuityType: "life",
         age: gsaNum,
         purchaseAmount: toNum(lifePurchaseAmount),
+        guaranteePeriod: toNum(guaranteePeriod)
       }
       const { data } = await axios.post("https://njs.exclusivelife.co.bw/api/quotes/calculate-annuity", payload)
       const res = data.output
@@ -421,7 +423,10 @@ Insurance will not accept liability for any losses incurred as a result of using
               </div>
               <div>
                 <Label>Guarantee Period</Label>
-                <Select defaultValue="5">
+                <Select
+                  value={guaranteePeriod}
+                  onValueChange={(value) => setGuaranteePeriod(value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select guarantee period" />
                   </SelectTrigger>
@@ -647,10 +652,15 @@ Insurance will not accept liability for any losses incurred as a result of using
                       <Separator />
                     </>
                   )}
-
                   {lifeResult && (
                     <div className="space-y-2">
                       <h4 className="font-semibold text-primary">Life Annuity</h4>
+                      {/* ADD THIS LINE */}
+                      <div className="flex justify-between">
+                        <span>Guarantee Period:</span>
+                        <span>{guaranteePeriod} years</span>
+                      </div>
+
                       <div className="flex justify-between">
                         <span>Monthly Life Annuity:</span>
                         <span>{fmtMoney(lifeResult.monthly_annuity)}</span>
