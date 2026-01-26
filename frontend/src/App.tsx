@@ -19,7 +19,6 @@ import PersonalDetails from "./pages/PersonalDetails";
 import QuotePreview from "./pages/QuotePreview";
 import Quotes from "./pages/Quotes";
 import QuoteDetail from "./pages/QuoteDetail";
-import LivingAnnuityCalculator from "./pages/LivingAnnuityCalculator";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import LogoutHandler from "./components/LogoutHandler";
@@ -88,11 +87,7 @@ const App = () => (
                   <QuoteDetail />
                 </Layout>
               } />
-              <Route path="/living-annuity-calculator" element={
-                <Layout>
-                  <LivingAnnuityCalculator />
-                </Layout>
-              } />
+            
               <Route path="/settings" element={
                 <Layout>
                   <Settings />
