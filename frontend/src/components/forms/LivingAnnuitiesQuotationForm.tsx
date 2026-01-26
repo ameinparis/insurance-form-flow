@@ -419,6 +419,20 @@ Insurance will not accept liability for any losses incurred as a result of using
                 <Label>Life Start Age</Label>
                 <Input type="number" value={guaranteedStartAge} onChange={(e) => setGuaranteedStartAge(e.target.value)} />
               </div>
+              <div>
+                <Label>Guarantee Period</Label>
+                <Select defaultValue="5">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select guarantee period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 years</SelectItem>
+                    <SelectItem value="10">10 years</SelectItem>
+                    <SelectItem value="15">15 years</SelectItem>
+                    <SelectItem value="20">20 years</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="col-span-2">
                 <Button onClick={handleLifeCalc} disabled={lifeLoading || lifeDisabled}>
                   {lifeLoading ? (
