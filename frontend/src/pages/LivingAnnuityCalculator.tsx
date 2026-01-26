@@ -14,6 +14,7 @@ const LivingAnnuityCalculator = () => {
     purchaseAmount: "",
     drawdownPercentage: "",
     ageForLifeGuarantee: "",
+    guaranteePeriod: "",
     frequency: "Monthly"
   })
   
@@ -111,6 +112,21 @@ const LivingAnnuityCalculator = () => {
                         {age} years
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="guaranteePeriod">Guarantee Period</Label>
+                <Select onValueChange={(value) => handleInputChange("guaranteePeriod", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select guarantee period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 years</SelectItem>
+                    <SelectItem value="10">10 years</SelectItem>
+                    <SelectItem value="15">15 years</SelectItem>
+                    <SelectItem value="20">20 years</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
