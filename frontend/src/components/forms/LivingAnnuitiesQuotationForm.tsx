@@ -27,7 +27,7 @@ type LivingResult = {
 
 type LifeResult = { monthly_annuity: number }
 
-const MIN_AGE = 45
+const MIN_AGE = 0
 const MAX_AGE = 85
 const MIN_INVEST = 300000
 
