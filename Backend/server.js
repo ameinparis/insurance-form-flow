@@ -16,8 +16,7 @@ const fs = require("fs");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 const jobs = {};
-const { Resend } = require('resend');
-const crypto = require('crypto'); 
+const crypto = require("crypto")
 const app = express();
 const PORT = process.env.PORT || 5002;
 
@@ -44,8 +43,15 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .catch(err => { console.error("MongoDB error", err); process.exit(1); });
 
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize SendGrid (with fallback)
+let sgMail;
+if (process.env.SENDGRID_API_KEY) {
+  sgMail = require('@sendgrid/mail');
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+} else {
+  console.warn('SENDGRID_API_KEY not set. Email functionality disabled.');
+}
+
 
 /* ------------------------------- Models ------------------------------ */
 // Users Schema
@@ -55,7 +61,7 @@ const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true, trim: true },
   lastName: { type: String, required: true, trim: true },
   role: { type: String, enum: ["user", "superuser", "admin"], default: "user" },
-  status: { 
+  status: {
     type: String,
     enum: ["pending", "active", "suspended"],
     default: "pending"
@@ -66,11 +72,11 @@ const User = mongoose.model("User", userSchema);
 //
 const tokenSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  token: { type: String, required: true }, 
-  type: { 
-    type: String, 
+  token: { type: String, required: true },
+  type: {
+    type: String,
     enum: ["password_setup", "password_reset"],
-    required: true 
+    required: true
   },
   email: { type: String, required: true },
   expiresAt: { type: Date, required: true },
@@ -151,10 +157,36 @@ const authenticateToken = (req, _res, next) => {
 };
 
 
+/* -------------------------- Email Helpers -------------------------- */
 
-/* ------------------------------ Routes ------------------------------- */
-// Health (optional)
-app.get("/health", (_req, res) => res.send("OK"));
+// Generate secure token for password setup
+const generateToken = () => {
+  return crypto.randomBytes(32).toString('hex');
+};
+
+const sendWelcomeEmail = async (email, firstName, lastName, token) => {
+  if (!sgMail) return { success: false, error: "SendGrid not configured" };
+
+  const setupUrl = `${process.env.APP_URL || "http://localhost:8080"}/auth/set-password?token=${token}`;
+
+  try {
+    await sgMail.send({
+      to: email,
+      from: {
+        email: process.env.SENDGRID_FROM_EMAIL || "online@exclusivelife.co.bw",
+        name: process.env.SENDGRID_FROM_NAME || "Exclusive Life Admin",
+      },
+      subject: "Welcome to Exclusive Life - Complete Your Account Setup",
+      html: `<p>Hi ${firstName},</p><p>Set your password here: <a href="${setupUrl}">${setupUrl}</a></p>`,
+      text: `Hi ${firstName}, set your password here: ${setupUrl}`,
+    });
+
+    return { success: true };
+  } catch (err) {
+    console.error("SendGrid send error:", err?.response?.body || err?.message || err);
+    return { success: false, error: err?.message || "SendGrid error" };
+  }
+};
 
 
 
@@ -166,26 +198,19 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
       return res.status(403).json({ message: "Forbidden: superuser only" });
     }
 
-    let { email, firstName, lastName, password, role } = req.body;
+    let { email, firstName, lastName, role } = req.body;
 
     // Basic required fields
-    if (!email || !firstName || !lastName || !password) {
-      return res.status(400).json({ message: "email, firstName, lastName, password are required" });
+    if (!email || !firstName || !lastName) {
+      return res.status(400).json({ message: "email, firstName, lastName are required" });
     }
 
     // Normalize input
     email = String(email).toLowerCase().trim();
     firstName = String(firstName).trim();
     lastName = String(lastName).trim();
-    password = String(password);
 
-    // Password policy (your current rule)
-    const strong = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-    if (!strong.test(password)) {
-      return res.status(400).json({ message: "Password must be 8+ chars with upper, lower and a number" });
-    }
-
-    // Role: allow only known roles, default to user
+    // Role validation
     const allowedRoles = ["user", "superuser", "admin"];
     role = allowedRoles.includes(String(role || "").toLowerCase())
       ? String(role).toLowerCase()
@@ -194,27 +219,68 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: "User already exists" });
 
-    const hash = await bcrypt.hash(password, 10);
+    // Generate a random temporary password
+    const tempPassword = Math.random().toString(36).slice(-8) + "Aa1!";
+    console.log(`Generated temp password for ${email}: ${tempPassword}`);
 
+    const hash = await bcrypt.hash(tempPassword, 10);
+
+    // Create user
     const user = await User.create({
       email,
       firstName,
       lastName,
       password: hash,
       role,
+      status: "pending"
     });
+
+    // Generate token for password setup
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    // Save token to database WITH userId
+    await Token.create({
+      userId: user._id,  
+      email: email.toLowerCase(),
+      token,
+      type: "password_setup",
+      expiresAt
+    });
+    // Send welcome email
+    let emailSent = false;
+    if (process.env.SENDGRID_API_KEY) {
+      const emailResult = await sendWelcomeEmail(email, firstName, lastName, token);
+      emailSent = emailResult.success;
+      if (!emailSent) {
+        console.warn(`Email sending failed for ${email}:`, emailResult.error);
+      }
+    } else {
+      console.warn('No SENDGRID_API_KEY in .env - email not sent');
+    }
 
     res.status(201).json({
-      message: "User created",
-      user: { id: user._id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role }
+      message: "User created successfully" + (emailSent ? " and welcome email sent" : ""),
+      emailSent,
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        status: user.status
+      }
     });
   } catch (e) {
-    console.error("Register error:", e);
-    res.status(500).json({ message: "Error creating user" });
-  }
+  console.error("Register error:", e);
+  return res.status(500).json({
+    message: "Error creating user",
+    error: e?.message,
+    stack: e?.stack,
+  });
+}
+
 });
-
-
 /** Login */
 app.post("/api/users/login", async (req, res) => {
   try {
@@ -554,12 +620,12 @@ app.post("/api/quotes/calculate-assurance", async (req, res) => {
 /** Individual Life Cover calculator proxy → Python (Excel sheet) */
 app.post("/api/quotes/calculate-individual-life", authenticateToken, async (req, res) => {
   try {
-    
+
     const PY_URL = (process.env.PY_CALC_URL || "http://localhost:5005") + "/individual/calculate";
 
     const { data } = await axios.post(PY_URL, req.body, {
       headers: { "Content-Type": "application/json" },
-      timeout: 120000, 
+      timeout: 120000,
     });
 
     // Pass through Python result
