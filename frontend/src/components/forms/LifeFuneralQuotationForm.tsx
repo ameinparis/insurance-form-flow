@@ -866,9 +866,6 @@ const LifeFuneralQuotationForm = () => {
                 </CardContent>
               </Card>
             </div>
-
-
-
             {/* Actions */}
             <div className="flex justify-between mt-6">
               <Button variant="secondary" onClick={() => setShowQuoteDialog(false)}>
@@ -895,3 +892,4 @@ const LifeFuneralQuotationForm = () => {
 }
 
 export default LifeFuneralQuotationForm
+ 

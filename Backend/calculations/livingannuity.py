@@ -5,9 +5,9 @@ import time
 import sys
 
 app = Flask(__name__)
-# Path to annuity.xlsm inside sheets folder
+# Path to sheets folder
 EXCEL_FILE = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', 'sheets', 'annuity.xlsm')
+    os.path.join(os.path.dirname(__file__), '..', 'sheets', 'Exclusive-Annuity.xlsm')
     
 )
 # Sanity check
@@ -106,8 +106,8 @@ def handle_combined_annuity(wb, data):
     sheet.range('C5').value = drawdown / 100
     sheet.range('C6').value = guaranteed_age
     sheet.range('C7').value = frequency
-    sheet.range('C15').value = upfront_commission / 100   # convert to decimal
-    sheet.range('C18').value = ongoing_commission / 100   # convert to decimal
+    sheet.range('C15').value = upfront_commission / 100   
+    sheet.range('C18').value = ongoing_commission / 100   
 
     print(f"Running Macro: GoalSeek_RAAfterLA")
     print(f"Inputs → Age: {age}, Amount: {amount}, Drawdown: {drawdown}%, Upfront: {upfront_commission}%, Ongoing: {ongoing_commission}%")
@@ -129,15 +129,25 @@ def handle_combined_annuity(wb, data):
 
 def handle_life_annuity(wb, data):
     sheet = wb.sheets['LifeAnnuity']
-    sheet.range('C3').value = data['age']
-    sheet.range('C4').value = data['purchaseAmount']
-    sheet.range('C5').value = "Monthly"  # Force Monthly
-
+    
+    guarantee_period = data.get('guaranteePeriod', 5)
+    
+    guarantee_text = f"{guarantee_period} years"
+    
+    # Write inputs to Excel
+    sheet.range('C3').value = data['age'] 
+    sheet.range('C4').value = data['purchaseAmount'] 
+    sheet.range('C5').value = "Monthly" 
+    sheet.range('C6').value = guarantee_text  
+    
+    print(f"Life Annuity Inputs → Age: {data['age']}, Amount: {data['purchaseAmount']}, Guarantee Period: {guarantee_text}")
+    
     wb.macro("GoalSeekLifeAnnuity")()
     wb.app.calculate()
-
+    time.sleep(0.5)  
     result = {
-        "monthly_annuity": round(float(sheet.range('C10').value), 2)
+        "monthly_annuity": round(float(sheet.range('C10').value), 2),
+        "guarantee_period": int(guarantee_period)  
     }
 
     print("Life Annuity Result:", result)
