@@ -22,6 +22,11 @@ import QuoteDetail from "./pages/QuoteDetail";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import LogoutHandler from "./components/LogoutHandler";
+import SetPassword from "./pages/auth/SetPassword";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
+import AccountPending from "./pages/auth/AccountPending";
+import LinkExpired from "./pages/auth/LinkExpired";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +52,11 @@ const App = () => (
           <BrowserRouter>
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/auth/set-password" element={<SetPassword />} />
+            <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
+            <Route path="/auth/pending" element={<AccountPending />} />
+            <Route path="/auth/link-expired" element={<LinkExpired />} />
             <Route path="/dashboard" element={
               <Layout>
                 <Dashboard />
