@@ -34,7 +34,7 @@ const ResetPassword = () => {
     setIsLoading(true)
 
     try {
-      const response = await fetch("http://localhost:5002/api/auth/reset-password", {
+      const response = await fetch("https://njs.exclusivelife.co.bw/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),
@@ -45,6 +45,7 @@ const ResetPassword = () => {
       if (response.ok) {
         setIsSuccess(true)
         toast.success("Password reset successfully!")
+        toast.success("Password updated. Please sign in with your new password.")
         setTimeout(() => navigate("/"), 3000)
       } else {
         if (data.expired) {

@@ -19,6 +19,8 @@ const jobs = {};
 const crypto = require("crypto")
 const app = express();
 const PORT = process.env.PORT || 5002;
+const emailTemplate = require("./emails/template");
+
 
 /* -------------------------- Core middleware -------------------------- */
 app.use(cors({
@@ -43,14 +45,6 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .catch(err => { console.error("MongoDB error", err); process.exit(1); });
 
 
-// Initialize SendGrid (with fallback)
-let sgMail;
-if (process.env.SENDGRID_API_KEY) {
-  sgMail = require('@sendgrid/mail');
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-} else {
-  console.warn('SENDGRID_API_KEY not set. Email functionality disabled.');
-}
 
 
 /* ------------------------------- Models ------------------------------ */
@@ -157,54 +151,85 @@ const authenticateToken = (req, _res, next) => {
 };
 
 
+
+
 /* -------------------------- Email Helpers -------------------------- */
 
-// Generate secure token for password setup
-const generateToken = () => {
-  return crypto.randomBytes(32).toString('hex');
-};
+// Initialize SendGrid 
+let sgMail;
+if (process.env.SENDGRID_API_KEY) {
+  sgMail = require('@sendgrid/mail');
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+} else {
+  console.warn('SENDGRID_API_KEY not set. Email functionality disabled.');
+}
 
-const sendWelcomeEmail = async (email, firstName, lastName, token) => {
-  if (!sgMail) return { success: false, error: "SendGrid not configured" };
+const sendEmail = async ({ to, subject, templateData, textFallback }) => {
+  if (!sgMail) return;
 
-  const setupUrl = `${process.env.APP_URL || "http://localhost:8080"}/auth/set-password?token=${token}`;
+  const fromEmail =
+    process.env.SENDGRID_FROM_EMAIL || "online@exclusivelife.co.bw";
 
   try {
-    await sgMail.send({
-      to: email,
-      from: {
-        email: process.env.SENDGRID_FROM_EMAIL || "online@exclusivelife.co.bw",
-        name: process.env.SENDGRID_FROM_NAME || "Exclusive Life Admin",
-      },
-      subject: "Welcome to Exclusive Life - Complete Your Account Setup",
-      html: `<p>Hi ${firstName},</p><p>Set your password here: <a href="${setupUrl}">${setupUrl}</a></p>`,
-      text: `Hi ${firstName}, set your password here: ${setupUrl}`,
-    });
+    const html = emailTemplate(templateData);
 
-    return { success: true };
+    await sgMail.send({
+      to,
+      from: {
+        email: fromEmail,
+        name: process.env.SENDGRID_FROM_NAME || "Exclusive Life",
+      },
+      subject,
+      html,
+      text: textFallback || "",
+    });
   } catch (err) {
-    console.error("SendGrid send error:", err?.response?.body || err?.message || err);
-    return { success: false, error: err?.message || "SendGrid error" };
+    console.error("SendGrid email failed:", err?.response?.body || err);
+    // IMPORTANT: do NOT throw
   }
 };
 
-const sendPasswordChangedEmail = async (email, firstName) => {
-  if (!sgMail) return;
 
-  await sgMail.send({
+
+const sendWelcomeEmail = async (email, firstName, token) => {
+  const setupUrl = `${process.env.APP_URL || "http://localhost:8080"}/auth/set-password?token=${token}`;
+
+  await sendEmail({
     to: email,
-    from: process.env.SENDGRID_FROM_EMAIL,
-    subject: "Your Exclusive Life password was changed",
-    html: `
-      <p>Hi ${firstName},</p>
-      <p>This is a confirmation that your password was changed.</p>
-      <p>If this wasn’t you, please reset your password immediately or contact support.</p>
-    `,
-    text: `Hi ${firstName}, your password was changed. If this wasn’t you, reset it immediately.`,
+    subject: "Welcome to Exclusive Life – Complete Your Account Setup",
+    templateData: {
+      greeting: `Hello ${firstName},`,
+      message: `
+        A request has been received to activate your Exclusive Life account.
+      `,
+      ctaText: "Set Password",
+      ctaUrl: setupUrl,
+      footerNote: `
+        If you did not initiate this request, please contact support immediately.<br><br>
+        Thank you,<br>
+        Exclusive Life Team
+      `,
+    },
+    textFallback: `Set your password: ${setupUrl}`,
   });
 };
 
-
+const sendPasswordChangedEmail = async (email, firstName) => {
+  await sendEmail({
+    to: email,
+    subject: "Your Exclusive Life password was changed",
+    templateData: {
+      greeting: `Hello ${firstName},`,
+      message: `
+        This is a confirmation that your password was changed.
+      `,
+      footerNote: `
+        If this wasn’t you, please reset your password immediately or contact support.<br><br>
+        Exclusive Life Team
+      `,
+    },
+  });
+};
 
 
 /** Create user (admin creates from Team screen) */
@@ -258,7 +283,7 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
 
     // Save token to database WITH userId
     await Token.create({
-      userId: user._id,  
+      userId: user._id,
       email: email.toLowerCase(),
       token,
       type: "password_setup",
@@ -267,8 +292,8 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
     // Send welcome email
     let emailSent = false;
     if (process.env.SENDGRID_API_KEY) {
-      const emailResult = await sendWelcomeEmail(email, firstName, lastName, token);
-      emailSent = emailResult.success;
+      const emailResult = await sendWelcomeEmail(email, firstName, token);
+      emailSent = true;
       if (!emailSent) {
         console.warn(`Email sending failed for ${email}:`, emailResult.error);
       }
@@ -289,13 +314,13 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
       }
     });
   } catch (e) {
-  console.error("Register error:", e);
-  return res.status(500).json({
-    message: "Error creating user",
-    error: e?.message,
-    stack: e?.stack,
-  });
-}
+    console.error("Register error:", e);
+    return res.status(500).json({
+      message: "Error creating user",
+      error: e?.message,
+      stack: e?.stack,
+    });
+  }
 });
 
 // Get user details for set-password screen (by token)
@@ -364,7 +389,17 @@ app.post("/api/auth/set-password", async (req, res) => {
     // Invalidate token
     await Token.deleteOne({ _id: t._id });
 
-    return res.json({ ok: true });
+    const authToken = jwt.sign(
+      { userId: user._id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.json({
+      ok: true,
+      token: authToken,
+    });
+
   } catch (e) {
     console.error("Set password error:", e);
     return res.status(500).json({ message: "Failed to set password" });
@@ -372,7 +407,7 @@ app.post("/api/auth/set-password", async (req, res) => {
 });
 
 app.post("/api/auth/forgot-password", async (req, res) => {
-  try { 
+  try {
     const { email } = req.body;
 
     if (!email) return res.json({ ok: true });
@@ -394,13 +429,24 @@ app.post("/api/auth/forgot-password", async (req, res) => {
     const resetUrl = `${process.env.APP_URL || "http://localhost:8080"}/auth/reset-password?token=${token}`;
 
     if (sgMail) {
-      await sgMail.send({
+      await sendEmail({
         to: user.email,
-        from: process.env.SENDGRID_FROM_EMAIL,
-        subject: "Reset your password",
-        html: `<p>Reset your password:</p><a href="${resetUrl}">${resetUrl}</a>`,
-        text: `Reset your password: ${resetUrl}`,
+        subject: "Reset your Exclusive Life password",
+        templateData: {
+          greeting: `Hello ${user.email},`,
+          message: `
+      A request has been received to change the password for your Exclusive Life account.
+    `,
+          ctaText: "Reset Password",
+          ctaUrl: resetUrl,
+          footerNote: `
+      If you did not initiate this request, please contact support immediately.<br><br>
+      Exclusive Life Team
+    `,
+        },
+        textFallback: `Reset your password: ${resetUrl}`,
       });
+
     }
 
     return res.json({ ok: true });

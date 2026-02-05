@@ -124,7 +124,7 @@ const Team = () => {
     setAddLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.post("http://localhost:5002/api/users/register", newUser, {
+      await axios.post("https://njs.exclusivelife.co.bw/api/users/register", newUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member added successfully")
@@ -146,7 +146,7 @@ const Team = () => {
     setEditLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.put(`http://localhost:5002/api/users/${editingUser.id}`, editUser, {
+      await axios.put(`https://njs.exclusivelife.co.bw/api/users/${editingUser.id}`, editUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member updated successfully")
@@ -178,7 +178,7 @@ const Team = () => {
     if (!confirm("Are you sure you want to delete this user?")) return
     try {
       const token = localStorage.getItem("token")
-      await axios.delete(`http://localhost:5002/api/users/${userId}`, {
+      await axios.delete(`https://njs.exclusivelife.co.bw/api/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       fetchUsers()
@@ -191,7 +191,7 @@ const Team = () => {
     try {
       setLoading(true)
       const token = localStorage.getItem("token")
-      const res = await axios.get("http://localhost:5002/api/users", {
+      const res = await axios.get("https://njs.exclusivelife.co.bw/api/users", {
         headers: { Authorization: `Bearer ${token}` }
       })
       const pastelColors = [
