@@ -188,6 +188,23 @@ const sendWelcomeEmail = async (email, firstName, lastName, token) => {
   }
 };
 
+const sendPasswordChangedEmail = async (email, firstName) => {
+  if (!sgMail) return;
+
+  await sgMail.send({
+    to: email,
+    from: process.env.SENDGRID_FROM_EMAIL,
+    subject: "Your Exclusive Life password was changed",
+    html: `
+      <p>Hi ${firstName},</p>
+      <p>This is a confirmation that your password was changed.</p>
+      <p>If this wasn’t you, please reset your password immediately or contact support.</p>
+    `,
+    text: `Hi ${firstName}, your password was changed. If this wasn’t you, reset it immediately.`,
+  });
+};
+
+
 
 
 /** Create user (admin creates from Team screen) */
@@ -279,8 +296,176 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
     stack: e?.stack,
   });
 }
-
 });
+
+// Get user details for set-password screen (by token)
+app.get("/api/auth/password-setup/verify", async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ message: "Missing token" });
+
+    const t = await Token.findOne({ token, type: "password_setup" });
+    if (!t) return res.status(400).json({ message: "Invalid token", expired: false });
+
+    if (t.expiresAt < new Date()) {
+      return res.status(400).json({ message: "Token expired", expired: true });
+    }
+
+    const user = await User.findById(t.userId).select("firstName lastName email status role");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    return res.json({
+      ok: true,
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        status: user.status,
+        role: user.role,
+      },
+    });
+  } catch (e) {
+    console.error("password-setup verify error:", e);
+    return res.status(500).json({ message: "Failed to verify token" });
+  }
+});
+
+// Set password using setup token
+app.post("/api/auth/set-password", async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ message: "Token and password are required" });
+    }
+
+    const t = await Token.findOne({ token, type: "password_setup" });
+    if (!t) {
+      return res.status(400).json({ message: "Invalid token", expired: false });
+    }
+
+    if (t.expiresAt < new Date()) {
+      return res.status(400).json({ message: "Token expired", expired: true });
+    }
+
+    const user = await User.findById(t.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Hash password
+    const hash = await bcrypt.hash(password, 10);
+
+    // Activate user
+    user.password = hash;
+    user.status = "active";
+    await user.save();
+
+    // Invalidate token
+    await Token.deleteOne({ _id: t._id });
+
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("Set password error:", e);
+    return res.status(500).json({ message: "Failed to set password" });
+  }
+});
+
+app.post("/api/auth/forgot-password", async (req, res) => {
+  try { 
+    const { email } = req.body;
+
+    if (!email) return res.json({ ok: true });
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.json({ ok: true });
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await Token.create({
+      userId: user._id,
+      email: user.email,
+      token,
+      type: "password_reset",
+      expiresAt,
+    });
+
+    const resetUrl = `${process.env.APP_URL || "http://localhost:8080"}/auth/reset-password?token=${token}`;
+
+    if (sgMail) {
+      await sgMail.send({
+        to: user.email,
+        from: process.env.SENDGRID_FROM_EMAIL,
+        subject: "Reset your password",
+        html: `<p>Reset your password:</p><a href="${resetUrl}">${resetUrl}</a>`,
+        text: `Reset your password: ${resetUrl}`,
+      });
+    }
+
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("Forgot password error:", e);
+    return res.json({ ok: true });
+  }
+});
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    const t = await Token.findOne({ token, type: "password_reset" });
+    if (!t) return res.status(400).json({ message: "Invalid token" });
+
+    if (t.expiresAt < new Date()) {
+      return res.status(400).json({ message: "Token expired", expired: true });
+    }
+
+    const user = await User.findById(t.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.password = await bcrypt.hash(password, 10);
+    await user.save();
+    await sendPasswordChangedEmail(user.email, user.firstName);
+    await Token.deleteOne({ _id: t._id });
+
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("Reset password error:", e);
+    return res.status(500).json({ message: "Failed to reset password" });
+  }
+});
+
+app.post("/api/auth/change-password", authenticateToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Missing fields" });
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    await sendPasswordChangedEmail(user.email, user.firstName);
+
+
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("Change password error:", e);
+    return res.status(500).json({ message: "Failed to change password" });
+  }
+});
+
+
+
 /** Login */
 app.post("/api/users/login", async (req, res) => {
   try {
@@ -303,16 +488,16 @@ app.post("/api/users/login", async (req, res) => {
 });
 
 /** Me */
-app.get("/api/users/me", authenticateToken, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.userId).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
-  } catch (e) {
-    console.error("Me error:", e);
-    res.status(500).json({ message: "Error fetching user" });
-  }
-});
+// app.get("/api/users/me", authenticateToken, async (req, res) => {
+//   try {
+//     const user = await User.findById(req.user.userId).select("-password");
+//     if (!user) return res.status(404).json({ message: "User not found" });
+//     res.json(user);
+//   } catch (e) {
+//     console.error("Me error:", e);
+//     res.status(500).json({ message: "Error fetching user" });
+//   }
+// });
 
 /** Annuity calculator proxy → Python */
 app.post("/api/annuity", async (req, res) => {

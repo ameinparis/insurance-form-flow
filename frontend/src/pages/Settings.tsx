@@ -11,9 +11,9 @@ import { useToast } from "@/hooks/use-toast"
 const Settings = () => {
   const { theme, setTheme } = useTheme()
   const { toast } = useToast()
-  
+
   const userName = localStorage.getItem("userName") || "User"
-  
+
   // Generate consistent pastel color based on user name (matches header avatar)
   const getAvatarStyles = (name: string) => {
     const colors = [
@@ -41,7 +41,7 @@ const Settings = () => {
   }
 
   const avatarStyles = getAvatarStyles(userName)
-  
+
   // Password change state
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
@@ -77,13 +77,26 @@ const Settings = () => {
 
     setIsChangingPassword(true)
     try {
-      // TODO: Implement actual password change API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      toast({
-        title: "Password updated",
-        description: "Your password has been changed successfully."
+      const token = localStorage.getItem("token")
+
+      const res = await fetch("http://localhost:5002/api/auth/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
       })
-      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to update password")
+      }
+
     } catch {
       toast({
         title: "Error",
@@ -205,8 +218,8 @@ const Settings = () => {
               <div className="space-y-2">
                 <Label htmlFor="currentPassword">Current Password</Label>
                 <div className="relative">
-                  <Input 
-                    id="currentPassword" 
+                  <Input
+                    id="currentPassword"
                     type={showCurrentPassword ? "text" : "password"}
                     placeholder="Enter current password"
                     value={passwordData.currentPassword}
@@ -225,8 +238,8 @@ const Settings = () => {
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
                 <div className="relative">
-                  <Input 
-                    id="newPassword" 
+                  <Input
+                    id="newPassword"
                     type={showNewPassword ? "text" : "password"}
                     placeholder="Enter new password"
                     value={passwordData.newPassword}
@@ -243,7 +256,7 @@ const Settings = () => {
                 {passwordData.newPassword && (
                   <div className="space-y-1">
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className={`h-full transition-all ${passwordStrength.color}`}
                         style={{ width: `${passwordStrength.strength}%` }}
                       />
@@ -258,8 +271,8 @@ const Settings = () => {
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm New Password</Label>
                 <div className="relative">
-                  <Input 
-                    id="confirmPassword" 
+                  <Input
+                    id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm new password"
                     value={passwordData.confirmPassword}
@@ -278,7 +291,7 @@ const Settings = () => {
                 )}
               </div>
 
-              <Button 
+              <Button
                 onClick={handlePasswordChange}
                 disabled={isChangingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
@@ -331,11 +344,10 @@ const Settings = () => {
                   {/* Light Theme Card */}
                   <button
                     onClick={() => setTheme('light')}
-                    className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${
-                      theme === 'light' 
-                        ? 'border-primary bg-primary/10 dark:bg-primary/20' 
+                    className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${theme === 'light'
+                        ? 'border-primary bg-primary/10 dark:bg-primary/20'
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
-                    }`}
+                      }`}
                   >
                     <Sun className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
                     <span className="font-medium text-foreground">Light</span>
@@ -344,11 +356,10 @@ const Settings = () => {
                   {/* Dark Theme Card */}
                   <button
                     onClick={() => setTheme('dark')}
-                    className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${
-                      theme === 'dark' 
-                        ? 'border-primary bg-primary/10 dark:bg-primary/20' 
+                    className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${theme === 'dark'
+                        ? 'border-primary bg-primary/10 dark:bg-primary/20'
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
-                    }`}
+                      }`}
                   >
                     <Moon className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
                     <span className="font-medium text-foreground">Dark</span>
@@ -357,11 +368,10 @@ const Settings = () => {
                   {/* System Theme Card */}
                   <button
                     onClick={() => setTheme('system')}
-                    className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${
-                      theme === 'system' 
-                        ? 'border-primary bg-primary/10 dark:bg-primary/20' 
+                    className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${theme === 'system'
+                        ? 'border-primary bg-primary/10 dark:bg-primary/20'
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
-                    }`}
+                      }`}
                   >
                     <Monitor className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
                     <span className="font-medium text-foreground">System</span>
@@ -399,8 +409,8 @@ const Settings = () => {
             <CardContent>
               <div className="space-y-3">
                 {auditData.map((item, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="flex items-start gap-4 p-4 bg-white dark:bg-slate-700 rounded-xl transition-colors hover:bg-gray-50 dark:hover:bg-slate-600"
                   >
                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -414,7 +424,7 @@ const Settings = () => {
                   </div>
                 ))}
               </div>
-              
+
               {auditData.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
                   <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />

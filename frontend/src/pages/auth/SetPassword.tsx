@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,51 @@ const SetPassword = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
+  const [userInfo, setUserInfo] = useState<{
+    firstName: string
+    lastName: string
+    email: string
+  } | null>(null)
+
+  const [isVerifying, setIsVerifying] = useState(true)
+
+
+  useEffect(() => {
+    if (!token) {
+      navigate("/auth/link-expired")
+      return
+    }
+
+    const verifyToken = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5002/api/auth/password-setup/verify?token=${token}`
+        )
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          navigate("/auth/link-expired")
+          return
+        }
+
+
+        setUserInfo({
+          firstName: data.user.firstName,
+          lastName: data.user.lastName,
+          email: data.user.email,
+        })
+      } catch {
+        navigate("/auth/link-expired")
+      }
+      finally {
+        setIsVerifying(false)
+      }
+    }
+
+    verifyToken()
+  }, [token, navigate])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -34,7 +79,7 @@ const SetPassword = () => {
     setIsLoading(true)
 
     try {
-      const response = await fetch("https://njs.exclusivelife.co.bw/api/auth/set-password", {
+      const response = await fetch("http://localhost:5002/api/auth/set-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),
@@ -49,9 +94,11 @@ const SetPassword = () => {
       } else {
         if (data.expired) {
           navigate("/auth/link-expired")
-        } else {
-          toast.error(data.message || "Failed to set password")
+          return
         }
+
+        toast.error(data.message || "Failed to set password")
+
       }
     } catch (error) {
       toast.error("Network error. Please try again.")
@@ -60,9 +107,14 @@ const SetPassword = () => {
     }
   }
 
-  if (!token) {
-    navigate("/auth/link-expired")
-    return null
+
+
+  if (isVerifying) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Verifying account…</p>
+      </div>
+    )
   }
 
   if (isSuccess) {
@@ -95,6 +147,27 @@ const SetPassword = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {userInfo && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>First Name</Label>
+                  <Input value={userInfo.firstName} disabled className="pr-10" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Last Name</Label>
+                  <Input value={userInfo.lastName} disabled className="pr-10" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input value={userInfo.email} disabled className="pr-10" />
+              </div>
+            </>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="password">New Password</Label>
             <div className="relative">

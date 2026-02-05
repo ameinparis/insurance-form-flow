@@ -176,13 +176,14 @@ const Landing = () => {
             </div>
 
             <div className="text-center">
-              <Button
-                type="button"
-                variant="link"
-                className="text-blue-500 hover:text-blue-600 text-sm"
-              >
-                Forgot Password?
-              </Button>
+            <Button
+  type="button"
+  variant="link"
+  className="text-blue-500 hover:text-blue-600 text-sm"
+  onClick={() => navigate("/auth/forgot-password")}
+>
+  Forgot Password?
+</Button>
             </div>
             <Button
               type="submit"
