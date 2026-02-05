@@ -14,7 +14,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { PageLoader } from "@/components/PageLoader"
+import { toast } from "sonner"
 
 interface TeamMember {
   id: string
@@ -36,12 +44,14 @@ const Team = () => {
   const [showEditUserModal, setShowEditUserModal] = useState(false)
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
   const [editingUser, setEditingUser] = useState<TeamMember | null>(null)
+  const [addLoading, setAddLoading] = useState(false)
+  const [editLoading, setEditLoading] = useState(false)
 
   const [newUser, setNewUser] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    role: "user",
+    role: "",
   })
 
   const [editUser, setEditUser] = useState({
@@ -61,41 +71,95 @@ const Team = () => {
     setEditUser((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setNewUser((prev) => ({ ...prev, role: e.target.value }))
+  const handleRoleChange = (value: string) => {
+    setNewUser((prev) => ({ ...prev, role: value }))
   }
 
-  const handleEditRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setEditUser((prev) => ({ ...prev, role: e.target.value }))
+  const handleEditRoleChange = (value: string) => {
+    setEditUser((prev) => ({ ...prev, role: value }))
+  }
+
+  const validateAddUser = () => {
+    if (!newUser.firstName.trim()) {
+      toast.error("First name is required")
+      return false
+    }
+    if (!newUser.lastName.trim()) {
+      toast.error("Last name is required")
+      return false
+    }
+    if (!newUser.email.trim()) {
+      toast.error("Email is required")
+      return false
+    }
+    if (!newUser.role) {
+      toast.error("Role is required")
+      return false
+    }
+    return true
+  }
+
+  const validateEditUser = () => {
+    if (!editUser.firstName.trim()) {
+      toast.error("First name is required")
+      return false
+    }
+    if (!editUser.lastName.trim()) {
+      toast.error("Last name is required")
+      return false
+    }
+    if (!editUser.email.trim()) {
+      toast.error("Email is required")
+      return false
+    }
+    if (!editUser.role) {
+      toast.error("Role is required")
+      return false
+    }
+    return true
   }
 
   const handleAddUser = async () => {
+    if (!validateAddUser()) return
+    setAddLoading(true)
     try {
       const token = localStorage.getItem("token")
       await axios.post("http://localhost:5002/api/users/register", newUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      toast.success("Member added successfully")
       setShowAddUserModal(false)
       setNewUser({ firstName: "", lastName: "", email: "", role: "" })
       fetchUsers()
-    } catch (err) {
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || "Failed to add member"
+      toast.error(errorMessage)
       console.error("Add user error", err)
+    } finally {
+      setAddLoading(false)
     }
   }
 
   const handleEditUser = async () => {
+    if (!validateEditUser()) return
     if (!editingUser) return
+    setEditLoading(true)
     try {
       const token = localStorage.getItem("token")
       await axios.put(`http://localhost:5002/api/users/${editingUser.id}`, editUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      toast.success("Member updated successfully")
       setShowEditUserModal(false)
       setEditingUser(null)
-      setEditUser({ firstName: "", lastName: "", email: "", role: "user" })
+      setEditUser({ firstName: "", lastName: "", email: "", role: "" })
       fetchUsers()
-    } catch (err) {
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || "Failed to update member"
+      toast.error(errorMessage)
       console.error("Edit user error", err)
+    } finally {
+      setEditLoading(false)
     }
   }
 
@@ -330,15 +394,21 @@ const Team = () => {
             </div>
             <div>
               <Label>Role</Label>
-              <select value={newUser.role} onChange={handleRoleChange}>
-                <option value="">Select Role</option> 
-                <option value="user">User</option>
-                <option value="superuser">Superuser</option>
-              </select>
+              <Select value={newUser.role} onValueChange={handleRoleChange}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="superuser">Superuser</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="outline" onClick={() => setShowAddUserModal(false)}>Cancel</Button>
-              <Button onClick={handleAddUser}>Add Member</Button>
+              <Button variant="outline" onClick={() => setShowAddUserModal(false)} disabled={addLoading}>Cancel</Button>
+              <Button onClick={handleAddUser} disabled={addLoading}>
+                {addLoading ? "Adding..." : "Add Member"}
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -367,18 +437,21 @@ const Team = () => {
             </div>
             <div>
               <Label>Role</Label>
-              <select
-                value={editUser.role}
-                onChange={handleEditRoleChange}
-                className="w-full border px-3 py-2 rounded-lg text-sm dark:bg-slate-800 mt-1"
-              >
-                <option value="user">User</option>
-                <option value="superuser">Superuser</option>
-              </select>
+              <Select value={editUser.role} onValueChange={handleEditRoleChange}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="superuser">Superuser</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="outline" onClick={() => setShowEditUserModal(false)}>Cancel</Button>
-              <Button onClick={handleEditUser}>Save Changes</Button>
+              <Button variant="outline" onClick={() => setShowEditUserModal(false)} disabled={editLoading}>Cancel</Button>
+              <Button onClick={handleEditUser} disabled={editLoading}>
+                {editLoading ? "Saving..." : "Save Changes"}
+              </Button>
             </div>
           </div>
         </DialogContent>
