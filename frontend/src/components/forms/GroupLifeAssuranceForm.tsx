@@ -332,9 +332,54 @@ const GroupLifeAssuranceForm = () => {
                     <HelpCircle className="h-5 w-5" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="left" className="max-w-lg p-3 text-sm">
-                  CSV/Excel should include columns: <br />
-                  <b>Member, Gender, DOB, Annual Salary</b>
+                <TooltipContent side="left" className="max-w-2xl p-4">
+                  <div className="space-y-2">
+                    <p className="font-semibold text-sm mb-3">Required CSV Format Example:</p>
+                    <div className="overflow-x-auto">
+                      <table className="text-xs border-collapse w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="px-2 py-1 text-left font-semibold">Member</th>
+                            <th className="px-2 py-1 text-left font-semibold">Gender</th>
+                            <th className="px-2 py-1 text-left font-semibold">DOB</th>
+                            <th className="px-2 py-1 text-left font-semibold">Annual Salary</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="border-b">
+                            <td className="px-2 py-1">1112</td>
+                            <td className="px-2 py-1">F</td>
+                            <td className="px-2 py-1">27/02/92</td>
+                            <td className="px-2 py-1">240,000.00</td>
+                          </tr>
+                          <tr className="border-b">
+                            <td className="px-2 py-1">227</td>
+                            <td className="px-2 py-1">M</td>
+                            <td className="px-2 py-1">08/06/88</td>
+                            <td className="px-2 py-1">68,000.00</td>
+                          </tr>
+                          <tr className="border-b">
+                            <td className="px-2 py-1">167</td>
+                            <td className="px-2 py-1">M</td>
+                            <td className="px-2 py-1">09/06/89</td>
+                            <td className="px-2 py-1">68,000.00</td>
+                          </tr>
+                          <tr className="border-b">
+                            <td className="px-2 py-1">1006</td>
+                            <td className="px-2 py-1">M</td>
+                            <td className="px-2 py-1">25/02/92</td>
+                            <td className="px-2 py-1">32,292.00</td>
+                          </tr>
+                          <tr>
+                            <td className="px-2 py-1">1097</td>
+                            <td className="px-2 py-1">F</td>
+                            <td className="px-2 py-1">03/04/87</td>
+                            <td className="px-2 py-1">120,000.00</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </TooltipContent>
               </Tooltip>
             </div>
