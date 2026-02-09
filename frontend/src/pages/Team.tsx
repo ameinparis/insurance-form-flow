@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select"
 import { PageLoader } from "@/components/PageLoader"
 import { toast } from "sonner"
+import { DeleteMemberDialog } from "@/components/team/DeleteMemberDialog"
 
 interface TeamMember {
   id: string
@@ -46,6 +47,8 @@ const Team = () => {
   const [editingUser, setEditingUser] = useState<TeamMember | null>(null)
   const [addLoading, setAddLoading] = useState(false)
   const [editLoading, setEditLoading] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deletingMember, setDeletingMember] = useState<TeamMember | null>(null)
 
   const [newUser, setNewUser] = useState({
     firstName: "",
@@ -174,16 +177,43 @@ const Team = () => {
     setShowEditUserModal(true)
   }
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Are you sure you want to delete this user?")) return
+  const handleDeleteUser = async () => {
+    if (!deletingMember) return
+    setDeleteLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.delete(`https://njs.exclusivelife.co.bw/api/users/${userId}`, {
+      await axios.delete(`https://njs.exclusivelife.co.bw/api/users/${deletingMember.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
+      toast.success("Member deleted successfully")
+      setDeletingMember(null)
       fetchUsers()
-    } catch (err) {
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || "Failed to delete member"
+      toast.error(errorMessage)
       console.error("Delete user error", err)
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
+  const handleToggleStatus = async (member: TeamMember) => {
+    try {
+      const token = localStorage.getItem("token")
+      await axios.put(`https://njs.exclusivelife.co.bw/api/users/${member.id}`, {
+        firstName: member.firstName,
+        lastName: member.lastName,
+        email: member.email,
+        role: member.role,
+        isActive: member.isActive === false,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      toast.success(`Member ${member.isActive === false ? "activated" : "deactivated"} successfully`)
+      fetchUsers()
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || "Failed to update status"
+      toast.error(errorMessage)
     }
   }
 
@@ -332,12 +362,23 @@ const Team = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className={`py-5 px-6 ${currentUserRole?.toLowerCase() !== "superuser" ? "rounded-r-xl" : ""}`}>
-                      <Badge
-                        variant="outline"
-                        className={`rounded-full px-2 py-1.5 text-xs font-medium border ${getStatusBadgeClass(member.isActive !== false)}`}
-                      >
-                        {member.isActive !== false ? "Active" : "Inactive"}
-                      </Badge>
+                      {currentUserRole?.toLowerCase() === "superuser" ? (
+                        <Badge
+                          variant="outline"
+                          className={`rounded-full px-2 py-1.5 text-xs font-medium border cursor-pointer transition-colors ${getStatusBadgeClass(member.isActive !== false)}`}
+                          onClick={() => handleToggleStatus(member)}
+                          title="Click to toggle status"
+                        >
+                          {member.isActive !== false ? "Active" : "Inactive"}
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className={`rounded-full px-2 py-1.5 text-xs font-medium border ${getStatusBadgeClass(member.isActive !== false)}`}
+                        >
+                          {member.isActive !== false ? "Active" : "Inactive"}
+                        </Badge>
+                      )}
                     </TableCell>
                     {currentUserRole?.toLowerCase() === "superuser" && (
                       <TableCell className="py-5 px-6 text-right rounded-r-xl">
@@ -355,7 +396,7 @@ const Team = () => {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            onClick={() => handleDeleteUser(member.id)}
+                            onClick={() => setDeletingMember(member)}
                             title="Delete User"
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
@@ -456,6 +497,16 @@ const Team = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteMemberDialog
+        open={!!deletingMember}
+        onOpenChange={(open) => { if (!open) setDeletingMember(null) }}
+        memberName={deletingMember?.name || ""}
+        memberEmail={deletingMember?.email || ""}
+        onConfirm={handleDeleteUser}
+        loading={deleteLoading}
+      />
     </div>
   )
 }
