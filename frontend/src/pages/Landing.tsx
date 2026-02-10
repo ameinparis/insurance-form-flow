@@ -20,7 +20,7 @@ const Landing = () => {
     setIsLoading(true)
 
     try {
-      const response = await fetch("https://njs.exclusivelife.co.bw/api/users/login", {
+      const response = await fetch("http://localhost:5002/api/users/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -83,11 +83,11 @@ const Landing = () => {
 
 
   useEffect(() => {
-  document.documentElement.classList.remove("dark")
-  return () => {
-    if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark")
-  }
-}, [])
+    document.documentElement.classList.remove("dark")
+    return () => {
+      if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark")
+    }
+  }, [])
 
   return (
 
@@ -143,7 +143,7 @@ const Landing = () => {
 
       {/* Authentication Dialog */}
       <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-<DialogContent className="sm:max-w-md bg-white text-black border border-gray-200 dark:!bg-white dark:!text-black dark:!border-gray-200">
+        <DialogContent className="sm:max-w-md bg-white text-black border border-gray-200 dark:!bg-white dark:!text-black dark:!border-gray-200">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center">Sign In</DialogTitle>
           </DialogHeader>
@@ -176,14 +176,14 @@ const Landing = () => {
             </div>
 
             <div className="text-center">
-            <Button
-  type="button"
-  variant="link"
-  className="text-blue-500 hover:text-blue-600 text-sm"
-  onClick={() => navigate("/auth/forgot-password")}
->
-  Forgot Password?
-</Button>
+              <Button
+                type="button"
+                variant="link"
+                className="text-blue-500 hover:text-blue-600 text-sm"
+                onClick={() => navigate("/auth/forgot-password")}
+              >
+                Forgot Password?
+              </Button>
             </div>
             <Button
               type="submit"
