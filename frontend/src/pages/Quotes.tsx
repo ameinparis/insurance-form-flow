@@ -66,10 +66,10 @@ useEffect(() => {
       const token = localStorage.getItem("token");
 
       const [oldRes, newRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes`, {
+        fetch(`${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/quotes`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes`, {
+        fetch(`${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/new-quotes`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -126,7 +126,7 @@ useEffect(() => {
     if (e) e.stopPropagation()
     try {
       const token = localStorage.getItem("token")
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes/${quoteId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/quotes/${quoteId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -143,7 +143,7 @@ useEffect(() => {
   const handleDownloadPdf = async (e: React.MouseEvent, quoteId: string, id: string, isLegacy: boolean) => {
     e.stopPropagation()
     try {
-      const url = `http://localhost:5002/api/quotes/${id}/generate-pdf?legacy=${isLegacy}`
+      const url = `https://njs.exclusivelife.co.bw/api/quotes/${id}/generate-pdf?legacy=${isLegacy}`
       const res = await fetch(url, { method: "GET" })
       if (!res.ok) throw new Error(`PDF generation failed: ${res.status}`)
       const blob = await res.blob()

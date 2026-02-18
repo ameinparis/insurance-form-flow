@@ -127,7 +127,7 @@ const Team = () => {
     setAddLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.post("http://localhost:5002/api/users/register", newUser, {
+      await axios.post("https://njs.exclusivelife.co.bw/api/users/register", newUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member added successfully")
@@ -149,7 +149,7 @@ const Team = () => {
     setEditLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.put(`http://localhost:5002/api/users/${editingUser.id}`, editUser, {
+      await axios.put(`https://njs.exclusivelife.co.bw/api/users/${editingUser.id}`, editUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member updated successfully")
@@ -182,7 +182,7 @@ const Team = () => {
     setDeleteLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.delete(`http://localhost:5002/api/users/${deletingMember.id}`, {
+      await axios.delete(`https://njs.exclusivelife.co.bw/api/users/${deletingMember.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member deleted successfully")
@@ -200,7 +200,7 @@ const Team = () => {
   const handleToggleStatus = async (member: TeamMember) => {
     try {
       const token = localStorage.getItem("token")
-      await axios.put(`http://localhost:5002/api/users/${member.id}`, {
+      await axios.put(`https://njs.exclusivelife.co.bw/api/users/${member.id}`, {
         firstName: member.firstName,
         lastName: member.lastName,
         email: member.email,
@@ -221,7 +221,7 @@ const Team = () => {
     try {
       setLoading(true)
       const token = localStorage.getItem("token")
-      const res = await axios.get("http://localhost:5002/api/users", {
+      const res = await axios.get("https://njs.exclusivelife.co.bw/api/users", {
         headers: { Authorization: `Bearer ${token}` }
       })
       const pastelColors = [
