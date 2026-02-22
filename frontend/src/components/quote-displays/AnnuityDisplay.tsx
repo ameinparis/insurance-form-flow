@@ -96,9 +96,10 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
           <span className="font-medium text-lg text-gray-700 dark:text-gray-300">Monthly Life Annuity:</span>
           <span className="font-bold text-lg text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.life?.monthly_annuity)}</span>
         </div>
+        {/* The below should pick from  Guarantee under Living Annuity from the dropdown */}
          {outputData?.living?.guarantee_period && (
           <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
-            * Life annuity is calculated based on guaranteed period of {outputData.living.guarantee_period} years
+            * Life annuity is calculated based on guaranteed period of {outputData.living.guarantee_period} years  
           </p>
         )}
       </div>
