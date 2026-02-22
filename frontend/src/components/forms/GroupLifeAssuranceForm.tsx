@@ -20,6 +20,75 @@ import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autoc
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 
 
+// --- Date helpers for CSV/XLSX DOB handling ---
+
+// Convert Excel serial (e.g. 32876) to "YYYY-MM-DD"
+const excelSerialToISODate = (serial: number): string => {
+  if (serial == null || Number.isNaN(serial)) return ""
+  const base = new Date(1899, 11, 30) // 1899-12-30 (Excel's 1900 bug offset)
+  const ms = serial * 24 * 60 * 60 * 1000
+  const d = new Date(base.getTime() + ms)
+  if (Number.isNaN(d.getTime())) return ""
+  return d.toISOString().slice(0, 10) // "YYYY-MM-DD"
+}
+
+const normaliseDob = (value: any): string => {
+  if (value == null || value === "") return ""
+
+  // If xlsx gives us a JS Date object
+  if (value instanceof Date) {
+    return value.toISOString().slice(0, 10)
+  }
+
+  // If xlsx gives us an Excel serial number
+  if (typeof value === "number") {
+    return excelSerialToISODate(value)
+  }
+
+  // Strings
+  if (typeof value === "string") {
+    const s = value.trim()
+    if (!s) return ""
+
+    // Already ISO "YYYY-MM-DD"
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+
+    // dd/mm/yyyy or dd-mm-yyyy or dd/mm/yy
+    const m1 = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2}|\d{4})$/)
+    if (m1) {
+      let [, d, m, y] = m1
+      if (y.length === 2) {
+        const yy = parseInt(y, 10)
+        // You can tweak this boundary. This says 30–99 → 19xx, else 20xx.
+        y = (yy >= 30 ? 1900 + yy : 2000 + yy).toString()
+      }
+      const day = String(d).padStart(2, "0")
+      const month = String(m).padStart(2, "0")
+      return `${y}-${month}-${day}`
+    }
+
+    // yyyy/mm/dd or yyyy-mm-dd
+    const m2 = s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$/)
+    if (m2) {
+      const [, y, m, d] = m2
+      const day = String(d).padStart(2, "0")
+      const month = String(m).padStart(2, "0")
+      return `${y}-${month}-${day}`
+    }
+
+    // Last resort: let JS parse and normalise
+    const d = new Date(s)
+    if (!Number.isNaN(d.getTime())) {
+      return d.toISOString().slice(0, 10)
+    }
+
+    return ""
+  }
+
+  // Anything weird → blank
+  return ""
+}
+
 const GroupLifeAssuranceForm = () => {
   const navigate = useNavigate()
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -93,16 +162,30 @@ const GroupLifeAssuranceForm = () => {
   const parseFile = (file: File) => {
     const fileExt = file.name.split(".").pop()?.toLowerCase()
     setUploadedFile(file)
-
     const parseData = (data: any[]) => {
       const clean = data.filter((row) => Object.values(row).some(Boolean))
-      const mapped = clean.map((r) => ({
-        member: r["Member"] || "",
-        gender: r["Gender"] || "",
-        dob: r["DOB"] || "",
-        annualSalary: r["Annual Salary"] || "",
-      }))
+
+      const mapped = clean.map((r) => {
+        // Try multiple header variants just in case
+        const rawDob =
+          r["DOB"] ??
+          r["Dob"] ??
+          r["dob"] ??
+          r["Date of Birth"] ??
+          r["Date of birth"] ??
+          r["date of birth"] ??
+          r["DoB"]
+
+        return {
+          member: r["Member"] || "",
+          gender: r["Gender"] || "",
+          dob: normaliseDob(rawDob), // centralised normalisation
+          annualSalary: r["Annual Salary"] || r["AnnualSalary"] || "",
+        }
+      })
+
       setMembers(mapped)
+      console.log("Mapped members (first 5):", mapped.slice(0, 5))
       toast.success(`${mapped.length} member records loaded`)
     }
 
@@ -116,12 +199,24 @@ const GroupLifeAssuranceForm = () => {
       const reader = new FileReader()
       reader.onload = (evt) => {
         const data = evt.target?.result
-        const workbook = XLSX.read(data, { type: "binary" })
+        if (!data) {
+          toast.error("Could not read file data")
+          return
+        }
+
+        const workbook = XLSX.read(data, {
+          type: "array",
+          cellDates: true, // try to give us Date objects
+        })
         const sheet = workbook.Sheets[workbook.SheetNames[0]]
-        const json = XLSX.utils.sheet_to_json(sheet, { defval: "" })
+        const json = XLSX.utils.sheet_to_json(sheet, {
+          defval: "",
+          raw: false, // prefer formatted text where applicable
+        })
+
         parseData(json)
       }
-      reader.readAsBinaryString(file)
+      reader.readAsArrayBuffer(file)
     } else {
       toast.error("Unsupported file format")
     }
@@ -187,7 +282,7 @@ const GroupLifeAssuranceForm = () => {
 
       const token = localStorage.getItem("token")
 
-      const res = await fetch("http://localhost:5002/api/quotes/calculate-assurance", {
+      const res = await fetch("https://njs.exclusivelife.co.bw/api/quotes/calculate-assurance", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -267,7 +362,7 @@ const GroupLifeAssuranceForm = () => {
       setIsSavingQuote(true);
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:5002/api/new-quotes", {
+      const res = await fetch("https://njs.exclusivelife.co.bw/api/new-quotes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -285,13 +380,13 @@ const GroupLifeAssuranceForm = () => {
           inputs: {
             members,
             summary,
-            salaryMultiplier,                            
+            salaryMultiplier,
             maxDeathBenefit: maxDeathBenefit
               ? Number(maxDeathBenefit)
-              : null,                                   
+              : null,
             maxODB: maxODB
               ? Number(maxODB)
-              : null,                                   
+              : null,
           },
           outputs: result,
         }),
@@ -303,7 +398,7 @@ const GroupLifeAssuranceForm = () => {
       }
 
       const data = await res.json();
-      
+
       toast.success(`Quote ${data.quoteId} saved successfully!`);
       setShowQuoteDialog(false);
     } catch (err: any) {

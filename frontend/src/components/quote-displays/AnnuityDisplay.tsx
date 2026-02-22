@@ -22,7 +22,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
     age: null,
     upfrontCommission: quote.upfrontCommission,
     ongoingCommission: quote.ongoingCommission,
-     guaranteePeriod: quote.guaranteePeriod
+    guaranteePeriod: quote.guaranteePeriod
   };
 
   const outputData = quote.outputs || {
@@ -32,7 +32,8 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
       guarantee_period: null
     },
     life: {
-      monthly_annuity: quote.monthlyLifeAnnuity
+      monthly_annuity: quote.monthlyLifeAnnuity,
+      guarantee_period: quote.guaranteePeriod ?? null,
     }
   };
 
@@ -97,67 +98,67 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
           <span className="font-bold text-lg text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.life?.monthly_annuity)}</span>
         </div>
         {/* The below should pick from  Guarantee under Living Annuity from the dropdown */}
-         {outputData?.living?.guarantee_period && (
+        {outputData?.life?.guarantee_period != null && (
           <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
-            * Life annuity is calculated based on guaranteed period of {outputData.living.guarantee_period} years  
+            * Life annuity is calculated based on guaranteed period of {outputData.life.guarantee_period} years
           </p>
         )}
       </div>
 
       {/* Fees Section */}
-  <div>
-  <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
-    <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Living Annuity Fees</h3>
-  </div>
-  <div className="overflow-x-auto">
-    <table className="w-full text-sm text-left">
-      <thead>
-        <tr>
-          <th colSpan={2} className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Upfront Fees</th>
-        </tr>
-      </thead>
-      <tbody className="text-gray-700 dark:text-gray-300">
-        <tr className="border-b border-gray-100 dark:border-gray-800">
-          <td className="px-4 py-2">Purchase Premium</td>
-          <td className="px-4 py-2">2%</td>
-        </tr>
-        <tr className="border-b border-gray-100 dark:border-gray-800">
-          <td className="px-4 py-2">Upfront Commission</td>
-          <td className="px-4 py-2">
-            {/* Display dynamic value or default */}
-            {inputData?.upfrontCommission !== undefined && inputData?.upfrontCommission !== null 
-              ? `${inputData.upfrontCommission}%` 
-              : "0%"}
-          </td>
-        </tr>
-      </tbody>
-      <thead>
-        <tr>
-          <th colSpan={2} className="px-4 py-2 pt-4 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Ongoing Fees</th>
-        </tr>
-      </thead>
-      <tbody className="text-gray-700 dark:text-gray-300">
-        <tr className="border-b border-gray-100 dark:border-gray-800">
-          <td className="px-4 py-2">Ongoing Commission</td>
-          <td className="px-4 py-2">
-            {/* Display dynamic value or default */}
-            {inputData?.ongoingCommission !== undefined && inputData?.ongoingCommission !== null
-              ? `${inputData.ongoingCommission}% p.a`
-              : "0% p.a"}
-          </td>
-        </tr>
-        <tr className="border-b border-gray-100 dark:border-gray-800">
-          <td className="px-4 py-2">Administration Fee</td>
-          <td className="px-4 py-2">1% p.a</td>
-        </tr>
-        <tr>
-          <td className="px-4 py-2">Assets Management Fee</td>
-          <td className="px-4 py-2">0.75% p.a</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+      <div>
+        <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Living Annuity Fees</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead>
+              <tr>
+                <th colSpan={2} className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Upfront Fees</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-700 dark:text-gray-300">
+              <tr className="border-b border-gray-100 dark:border-gray-800">
+                <td className="px-4 py-2">Purchase Premium</td>
+                <td className="px-4 py-2">2%</td>
+              </tr>
+              <tr className="border-b border-gray-100 dark:border-gray-800">
+                <td className="px-4 py-2">Upfront Commission</td>
+                <td className="px-4 py-2">
+                  {/* Display dynamic value or default */}
+                  {inputData?.upfrontCommission !== undefined && inputData?.upfrontCommission !== null
+                    ? `${inputData.upfrontCommission}%`
+                    : "0%"}
+                </td>
+              </tr>
+            </tbody>
+            <thead>
+              <tr>
+                <th colSpan={2} className="px-4 py-2 pt-4 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Ongoing Fees</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-700 dark:text-gray-300">
+              <tr className="border-b border-gray-100 dark:border-gray-800">
+                <td className="px-4 py-2">Ongoing Commission</td>
+                <td className="px-4 py-2">
+                  {/* Display dynamic value or default */}
+                  {inputData?.ongoingCommission !== undefined && inputData?.ongoingCommission !== null
+                    ? `${inputData.ongoingCommission}% p.a`
+                    : "0% p.a"}
+                </td>
+              </tr>
+              <tr className="border-b border-gray-100 dark:border-gray-800">
+                <td className="px-4 py-2">Administration Fee</td>
+                <td className="px-4 py-2">1% p.a</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2">Assets Management Fee</td>
+                <td className="px-4 py-2">0.75% p.a</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Customer Acceptance Signature Section */}
       <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
@@ -188,3 +189,4 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
     </div>
   );
 };
+
