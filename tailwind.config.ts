@@ -4,10 +4,9 @@ import tailwindcssAnimate from "tailwindcss-animate";
 export default {
 	darkMode: ["class"],
 	content: [
-		"./src/**/*.{ts,tsx}",
-		"./index.html",
+		"./frontend/src/**/*.{ts,tsx}",
+		"./frontend/index.html",
 	],
-	safelist: ["border-border"],
 	prefix: "",
 	theme: {
 		container: {
