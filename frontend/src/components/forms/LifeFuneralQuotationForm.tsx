@@ -23,8 +23,8 @@ const LifeFuneralQuotationForm = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [premiumResult, setPremiumResult] = useState<any | null>(null)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
-  
-  const { 
+
+  const {
     addJob,
     updateJob,
     setJobViewResultsCallback
@@ -231,19 +231,19 @@ const LifeFuneralQuotationForm = () => {
 
         if (data.status === "error") {
           clearInterval(interval);
-          updateJob(widgetJobId, { 
-            progress: 0, 
-            status: "error", 
-            errorMessage: data.error || "Calculation failed" 
+          updateJob(widgetJobId, {
+            progress: 0,
+            status: "error",
+            errorMessage: data.error || "Calculation failed"
           });
         }
 
       } catch (err) {
         clearInterval(interval);
-        updateJob(widgetJobId, { 
-          progress: 0, 
-          status: "error", 
-          errorMessage: "Polling failed - please try again" 
+        updateJob(widgetJobId, {
+          progress: 0,
+          status: "error",
+          errorMessage: "Polling failed - please try again"
         });
       }
     }, 1000);
@@ -252,6 +252,48 @@ const LifeFuneralQuotationForm = () => {
   const handleSubmit = async () => {
     if (!uploadedFile) {
       toast.error("Please upload a member file first.");
+      return;
+    }
+    // ✅ Step 1: block submit if required fields are blank
+    const required = [
+      ["profitTarget", "Profit Target (%)"],
+      ["societyName", "Society Name"],
+      ["asAndWhenCommission", "As-and-When Commission (%)"],
+      ["schemeType", "Scheme Type"],
+      ["maxExtendedFamilyMembers", "Max Extended Family Members"],
+      ["maxAgeChildren", "Max Age of Children Covered"],
+      ["coverLevelType", "Cover Levels"],
+      ["principalMemberCover", "Principal Member Cover"],
+    ] as const;
+
+    const missing = required
+      .filter(([key]) => !String((formData as any)[key] ?? "").trim())
+      .map(([, label]) => label);
+
+    if (missing.length) {
+      toast.error(`Please fill in: ${missing.join(", ")}`);
+      return;
+    }
+
+    // ✅ Step 2: block submit if required numeric fields are <= 0
+    const mustBePositive = [
+      ["profitTarget", "Profit Target (%)"],
+      ["asAndWhenCommission", "As-and-When Commission (%)"],
+      ["maxExtendedFamilyMembers", "Max Extended Family Members"],
+      ["maxAgeChildren", "Max Age of Children Covered"],
+      ["principalMemberCover", "Principal Member Cover"],
+    ] as const;
+
+    const invalidNums = mustBePositive
+      .filter(([key]) => {
+        const raw = String((formData as any)[key] ?? "");
+        const num = parseFloat(toNumericString(raw));
+        return !isFinite(num) || num <= 0;
+      })
+      .map(([, label]) => label);
+
+    if (invalidNums.length) {
+      toast.error(`These must be greater than 0: ${invalidNums.join(", ")}`);
       return;
     }
 
@@ -264,6 +306,16 @@ const LifeFuneralQuotationForm = () => {
       extendedFamilyCover: formData.extendedFamilyCover || formData.principalMemberCover || "0",
     };
 
+    const OPTIONAL_NUMERIC_DEFAULT_ZERO = new Set([
+      "parentsCover",
+      "spouseCover",
+      "extendedFamilyCover",
+      "children16toMax",
+      "children6to15",
+      "children1to5",
+      "children0to1",
+    ]);
+
     //sanitize ALL fields to numeric strings (or keep plain text where applicable)
     const numericKeys = [
       "profitTarget", "asAndWhenCommission", "numberOfLives", "maxExtendedFamilyMembers",
@@ -275,10 +327,16 @@ const LifeFuneralQuotationForm = () => {
     Object.entries(syncedFormData).forEach(([k, v]) => {
       if (numericKeys.includes(k)) {
         const s = toNumericString(String(v ?? ""));
-        cleanedFormData[k] = s === "" ? "0" : s;
+        if (s === "") {
+          // ✅ only optional numeric fields get forced to "0"
+          cleanedFormData[k] = OPTIONAL_NUMERIC_DEFAULT_ZERO.has(k) ? "0" : "";
+        } else {
+          cleanedFormData[k] = s;
+        }
       } else {
         cleanedFormData[k] = String(v ?? "");
       }
+
     });
 
     const payload = new FormData();
@@ -294,10 +352,10 @@ const LifeFuneralQuotationForm = () => {
       });
 
       if (!res.ok) {
-        updateJob(widgetJobId, { 
-          progress: 0, 
-          status: "error", 
-          errorMessage: "Failed to start calculation" 
+        updateJob(widgetJobId, {
+          progress: 0,
+          status: "error",
+          errorMessage: "Failed to start calculation"
         });
         return;
       }
@@ -310,10 +368,10 @@ const LifeFuneralQuotationForm = () => {
 
     } catch (err: any) {
       console.error("Quote error", err);
-      updateJob(widgetJobId, { 
-        progress: 0, 
-        status: "error", 
-        errorMessage: err.message || "Failed to calculate" 
+      updateJob(widgetJobId, {
+        progress: 0,
+        status: "error",
+        errorMessage: err.message || "Failed to calculate"
       });
     }
   };
@@ -388,7 +446,10 @@ const LifeFuneralQuotationForm = () => {
                 </TooltipTrigger>
                 <TooltipContent side="left" className="max-w-2xl p-4">
                   <div className="space-y-2">
-                    <p className="font-semibold text-sm mb-3">Required CSV Format Example:</p>
+                    <p className="font-semibold text-sm mb-2">Required File Format (CSV or Excel):</p>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Headers are required. DOB column can be <b>DOB</b> or <b>Date of Birth</b>.
+                    </p>
                     <div className="overflow-x-auto">
                       <table className="text-xs border-collapse w-full">
                         <thead>
@@ -892,4 +953,3 @@ const LifeFuneralQuotationForm = () => {
 }
 
 export default LifeFuneralQuotationForm
- 

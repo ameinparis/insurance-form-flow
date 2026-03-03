@@ -104,6 +104,13 @@ def _safe_named_value(wb, name):
     except Exception as e:
         print(f"[NAMED] Could not read {name}: {e}", file=sys.stderr)
         return None
+    
+def _is_blank(v):
+    return v is None or str(v).strip() == ""
+
+def _require_inputs(inputs, required_keys):
+    missing = [k for k in required_keys if _is_blank(inputs.get(k))]
+    return missing
 
 
 # ------------------------------------------------------------
@@ -145,6 +152,41 @@ def calculate_funeral():
         payload = request.get_json()
         members = payload.get("members", [])
         inputs = payload.get("inputs", {})
+        # ---------- Early validation (STOP before Excel) ----------
+        required = [
+            "profitTarget",
+            "societyName",
+            "asAndWhenCommission",
+            "schemeType",
+            "maxExtendedFamilyMembers",
+            "maxAgeChildren",
+            "coverLevelType",
+            "principalMemberCover",
+        ]
+
+        missing = _require_inputs(inputs, required)
+        if missing:
+            return jsonify({"error": f"Missing required inputs: {', '.join(missing)}"}), 400
+
+        cover_type = (inputs.get("coverLevelType") or "").strip()
+        if cover_type not in ("scheme-rules", "member-specified"):
+            return jsonify({"error": f"Invalid coverLevelType: '{cover_type}'"}), 400
+
+        must_be_positive = [
+            "profitTarget",
+            "asAndWhenCommission",
+            "maxExtendedFamilyMembers",
+            "maxAgeChildren",
+            "principalMemberCover",
+        ]
+        bad_nums = []
+        for k in must_be_positive:
+            n = _to_float(inputs.get(k), 0.0)
+            if n <= 0:
+                bad_nums.append(k)
+
+        if bad_nums:
+            return jsonify({"error": f"These inputs must be > 0: {', '.join(bad_nums)}"}), 400
 
         print("=== /calculate CALLED ===")
         print(f"Python platform: {sys.platform}")
@@ -155,8 +197,13 @@ def calculate_funeral():
         if not isinstance(members, list) or len(members) == 0:
             print("[ERROR] No member data provided", file=sys.stderr)
             return jsonify({"error": "No member data provided"}), 400
+        
+        missing_dob = sum(1 for m in members if _is_blank(m.get("dob")))
+        if missing_dob > 0:
+            return jsonify({
+                "error": f"{missing_dob} members missing DOB. Check file headers (DOB vs Date of Birth)."
+            }), 400
 
-        cover_type = (inputs.get("coverLevelType") or "").strip()
         cover_text = "Scheme Rules Benefits" if cover_type == "scheme-rules" else "Member Specified"
         print(f"Cover type raw='{cover_type}', mapped text='{cover_text}'")
 

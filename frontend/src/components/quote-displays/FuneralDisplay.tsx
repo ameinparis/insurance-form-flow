@@ -25,10 +25,18 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
   console.log("FuneralDisplay outputs:", outputs?.rows);
 
   // Extract the relevant premiums safely
-  const premiumPerFamily = getRow("family")?.totalPremium;
-  const premiumPerMember = getRow("member")?.totalPremium;
+  const premiumPerFamilyTotal = getRow("family")?.totalPremium;
+  const premiumPerMemberTotal = getRow("member")?.totalPremium;
+
+  const premiumPerFamilyPerBeneficiary = getRow("family")?.premiumPerBeneficiary;
+  const premiumPerMemberPerBeneficiary = getRow("member")?.premiumPerBeneficiary;
   const premiumPerParent = getRow("parent")?.totalPremium;
   const premiumPerExtended = getRow("extended")?.totalPremium;
+
+  const hasMoney = (v: any) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0;
+  };
 
   return (
     <div className="bg-white dark:bg-slate-900 p-8 space-y-10">
@@ -36,7 +44,7 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
       <section className="space-y-4">
         <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 inline-block">
-           Group Funeral Scheme Quotation for {client?.companyName || "Client Name"}
+            Group Funeral Scheme Quotation for {client?.companyName || "Client Name"}
           </h2>
         </div>
         <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -75,46 +83,51 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
           <Table>
             <TableBody>
               <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
-                <TableCell>Monthly Premium Per Family</TableCell>
-                <TableCell>{formatCurrency(premiumPerFamily)}</TableCell>
-              </TableRow>
-              <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
-                <TableCell>Monthly Premium Per Member</TableCell>
-                <TableCell>{formatCurrency(premiumPerMember)}</TableCell>
-              </TableRow>
+  <TableCell>Monthly Premium Per Family</TableCell>
+  <TableCell>{formatCurrency(premiumPerFamilyTotal)}</TableCell>
+</TableRow>
+
+<TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
+  <TableCell>Monthly Premium Per Member</TableCell>
+  <TableCell>{formatCurrency(premiumPerFamilyPerBeneficiary)}</TableCell>
+</TableRow>
             </TableBody>
           </Table>
         </div>
 
         {/* 2. Parents */}
-        <div className="space-y-1">
-          <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">
-            2. Parents and Parents-in-Law
-          </h4>
-          <Table>
-            <TableBody>
-              <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
-                <TableCell>Monthly Premium Per Parent</TableCell>
-                <TableCell>{formatCurrency(premiumPerParent)}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
+        {hasMoney(premiumPerParent) && (
+          <div className="space-y-1">
+            <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">
+              2. Parents and Parents-in-Law
+            </h4>
+            <Table>
+              <TableBody>
+                <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
+                  <TableCell>Monthly Premium Per Parent</TableCell>
+                  <TableCell>{formatCurrency(premiumPerParent)}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
         {/* 3. Extended Family */}
-        <div className="space-y-1">
-          <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">
-            3. Extended Family Members
-          </h4>
-          <Table>
-            <TableBody>
-              <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
-                <TableCell>Monthly Premium Per Member</TableCell>
-                <TableCell>{formatCurrency(premiumPerExtended)}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
+        {hasMoney(premiumPerExtended) && (
+          <div className="space-y-1">
+            <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">
+              3. Extended Family Members
+            </h4>
+            <Table>
+              <TableBody>
+                <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
+                  <TableCell>Monthly Premium Per Member</TableCell>
+                  <TableCell>{formatCurrency(premiumPerExtended)}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </section>
 
       {/* Policy Specs */}
@@ -172,6 +185,12 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
               Date:
+            </label>
+            <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
+          </div>
+           <div>
+            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+             Commencement Date:
             </label>
             <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
           </div>

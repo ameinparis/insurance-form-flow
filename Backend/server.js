@@ -27,7 +27,7 @@ app.use(cors({
   origin: [
     "http://localhost:3000",
     "http://localhost:5173",
-    "http://localhost:8080",
+    "http://localhost:8080",    
     process.env.FRONTEND_ORIGIN,   // e.g. https://app.exclusivelife.co.bw
   ].filter(Boolean),
   credentials: true,
@@ -660,7 +660,13 @@ app.post("/api/quotes/calculate-funeral", authenticateToken, upload.single("file
       memberNumber: row["Member Number"] || row["Member number"] || "",
       surname: row["Member Surname"] || row["Surname"] || "",
       firstName: row["First Name"] || row["Firstname"] || "",
-      dob: row["Date of Birth"],
+      dob:
+        row["Date of Birth"] ??
+        row["DOB"] ??
+        row["Dob"] ??
+        row["Date of birth"] ??
+        row["Date Of Birth"] ??
+        "",
       relationship: row["Relationship"],
       gender: row["Gender"],
       coverAmount: parseFloat(row["Sum assured"] || row["Sum Assured"] || 0),
@@ -687,6 +693,8 @@ app.post("/api/quotes/calculate-funeral", authenticateToken, upload.single("file
     res.status(500).json({ message: "Failed to process funeral quote", error: e.message });
   }
 });
+
+ 
 
 
 /** ---------------- NEW FUNERAL JOB SYSTEM: START JOB ---------------- */
@@ -764,6 +772,24 @@ async function processFuneralJobs() {
         job.error = "Unsupported file type";
         continue;
       }
+      console.log("Parsed headers:", rows[0] ? Object.keys(rows[0]) : []);
+      const headers = rows[0] ? Object.keys(rows[0]).map(h => String(h).trim()) : [];
+      const hasAnyKnownHeader =
+        headers.includes("Member Number") ||
+        headers.includes("Member number") ||
+        headers.includes("Surname") ||
+        headers.includes("Member Surname") ||
+        headers.includes("First Name") ||
+        headers.includes("DOB") ||
+        headers.includes("Date of Birth");
+
+      if (!hasAnyKnownHeader) {
+        job.status = "error";
+        job.error = "Invalid template: missing header row. Please use the provided template with headers (Member Number, Surname, First Name, DOB/Date of Birth, Relationship, Gender, Sum Assured).";
+        job.progress = 0;
+        job.message = "Validation failed";
+        continue;
+      }
 
       job.progress = 30;
       job.message = "Validating and cleaning member data...";
@@ -773,13 +799,29 @@ async function processFuneralJobs() {
         memberNumber: row["Member Number"] || row["Member number"] || "",
         surname: row["Member Surname"] || row["Surname"] || "",
         firstName: row["First Name"] || row["Firstname"] || "",
-        dob: row["Date of Birth"],
+        dob:
+          row["Date of Birth"] ??
+          row["DOB"] ??
+          row["Dob"] ??
+          row["Date of birth"] ??
+          row["Date Of Birth"] ??
+          "",
         relationship: row["Relationship"],
         gender: row["Gender"],
         coverAmount: parseFloat(row["Sum assured"] || row["Sum Assured"] || 0),
         premium: 0,
         age: 0,
       }));
+
+      // ✅ FAIL FAST: ensure DOB exists
+      const missingDob = members.filter(m => !m.dob || String(m.dob).trim() === "").length;
+      if (missingDob > 0) {
+        job.status = "error";
+        job.error = `Member file invalid: ${missingDob} members missing DOB (check headers: DOB vs Date of Birth)`;
+        job.progress = 0;
+        job.message = "Validation failed";
+        continue;
+      }
 
       job.progress = 50;
       job.message = "Preparing data for Excel model...";
@@ -803,6 +845,31 @@ async function processFuneralJobs() {
       try {
         const PY_URL =
           process.env.PY_CALC_URL || "http://localhost:5005/funeral/calculate";
+
+        // VALIDATE required form fields before Python/Excel
+        const required = [
+          "profitTarget",
+          "societyName",
+          "asAndWhenCommission",
+          "schemeType",
+          "maxExtendedFamilyMembers",
+          "maxAgeChildren",
+          "coverLevelType",
+          "principalMemberCover",
+        ];
+
+        const isBlank = (v) => v === undefined || v === null || String(v).trim() === "";
+        const missing = required.filter((k) => isBlank(formData?.[k]));
+
+        if (missing.length) {
+          clearInterval(smoothingTimer);
+          job.status = "error";
+          job.error = `Missing required fields: ${missing.join(", ")}`;
+          job.progress = 0;
+          job.message = "Validation failed";
+          continue;
+        }
+
         const { data } = await axios.post(PY_URL, { members, inputs: formData });
 
         clearInterval(smoothingTimer);

@@ -22,6 +22,13 @@ import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 
 // --- Date helpers for CSV/XLSX DOB handling ---
 
+const normaliseMoney = (v: any): string => {
+  if (v == null || v === "") return ""
+  // keep digits + dot only (removes commas/spaces/currency)
+  const cleaned = String(v).trim().replace(/[^0-9.]/g, "")
+  return cleaned
+}
+
 // Convert Excel serial (e.g. 32876) to "YYYY-MM-DD"
 const excelSerialToISODate = (serial: number): string => {
   if (serial == null || Number.isNaN(serial)) return ""
@@ -166,7 +173,6 @@ const GroupLifeAssuranceForm = () => {
       const clean = data.filter((row) => Object.values(row).some(Boolean))
 
       const mapped = clean.map((r) => {
-        // Try multiple header variants just in case
         const rawDob =
           r["DOB"] ??
           r["Dob"] ??
@@ -176,17 +182,32 @@ const GroupLifeAssuranceForm = () => {
           r["date of birth"] ??
           r["DoB"]
 
+        const rawSalary =
+          r["Annual Salary"] ??
+          r["AnnualSalary"] ??
+          r["annualSalary"] ??
+          r["annual salary"] ??
+          ""
+
         return {
           member: r["Member"] || "",
           gender: r["Gender"] || "",
-          dob: normaliseDob(rawDob), // centralised normalisation
-          annualSalary: r["Annual Salary"] || r["AnnualSalary"] || "",
+          dob: normaliseDob(rawDob),
+          annualSalary: normaliseMoney(rawSalary),
         }
       })
 
       setMembers(mapped)
       console.log("Mapped members (first 5):", mapped.slice(0, 5))
       toast.success(`${mapped.length} member records loaded`)
+
+      // ✅ DOB missing warning (must be here)
+      const missingDob = mapped.filter((m) => !m.dob).length
+      if (missingDob > 0) {
+        toast.error(
+          `${missingDob} DOB value(s) could not be read. Please ensure the DOB column is formatted as a Date (dd/mm/yyyy).`
+        )
+      }
     }
 
     if (fileExt === "csv") {
@@ -211,9 +232,8 @@ const GroupLifeAssuranceForm = () => {
         const sheet = workbook.Sheets[workbook.SheetNames[0]]
         const json = XLSX.utils.sheet_to_json(sheet, {
           defval: "",
-          raw: false, // prefer formatted text where applicable
+          raw: true,
         })
-
         parseData(json)
       }
       reader.readAsArrayBuffer(file)
@@ -429,7 +449,21 @@ const GroupLifeAssuranceForm = () => {
                 </TooltipTrigger>
                 <TooltipContent side="left" className="max-w-2xl p-4">
                   <div className="space-y-2">
-                    <p className="font-semibold text-sm mb-3">Required CSV Format Example:</p>
+                    <p className="font-semibold text-sm mb-2">
+                      Required File Structure (CSV or Excel):
+                    </p>
+
+                    <p className="text-xs text-muted-foreground mb-3">
+                      <span className="font-semibold text-foreground">Headers must match exactly.</span>{" "}
+                      DOB can be <b>DOB</b> or <b>Date of Birth</b>. Gender must be <b>M</b> or <b>F</b>.
+                    </p>
+
+                    <div className="rounded-md border border-muted-foreground/20 bg-muted/30 p-2 text-xs">
+                      <span className="font-semibold text-foreground">Tip:</span>{" "}
+                      In Excel, format the DOB column as <span className="font-semibold">Date</span> (not Text).
+                      If DOB is not a real date, it may import blank.
+                    </div>
+
                     <div className="overflow-x-auto">
                       <table className="text-xs border-collapse w-full">
                         <thead>
@@ -453,23 +487,11 @@ const GroupLifeAssuranceForm = () => {
                             <td className="px-2 py-1">08/06/88</td>
                             <td className="px-2 py-1">68,000.00</td>
                           </tr>
-                          <tr className="border-b">
+                          <tr>
                             <td className="px-2 py-1">167</td>
                             <td className="px-2 py-1">M</td>
                             <td className="px-2 py-1">09/06/89</td>
                             <td className="px-2 py-1">68,000.00</td>
-                          </tr>
-                          <tr className="border-b">
-                            <td className="px-2 py-1">1006</td>
-                            <td className="px-2 py-1">M</td>
-                            <td className="px-2 py-1">25/02/92</td>
-                            <td className="px-2 py-1">32,292.00</td>
-                          </tr>
-                          <tr>
-                            <td className="px-2 py-1">1097</td>
-                            <td className="px-2 py-1">F</td>
-                            <td className="px-2 py-1">03/04/87</td>
-                            <td className="px-2 py-1">120,000.00</td>
                           </tr>
                         </tbody>
                       </table>
