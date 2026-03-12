@@ -85,7 +85,7 @@ const QuoteDetail = () => {
 
   const downloadPDF = async (quoteId: string) => {
     const isLegacy = searchParams.get("legacy") === "true";
-    const url = `https://njs.exclusivelife.co.bw/api/quotes/${quoteId}/generate-pdf?legacy=${isLegacy}`;
+    const url = `http://localhost:5002/api/quotes/${quoteId}/generate-pdf?legacy=${isLegacy}`;
     await downloadPdfFromUrl(url, `quote-${String(quoteId)}.pdf`);
   };
 
@@ -229,7 +229,7 @@ section.space-y-4 > div + p {
 
 
     // Send to your backend PDF generator
-    const res = await fetch("https://njs.exclusivelife.co.bw/api/quotes/html-to-pdf", {
+    const res = await fetch("http://localhost:5002/api/quotes/html-to-pdf", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ html }),
