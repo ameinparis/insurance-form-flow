@@ -85,52 +85,52 @@
   }
 
   .dark {
-    /* Dark mode - Deep slate blue matching reference */
-    --background: 213 32% 14%;        /* #192231 - Deep slate blue */
-    --foreground: 210 40% 98%;        /* Light text */
+    /* Dark mode - Uniform dark blue #1a1f2e for header, sidebar, body */
+    --background: 220 32% 12%;             /* #1a1f2e - Dark blue */
+    --foreground: 210 40% 98%;              /* Light text */
 
-    --card: 213 32% 17%;              /* #1e2a3b - Slightly lighter cards */
+    --card: 220 28% 14%;                   /* Slightly lighter cards */
     --card-foreground: 210 40% 98%;
 
-    --popover: 213 32% 15%;
+    --popover: 220 32% 12%;
     --popover-foreground: 210 40% 98%;
 
-    --brand-accent: 199 89% 48%;      /* Cyan blue #0ea5e9 */
-    --primary: 199 89% 48%;           /* Cyan blue for dark mode */
+    --brand-accent: 199 89% 48%;            /* Cyan blue #0ea5e9 */
+    --primary: 199 89% 48%;                 /* Cyan blue for dark mode */
     --primary-hover: 199 89% 55%;
-    --primary-foreground: 213 32% 14%;
+    --primary-foreground: 220 32% 12%;
     
     --primary-gradient-from: 199 89% 48%;
     --primary-gradient-to: 199 89% 55%;
 
-    --secondary: 213 32% 20%;
+    --secondary: 220 28% 16%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 213 32% 20%;
+    --muted: 220 28% 16%;
     --muted-foreground: 215 20% 55%;
 
-    --accent: 213 32% 22%;
+    --accent: 220 28% 18%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 213 25% 22%;
-    --input: 213 32% 20%;
+    --border: 220 28% 16%;
+    --input: 220 28% 16%;
     --ring: 199 89% 48%;
     
-    /* Sidebar - Deep slate matching background */
-    --sidebar-background: 213 32% 15%;
+    /* Sidebar - Same as background, no border */
+    --sidebar-background: 220 32% 12%;      /* Same as background */
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 199 89% 48%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 213 32% 20%;
+    --sidebar-primary-foreground: 220 32% 12%;
+    --sidebar-accent: 220 28% 16%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-accent-hover: 199 50% 20%;
-    --sidebar-border: 213 25% 20%;
+    --sidebar-accent-hover: 220 28% 20%;
+    --sidebar-border: 220 32% 12%;          /* Same as background, invisible */
     --sidebar-ring: 199 89% 48%;
-    --sidebar-active: 199 50% 20%;    /* Blue tint for active */
-    --sidebar-active-foreground: 199 89% 60%;  /* Cyan text */
+    --sidebar-active: 220 28% 18%;           /* Blue tint for active */
+    --sidebar-active-foreground: 199 89% 60%; /* Cyan text */
   }
 }
 

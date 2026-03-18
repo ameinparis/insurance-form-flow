@@ -49,9 +49,7 @@ const CalculatorForm = () => {
       "life-funeral": 0.02,
       "living-annuities": 0.015,
       "group-life-assurance": 0.025,
-      "credit-life": 0.03,
       "critical-illness": 0.035,
-      "occupational-disability": 0.04,
       "individual-life": 0.025
     }
     return rates[insuranceType as keyof typeof rates] || 0.02
@@ -62,9 +60,7 @@ const CalculatorForm = () => {
       "life-funeral": "Life Funeral Quotation",
       "living-annuities": "Living Annuities Quotation",
       "group-life-assurance": "Group Life Assurance (GLA)",
-      "credit-life": "Credit Life Cover",
       "critical-illness": "Critical Illness Cover",
-      "occupational-disability": "Occupational Disability",
       "individual-life": "Individual Life Cover"
     }
     return titles[type as keyof typeof titles] || "Insurance Quotation"

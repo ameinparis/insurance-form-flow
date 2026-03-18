@@ -20,7 +20,7 @@ const settingsItems = [
 
 export function AppSidebar() {
   return (
-    <Sidebar className="w-64 bg-white dark:bg-sidebar-background rounded-3xl shadow-sm sticky top-0 h-[calc(100vh-7rem)] overflow-hidden">
+    <Sidebar className="w-64 bg-background rounded-3xl sticky top-0 h-[calc(100vh-7rem)] overflow-hidden border-0">
       <SidebarContent className="flex flex-col h-full">
         {/* MENU Section */}
         <div className="px-4 pt-5 pb-3">

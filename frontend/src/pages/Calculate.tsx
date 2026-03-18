@@ -2,9 +2,7 @@ import {
   Heart, 
   Shield, 
   Users, 
-  CreditCard, 
   Activity, 
-  UserCheck, 
   User 
 } from "lucide-react"
 import { Link } from "react-router-dom"
@@ -45,28 +43,12 @@ const Calculate = () => {
       iconColor: "text-teal-600"
     },
     {
-      id: "credit-life",
-      title: "Credit Life",
-      description: "Credit balance protection",
-      icon: CreditCard,
-      bgColor: "bg-amber-100",
-      iconColor: "text-amber-600"
-    },
-    {
       id: "critical-illness",
       title: "Critical Illness",
       description: "Serious illness protection",
       icon: Activity,
       bgColor: "bg-red-100",
       iconColor: "text-red-600"
-    },
-    {
-      id: "occupational-disability",
-      title: "Occupational Disability",
-      description: "Work disability income",
-      icon: UserCheck,
-      bgColor: "bg-indigo-100",
-      iconColor: "text-indigo-600"
     },
     
   ]
@@ -78,7 +60,7 @@ const Calculate = () => {
         <p className="text-muted-foreground">Choose an insurance type to get started with your calculation.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {options.map((option) => (
           <div 
             key={option.id} 
