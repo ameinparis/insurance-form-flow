@@ -15,7 +15,7 @@ const AccountPending = () => {
     setIsLoading(true)
 
     try {
-      const response = await fetch("http://localhost:5002/api/auth/resend-setup", {
+      const response = await fetch("https://njs.exclusivelife.co.bw/api/auth/resend-setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
