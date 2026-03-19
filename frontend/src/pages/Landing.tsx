@@ -55,7 +55,7 @@ const Landing = () => {
 
 
   useEffect(() => {
-    const title = "Exclusive Insurance — Simple, Secure Insurance"
+    const title = "Exclusive Insurance | Simple, Secure Insurance"
     const description = "Simple, secure insurance with smart protection and fast quotes."
     document.title = title
 
