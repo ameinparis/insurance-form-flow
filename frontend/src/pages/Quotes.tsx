@@ -13,6 +13,17 @@ import { useAuth } from "@/lib/authlibrary"
 import { useGlobalSearch } from "@/lib/searchContext"
 import { PdfIcon } from "@/components/PdfIcon"
 import { PageLoader } from "@/components/PageLoader"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const Quotes = () => {
   const navigate = useNavigate()
@@ -22,12 +33,13 @@ const Quotes = () => {
   const [quotes, setQuotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
+  const [deleteQuoteId, setDeleteQuoteId] = useState<string | null>(null)
   const { userRole } = useAuth()
   const itemsPerPage = 100
 
   // Use global search term if available, otherwise use local
   const searchTerm = globalSearchTerm || localSearchTerm
-  
+
   // Sync local search with global when component mounts
   useEffect(() => {
     if (globalSearchTerm) {
@@ -59,91 +71,106 @@ const Quotes = () => {
     return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-300 dark:border-gray-700"
   }
 
-useEffect(() => {
-  const fetchQuotes = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
+  useEffect(() => {
+    const fetchQuotes = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
 
-      const [oldRes, newRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/quotes`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch(`${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/new-quotes`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
+        const [oldRes, newRes] = await Promise.all([
+          fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
-      if (!oldRes.ok || !newRes.ok) throw new Error("Failed to fetch quotes");
+        if (!oldRes.ok || !newRes.ok) throw new Error("Failed to fetch quotes");
 
-      const oldQuotes = await oldRes.json();
-      const newQuotes = await newRes.json();
+        const oldQuotes = await oldRes.json();
+        const newQuotes = await newRes.json();
 
-      const mappedOld = oldQuotes.map((q: any) => ({
-        id: q._id,
-        quoteId: q.quoteId,
-        fullName: q.fullName || "Unnamed",
-        email: q.email || "—",
-        contactNumber: q.contactNumber || "—",
-        type: "Exclusive Annuity",
-        createdByName: q.createdByName || q.createdBy?.firstName || "—",
-        createdAt: q.createdAt,
-        isLegacy: true,
-      }));
+        const mappedOld = oldQuotes.map((q: any) => ({
+          id: q._id,
+          quoteId: q.quoteId,
+          fullName: q.fullName || "Unnamed",
+          email: q.email || "—",
+          contactNumber: q.contactNumber || "—",
+          type: "Exclusive Annuity",
+          createdByName: q.createdByName || q.createdBy?.firstName || "—",
+          createdAt: q.createdAt,
+          isLegacy: true,
+        }));
 
-      const mappedNew = newQuotes.map((q: any) => ({
-        id: q._id,
-        quoteId: q.quoteId,
-        fullName: q.client?.fullName || q.client?.schemeName ||  "Unnamed",
-        email: q.client?.email || "—",
-        contactNumber: q.client?.contactNumber || "—",
-        type: q.productType || "Unknown",
-        createdByName:
-          q.createdByName ||
-          (q.createdBy?.firstName ? `${q.createdBy.firstName} ${q.createdBy.lastName || ""}` : "—"),
-        createdAt: q.createdAt,
-        isLegacy: false,
-      }));
+        const mappedNew = newQuotes.map((q: any) => ({
+          id: q._id,
+          quoteId: q.quoteId,
+          fullName: q.client?.fullName || q.client?.schemeName || "Unnamed",
+          email: q.client?.email || "—",
+          contactNumber: q.client?.contactNumber || "—",
+          type: q.productType || "Unknown",
+          createdByName:
+            q.createdByName ||
+            (q.createdBy?.firstName ? `${q.createdBy.firstName} ${q.createdBy.lastName || ""}` : "—"),
+          createdAt: q.createdAt,
+          isLegacy: false,
+        }));
 
-      setQuotes(
-        [...mappedOld, ...mappedNew].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
-      );
-    } catch (err) {
-      console.error("Error fetching quotes:", err);
-      toast.error("Failed to load quotes");
-      setQuotes([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setQuotes(
+          [...mappedOld, ...mappedNew].sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+        );
+      } catch (err) {
+        console.error("Error fetching quotes:", err);
+        toast.error("Failed to load quotes");
+        setQuotes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchQuotes();
-}, []);
+    fetchQuotes();
+  }, []);
 
-  const handleDeleteQuote = async (quoteId: string, e?: React.MouseEvent) => {
+  const handleDeleteQuote = async (quoteId: string, isLegacy: boolean = false, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
+
     try {
       const token = localStorage.getItem("token")
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/quotes/${quoteId}`, {
+      const endpoint = isLegacy
+        ? `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes/${quoteId}`
+        : `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes/${quoteId}`
+
+      console.log("Deleting:", { quoteId, isLegacy, endpoint, token })
+
+      const res = await fetch(endpoint, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       })
 
-      if (!res.ok) throw new Error("Failed to delete quote")
+      const data = await res.json().catch(() => ({}))
+      console.log("Delete response:", res.status, data)
+
+      if (!res.ok) {
+        throw new Error(data.message || `Failed to delete quote (${res.status})`)
+      }
+
       setQuotes((quotes) => quotes.filter((q) => q.id !== quoteId))
       toast.success("Quote deleted successfully")
     } catch (err) {
       console.error("Error deleting quote:", err)
-      toast.error("Failed to delete quote")
+      toast.error(err instanceof Error ? err.message : "Failed to delete quote")
     }
   }
 
   const handleDownloadPdf = async (e: React.MouseEvent, quoteId: string, id: string, isLegacy: boolean) => {
     e.stopPropagation()
     try {
-      const url = `https://njs.exclusivelife.co.bw/api/quotes/${id}/generate-pdf?legacy=${isLegacy}`
+      const url = `http://localhost:5002/api/quotes/${id}/generate-pdf?legacy=${isLegacy}`
       const res = await fetch(url, { method: "GET" })
       if (!res.ok) throw new Error(`PDF generation failed: ${res.status}`)
       const blob = await res.blob()
@@ -288,157 +315,184 @@ useEffect(() => {
         </Card>
       ) : (
         <div className="bg-gray-50 dark:bg-slate-800 rounded-3xl p-6">
-         <div className="overflow-x-auto">
-                <Table className="border-separate border-spacing-y-3 w-full">
+          <div className="overflow-x-auto">
+            <Table className="border-separate border-spacing-y-3 w-full">
 
-                  <TableHeader className="sticky top-0 z-10">
-                    <TableRow className="bg-gray-200 dark:bg-slate-700 border-b border-gray-300 dark:border-gray-600 rounded-xl">
-                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
-                        Quote ID
-                      </TableHead>
-                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
-                        Client Name
-                      </TableHead>
-                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
-                        Type
-                      </TableHead>
-                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
-                        Created By
-                      </TableHead>
-                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
-                        Date
-                      </TableHead>
-                      <TableHead className="text-right font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
+              <TableHeader className="sticky top-0 z-10">
+                <TableRow className="bg-gray-200 dark:bg-slate-700 border-b border-gray-300 dark:border-gray-600 rounded-xl">
+                  <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
+                    Quote ID
+                  </TableHead>
+                  <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
+                    Client Name
+                  </TableHead>
+                  <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
+                    Type
+                  </TableHead>
+                  <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
+                    Created By
+                  </TableHead>
+                  <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
+                    Date
+                  </TableHead>
+                  <TableHead className="text-right font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
 
-                  <TableBody>
-                    {currentQuotes.map((quote) => (
-                      <TableRow
-                        key={quote.id}
-                        onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
-                        className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-sky-100 dark:hover:bg-sky-900/30 hover:border-sky-200 dark:hover:border-sky-700 transition-all duration-200 my-2 overflow-hidden cursor-pointer"
+              <TableBody>
+                {currentQuotes.map((quote) => (
+                  <TableRow
+                    key={quote.id}
+                    onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
+                    className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-sky-100 dark:hover:bg-sky-900/30 hover:border-sky-200 dark:hover:border-sky-700 transition-all duration-200 my-2 overflow-hidden cursor-pointer"
+                  >
+                    <TableCell className="py-5 px-6 rounded-l-xl">
+                      <div className="flex items-center gap-3">
+                        <PdfIcon size="md" />
+                        <span className="text-gray-700 dark:text-gray-300 font-small">{quote.quoteId}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
+                      {quote.clientName || quote.fullName || quote.schemeName || "Unnamed"}
+                    </TableCell>
+                    <TableCell className="py-5 px-6">
+                      <Badge
+                        variant="outline"
+                        className={`rounded-full px-2 py-1.5 text-xs font-medium border ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
                       >
-                        <TableCell className="py-5 px-6 rounded-l-xl">
-                          <div className="flex items-center gap-3">
-                            <PdfIcon size="md" />
-                            <span className="text-gray-700 dark:text-gray-300 font-small">{quote.quoteId}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
-                          {quote.clientName || quote.fullName || quote.schemeName || "Unnamed"}
-                        </TableCell>
-                        <TableCell className="py-5 px-6">
-                          <Badge
-                            variant="outline"
-                            className={`rounded-full px-2 py-1.5 text-xs font-medium border ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
-                          >
-                            {quote.type || "Unknown"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
-                          {quote.createdByName || "—"}
-                        </TableCell>
-                        <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
-                          {new Date(quote.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell className="py-5 px-6 text-right rounded-r-xl">
-                          <div className="flex justify-end gap-3">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={(e) => handleDownloadPdf(e, quote.quoteId, quote.id, quote.isLegacy || false)}
-                              title="Download PDF"
-                            >
-                              <Download className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                            </Button>
-                            {userRole === "superuser" && (
+                        {quote.type || "Unknown"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
+                      {quote.createdByName || "—"}
+                    </TableCell>
+                    <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
+                      {new Date(quote.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="py-5 px-6 text-right rounded-r-xl">
+                      <div className="flex justify-end gap-3">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={(e) => handleDownloadPdf(e, quote.quoteId, quote.id, quote.isLegacy || false)}
+                          title="Download PDF"
+                        >
+                          <Download className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                        </Button>
+                        {userRole === "superuser" && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={(e) => handleDeleteQuote(quote.id, e)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setDeleteQuoteId(quote.id)
+                                }}
                                 title="Delete Quote"
                               >
                                 <Trash2 className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-8 flex justify-center">
-                <Pagination>
-                  <PaginationContent className="gap-1">
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        onClick={() => goToPage(currentPage - 1)}
-                        className={`rounded-lg ${currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800'}`}
-                      />
-                    </PaginationItem>
-                    
-                    {[...Array(totalPages)].map((_, i) => {
-                      const pageNum = i + 1
-                      if (
-                        pageNum === 1 ||
-                        pageNum === totalPages ||
-                        (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
-                      ) {
-                        return (
-                          <PaginationItem key={pageNum}>
-                            <PaginationLink
-                              onClick={() => goToPage(pageNum)}
-                              isActive={currentPage === pageNum}
-                              className={`rounded-lg cursor-pointer min-w-10 ${
-                                currentPage === pageNum
-                                  ? 'bg-[#009fe3] text-white hover:bg-[#0088c6] border-[#009fe3]'
-                                  : 'hover:bg-gray-100 dark:hover:bg-slate-800'
-                              }`}
-                            >
-                              {pageNum}
-                            </PaginationLink>
-                          </PaginationItem>
-                        )
-                      } else if (
-                        pageNum === currentPage - 2 ||
-                        pageNum === currentPage + 2
-                      ) {
-                        return (
-                          <PaginationItem key={pageNum}>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        )
-                      }
-                      return null
-                    })}
-
-                    <PaginationItem>
-                      <PaginationNext 
-                        onClick={() => goToPage(currentPage + 1)}
-                        className={`rounded-lg ${currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800'}`}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
-
-                   <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
-              <p className="text-sm text-muted-foreground">
-                Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedQuotes.length)} of {filteredAndSortedQuotes.length} quotes
-              </p>
-            </div>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure you want to delete?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete the quote.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => setDeleteQuoteId(null)}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteQuote(quote.id, quote.isLegacy || false)
+                                    setDeleteQuoteId(null)
+                                  }}
+                                  className="bg-red-500 hover:bg-red-600 text-white"
+                                >
+                                  Yes, Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-        )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-8 flex justify-center">
+              <Pagination>
+                <PaginationContent className="gap-1">
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => goToPage(currentPage - 1)}
+                      className={`rounded-lg ${currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800'}`}
+                    />
+                  </PaginationItem>
+
+                  {[...Array(totalPages)].map((_, i) => {
+                    const pageNum = i + 1
+                    if (
+                      pageNum === 1 ||
+                      pageNum === totalPages ||
+                      (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                    ) {
+                      return (
+                        <PaginationItem key={pageNum}>
+                          <PaginationLink
+                            onClick={() => goToPage(pageNum)}
+                            isActive={currentPage === pageNum}
+                            className={`rounded-lg cursor-pointer min-w-10 ${currentPage === pageNum
+                              ? 'bg-[#009fe3] text-white hover:bg-[#0088c6] border-[#009fe3]'
+                              : 'hover:bg-gray-100 dark:hover:bg-slate-800'
+                              }`}
+                          >
+                            {pageNum}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    } else if (
+                      pageNum === currentPage - 2 ||
+                      pageNum === currentPage + 2
+                    ) {
+                      return (
+                        <PaginationItem key={pageNum}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )
+                    }
+                    return null
+                  })}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => goToPage(currentPage + 1)}
+                      className={`rounded-lg ${currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800'}`}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
+            <p className="text-sm text-muted-foreground">
+              Showing {startIndex + 1} to {Math.min(endIndex, filteredAndSortedQuotes.length)} of {filteredAndSortedQuotes.length} quotes
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

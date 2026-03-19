@@ -615,6 +615,18 @@ app.get("/api/quotes/:id", authenticateToken, async (req, res) => {
   }
 });
 
+/** Delete quote by id */
+app.delete("/api/quotes/:id", authenticateToken, async (req, res) => {
+  try {
+    const q = await Quote.findByIdAndDelete(req.params.id);
+    if (!q) return res.status(404).json({ message: "Quote not found" });
+    res.json({ message: "Quote deleted successfully", id: req.params.id });
+  } catch (e) {
+    console.error("Delete quote error:", e);
+    res.status(500).json({ message: "Failed to delete quote" });
+  }
+});
+
 
 
 
@@ -1018,6 +1030,18 @@ app.get("/api/new-quotes/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// Delete new quote
+app.delete("/api/new-quotes/:id", authenticateToken, async (req, res) => {
+  try {
+    const q = await Quotes.findByIdAndDelete(req.params.id);
+    if (!q) return res.status(404).json({ message: "New Quote not found" });
+    res.json({ message: "Quote deleted successfully", id: req.params.id });
+  } catch (e) {
+    console.error("Delete new quote error:", e);
+    res.status(500).json({ message: "Failed to delete new quote" });
+  }
+});
+
 // Get users
 
 app.get("/api/users", authenticateToken, async (req, res) => {
@@ -1040,7 +1064,7 @@ async function getQuoteById(id, isLegacy = false) {
   }
 }
 
-// Download PDF
+// Download PDF (this is for social light do not delete it)
 async function renderQuoteHTML(quote) {
   // Basic HTML render — improve this later using your React structure
   const logo = "https://sociallightbw.s3.af-south-1.amazonaws.com/socialDark.png";
@@ -1091,6 +1115,7 @@ async function renderQuoteHTML(quote) {
     </html>
   `;
 }
+
 app.get("/api/quotes/:id/generate-pdf", async (req, res) => {
   const { id } = req.params;
   const isLegacy = req.query.legacy === "true";
@@ -1171,6 +1196,7 @@ app.post("/api/quotes/html-to-pdf", async (req, res) => {
     res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
+
 
 
 

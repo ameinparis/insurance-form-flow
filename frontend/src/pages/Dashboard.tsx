@@ -10,12 +10,24 @@ import { useAuth } from "@/lib/authlibrary"
 import { PdfIcon } from "@/components/PdfIcon"
 import { StatsCards } from "@/components/dashboard/StatsCards"
 import { PageLoader } from "@/components/PageLoader"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const Dashboard = () => {
   const navigate = useNavigate()
   const [recentQuotes, setRecentQuotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
+  const [deleteQuoteId, setDeleteQuoteId] = useState<string | null>(null)
   const { userRole } = useAuth()
   const maxDisplayQuotes = 15
 
@@ -45,10 +57,10 @@ const Dashboard = () => {
         const token = localStorage.getItem("token");
 
         const [oldRes, newRes] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/quotes`, {
+          fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          fetch(`${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/new-quotes`, {
+          fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes`, {
             headers: { Authorization: `Bearer ${token}` },
           })
         ]);
@@ -97,10 +109,13 @@ const Dashboard = () => {
   }, []);
 
 
-  const handleDeleteQuote = async (quoteId: string) => {
+  const handleDeleteQuote = async (quoteId: string, isLegacy: boolean = false) => {
     try {
       const token = localStorage.getItem("token")
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/quotes/${quoteId}`, {
+      const endpoint = isLegacy 
+        ? `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes/${quoteId}`
+        : `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes/${quoteId}`
+      const res = await fetch(endpoint, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -117,7 +132,7 @@ const Dashboard = () => {
   const handleDownloadPdf = async (e: React.MouseEvent, quoteId: string, id: string, isLegacy: boolean) => {
     e.stopPropagation()
     try {
-      const url = `https://njs.exclusivelife.co.bw/api/quotes/${id}/generate-pdf?legacy=${isLegacy}`
+      const url = `http://localhost:5002/api/quotes/${id}/generate-pdf?legacy=${isLegacy}`
       const res = await fetch(url, { method: "GET" })
       if (!res.ok) throw new Error(`PDF generation failed: ${res.status}`)
       const blob = await res.blob()
@@ -253,18 +268,42 @@ const Dashboard = () => {
                               <Download className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                             </Button>
                             {userRole === "superuser" && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDeleteQuote(quote.id)
-                                }}
-                                title="Delete Quote"
-                              >
-                                <Trash2 className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setDeleteQuoteId(quote.id)
+                                    }}
+                                    title="Delete Quote"
+                                  >
+                                    <Trash2 className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure you want to delete?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This action cannot be undone. This will permanently delete the quote.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel onClick={() => setDeleteQuoteId(null)}>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => {
+                                        handleDeleteQuote(quote.id, quote.isLegacy || false)
+                                        setDeleteQuoteId(null)
+                                      }}
+                                      className="bg-red-500 hover:bg-red-600 text-white"
+                                    >
+                                      Yes, Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             )}
                           </div>
                         </TableCell>
