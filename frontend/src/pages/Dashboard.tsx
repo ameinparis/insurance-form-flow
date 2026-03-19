@@ -206,7 +206,7 @@ const Dashboard = () => {
                   <TableHeader className="sticky top-0 z-10">
                     <TableRow className="bg-gray-200 dark:bg-slate-700 border-b border-gray-300 dark:border-gray-600 rounded-xl">
                       <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
-                        Quote ID
+                        Quote IDsss
                       </TableHead>
                       <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
                         Client Name
