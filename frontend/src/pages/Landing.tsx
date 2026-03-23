@@ -120,7 +120,7 @@ const Landing = () => {
         </h1>
 
         <p className="mt-6 text-sm sm:text-base md:text-lg text-gray-500 tracking-wide">
-          Professional tool to calculate, manage, and deliver accurate quotes — faster and smarter.  </p>
+          Professional tool to calculate, manage, and deliver accurate quotes faster and smarter.  </p>
 
         {/* <div className="mt-16 w-full flex justify-center">
           <img
