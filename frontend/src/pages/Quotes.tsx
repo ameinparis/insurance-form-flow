@@ -453,8 +453,8 @@ const Quotes = () => {
                           <PaginationLink
                             onClick={() => goToPage(pageNum)}
                             isActive={currentPage === pageNum}
-                            className={`rounded-lg cursor-pointer min-w-10 ${currentPage === pageNum
-                              ? 'bg-[#009fe3] text-white hover:bg-[#0088c6] border-[#009fe3]'
+                            className={`rounded-full cursor-pointer min-w-10 ${currentPage === pageNum
+                              ? 'bg-transparent text-[#009fe3] border-2 border-[#009fe3] hover:bg-[#009fe3]/10'
                               : 'hover:bg-gray-100 dark:hover:bg-slate-800'
                               }`}
                           >
