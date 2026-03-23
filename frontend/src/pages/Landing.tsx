@@ -116,11 +116,11 @@ const Landing = () => {
 
       <section className="relative flex flex-col items-center justify-center text-center px-6 py-24">
         <h1 className="font-montserrat  text-[clamp(2rem,5vw,5rem)] text-[#1b1b1b] leading-tight">
-          Streamlining..... Insurance Quotations
+          Streamlining Insurance Quotations
         </h1>
 
         <p className="mt-6 text-sm sm:text-base md:text-lg text-gray-500 tracking-wide">
-          Professional tool to calculate, manage, and deliver accurate quotes — faster and smarter.  </p>
+          Professional tool to calculate, manage, and deliver accurate quotes faster and smarter.  </p>
 
         {/* <div className="mt-16 w-full flex justify-center">
           <img
