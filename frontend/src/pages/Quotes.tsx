@@ -35,7 +35,7 @@ const Quotes = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [deleteQuoteId, setDeleteQuoteId] = useState<string | null>(null)
   const { userRole } = useAuth()
-  const itemsPerPage = 100
+  const itemsPerPage = 50
 
   // Use global search term if available, otherwise use local
   const searchTerm = globalSearchTerm || localSearchTerm
