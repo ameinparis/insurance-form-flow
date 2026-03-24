@@ -336,9 +336,9 @@ const Team = () => {
                 {teamMembers.map((member) => (
                   <TableRow
                     key={member.id}
-                    className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-sky-100 dark:hover:bg-sky-900/30 hover:border-sky-200 dark:hover:border-sky-700 transition-all duration-200 my-2 overflow-hidden"
+                    className="group bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm transition-all duration-200 my-2 overflow-hidden"
                   >
-                    <TableCell className="py-5 px-6 rounded-l-xl">
+                    <TableCell className="py-5 px-6 rounded-l-xl group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                       <div className="flex items-center gap-3">
                         <Avatar className={`h-10 w-10 border-2 ${member.borderColor}`}>
                           <AvatarFallback className={`${member.bgColor} font-semibold`}>
@@ -348,10 +348,10 @@ const Team = () => {
                         <span className="text-gray-700 dark:text-gray-300 font-medium">{member.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
+                    <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                       {member.email}
                     </TableCell>
-                    <TableCell className="py-5 px-6">
+                    <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                       <Badge
                         variant="outline"
                         className={`rounded-full px-2 py-1.5 text-xs font-medium border capitalize ${getRoleBadgeClass(member.role)}`}
@@ -359,7 +359,7 @@ const Team = () => {
                         {member.role}
                       </Badge>
                     </TableCell>
-                    <TableCell className={`py-5 px-6 ${currentUserRole?.toLowerCase() !== "superuser" ? "rounded-r-xl" : ""}`}>
+                    <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                       {currentUserRole?.toLowerCase() === "superuser" ? (
                         <Badge
                           variant="outline"
@@ -378,7 +378,7 @@ const Team = () => {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="py-5 px-6 text-right rounded-r-xl">
+                    <TableCell className="py-5 px-6 text-right rounded-r-xl group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
