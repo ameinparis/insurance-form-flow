@@ -378,7 +378,7 @@ const Team = () => {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="py-5 px-6 text-right rounded-r-xl">
+                    <TableCell className="py-5 px-6 text-right rounded-r-xl group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
