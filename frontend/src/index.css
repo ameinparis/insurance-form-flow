@@ -119,15 +119,15 @@
     --input: 220 28% 16%;
     --ring: 199 89% 48%;
     
-    /* Sidebar - Same darker navy as card/header */
-    --sidebar-background: 222 20% 21%;      /* Same as card */
+    --sidebar-background: 228 45% 13%;      /* rgb(18,24,48) */
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 199 89% 48%;
-    --sidebar-primary-foreground: 220 32% 12%;
-    --sidebar-accent: 222 20% 24%;
+    --sidebar-primary-foreground: 228 45% 13%;
+    --sidebar-accent: 228 40% 17%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-accent-hover: 222 20% 26%;
-    --sidebar-border: 222 20% 21%;          /* Same as sidebar bg, invisible */
+    --sidebar-accent-hover: 228 40% 20%;
+    --sidebar-border: 228 45% 13%;
+    --sidebar-ring: 199 89% 48%;
     --sidebar-ring: 199 89% 48%;
     --sidebar-active: 220 28% 18%;           /* Blue tint for active */
     --sidebar-active-foreground: 199 89% 60%; /* Cyan text */
