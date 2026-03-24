@@ -61,7 +61,7 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="w-full min-h-screen bg-background">
+      <div className="w-full h-screen overflow-hidden bg-background">
         {/* Fixed Header */}
         <header className="fixed top-0 left-0 right-0 z-50 mx-8 mt-6 h-[72px] flex items-center px-8 justify-between bg-card rounded-[40px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-0">
           {/* Logo */}
