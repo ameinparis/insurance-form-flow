@@ -164,10 +164,6 @@ const Settings = () => {
                   <h3 className="text-xl font-semibold text-foreground">
                     {userName.split(" ").map(word => word[0].toUpperCase() + word.slice(1)).join(" ")}
                   </h3>
-                  <p className="text-sm text-primary">Insurance Advisor</p>
-                  <p className="text-xs text-muted-foreground mt-2 text-center">
-                    Member since January 2024
-                  </p>
                 </div>
 
                 {/* Right side - Editable form */}
