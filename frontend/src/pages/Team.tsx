@@ -338,7 +338,7 @@ const Team = () => {
                     key={member.id}
                     className="group bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm transition-all duration-200 my-2 overflow-hidden"
                   >
-                    <TableCell className="py-5 px-6 rounded-l-xl">
+                    <TableCell className="py-5 px-6 rounded-l-xl group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                       <div className="flex items-center gap-3">
                         <Avatar className={`h-10 w-10 border-2 ${member.borderColor}`}>
                           <AvatarFallback className={`${member.bgColor} font-semibold`}>
