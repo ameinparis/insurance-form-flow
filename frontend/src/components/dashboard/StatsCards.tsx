@@ -29,10 +29,10 @@ const COLORS = [
 
 // Pastel card backgrounds matching the reference image
 const CARD_STYLES = [
-  { bg: "bg-blue-100 dark:bg-blue-900/30", iconBg: "bg-blue-200/80 dark:bg-blue-800/50", iconColor: "text-blue-700 dark:text-blue-300" },
-  { bg: "bg-emerald-100 dark:bg-emerald-900/30", iconBg: "bg-emerald-200/80 dark:bg-emerald-800/50", iconColor: "text-emerald-700 dark:text-emerald-300" },
-  { bg: "bg-purple-100 dark:bg-purple-900/30", iconBg: "bg-purple-200/80 dark:bg-purple-800/50", iconColor: "text-purple-700 dark:text-purple-300" },
-  { bg: "bg-orange-100 dark:bg-orange-900/30", iconBg: "bg-orange-200/80 dark:bg-orange-800/50", iconColor: "text-orange-700 dark:text-orange-300" },
+  { bg: "bg-blue-100 dark:bg-blue-900/60", iconBg: "bg-blue-200/80 dark:bg-blue-700/50", iconColor: "text-blue-700 dark:text-blue-200" },
+  { bg: "bg-emerald-100 dark:bg-emerald-900/60", iconBg: "bg-emerald-200/80 dark:bg-emerald-700/50", iconColor: "text-emerald-700 dark:text-emerald-200" },
+  { bg: "bg-purple-100 dark:bg-purple-900/60", iconBg: "bg-purple-200/80 dark:bg-purple-700/50", iconColor: "text-purple-700 dark:text-purple-200" },
+  { bg: "bg-orange-100 dark:bg-orange-900/60", iconBg: "bg-orange-200/80 dark:bg-orange-700/50", iconColor: "text-orange-700 dark:text-orange-200" },
 ]
 
 export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: StatsCardsProps) => {
