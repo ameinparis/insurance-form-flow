@@ -108,14 +108,7 @@ const Settings = () => {
     }
   }
 
-  // Mock audit data - in real app, fetch from API
-  const auditData = [
-    { action: "User Login", details: "ame busang logged in", time: "2 hours ago", icon: User },
-    { action: "Quote Created", details: "New life insurance quote #QT-2024-001", time: "4 hours ago", icon: FileText },
-    { action: "Settings Updated", details: "Email notifications enabled", time: "1 day ago", icon: Shield },
-    { action: "Quote Exported", details: "Quote #QT-2024-001 exported as PDF", time: "2 days ago", icon: FileText },
-    { action: "User Login", details: "ame busang logged in from new device", time: "3 days ago", icon: User },
-  ]
+  const auditData: { action: string; details: string; time: string; icon: any }[] = []
 
   const getPasswordStrength = (password: string) => {
     if (password.length === 0) return { strength: 0, label: "", color: "" }
