@@ -201,19 +201,6 @@ const Landing = () => {
             </Button>
 
 
-            <div className="text-center">
-              <div className="text-muted-foreground mb-4">OR</div>
-              <div className="text-muted-foreground">
-                Don't have an account?{" "}
-                <Button
-                  type="button"
-                  variant="link"
-                  className="text-blue-500 hover:text-blue-600 p-0 h-auto font-normal"
-                >
-                  Signup
-                </Button>
-              </div>
-            </div>
           </form>
         </DialogContent>
       </Dialog>
