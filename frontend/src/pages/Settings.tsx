@@ -305,12 +305,12 @@ const Settings = () => {
                   </div>
                   <div>
                     <p className="font-medium">Current Session</p>
-                    <p className="text-sm text-muted-foreground">Active now</p>
+                    <p className="text-sm text-muted-foreground"></p>
                   </div>
                 </div>
                 <div className="text-right text-sm text-muted-foreground">
-                  <p>Last login: Today, 9:45 AM</p>
-                  <p>Browser: Chrome on Windows</p>
+                  <p></p>
+                  <p></p>
                 </div>
               </div>
             </CardContent>
