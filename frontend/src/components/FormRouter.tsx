@@ -53,9 +53,9 @@ const FormRouter = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="bg-gray-50 dark:bg-slate-800 rounded-3xl p-6 space-y-6">
       <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/calculator")}>
+        <Button variant="ghost" size="sm" onClick={() => navigate("/calculator")} className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 h-9 w-9 p-0">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
