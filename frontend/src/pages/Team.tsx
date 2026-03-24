@@ -378,13 +378,12 @@ const Team = () => {
                         </Badge>
                       )}
                     </TableCell>
-                    {(
-                      <TableCell className="py-5 px-6 text-right rounded-r-xl">
+                    <TableCell className="py-5 px-6 text-right rounded-r-xl">
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-8 w-8 hover:bg-transparent"
                             onClick={() => openEditModal(member)}
                             title="Edit User"
                           >
@@ -393,7 +392,7 @@ const Team = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className="h-8 w-8 hover:bg-transparent"
                             onClick={() => setDeletingMember(member)}
                             title="Delete User"
                           >
@@ -401,7 +400,6 @@ const Team = () => {
                           </Button>
                         </div>
                       </TableCell>
-                    )}
                   </TableRow>
                 ))}
               </TableBody>
