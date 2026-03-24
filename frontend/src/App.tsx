@@ -8,6 +8,7 @@ import { BackgroundJobProvider } from "@/contexts/BackgroundJobContext";
 import MultiJobWidget from "@/components/BackgroundJobWidget";
 import { useBackgroundJob } from "@/contexts/BackgroundJobContext";
 import { Layout } from "./components/Layout";
+import { ScrollToTop } from "./components/ScrollToTop";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Calculate from "./pages/Calculate";
@@ -50,6 +51,7 @@ const App = () => (
           <Sonner />
           <GlobalBackgroundJobWidget />
           <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth/set-password" element={<SetPassword />} />
