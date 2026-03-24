@@ -125,7 +125,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="sticky top-[102px] self-start h-[calc(100vh-130px)]">
             <AppSidebar />
           </div>
-          <main className="flex-1 overflow-auto bg-background rounded-3xl p-6 shadow-sm">
+          <main className="flex-1 overflow-auto bg-card rounded-3xl p-6 shadow-sm">
             {children}
           </main>
         </div>
