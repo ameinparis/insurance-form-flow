@@ -119,7 +119,7 @@
     --input: 225 25% 15%;
     --ring: 199 89% 48%;
     
-    --sidebar-background: 225 30% 9%;       /* ~#111827 - Slightly lighter than body */
+    --sidebar-background: 225 30% 11%;      /* Match card color for consistent sidebar */
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 199 89% 48%;
     --sidebar-primary-foreground: 225 30% 7%;
