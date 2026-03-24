@@ -89,7 +89,7 @@
     --background: 220 32% 12%;             /* #1a1f2e - Dark blue body */
     --foreground: 210 40% 98%;              /* Light text */
 
-    --card: 222 20% 21%;                   /* #2b3143 - Header/sidebar panels */
+    --card: 228 45% 13%;                   /* rgb(18,24,48) */
     --card-foreground: 210 40% 98%;
 
     --popover: 220 32% 12%;
