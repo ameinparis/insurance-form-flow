@@ -85,11 +85,11 @@
   }
 
   .dark {
-    /* Dark mode - Uniform dark blue #1a1f2e for header, sidebar, body */
-    --background: 220 32% 12%;             /* #1a1f2e - Dark blue */
+    /* Dark mode - Dark navy for body, lighter navy for header/sidebar */
+    --background: 220 32% 12%;             /* #1a1f2e - Dark blue body */
     --foreground: 210 40% 98%;              /* Light text */
 
-    --card: 220 28% 14%;                   /* Slightly lighter cards */
+    --card: 222 20% 21%;                   /* #2b3143 - Header/sidebar panels */
     --card-foreground: 210 40% 98%;
 
     --popover: 220 32% 12%;
