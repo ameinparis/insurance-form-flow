@@ -326,11 +326,9 @@ const Team = () => {
                   <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
                     Status
                   </TableHead>
-                  {currentUserRole?.toLowerCase() === "superuser" && (
-                    <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs text-right rounded-r-full">
-                      Actions
-                    </TableHead>
-                  )}
+                  <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs text-right rounded-r-full">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
 
