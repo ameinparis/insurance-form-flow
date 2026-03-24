@@ -108,14 +108,7 @@ const Settings = () => {
     }
   }
 
-  // Mock audit data - in real app, fetch from API
-  const auditData = [
-    { action: "User Login", details: "ame busang logged in", time: "2 hours ago", icon: User },
-    { action: "Quote Created", details: "New life insurance quote #QT-2024-001", time: "4 hours ago", icon: FileText },
-    { action: "Settings Updated", details: "Email notifications enabled", time: "1 day ago", icon: Shield },
-    { action: "Quote Exported", details: "Quote #QT-2024-001 exported as PDF", time: "2 days ago", icon: FileText },
-    { action: "User Login", details: "ame busang logged in from new device", time: "3 days ago", icon: User },
-  ]
+  const auditData: { action: string; details: string; time: string; icon: any }[] = []
 
   const getPasswordStrength = (password: string) => {
     if (password.length === 0) return { strength: 0, label: "", color: "" }
@@ -171,10 +164,6 @@ const Settings = () => {
                   <h3 className="text-xl font-semibold text-foreground">
                     {userName.split(" ").map(word => word[0].toUpperCase() + word.slice(1)).join(" ")}
                   </h3>
-                  <p className="text-sm text-primary">Insurance Advisor</p>
-                  <p className="text-xs text-muted-foreground mt-2 text-center">
-                    Member since January 2024
-                  </p>
                 </div>
 
                 {/* Right side - Editable form */}
@@ -316,12 +305,12 @@ const Settings = () => {
                   </div>
                   <div>
                     <p className="font-medium">Current Session</p>
-                    <p className="text-sm text-muted-foreground">Active now</p>
+                    <p className="text-sm text-muted-foreground"></p>
                   </div>
                 </div>
                 <div className="text-right text-sm text-muted-foreground">
-                  <p>Last login: Today, 9:45 AM</p>
-                  <p>Browser: Chrome on Windows</p>
+                  <p></p>
+                  <p></p>
                 </div>
               </div>
             </CardContent>
