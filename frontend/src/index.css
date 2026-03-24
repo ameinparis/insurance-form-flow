@@ -85,52 +85,51 @@
   }
 
   .dark {
-    /* Dark mode - Dark navy for body, lighter navy for header/sidebar */
-    --background: 220 32% 12%;             /* #1a1f2e - Dark blue body */
-    --foreground: 210 40% 98%;              /* Light text */
+    /* Dark mode - Very dark navy matching reference dashboard */
+    --background: 225 30% 7%;               /* ~#0d1117 - Very dark body */
+    --foreground: 210 40% 98%;
 
-    --card: 228 45% 13%;                   /* rgb(18,24,48) */
+    --card: 225 30% 11%;                    /* ~#151b2b - Dark card panels */
     --card-foreground: 210 40% 98%;
 
-    --popover: 220 32% 12%;
+    --popover: 225 30% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --brand-accent: 199 89% 48%;            /* Cyan blue #0ea5e9 */
-    --primary: 199 89% 48%;                 /* Cyan blue for dark mode */
+    --brand-accent: 199 89% 48%;
+    --primary: 199 89% 48%;
     --primary-hover: 199 89% 55%;
-    --primary-foreground: 220 32% 12%;
+    --primary-foreground: 225 30% 7%;
     
     --primary-gradient-from: 199 89% 48%;
     --primary-gradient-to: 199 89% 55%;
 
-    --secondary: 220 28% 16%;
+    --secondary: 225 25% 13%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 220 28% 16%;
+    --muted: 225 25% 13%;
     --muted-foreground: 215 20% 55%;
 
-    --accent: 220 28% 18%;
+    --accent: 225 25% 15%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 220 28% 16%;
-    --input: 220 28% 16%;
+    --border: 225 25% 15%;
+    --input: 225 25% 15%;
     --ring: 199 89% 48%;
     
-    --sidebar-background: 228 45% 13%;      /* rgb(18,24,48) */
+    --sidebar-background: 225 30% 9%;       /* ~#111827 - Slightly lighter than body */
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 199 89% 48%;
-    --sidebar-primary-foreground: 228 45% 13%;
-    --sidebar-accent: 228 40% 17%;
+    --sidebar-primary-foreground: 225 30% 7%;
+    --sidebar-accent: 225 28% 14%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-accent-hover: 228 40% 20%;
-    --sidebar-border: 228 45% 13%;
+    --sidebar-accent-hover: 225 28% 17%;
+    --sidebar-border: 225 25% 13%;
     --sidebar-ring: 199 89% 48%;
-    --sidebar-ring: 199 89% 48%;
-    --sidebar-active: 220 28% 18%;           /* Blue tint for active */
-    --sidebar-active-foreground: 199 89% 60%; /* Cyan text */
+    --sidebar-active: 225 28% 15%;
+    --sidebar-active-foreground: 199 89% 60%;
   }
 }
 
