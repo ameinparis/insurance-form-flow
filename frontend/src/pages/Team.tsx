@@ -348,7 +348,7 @@ const Team = () => {
                         <span className="text-gray-700 dark:text-gray-300 font-medium">{member.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
+                    <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                       {member.email}
                     </TableCell>
                     <TableCell className="py-5 px-6">
