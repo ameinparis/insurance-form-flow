@@ -359,7 +359,7 @@ const Team = () => {
                         {member.role}
                       </Badge>
                     </TableCell>
-                    <TableCell className={`py-5 px-6 ${currentUserRole?.toLowerCase() !== "superuser" ? "rounded-r-xl" : ""}`}>
+                    <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                       {currentUserRole?.toLowerCase() === "superuser" ? (
                         <Badge
                           variant="outline"
