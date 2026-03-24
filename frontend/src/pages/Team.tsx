@@ -351,7 +351,7 @@ const Team = () => {
                     <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                       {member.email}
                     </TableCell>
-                    <TableCell className="py-5 px-6">
+                    <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                       <Badge
                         variant="outline"
                         className={`rounded-full px-2 py-1.5 text-xs font-medium border capitalize ${getRoleBadgeClass(member.role)}`}
