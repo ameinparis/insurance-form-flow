@@ -130,7 +130,38 @@ const newQuoteSchema = new mongoose.Schema({
 
 const Quotes = mongoose.model("Quotes", newQuoteSchema);
 
+// Audit Log Schema
+const auditLogSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  userEmail: { type: String },
+  userName: { type: String },
+  action: {
+    type: String,
+    enum: [
+      "USER_LOGIN",
+      "USER_LOGOUT",
+      "USER_CREATED",
+      "QUOTE_CALCULATED",
+      "QUOTE_SAVED",
+      "QUOTE_DELETED",
+      "USER_UPDATED",
+      "PASSWORD_CHANGED",
+      "PASSWORD_RESET"
+    ],
+    required: true
+  },
+  details: { type: String },
+  metadata: { type: mongoose.Schema.Types.Mixed },
+  ipAddress: { type: String },
+  userAgent: { type: String }
+}, { timestamps: true });
 
+// Index for efficient querying
+auditLogSchema.index({ createdAt: -1 });
+auditLogSchema.index({ userId: 1, createdAt: -1 });
+auditLogSchema.index({ action: 1, createdAt: -1 });
+
+const AuditLog = mongoose.model("AuditLog", auditLogSchema);
 
 /* ---------------------------- Auth helpers --------------------------- */
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -148,6 +179,28 @@ const authenticateToken = (req, _res, next) => {
     req.user = payload; // { userId, role }
     next();
   });
+};
+
+/* ---------------------------- Audit Log Helper --------------------------- */
+const logAudit = async ({ userId, userEmail, userName, action, details, metadata = {}, req }) => {
+  try {
+    const ipAddress = req?.headers["x-forwarded-for"] || req?.connection?.remoteAddress || "unknown";
+    const userAgent = req?.headers["user-agent"] || "unknown";
+
+    await AuditLog.create({
+      userId,
+      userEmail,
+      userName,
+      action,
+      details,
+      metadata,
+      ipAddress,
+      userAgent
+    });
+  } catch (error) {
+    // Never throw - audit logging should never break the app
+    console.error("Audit log error:", error.message);
+  }
 };
 
 
@@ -301,6 +354,17 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
       console.warn('No SENDGRID_API_KEY in .env - email not sent');
     }
 
+    // Log user creation
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "USER_CREATED",
+      details: `New user ${email} created with role ${role}`,
+      metadata: { newUserId: user._id, newUserEmail: email, newUserRole: role },
+      req
+    });
+
     res.status(201).json({
       message: "User created successfully" + (emailSent ? " and welcome email sent" : ""),
       emailSent,
@@ -364,6 +428,10 @@ app.post("/api/auth/set-password", async (req, res) => {
       return res.status(400).json({ message: "Token and password are required" });
     }
 
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters" });
+    }
+
     const t = await Token.findOne({ token, type: "password_setup" });
     if (!t) {
       return res.status(400).json({ message: "Invalid token", expired: false });
@@ -389,6 +457,16 @@ app.post("/api/auth/set-password", async (req, res) => {
     // Invalidate token
     await Token.deleteOne({ _id: t._id });
 
+    // Log initial password setup
+    await logAudit({
+      userId: user._id,
+      userEmail: user.email,
+      userName: `${user.firstName} ${user.lastName}`,
+      action: "PASSWORD_CHANGED",
+      details: `User ${user.email} set their initial password and activated account`,
+      req
+    });
+
     const authToken = jwt.sign(
       { userId: user._id, role: user.role },
       JWT_SECRET,
@@ -398,6 +476,7 @@ app.post("/api/auth/set-password", async (req, res) => {
     return res.json({
       ok: true,
       token: authToken,
+      message: "Password set successfully"
     });
 
   } catch (e) {
@@ -460,6 +539,14 @@ app.post("/api/auth/reset-password", async (req, res) => {
   try {
     const { token, password } = req.body;
 
+    if (!token || !password) {
+      return res.status(400).json({ message: "Token and password are required" });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters" });
+    }
+
     const t = await Token.findOne({ token, type: "password_reset" });
     if (!t) return res.status(400).json({ message: "Invalid token" });
 
@@ -470,12 +557,28 @@ app.post("/api/auth/reset-password", async (req, res) => {
     const user = await User.findById(t.userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    user.password = await bcrypt.hash(password, 10);
+    // Hash and save the new password
+    const hash = await bcrypt.hash(password, 10);
+    user.password = hash;
     await user.save();
+
+    // Send password change confirmation email
     await sendPasswordChangedEmail(user.email, user.firstName);
+
+    // Delete the used token
     await Token.deleteOne({ _id: t._id });
 
-    return res.json({ ok: true });
+    // Log password reset
+    await logAudit({
+      userId: user._id,
+      userEmail: user.email,
+      userName: `${user.firstName} ${user.lastName}`,
+      action: "PASSWORD_RESET",
+      details: `User ${user.email} reset their password`,
+      req
+    });
+
+    return res.json({ ok: true, message: "Password reset successfully" });
   } catch (e) {
     console.error("Reset password error:", e);
     return res.status(500).json({ message: "Failed to reset password" });
@@ -490,6 +593,10 @@ app.post("/api/auth/change-password", authenticateToken, async (req, res) => {
       return res.status(400).json({ message: "Missing fields" });
     }
 
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters" });
+    }
+
     const user = await User.findById(req.user.userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -498,12 +605,25 @@ app.post("/api/auth/change-password", authenticateToken, async (req, res) => {
       return res.status(400).json({ message: "Current password is incorrect" });
     }
 
-    user.password = await bcrypt.hash(newPassword, 10);
+    // Hash and save the new password
+    const hash = await bcrypt.hash(newPassword, 10);
+    user.password = hash;
     await user.save();
+
+    // Send password change confirmation email
     await sendPasswordChangedEmail(user.email, user.firstName);
 
+    // Log password change
+    await logAudit({
+      userId: user._id,
+      userEmail: user.email,
+      userName: `${user.firstName} ${user.lastName}`,
+      action: "PASSWORD_CHANGED",
+      details: `User ${user.email} changed their password`,
+      req
+    });
 
-    return res.json({ ok: true });
+    return res.json({ ok: true, message: "Password updated successfully" });
   } catch (e) {
     console.error("Change password error:", e);
     return res.status(500).json({ message: "Failed to change password" });
@@ -524,6 +644,16 @@ app.post("/api/users/login", async (req, res) => {
     if (!ok) return res.status(400).json({ message: "Invalid password" });
 
     const token = jwt.sign({ userId: user._id.toString(), role: user.role }, JWT_SECRET);
+
+    // Log successful login
+    await logAudit({
+      userId: user._id,
+      userEmail: user.email,
+      userName: `${user.firstName} ${user.lastName}`,
+      action: "USER_LOGIN",
+      details: `User ${user.email} logged in successfully`,
+      req
+    });
 
     const { password: _pw, ...safe } = user.toObject();
     res.json({ ...safe, token, userId: user._id.toString() });
@@ -577,6 +707,17 @@ app.post("/api/quotes", authenticateToken, async (req, res) => {
       createdByName: req.body.createdByName,
     });
 
+    // Log quote saved
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "QUOTE_SAVED",
+      details: `Legacy quote saved with ID ${quoteId}`,
+      metadata: { quoteId, quote: req.body },
+      req
+    });
+
     res.status(201).json({ message: "Quote saved", quoteId, quote });
   } catch (e) {
     console.error("Save quote error:", e);
@@ -620,6 +761,18 @@ app.delete("/api/quotes/:id", authenticateToken, async (req, res) => {
   try {
     const q = await Quote.findByIdAndDelete(req.params.id);
     if (!q) return res.status(404).json({ message: "Quote not found" });
+
+    // Log quote deletion
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "QUOTE_DELETED",
+      details: `Legacy quote ${q.quoteId} deleted`,
+      metadata: { quoteId: q.quoteId },
+      req
+    });
+
     res.json({ message: "Quote deleted successfully", id: req.params.id });
   } catch (e) {
     console.error("Delete quote error:", e);
@@ -637,6 +790,18 @@ app.post("/api/quotes/calculate-annuity", async (req, res) => {
   try {
     const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/annuity/calculate";
     const { data } = await axios.post(PY_URL, req.body);
+
+    // Log quote calculation
+    await logAudit({
+      userId: req.user?.userId,
+      userEmail: req.user?.email,
+      userName: req.user?.name,
+      action: "QUOTE_CALCULATED",
+      details: `Annuity quote calculated`,
+      metadata: { productType: "Exclusive Annuity", inputs: req.body },
+      req
+    });
+
     res.json(data);
   } catch (e) {
     console.error("Annuity proxy error:", e.response?.data || e.message);
@@ -693,6 +858,17 @@ app.post("/api/quotes/calculate-funeral", authenticateToken, upload.single("file
     // Step 4: Send to Python for processing
     const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/funeral/calculate";
     const { data } = await axios.post(PY_URL, { members, inputs });
+
+    // Log quote calculation
+    await logAudit({
+      userId: req.user?.userId,
+      userEmail: req.user?.email,
+      userName: req.user?.name,
+      action: "QUOTE_CALCULATED",
+      details: `Funeral quote calculated for ${inputs.schemeName || inputs.societyName || "Unknown"}`,
+      metadata: { productType: "Exclusive Funeral", memberCount: members.length, inputs },
+      req
+    });
 
     // Step 5: Return the result
     res.status(200).json({
@@ -916,6 +1092,18 @@ app.post("/api/quotes/calculate-assurance", async (req, res) => {
   try {
     const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/assurance/calculate";
     const { data } = await axios.post(PY_URL, req.body);
+
+    // Log quote calculation
+    await logAudit({
+      userId: req.user?.userId,
+      userEmail: req.user?.email,
+      userName: req.user?.name,
+      action: "QUOTE_CALCULATED",
+      details: `Life Assurance quote calculated`,
+      metadata: { productType: "Exclusive Life Assurance", inputs: req.body },
+      req
+    });
+
     res.status(200).json({
       message: "Life Assurance quotation calculated successfully",
       result: data.output || {},
@@ -936,6 +1124,17 @@ app.post("/api/quotes/calculate-individual-life", authenticateToken, async (req,
     const { data } = await axios.post(PY_URL, req.body, {
       headers: { "Content-Type": "application/json" },
       timeout: 120000,
+    });
+
+    // Log quote calculation
+    await logAudit({
+      userId: req.user?.userId,
+      userEmail: req.user?.email,
+      userName: req.user?.name,
+      action: "QUOTE_CALCULATED",
+      details: `Individual Life Cover quote calculated`,
+      metadata: { productType: "Individual Life Cover", inputs: req.body },
+      req
     });
 
     // Pass through Python result
@@ -998,6 +1197,17 @@ app.post("/api/new-quotes", authenticateToken, async (req, res) => {
       createdBy: req.user.userId,
     });
 
+    // Log quote saved
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "QUOTE_SAVED",
+      details: `${productType} quote saved with ID ${quoteId}`,
+      metadata: { quoteId, productType, client },
+      req
+    });
+
     res.status(201).json({ message: "New Quote saved", quoteId, quote });
   } catch (e) {
     console.error("Save new quote error:", e);
@@ -1035,6 +1245,18 @@ app.delete("/api/new-quotes/:id", authenticateToken, async (req, res) => {
   try {
     const q = await Quotes.findByIdAndDelete(req.params.id);
     if (!q) return res.status(404).json({ message: "New Quote not found" });
+
+    // Log quote deletion
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "QUOTE_DELETED",
+      details: `Quote ${q.quoteId} deleted`,
+      metadata: { quoteId: q.quoteId, productType: q.productType },
+      req
+    });
+
     res.json({ message: "Quote deleted successfully", id: req.params.id });
   } catch (e) {
     console.error("Delete new quote error:", e);
@@ -1199,6 +1421,77 @@ app.post("/api/quotes/html-to-pdf", async (req, res) => {
 
 
 
+/* ----------------------------- Audit Log API Endpoints -------------------------- */
+
+// Get all audit logs (with optional filtering)
+app.get("/api/audit-logs", authenticateToken, async (req, res) => {
+  try {
+    const { action, userId, startDate, endDate, limit = 100, skip = 0 } = req.query;
+
+    const query = {};
+
+    // Filter by action type
+    if (action) {
+      query.action = action;
+    }
+
+    // Filter by userId
+    if (userId) {
+      query.userId = userId;
+    }
+
+    // Filter by date range
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    const logs = await AuditLog.find(query)
+      .sort({ createdAt: -1 })
+      .populate("userId", "firstName lastName email")
+      .limit(parseInt(limit))
+      .skip(parseInt(skip));
+
+    const total = await AuditLog.countDocuments(query);
+
+    res.json({ logs, total, limit: parseInt(limit), skip: parseInt(skip) });
+  } catch (e) {
+    console.error("Audit logs fetch error:", e);
+    res.status(500).json({ message: "Failed to fetch audit logs" });
+  }
+});
+
+// Get audit logs summary (counts by action)
+app.get("/api/audit-logs/summary", authenticateToken, async (req, res) => {
+  try {
+    const summary = await AuditLog.aggregate([
+      {
+        $group: {
+          _id: "$action",
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { count: -1 }
+      }
+    ]);
+
+    const recentLogs = await AuditLog.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .populate("userId", "firstName lastName email");
+
+    res.json({ summary, recentLogs });
+  } catch (e) {
+    console.error("Audit logs summary error:", e);
+    res.status(500).json({ message: "Failed to fetch audit logs summary" });
+  }
+});
 
 /* ----------------------------- Start server -------------------------- */
 app.listen(PORT, () => console.log(`Server running on Port ${PORT}`));
