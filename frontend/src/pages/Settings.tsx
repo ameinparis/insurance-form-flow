@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/hooks/useTheme"
-import { Eye, EyeOff, Sun, Moon, Monitor, Shield, Clock, User, FileText } from "lucide-react"
+import { Eye, EyeOff, Sun, Moon, Monitor, Shield, Clock, User, FileText, LogIn, LogOut, Edit, Trash2, Plus, RefreshCw, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useAuditLogs } from "@/hooks/useAuditLogs"
 
 const Settings = () => {
   const { theme, setTheme } = useTheme()
@@ -112,7 +113,30 @@ const Settings = () => {
     }
   }
 
-  const auditData: { action: string; details: string; time: string; icon: any }[] = []
+  const { logs: auditLogs, isLoading: auditLoading, error: auditError } = useAuditLogs(auditFilter)
+
+  const getAuditIcon = (action: string) => {
+    if (action.toLowerCase().includes('login') || action.toLowerCase().includes('sign')) return LogIn
+    if (action.toLowerCase().includes('logout')) return LogOut
+    if (action.toLowerCase().includes('delete') || action.toLowerCase().includes('remove')) return Trash2
+    if (action.toLowerCase().includes('create') || action.toLowerCase().includes('add')) return Plus
+    if (action.toLowerCase().includes('update') || action.toLowerCase().includes('edit') || action.toLowerCase().includes('change')) return Edit
+    return FileText
+  }
+
+  const formatAuditTime = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `${diffHours}h ago`
+    const diffDays = Math.floor(diffHours / 24)
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString()
+  }
 
   const getPasswordStrength = (password: string) => {
     if (password.length === 0) return { strength: 0, label: "", color: "" }
@@ -344,7 +368,7 @@ const Settings = () => {
                   <button
                     onClick={() => setTheme('light')}
                     className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${theme === 'light'
-                        ? 'border-primary bg-primary/10 dark:bg-primary/20'
+                        ? 'border-[#009fe3] bg-[#009fe3]/10'
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                       }`}
                   >
@@ -356,7 +380,7 @@ const Settings = () => {
                   <button
                     onClick={() => setTheme('dark')}
                     className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${theme === 'dark'
-                        ? 'border-primary bg-primary/10 dark:bg-primary/20'
+                        ? 'border-[#009fe3] bg-[#009fe3]/10'
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                       }`}
                   >
@@ -368,7 +392,7 @@ const Settings = () => {
                   <button
                     onClick={() => setTheme('system')}
                     className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${theme === 'system'
-                        ? 'border-primary bg-primary/10 dark:bg-primary/20'
+                        ? 'border-[#009fe3] bg-[#009fe3]/10'
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                       }`}
                   >
@@ -406,28 +430,48 @@ const Settings = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {auditData.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-4 p-4 bg-white dark:bg-slate-700 rounded-xl transition-colors hover:bg-gray-50 dark:hover:bg-slate-600"
-                  >
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <item.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium">{item.action}</p>
-                      <p className="text-sm text-muted-foreground truncate">{item.details}</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground whitespace-nowrap">{item.time}</p>
-                  </div>
-                ))}
-              </div>
-
-              {auditData.length === 0 && (
+              {auditLoading ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Loader2 className="h-12 w-12 mx-auto mb-4 opacity-50 animate-spin" />
+                  <p>Loading audit logs...</p>
+                </div>
+              ) : auditError ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Failed to load audit logs.</p>
+                </div>
+              ) : auditLogs.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No activity found for the selected period.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {auditLogs.map((log) => {
+                    const IconComponent = getAuditIcon(log.action)
+                    const userName = log.userId
+                      ? `${log.userId.firstName} ${log.userId.lastName}`
+                      : 'System'
+                    return (
+                      <div
+                        key={log._id}
+                        className="flex items-start gap-4 p-4 bg-white dark:bg-slate-700 rounded-xl transition-colors hover:bg-gray-50 dark:hover:bg-slate-600"
+                      >
+                        <div className="h-10 w-10 rounded-full bg-[#009fe3]/10 flex items-center justify-center flex-shrink-0">
+                          <IconComponent className="h-5 w-5 text-[#009fe3]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium">{log.action}</p>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {log.details || `by ${userName}`}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatAuditTime(log.createdAt)}
+                        </p>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </CardContent>
