@@ -1,4 +1,4 @@
-import { formatCurrency } from "@/lib/quoteUtils";
+import { formatCurrency, toTitleCase } from "@/lib/quoteUtils";
 
 interface LifeDisplayProps {
   quote: any;
@@ -17,7 +17,7 @@ export const LifeDisplay = ({ quote }: LifeDisplayProps) => {
     <div className="bg-white dark:bg-slate-900 p-8 space-y-8 text-sm text-gray-800 dark:text-gray-100">
       {/* HEADER */}
       <section>
-        <div className="text-base font-semibold"><span>{client?.schemeName || client?.companyName || "-"}</span></div>
+        <div className="text-base font-semibold"><span>{toTitleCase(client?.schemeName || client?.companyName) !== "—" ? toTitleCase(client?.schemeName || client?.companyName) : "-"}</span></div>
         <div className="text-base font-semibold">QUOTATION FOR GROUP LIFE ASSURANCE</div>
         <div className="flex justify-between mt-2 text-sm">
           <span>PERIOD</span>

@@ -8,6 +8,7 @@ import { Download, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
 import { PdfIcon } from "@/components/PdfIcon"
+import { toTitleCase } from "@/lib/quoteUtils"
 import { StatsCards } from "@/components/dashboard/StatsCards"
 import { PageLoader } from "@/components/PageLoader"
 import {
@@ -240,12 +241,12 @@ const Dashboard = () => {
                           </div>
                         </TableCell>
                         <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
-                          {quote.clientName || quote.fullName || quote.schemeName || "Unnamed"}
+                          {toTitleCase(quote.clientName || quote.fullName || quote.schemeName || "Unnamed")}
                         </TableCell>
                         <TableCell className="py-5 px-6">
                           <Badge
                             variant="outline"
-                            className={`rounded-full px-2 py-1.5 text-xs font-medium border ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
+                            className={`rounded-full px-2 py-1.5 text-xs font-medium border whitespace-nowrap ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
                           >
                             {quote.type || "Unknown"}
                           </Badge>

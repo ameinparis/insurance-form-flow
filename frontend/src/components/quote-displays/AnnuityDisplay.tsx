@@ -1,4 +1,4 @@
-import { formatCurrency } from "@/lib/quoteUtils";
+import { formatCurrency, toTitleCase } from "@/lib/quoteUtils";
 
 interface AnnuityDisplayProps {
   quote: any;
@@ -42,7 +42,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
       {/* Personal & Annuity Details */}
       <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 inline-block">
-          Quotation for {clientData?.fullName || "Client Name"}
+          Quotation for {toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "Client Name"}
         </h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
