@@ -37,6 +37,8 @@ const Landing = () => {
 
         const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ")
         localStorage.setItem("userName", fullName)
+        // Store the email used for login
+        localStorage.setItem("userEmail", email)
 
         toast.success("Welcome to Exclusive Insurance!")
         navigate("/dashboard")

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,6 +13,10 @@ const Settings = () => {
   const { toast } = useToast()
 
   const userName = localStorage.getItem("userName") || "User"
+  const userEmail = localStorage.getItem("userEmail") || ""
+
+  // Initialize email from localStorage
+  const [email] = useState(() => localStorage.getItem("userEmail") || "")
 
   // Generate consistent pastel color based on user name (matches header avatar)
   const getAvatarStyles = (name: string) => {
@@ -183,7 +187,13 @@ const Settings = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" type="email" placeholder="Enter your email" defaultValue="ame.busang@exclusive.co.bw" />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      value={email}
+                      disabled 
+                      className="bg-muted cursor-not-allowed"
+                    />
                   </div>
                   <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
                     Save Changes
@@ -430,3 +440,4 @@ const Settings = () => {
 }
 
 export default Settings
+
