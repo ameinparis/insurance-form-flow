@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/hooks/useTheme"
-import { Eye, EyeOff, Sun, Moon, Monitor, Shield, Clock, User, FileText, LogIn, LogOut, Edit, Trash2, Plus, RefreshCw, Loader2 } from "lucide-react"
+import { Eye, EyeOff, Sun, Moon, Monitor, Shield, Clock, User, FileText, LogIn, LogOut, Edit, Trash2, Plus, RefreshCw, Loader2, Download, ChevronLeft, ChevronRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuditLogs } from "@/hooks/useAuditLogs"
 
@@ -60,6 +60,36 @@ const Settings = () => {
 
   // Audit trail filter state
   const [auditFilter, setAuditFilter] = useState("7days")
+  const [auditPage, setAuditPage] = useState(1)
+  const AUDIT_PAGE_SIZE = 50
+
+  const formatActionLabel = (action: string) => {
+    return action
+      .replace(/[_-]/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ')
+  }
+
+  const handleExportAuditLogs = () => {
+    if (!auditLogs || auditLogs.length === 0) return
+    const headers = ['Date and Time', 'Actor', 'Action', 'Description']
+    const rows = auditLogs.map(log => {
+      const actorName = log.userId ? `${log.userId.firstName} ${log.userId.lastName}` : 'System'
+      const date = new Date(log.createdAt)
+      const formatted = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      return [formatted, actorName, formatActionLabel(log.action), log.details || ''].map(v => `"${v}"`)
+    })
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   const handlePasswordChange = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -415,18 +445,30 @@ const Settings = () => {
                   View system activity and user actions.
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="filter" className="text-sm text-muted-foreground">Show:</Label>
-                <select
-                  id="filter"
-                  value={auditFilter}
-                  onChange={(e) => setAuditFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg border border-border bg-white dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="filter" className="text-sm text-muted-foreground">Show:</Label>
+                  <select
+                    id="filter"
+                    value={auditFilter}
+                    onChange={(e) => { setAuditFilter(e.target.value); setAuditPage(1); }}
+                    className="px-3 py-1.5 rounded-lg border border-border bg-white dark:bg-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    <option value="7days">Last 7 days</option>
+                    <option value="30days">Last 30 days</option>
+                    <option value="all">All time</option>
+                  </select>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportAuditLogs}
+                  disabled={!auditLogs || auditLogs.length === 0}
+                  className="flex items-center gap-2"
                 >
-                  <option value="7days">Last 7 days</option>
-                  <option value="30days">Last 30 days</option>
-                  <option value="all">All time</option>
-                </select>
+                  <Download className="h-4 w-4" />
+                  Export CSV
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -445,59 +487,96 @@ const Settings = () => {
                   <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No activity found for the selected period.</p>
                 </div>
-              ) : (
-                <div className="overflow-x-auto rounded-xl border border-border">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-[#009fe3] text-white">
-                        <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Date and Time</th>
-                        <th className="text-left px-4 py-3 font-medium">Actor</th>
-                        <th className="text-left px-4 py-3 font-medium">Action</th>
-                        <th className="text-left px-4 py-3 font-medium">Description</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {auditLogs.map((log, index) => {
-                        const actorName = log.userId
-                          ? `${log.userId.firstName} ${log.userId.lastName}`
-                          : 'System'
-                        const date = new Date(log.createdAt)
-                        const formattedDate = date.toLocaleDateString('en-GB', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })
-                        const formattedTime = date.toLocaleTimeString('en-GB', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          second: '2-digit',
-                        })
-                        return (
-                          <tr
-                            key={log._id}
-                            className={`border-t border-border hover:bg-muted/50 transition-colors ${
-                              index % 2 === 0 ? 'bg-white dark:bg-slate-700' : 'bg-gray-50 dark:bg-slate-800'
-                            }`}
-                          >
-                            <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                              {formattedDate} {formattedTime}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap font-medium">
-                              {actorName}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              {log.action}
-                            </td>
-                            <td className="px-4 py-3 text-muted-foreground">
-                              {log.details || '—'}
-                            </td>
+              ) : (() => {
+                const totalPages = Math.ceil(auditLogs.length / AUDIT_PAGE_SIZE)
+                const paginatedLogs = auditLogs.slice((auditPage - 1) * AUDIT_PAGE_SIZE, auditPage * AUDIT_PAGE_SIZE)
+                return (
+                  <div className="space-y-4">
+                    <div className="overflow-x-auto rounded-xl border border-border">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-muted border-b border-border">
+                            <th className="text-left px-4 py-3 font-semibold text-foreground whitespace-nowrap">Date and Time</th>
+                            <th className="text-left px-4 py-3 font-semibold text-foreground">Actor</th>
+                            <th className="text-left px-4 py-3 font-semibold text-foreground">Action</th>
+                            <th className="text-left px-4 py-3 font-semibold text-foreground">Description</th>
                           </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                        </thead>
+                        <tbody>
+                          {paginatedLogs.map((log, index) => {
+                            const actorName = log.userId
+                              ? `${log.userId.firstName} ${log.userId.lastName}`
+                              : 'System'
+                            const date = new Date(log.createdAt)
+                            const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                            const formattedTime = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                            return (
+                              <tr
+                                key={log._id}
+                                className={`border-t border-border hover:bg-muted/50 transition-colors ${
+                                  index % 2 === 0 ? 'bg-white dark:bg-slate-700' : 'bg-gray-50 dark:bg-slate-800'
+                                }`}
+                              >
+                                <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                                  {formattedDate} {formattedTime}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap font-medium">
+                                  {actorName}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  {formatActionLabel(log.action)}
+                                </td>
+                                <td className="px-4 py-3 text-muted-foreground">
+                                  {log.details || '—'}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          Showing {(auditPage - 1) * AUDIT_PAGE_SIZE + 1}–{Math.min(auditPage * AUDIT_PAGE_SIZE, auditLogs.length)} of {auditLogs.length} logs
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            disabled={auditPage === 1}
+                            onClick={() => setAuditPage(p => p - 1)}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            <Button
+                              key={page}
+                              variant={page === auditPage ? "outline" : "ghost"}
+                              size="icon"
+                              className={`h-8 w-8 rounded-full ${page === auditPage ? 'border-[#009fe3] text-[#009fe3]' : ''}`}
+                              onClick={() => setAuditPage(page)}
+                            >
+                              {page}
+                            </Button>
+                          ))}
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            disabled={auditPage === totalPages}
+                            onClick={() => setAuditPage(p => p + 1)}
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
