@@ -65,7 +65,7 @@ const Calculate = () => {
           {options.map((option) => (
             <div 
               key={option.id} 
-              className="bg-muted/50 dark:bg-muted/20 rounded-2xl p-6 flex flex-col items-center text-center space-y-4 hover:shadow-lg transition-all duration-300"
+              className="bg-muted/50 dark:bg-[hsl(225,28%,15%)] dark:border dark:border-[hsl(225,25%,22%)] rounded-2xl p-6 flex flex-col items-center text-center space-y-4 hover:shadow-lg transition-all duration-300"
             >
               {/* Icon Container */}
               <div className={`h-16 w-16 rounded-xl ${option.bgColor} flex items-center justify-center`}>
