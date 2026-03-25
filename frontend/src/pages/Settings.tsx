@@ -344,7 +344,7 @@ const Settings = () => {
                   <button
                     onClick={() => setTheme('light')}
                     className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${theme === 'light'
-                        ? 'border-primary bg-primary/10 dark:bg-primary/20'
+                        ? 'border-[#009fe3] bg-[#009fe3]/10'
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                       }`}
                   >
@@ -356,7 +356,7 @@ const Settings = () => {
                   <button
                     onClick={() => setTheme('dark')}
                     className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${theme === 'dark'
-                        ? 'border-primary bg-primary/10 dark:bg-primary/20'
+                        ? 'border-[#009fe3] bg-[#009fe3]/10'
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                       }`}
                   >
@@ -368,7 +368,7 @@ const Settings = () => {
                   <button
                     onClick={() => setTheme('system')}
                     className={`flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 cursor-pointer transition-all ${theme === 'system'
-                        ? 'border-primary bg-primary/10 dark:bg-primary/20'
+                        ? 'border-[#009fe3] bg-[#009fe3]/10'
                         : 'border-border bg-white dark:bg-slate-700/50 hover:border-muted-foreground/50'
                       }`}
                   >
