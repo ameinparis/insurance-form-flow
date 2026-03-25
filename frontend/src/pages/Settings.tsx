@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/hooks/useTheme"
-import { Eye, EyeOff, Sun, Moon, Monitor, Shield, Clock, User, FileText, LogIn, LogOut, Edit, Trash2, Plus, RefreshCw, Loader2 } from "lucide-react"
+import { Eye, EyeOff, Sun, Moon, Monitor, Shield, Clock, User, FileText, LogIn, LogOut, Edit, Trash2, Plus, RefreshCw, Loader2, Download, ChevronLeft, ChevronRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuditLogs } from "@/hooks/useAuditLogs"
 
@@ -60,6 +60,36 @@ const Settings = () => {
 
   // Audit trail filter state
   const [auditFilter, setAuditFilter] = useState("7days")
+  const [auditPage, setAuditPage] = useState(1)
+  const AUDIT_PAGE_SIZE = 50
+
+  const formatActionLabel = (action: string) => {
+    return action
+      .replace(/[_-]/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ')
+  }
+
+  const handleExportAuditLogs = () => {
+    if (!auditLogs || auditLogs.length === 0) return
+    const headers = ['Date and Time', 'Actor', 'Action', 'Description']
+    const rows = auditLogs.map(log => {
+      const actorName = log.userId ? `${log.userId.firstName} ${log.userId.lastName}` : 'System'
+      const date = new Date(log.createdAt)
+      const formatted = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      return [formatted, actorName, formatActionLabel(log.action), log.details || ''].map(v => `"${v}"`)
+    })
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   const handlePasswordChange = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
