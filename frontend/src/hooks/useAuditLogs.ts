@@ -21,7 +21,7 @@ interface AuditLogsResponse {
   skip: number
 }
 
-const API_BASE_URL = 'http://localhost:5002/api'
+const API_BASE_URL = 'https://njs.exclusivelife.co.bw/api'
 
 export function useAuditLogs(filter: string) {
   const [logs, setLogs] = useState<AuditLog[]>([])
