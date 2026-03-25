@@ -292,7 +292,7 @@ Insurance will not accept liability for any losses incurred as a result of using
 
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
+    <div className="w-full space-y-6">
       {/* Step 1: Living Annuity */}
       <Card>
         <CardHeader>

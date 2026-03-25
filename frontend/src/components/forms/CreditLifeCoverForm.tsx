@@ -29,7 +29,7 @@ const CreditLifeCoverForm = () => {
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-2xl font-bold">Credit Life Cover</CardTitle>
         <CardDescription>

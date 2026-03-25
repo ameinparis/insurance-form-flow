@@ -46,7 +46,7 @@ const CriticalIllnessCoverForm = () => {
   ]
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-2xl font-bold">Critical Illness Cover</CardTitle>
         <CardDescription>
