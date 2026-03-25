@@ -446,32 +446,56 @@ const Settings = () => {
                   <p>No activity found for the selected period.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {auditLogs.map((log) => {
-                    const IconComponent = getAuditIcon(log.action)
-                    const userName = log.userId
-                      ? `${log.userId.firstName} ${log.userId.lastName}`
-                      : 'System'
-                    return (
-                      <div
-                        key={log._id}
-                        className="flex items-start gap-4 p-4 bg-white dark:bg-slate-700 rounded-xl transition-colors hover:bg-gray-50 dark:hover:bg-slate-600"
-                      >
-                        <div className="h-10 w-10 rounded-full bg-[#009fe3]/10 flex items-center justify-center flex-shrink-0">
-                          <IconComponent className="h-5 w-5 text-[#009fe3]" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium">{log.action}</p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {log.details || `by ${userName}`}
-                          </p>
-                        </div>
-                        <p className="text-xs text-muted-foreground whitespace-nowrap">
-                          {formatAuditTime(log.createdAt)}
-                        </p>
-                      </div>
-                    )
-                  })}
+                <div className="overflow-x-auto rounded-xl border border-border">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-[#009fe3] text-white">
+                        <th className="text-left px-4 py-3 font-medium whitespace-nowrap">Date and Time</th>
+                        <th className="text-left px-4 py-3 font-medium">Actor</th>
+                        <th className="text-left px-4 py-3 font-medium">Action</th>
+                        <th className="text-left px-4 py-3 font-medium">Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditLogs.map((log, index) => {
+                        const actorName = log.userId
+                          ? `${log.userId.firstName} ${log.userId.lastName}`
+                          : 'System'
+                        const date = new Date(log.createdAt)
+                        const formattedDate = date.toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })
+                        const formattedTime = date.toLocaleTimeString('en-GB', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                        })
+                        return (
+                          <tr
+                            key={log._id}
+                            className={`border-t border-border hover:bg-muted/50 transition-colors ${
+                              index % 2 === 0 ? 'bg-white dark:bg-slate-700' : 'bg-gray-50 dark:bg-slate-800'
+                            }`}
+                          >
+                            <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                              {formattedDate} {formattedTime}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap font-medium">
+                              {actorName}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {log.action}
+                            </td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              {log.details || '—'}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardContent>
