@@ -15,21 +15,21 @@ const FormRouter = () => {
   const getFormTitle = () => {
     switch (type) {
       case "life-funeral":
-        return "Life Funeral Insurance"
+        return "Exclusive Group Funeral Insurance"
       case "living-annuities":
-        return "Living Annuities"
+        return "Exclusive Living Annuities"
       case "group-life-assurance":
-        return "Group Life Assurance"
+        return "Exclusive Group Life Assurance"
       case "individual-life-cover":
-        return "Individual Life Cover"
+        return "Exclusive Individual Life Cover"
       case "critical-illness":
-        return "Critical Illness Cover"
+        return "Exclusive Critical Illness Cover"
       case "home":
-        return "Home Insurance"
+        return "Exclusive Home Insurance"
       case "health":
-        return "Health Insurance"
+        return "Exclusive Health Insurance"
       default:
-        return "Insurance Calculator"
+        return "Exclusive Insurance Calculator"
     }
   }
 
