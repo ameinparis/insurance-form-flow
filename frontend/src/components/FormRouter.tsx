@@ -22,6 +22,8 @@ const FormRouter = () => {
         return "Group Life Assurance"
       case "individual-life-cover":
         return "Individual Life Cover"
+      case "critical-illness":
+        return "Critical Illness Cover"
       case "home":
         return "Home Insurance"
       case "health":
