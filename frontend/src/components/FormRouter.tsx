@@ -6,6 +6,7 @@ import LivingAnnuitiesQuotationForm from "./forms/LivingAnnuitiesQuotationForm"
 import CreditLifeCoverForm from "./forms/CreditLifeCoverForm"
 import GroupLifeAssuranceForm from "./forms/GroupLifeAssuranceForm"
 import IndividualLifeCoverForm from "./forms/IndividualLifeCoverForm"
+import CriticalIllnessCoverForm from "./forms/CriticalIllnessCoverForm"
 
 const FormRouter = () => {
   const { type } = useParams()
@@ -40,6 +41,8 @@ const FormRouter = () => {
         return <GroupLifeAssuranceForm />
         case "individual-life-cover":
           return <IndividualLifeCoverForm/>
+      case "critical-illness":
+          return <CriticalIllnessCoverForm/>
       default:
         return (
           <div className="text-center py-8">

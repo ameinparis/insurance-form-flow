@@ -407,7 +407,7 @@ Insurance will not accept liability for any losses incurred as a result of using
       {/* Step 2: Life Annuity */}
       <Card className={showLifeForm ? "" : "opacity-60 pointer-events-none"}>
         <CardHeader>
-          <CardTitle>Life Annuity Setup</CardTitle>
+          <CardTitle>Life Annuity</CardTitle>
           <CardDescription>Step 2: calculate monthly life annuity using funds remaining.</CardDescription>
         </CardHeader>
         <CardContent>

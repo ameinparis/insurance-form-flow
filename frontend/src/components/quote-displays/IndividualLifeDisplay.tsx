@@ -18,12 +18,29 @@ export const IndividualLifeDisplay = ({ quote }: IndividualLifeDisplayProps) => 
       {/* Header */}
       <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-8">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 inline-block">
-          Quotation for {clientData?.fullName || "Client Name"}
+          Individual Life Cover Quotation for {clientData?.fullName || "Client Name"}
         </h2>
       </div>
 
- 
-  
+      {/* Quotation Notice */}
+      <section className="space-y-4">
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          This is a quotation only, and it is not the intention to "HOLD COVERED" unless specifically endorsed in writing.
+        </p>
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          This quotation is based on the information supplied at the time of quoting. Any misrepresentation, material mis-description or non-disclosure shall render any item, section or entire policy avoidable.
+        </p>
+
+        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 pt-2">GENERAL CONDITIONS</h3>
+        <ul className="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-2">
+          <li>The standard individual life cover policy wording terms and conditions will apply unless otherwise agreed.</li>
+          <li>Any additional covers or extensions will be subject to additional premium.</li>
+          <li>All values quoted are inclusive of VAT unless otherwise stated.</li>
+          <li>This quote is valid for 30 days.</li>
+          <li>The quoted premium is inclusive of commission at 10% + VAT.</li>
+        </ul>
+      </section>
+
 
       {/* Premium Section */}
       <div>
