@@ -1,4 +1,4 @@
-import { formatCurrency } from "@/lib/quoteUtils";
+import { formatCurrency, toTitleCase } from "@/lib/quoteUtils";
 import {
   Table,
   TableBody,
@@ -44,7 +44,7 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
       <section className="space-y-4">
         <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 inline-block">
-            Group Funeral Scheme Quotation for {client?.companyName || "Client Name"}
+            Group Funeral Scheme Quotation for {toTitleCase(client?.companyName) !== "—" ? toTitleCase(client?.companyName) : "Client Name"}
           </h2>
         </div>
         <p className="text-sm text-gray-700 dark:text-gray-300">

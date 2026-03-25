@@ -95,6 +95,18 @@ export const getProductDisplayName = (productType?: string): string => {
 };
 
 /**
+ * Convert a string to Title Case (first letter uppercase, rest lowercase per word)
+ */
+export const toTitleCase = (str: string | undefined | null): string => {
+  if (!str) return "—";
+  return str
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
+/**
  * Format date string
  */
 export const formatDate = (dateString?: string): string => {

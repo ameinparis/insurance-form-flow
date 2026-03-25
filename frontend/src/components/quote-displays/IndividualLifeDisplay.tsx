@@ -1,4 +1,4 @@
-import { formatCurrency } from "@/lib/quoteUtils";
+import { formatCurrency, toTitleCase } from "@/lib/quoteUtils";
 
 interface IndividualLifeDisplayProps {
   quote: any;
@@ -18,7 +18,7 @@ export const IndividualLifeDisplay = ({ quote }: IndividualLifeDisplayProps) => 
       {/* Header */}
       <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-8">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 inline-block">
-          Individual Life Cover Quotation for {clientData?.fullName || "Client Name"}
+          Individual Life Cover Quotation for {toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "Client Name"}
         </h2>
       </div>
 
