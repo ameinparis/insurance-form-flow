@@ -83,14 +83,15 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
           <Table>
             <TableBody>
               <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
-  <TableCell>Monthly Premium Per Family</TableCell>
-  <TableCell>{formatCurrency(premiumPerFamilyTotal)}</TableCell>
-</TableRow>
-
-<TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
   <TableCell>Monthly Premium Per Member</TableCell>
+  <TableCell>{formatCurrency(premiumPerMemberPerBeneficiary)}</TableCell>
+</TableRow>
+              <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
+  <TableCell>Monthly Premium Per Family</TableCell>
   <TableCell>{formatCurrency(premiumPerFamilyPerBeneficiary)}</TableCell>
 </TableRow>
+
+
             </TableBody>
           </Table>
         </div>
