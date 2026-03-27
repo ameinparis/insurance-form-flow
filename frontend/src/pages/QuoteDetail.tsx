@@ -120,7 +120,7 @@ const QuoteDetail = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
-        <Button onClick={exportStyledQuotePDF}>
+        <Button onClick={handleDownloadPdf}>
           <Download className="h-4 w-4 mr-2" />
           Download PDF
         </Button>
