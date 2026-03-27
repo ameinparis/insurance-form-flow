@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/authlibrary"
 import { useGlobalSearch } from "@/lib/searchContext"
 import { PdfIcon } from "@/components/PdfIcon"
 import { toTitleCase } from "@/lib/quoteUtils"
+import { exportQuotePdf } from "@/lib/pdfExport"
 import { PageLoader } from "@/components/PageLoader"
 import {
   AlertDialog,
@@ -171,22 +172,8 @@ const Quotes = () => {
   const handleDownloadPdf = async (e: React.MouseEvent, quoteId: string, id: string, isLegacy: boolean) => {
     e.stopPropagation()
     try {
-      const url = `http://localhost:5002/api/quotes/${id}/generate-pdf?legacy=${isLegacy}`
-      const res = await fetch(url, { method: "GET" })
-      if (!res.ok) throw new Error(`PDF generation failed: ${res.status}`)
-      const blob = await res.blob()
-      const objUrl = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = objUrl
-      a.download = `quote-${quoteId}.pdf`
-      a.target = "_blank"
-      a.style.display = "none"
-      document.body.appendChild(a)
-      a.click()
-      setTimeout(() => {
-        URL.revokeObjectURL(objUrl)
-        a.remove()
-      }, 3000)
+      toast.info("Generating PDF...")
+      await exportQuotePdf(id, quoteId, isLegacy)
       toast.success("PDF downloaded successfully")
     } catch (err) {
       console.error("Error downloading PDF:", err)
