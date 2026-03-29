@@ -36,17 +36,28 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
     return Number.isFinite(n) && n > 0;
   };
 
-  // Build dynamic cover & premium rows from inputs
-  const coverRows = [
-    { label: "Principal Member", cover: inputs?.principalMemberCover, premiumRow: getRow("member") },
-    { label: "Spouse", cover: inputs?.spouseCover, premiumRow: null },
-    { label: "Children age 16 to 19", cover: inputs?.children16toMax, premiumRow: null },
-    { label: "Children age 6 to 15", cover: inputs?.children6to15, premiumRow: null },
-    { label: "Children age 1 to 5", cover: inputs?.children1to5, premiumRow: null },
-    { label: "Children age 0 to 1", cover: inputs?.children0to1, premiumRow: null },
-    { label: "Extended Family", cover: inputs?.extendedFamilyCover, premiumRow: getRow("extended") },
-    { label: "Parents", cover: inputs?.parentsCover, premiumRow: getRow("parent") },
+  // Group cover rows by premium category
+  const memberCoverRows = [
+    { label: "Principal Member", cover: inputs?.principalMemberCover },
   ].filter((row) => hasMoney(row.cover));
+
+  const familyCoverRows = [
+    { label: "Spouse", cover: inputs?.spouseCover },
+    { label: "Children age 16 to 19", cover: inputs?.children16toMax },
+    { label: "Children age 6 to 15", cover: inputs?.children6to15 },
+    { label: "Children age 1 to 5", cover: inputs?.children1to5 },
+    { label: "Children age 0 to 1", cover: inputs?.children0to1 },
+  ].filter((row) => hasMoney(row.cover));
+
+  const parentCoverRows = [
+    { label: "Parents", cover: inputs?.parentsCover },
+  ].filter((row) => hasMoney(row.cover));
+
+  const extendedCoverRows = [
+    { label: "Extended Family", cover: inputs?.extendedFamilyCover },
+  ].filter((row) => hasMoney(row.cover));
+
+  const allCoverRows = [...memberCoverRows, ...familyCoverRows, ...parentCoverRows, ...extendedCoverRows];
 
   return (
     <div className="bg-white dark:bg-slate-900 p-8 space-y-10">
@@ -80,7 +91,7 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
       </section>
 
       {/* Cover Amounts */}
-      {coverRows.length > 0 && (
+      {allCoverRows.length > 0 && (
         <section className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
             COVER AMOUNTS
@@ -93,7 +104,7 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {coverRows.map((row) => (
+              {allCoverRows.map((row) => (
                 <TableRow key={row.label} className="border-b border-gray-100 dark:border-gray-800">
                   <TableCell>{row.label}</TableCell>
                   <TableCell>{formatCurrency(row.cover)}</TableCell>
@@ -104,36 +115,51 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
         </section>
       )}
 
-      {/* Pricing Summary */}
+      {/* Monthly Premium */}
       <section className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-          PRICING SUMMARY
+          MONTHLY PREMIUM
         </h3>
 
-        {/* 1. Member and Family */}
-        <div className="space-y-1">
-          <h4 className="font-medium text-gray-700 dark:text-gray-300">
-            1. Member and Family
-          </h4>
-          <Table>
-            <TableBody>
-              <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
-                <TableCell>Monthly Premium Per Member</TableCell>
-                <TableCell>{formatCurrency(premiumPerMemberPerBeneficiary)}</TableCell>
-              </TableRow>
-              <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
-                <TableCell>Monthly Premium Per Family</TableCell>
-                <TableCell>{formatCurrency(premiumPerFamilyPerBeneficiary)}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
+        {/* 1. Member */}
+        {hasMoney(premiumPerMemberPerBeneficiary) && (
+          <div className="space-y-1">
+            <h4 className="font-medium text-gray-700 dark:text-gray-300">
+              1. Member
+            </h4>
+            <Table>
+              <TableBody>
+                <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
+                  <TableCell>Monthly Premium Per Member</TableCell>
+                  <TableCell>{formatCurrency(premiumPerMemberPerBeneficiary)}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
-        {/* 2. Parents */}
+        {/* 2. Family */}
+        {hasMoney(premiumPerFamilyPerBeneficiary) && (
+          <div className="space-y-1">
+            <h4 className="font-medium text-gray-700 dark:text-gray-300">
+              {hasMoney(premiumPerMemberPerBeneficiary) ? "2" : "1"}. Member and Family
+            </h4>
+            <Table>
+              <TableBody>
+                <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
+                  <TableCell>Monthly Premium Per Family</TableCell>
+                  <TableCell>{formatCurrency(premiumPerFamilyPerBeneficiary)}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        {/* Parents */}
         {hasMoney(premiumPerParent) && (
           <div className="space-y-1">
             <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">
-              2. Parents and Parents-in-Law
+              {[hasMoney(premiumPerMemberPerBeneficiary), hasMoney(premiumPerFamilyPerBeneficiary)].filter(Boolean).length + 1}. Parents and Parents-in-Law
             </h4>
             <Table>
               <TableBody>
@@ -146,11 +172,11 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
           </div>
         )}
 
-        {/* 3. Extended Family */}
+        {/* Extended Family */}
         {hasMoney(premiumPerExtended) && (
           <div className="space-y-1">
             <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">
-              3. Extended Family Members
+              {[hasMoney(premiumPerMemberPerBeneficiary), hasMoney(premiumPerFamilyPerBeneficiary), hasMoney(premiumPerParent)].filter(Boolean).length + 1}. Extended Family Members
             </h4>
             <Table>
               <TableBody>
@@ -163,7 +189,6 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
           </div>
         )}
       </section>
-
       {/* Policy Specs */}
       <section className="space-y-2">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mt-6">
