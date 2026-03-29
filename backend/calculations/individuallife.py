@@ -92,7 +92,7 @@ def normalize_payload(payload: dict) -> dict:
     required = [
         "age", "gender", "smokerStatus", "education", "income", "marriageStatus",
         "product", "term", "cashbackOption",
-        "deathCover", "disabilityCover", "ciCover"
+        "deathCover", "disabilityCover"
     ]
     missing = [k for k in required if payload.get(k) in (None, "", [])]
     if missing:
