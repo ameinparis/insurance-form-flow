@@ -3,6 +3,8 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableHead,
+  TableHeader,
   TableRow,
 } from "@/components/ui/table";
 
@@ -13,7 +15,7 @@ interface FuneralDisplayProps {
 export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
   const { client, inputs, outputs } = quote || {};
 
-  //Fuzzy matching helper — case-insensitive, partial match
+  // Fuzzy matching helper — case-insensitive, partial match
   const getRow = (keyword: string) =>
     outputs?.rows?.find(
       (row: any) =>
@@ -21,13 +23,9 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
         row.memberStatus.toLowerCase().includes(keyword.toLowerCase())
     );
 
-  //Log what’s coming from backend — so you can confirm Excel labels
-  console.log("FuneralDisplay outputs:", outputs?.rows);
-
   // Extract the relevant premiums safely
   const premiumPerFamilyTotal = getRow("family")?.totalPremium;
   const premiumPerMemberTotal = getRow("member")?.totalPremium;
-
   const premiumPerFamilyPerBeneficiary = getRow("family")?.premiumPerBeneficiary;
   const premiumPerMemberPerBeneficiary = getRow("member")?.premiumPerBeneficiary;
   const premiumPerParent = getRow("parent")?.totalPremium;
@@ -37,6 +35,18 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
     const n = Number(v);
     return Number.isFinite(n) && n > 0;
   };
+
+  // Build dynamic cover & premium rows from inputs
+  const coverRows = [
+    { label: "Principal Member", cover: inputs?.principalMemberCover, premiumRow: getRow("member") },
+    { label: "Spouse", cover: inputs?.spouseCover, premiumRow: null },
+    { label: "Children age 16 to 19", cover: inputs?.children16toMax, premiumRow: null },
+    { label: "Children age 6 to 15", cover: inputs?.children6to15, premiumRow: null },
+    { label: "Children age 1 to 5", cover: inputs?.children1to5, premiumRow: null },
+    { label: "Children age 0 to 1", cover: inputs?.children0to1, premiumRow: null },
+    { label: "Extended Family", cover: inputs?.extendedFamilyCover, premiumRow: getRow("extended") },
+    { label: "Parents", cover: inputs?.parentsCover, premiumRow: getRow("parent") },
+  ].filter((row) => hasMoney(row.cover));
 
   return (
     <div className="bg-white dark:bg-slate-900 p-8 space-y-10">
@@ -48,7 +58,7 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
           </h2>
         </div>
         <p className="text-sm text-gray-700 dark:text-gray-300">
-          This is a quotation only, and it is not the intention to “HOLD COVERED” unless specifically endorsed in writing.
+          This is a quotation only, and it is not the intention to "HOLD COVERED" unless specifically endorsed in writing.
         </p>
         <p className="text-sm text-gray-700 dark:text-gray-300">
           This quotation is based on the information supplied at the time of quoting. Any misrepresentation, material mis-description or non-disclosure shall render any item, section or entire policy avoidable.
@@ -69,6 +79,31 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
         </ul>
       </section>
 
+      {/* Cover Amounts */}
+      {coverRows.length > 0 && (
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+            COVER AMOUNTS
+          </h3>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-semibold">Beneficiary</TableHead>
+                <TableHead className="font-semibold">Cover Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {coverRows.map((row) => (
+                <TableRow key={row.label} className="border-b border-gray-100 dark:border-gray-800">
+                  <TableCell>{row.label}</TableCell>
+                  <TableCell>{formatCurrency(row.cover)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </section>
+      )}
+
       {/* Pricing Summary */}
       <section className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
@@ -83,15 +118,13 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
           <Table>
             <TableBody>
               <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
-  <TableCell>Monthly Premium Per Member</TableCell>
-  <TableCell>{formatCurrency(premiumPerMemberPerBeneficiary)}</TableCell>
-</TableRow>
+                <TableCell>Monthly Premium Per Member</TableCell>
+                <TableCell>{formatCurrency(premiumPerMemberPerBeneficiary)}</TableCell>
+              </TableRow>
               <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
-  <TableCell>Monthly Premium Per Family</TableCell>
-  <TableCell>{formatCurrency(premiumPerFamilyPerBeneficiary)}</TableCell>
-</TableRow>
-
-
+                <TableCell>Monthly Premium Per Family</TableCell>
+                <TableCell>{formatCurrency(premiumPerFamilyPerBeneficiary)}</TableCell>
+              </TableRow>
             </TableBody>
           </Table>
         </div>
@@ -189,9 +222,9 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
             </label>
             <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
           </div>
-           <div>
+          <div>
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-             Commencement Date:
+              Commencement Date:
             </label>
             <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
           </div>
