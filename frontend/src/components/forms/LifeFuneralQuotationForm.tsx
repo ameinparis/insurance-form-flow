@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,6 +38,13 @@ const LifeFuneralQuotationForm = () => {
     companyContact: "",
     companyEmail: ""
   })
+
+  // Pre-fill companyName with societyName when the quote dialog opens
+  useEffect(() => {
+    if (showQuoteDialog && formData.societyName && !customerDetails.companyName) {
+      setCustomerDetails((prev) => ({ ...prev, companyName: formData.societyName }))
+    }
+  }, [showQuoteDialog])
 
   // Generate suggestions based on company name input
   const companySuggestions = useMemo((): AutocompleteSuggestion[] => {
