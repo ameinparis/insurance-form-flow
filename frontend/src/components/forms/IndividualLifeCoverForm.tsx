@@ -384,8 +384,7 @@ const displayValue = (row: any) => {
                     type="number"
                     value={formData.ciCover}
                     onChange={(e) => handleInputChange("ciCover", e.target.value)}
-                    placeholder="Enter CI cover amount"
-                    required
+                    placeholder="Enter CI cover amount (optional)"
                   />
                 </div>
               </div>
