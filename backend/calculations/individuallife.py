@@ -120,7 +120,7 @@ def normalize_payload(payload: dict) -> dict:
         "cashbackOption": map_enum("cashbackOption", payload["cashbackOption"]),
         "deathCover": as_int(payload["deathCover"], "deathCover"),
         "disabilityCover": as_int(payload["disabilityCover"], "disabilityCover"),
-        "ciCover": as_int(payload["ciCover"], "ciCover"),
+        "ciCover": as_int(payload.get("ciCover", 0), "ciCover"),
     }
 
 
