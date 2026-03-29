@@ -158,8 +158,6 @@ def calculate_funeral():
             "societyName",
             "asAndWhenCommission",
             "schemeType",
-            "maxExtendedFamilyMembers",
-            "maxAgeChildren",
             "coverLevelType",
             "principalMemberCover",
         ]
@@ -175,8 +173,6 @@ def calculate_funeral():
         must_be_positive = [
             "profitTarget",
             "asAndWhenCommission",
-            "maxExtendedFamilyMembers",
-            "maxAgeChildren",
             "principalMemberCover",
         ]
         bad_nums = []

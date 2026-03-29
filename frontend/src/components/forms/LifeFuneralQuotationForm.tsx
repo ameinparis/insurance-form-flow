@@ -169,16 +169,43 @@ const LifeFuneralQuotationForm = () => {
 
     const parseData = (data: any[]) => {
       const cleanRows = data.filter((row) => Object.values(row).some(Boolean))
-      const maxChildAge = cleanRows
-        .filter((row) => (row["Member Status"] || "").toLowerCase() === "child")
-        .map((row) => parseFloat(row["Age"]))
-        .filter((age) => !isNaN(age))
-        .reduce((max, age) => Math.max(max, age), 0)
+
+      // Calculate current max age of children from DOB + Relationship
+      const today = new Date()
+      let maxChildAge = 0
+      cleanRows.forEach((row) => {
+        const rel = (row["Relationship"] || row["Member Status"] || "").toString().toLowerCase()
+        if (rel.includes("child")) {
+          const dobRaw = row["DOB"] || row["Date of Birth"] || row["dob"] || row["date of birth"]
+          if (dobRaw) {
+            let dob: Date | null = null
+            if (typeof dobRaw === "number") {
+              // Excel serial date
+              dob = new Date(Math.round((dobRaw - 25569) * 86400 * 1000))
+            } else {
+              const s = String(dobRaw).trim()
+              // Try dd/mm/yyyy
+              const ddmm = s.match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/)
+              if (ddmm) {
+                dob = new Date(parseInt(ddmm[3]), parseInt(ddmm[2]) - 1, parseInt(ddmm[1]))
+              } else {
+                dob = new Date(s)
+              }
+            }
+            if (dob && !isNaN(dob.getTime())) {
+              let age = today.getFullYear() - dob.getFullYear()
+              const m = today.getMonth() - dob.getMonth()
+              if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--
+              if (age > maxChildAge) maxChildAge = age
+            }
+          }
+        }
+      })
 
       setFormData((prev) => ({
         ...prev,
         numberOfLives: String(cleanRows.length),
-        currentMaxAgeChild: String(maxChildAge || "")
+        currentMaxAgeChild: maxChildAge > 0 ? String(maxChildAge) : ""
       }))
       toast.success(`${cleanRows.length} member records loaded`)
     }
@@ -260,8 +287,6 @@ const LifeFuneralQuotationForm = () => {
       ["societyName", "Society Name"],
       ["asAndWhenCommission", "As-and-When Commission (%)"],
       ["schemeType", "Scheme Type"],
-      ["maxExtendedFamilyMembers", "Max Extended Family Members"],
-      ["maxAgeChildren", "Max Age of Children Covered"],
       ["coverLevelType", "Cover Levels"],
       ["principalMemberCover", "Principal Member Cover"],
     ] as const;
@@ -279,8 +304,6 @@ const LifeFuneralQuotationForm = () => {
     const mustBePositive = [
       ["profitTarget", "Profit Target (%)"],
       ["asAndWhenCommission", "As-and-When Commission (%)"],
-      ["maxExtendedFamilyMembers", "Max Extended Family Members"],
-      ["maxAgeChildren", "Max Age of Children Covered"],
       ["principalMemberCover", "Principal Member Cover"],
     ] as const;
 
@@ -582,7 +605,7 @@ const LifeFuneralQuotationForm = () => {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="maxExtendedFamilyMembers">Max Extended Family Members<span className="text-red-500">*</span></Label>
+                <Label htmlFor="maxExtendedFamilyMembers">Max Extended Family Members</Label>
                 <Input
                   id="maxExtendedFamilyMembers"
                   type="number"
@@ -592,7 +615,7 @@ const LifeFuneralQuotationForm = () => {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="maxAgeChildren">Max Age of Children Covered<span className="text-red-500">*</span></Label>
+                <Label htmlFor="maxAgeChildren">Max Age of Children Covered</Label>
                 <Input
                   id="maxAgeChildren"
                   type="number"
@@ -602,12 +625,13 @@ const LifeFuneralQuotationForm = () => {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="currentMaxAgeChild">Current Max Age of Child in Data<span className="text-red-500">*</span></Label>
+                <Label htmlFor="currentMaxAgeChild">Current Max Age of Child in Data</Label>
                 <Input
                   id="currentMaxAgeChild"
                   type="number"
                   value={formData.currentMaxAgeChild}
-                  onChange={(e) => handleInputChange("currentMaxAgeChild", e.target.value)}
+                  readOnly
+                  className="bg-muted"
                 />
 
               </div>
