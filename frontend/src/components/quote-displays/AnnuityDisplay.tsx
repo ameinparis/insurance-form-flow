@@ -41,14 +41,14 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
     <div className="bg-white dark:bg-slate-900 p-8 space-y-8">
       {/* Personal & Annuity Details */}
       <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 inline-block">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-block">
           Quotation for {toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "Client Name"}
         </h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
         <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-gray-700 dark:text-gray-300">Date of Birth:</span>
-          <span className="text-gray-800 dark:text-gray-100">{clientData?.dateOfBirth || "N/A"}</span>
+          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Date of Birth:</span>
+          <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.dateOfBirth || "N/A"}</span>
         </div>
         <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
           <span className="font-medium text-gray-700 dark:text-gray-300">ID/Passport Number:</span>
