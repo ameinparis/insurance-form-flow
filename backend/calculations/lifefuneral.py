@@ -295,7 +295,7 @@ def calculate_funeral():
         for addr, val in cover_cells.items():
             num = _cover_thousands(val)
             print(f"  {addr}: raw={val!r} -> snapped={num}")
-            inp.range(addr).api.Value = float(num)
+            inp.range(addr).value = float(num)
 
         print("==== DEBUG: InputSheet values written to Excel ====")
         for addr in ("I6","I7","I8","I9","I10","I11","I12","I13","I14",
@@ -316,6 +316,15 @@ def calculate_funeral():
         print("Activating InputSheet and running macro 'Pricing'")
         inp.activate()
         wb.app.calculate()
+
+        principal_cover = inp.range("I17").value
+        print(f"PRE-MACRO I17 readback: {principal_cover!r}")
+
+        if principal_cover in (None, ""):
+            return jsonify({
+                "error": "InputSheet!I17 is blank before running Pricing"
+            }), 500
+
         wb.macro("Pricing")()
         wb.app.calculate()
         print("Macro 'Pricing' completed")

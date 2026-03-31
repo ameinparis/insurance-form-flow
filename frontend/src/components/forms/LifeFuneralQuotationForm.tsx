@@ -344,6 +344,9 @@ const LifeFuneralQuotationForm = () => {
       "children6to15",
       "children1to5",
       "children0to1",
+      "maxExtendedFamilyMembers",
+      "maxAgeChildren",
+      "currentMaxAgeChild",
     ]);
 
     //sanitize ALL fields to numeric strings (or keep plain text where applicable)
@@ -543,7 +546,7 @@ const LifeFuneralQuotationForm = () => {
         {/* Quotation Setup Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Quotation Setup</CardTitle>
+            <CardTitle></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
