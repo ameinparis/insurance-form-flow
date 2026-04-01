@@ -618,36 +618,42 @@ const LifeFuneralQuotationForm = () => {
                 />
               </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="maxExtendedFamilyMembers">Max Extended Family Members</Label>
-                <Input
-                  id="maxExtendedFamilyMembers"
-                  type="number"
-                  value={formData.maxExtendedFamilyMembers}
-                  onChange={(e) => handleInputChange("maxExtendedFamilyMembers", e.target.value)}
-                />
-              </div>
+              {showExtended && (
+                <div className="space-y-1">
+                  <Label htmlFor="maxExtendedFamilyMembers">Max Extended Family Members</Label>
+                  <Input
+                    id="maxExtendedFamilyMembers"
+                    type="number"
+                    value={formData.maxExtendedFamilyMembers}
+                    onChange={(e) => handleInputChange("maxExtendedFamilyMembers", e.target.value)}
+                  />
+                </div>
+              )}
 
-              <div className="space-y-1">
-                <Label htmlFor="maxAgeChildren">Max Age of Children Covered</Label>
-                <Input
-                  id="maxAgeChildren"
-                  type="number"
-                  value={formData.maxAgeChildren}
-                  onChange={(e) => handleInputChange("maxAgeChildren", e.target.value)}
-                />
-              </div>
+              {showChildren && (
+                <>
+                  <div className="space-y-1">
+                    <Label htmlFor="maxAgeChildren">Max Age of Children Covered</Label>
+                    <Input
+                      id="maxAgeChildren"
+                      type="number"
+                      value={formData.maxAgeChildren}
+                      onChange={(e) => handleInputChange("maxAgeChildren", e.target.value)}
+                    />
+                  </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="currentMaxAgeChild">Current Max Age of Child in Data</Label>
-                <Input
-                  id="currentMaxAgeChild"
-                  type="number"
-                  value={formData.currentMaxAgeChild}
-                  readOnly
-                  className="bg-muted"
-                />
-              </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="currentMaxAgeChild">Current Max Age of Child in Data</Label>
+                    <Input
+                      id="currentMaxAgeChild"
+                      type="number"
+                      value={formData.currentMaxAgeChild}
+                      readOnly
+                      className="bg-muted"
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Cover Levels Dropdown */}
               <div className="space-y-1 col-span-1 md:col-span-2">
