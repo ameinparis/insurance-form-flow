@@ -442,6 +442,7 @@ const GroupLifeAssuranceForm = () => {
 
   return (
     <TooltipProvider>
+      {isRedirecting && <GeneratingOverlay />}
       <div className="w-full space-y-8">
         <Card>
           <CardHeader>

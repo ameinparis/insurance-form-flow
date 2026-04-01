@@ -228,6 +228,7 @@ const displayValue = (row: any) => {
 
   return (
     <>
+      {isRedirecting && <GeneratingOverlay />}
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Individual Life Cover</CardTitle>

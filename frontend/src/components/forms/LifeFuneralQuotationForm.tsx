@@ -457,6 +457,7 @@ const LifeFuneralQuotationForm = () => {
 
   return (
     <TooltipProvider>
+      {isRedirecting && <GeneratingOverlay />}
       <div className="w-full space-y-6">
         {/* Upload Card */}
         <Card>

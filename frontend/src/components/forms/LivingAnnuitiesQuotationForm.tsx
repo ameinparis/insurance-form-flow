@@ -304,6 +304,8 @@ Insurance will not accept liability for any losses incurred as a result of using
 
 
   return (
+    <>
+    {isRedirecting && <GeneratingOverlay />}
     <div className="w-full space-y-6">
       {/* Step 1: Living Annuity */}
       <Card>
