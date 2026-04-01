@@ -18,6 +18,14 @@ import axios from "axios"
 import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 
+const GeneratingOverlay = () => (
+  <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+    <h2 className="text-xl font-semibold text-foreground">Generating Quote...</h2>
+    <p className="text-muted-foreground mt-2">Please wait while we prepare your quote</p>
+  </div>
+)
+
 type LivingResult = {
   guarantee_period: number
   guaranteed_annuity: number
@@ -233,6 +241,7 @@ Insurance will not accept liability for any losses incurred as a result of using
   }
 
   const [isSavingQuote, setIsSavingQuote] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   const handleFinalQuoteSubmit = async () => {
     const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']
@@ -280,9 +289,11 @@ Insurance will not accept liability for any losses incurred as a result of using
         }
       )
 
-      toast.success(`Quote ${data.quoteId} created successfully! Redirecting...`)
+      toast.success(`Quote ${data.quoteId} created successfully!`)
       setShowQuoteDialog(false)
-      setTimeout(() => navigate(`/quotes/${data._id}`), 1500)
+      setIsSavingQuote(false)
+      setIsRedirecting(true)
+      setTimeout(() => navigate(`/quotes/${data._id}`), 4000)
 
     } catch (error: any) {
       console.error("Error saving quote:", error)
@@ -293,6 +304,8 @@ Insurance will not accept liability for any losses incurred as a result of using
 
 
   return (
+    <>
+    {isRedirecting && <GeneratingOverlay />}
     <div className="w-full space-y-6">
       {/* Step 1: Living Annuity */}
       <Card>
@@ -728,6 +741,7 @@ Insurance will not accept liability for any losses incurred as a result of using
         </DialogContent>
       </Dialog>
     </div>
+    </>
   )
 }
 

@@ -14,12 +14,21 @@ import axios from "axios"
 import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 
+const GeneratingOverlay = () => (
+  <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+    <h2 className="text-xl font-semibold text-foreground">Generating Quote...</h2>
+    <p className="text-muted-foreground mt-2">Please wait while we prepare your quote</p>
+  </div>
+)
+
 const IndividualLifeCoverForm = () => {
   const navigate = useNavigate()
   const [isCalculating, setIsCalculating] = useState(false)
   const [result, setResult] = useState<any | null>(null)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [isSavingQuote, setIsSavingQuote] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   const formatMoney = (v: any) => {
   const n = Number(v)
@@ -188,13 +197,14 @@ const displayValue = (row: any) => {
       throw new Error(data.message || data.error || "Failed to save quote")
     }
 
-    toast.success(`Quote ${data.quoteId} saved successfully! Redirecting...`)
+    toast.success(`Quote ${data.quoteId} saved successfully!`)
     setShowQuoteDialog(false)
-    setTimeout(() => navigate(`/quotes/${data._id}`), 1500)
+    setIsSavingQuote(false)
+    setIsRedirecting(true)
+    setTimeout(() => navigate(`/quotes/${data._id}`), 4000)
   } catch (err: any) {
     console.error("Save quote error:", err)
     toast.error(err.message || "Failed to save quote")
-  } finally {
     setIsSavingQuote(false)
   }
 }
@@ -218,6 +228,7 @@ const displayValue = (row: any) => {
 
   return (
     <>
+      {isRedirecting && <GeneratingOverlay />}
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Individual Life Cover</CardTitle>
