@@ -41,6 +41,17 @@ export interface QuoteData {
   updatedAt?: string;
 }
 
+export interface SavedQuoteResponse {
+  _id?: string;
+  quoteId?: string;
+  quote?: {
+    _id?: string;
+    quoteId?: string;
+  };
+}
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
  * Fetch quote details from either legacy or new API endpoint
  */
@@ -65,6 +76,54 @@ export const fetchQuoteDetails = async (
   }
   
   return response.json();
+};
+
+export const getSavedQuoteId = (response: SavedQuoteResponse): string | null => {
+  return response._id || response.quote?._id || null;
+};
+
+export const waitForQuoteReady = async (
+  quoteId: string,
+  options: {
+    isLegacy?: boolean;
+    retries?: number;
+    intervalMs?: number;
+    minimumMs?: number;
+  } = {}
+): Promise<QuoteData> => {
+  const {
+    isLegacy = false,
+    retries = 15,
+    intervalMs = 1000,
+    minimumMs = 0,
+  } = options;
+
+  const readinessPromise = (async () => {
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt < retries; attempt += 1) {
+      try {
+        return await fetchQuoteDetails(quoteId, isLegacy);
+      } catch (error) {
+        lastError = error;
+
+        if (attempt === retries - 1) {
+          break;
+        }
+
+        await delay(intervalMs);
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new Error("Quote is not ready yet");
+  })();
+
+  const [quote] = await Promise.all([
+    readinessPromise,
+    minimumMs > 0 ? delay(minimumMs) : Promise.resolve(),
+  ]);
+
+  return quote;
 };
 
 /**
