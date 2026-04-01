@@ -29,6 +29,14 @@ interface DetectedRoles {
 
 const EMPTY_ROLES: DetectedRoles = { principal: 0, spouse: 0, child: 0, adultDependent: 0, extended: 0 }
 
+const GeneratingOverlay = () => (
+  <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+    <h2 className="text-xl font-semibold text-foreground">Generating Quote...</h2>
+    <p className="text-muted-foreground mt-2">Please wait while we prepare your quote</p>
+  </div>
+)
+
 function classifyRelationship(raw: string): keyof DetectedRoles | null {
   const rel = (raw || "").toString().trim().toLowerCase()
   if (!rel) return null
