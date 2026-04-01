@@ -241,6 +241,7 @@ Insurance will not accept liability for any losses incurred as a result of using
   }
 
   const [isSavingQuote, setIsSavingQuote] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   const handleFinalQuoteSubmit = async () => {
     const requiredFields = ['fullName', 'dateOfBirth', 'idNumber', 'contactNumber', 'email']

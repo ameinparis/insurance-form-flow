@@ -410,6 +410,7 @@ const LifeFuneralQuotationForm = () => {
   }
 
   const [isSavingQuote, setIsSavingQuote] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   const handleCreateQuote = async () => {
     const requiredFields = ['companyName', 'registrationNumber', 'companyContact', 'companyEmail']

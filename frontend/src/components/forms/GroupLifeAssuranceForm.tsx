@@ -123,6 +123,7 @@ const GroupLifeAssuranceForm = () => {
   const [isCalculating, setIsCalculating] = useState(false)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [isSavingQuote, setIsSavingQuote] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   // New inputs
   const [maxDeathBenefit, setMaxDeathBenefit] = useState<string>("")
