@@ -741,6 +741,7 @@ Insurance will not accept liability for any losses incurred as a result of using
         </DialogContent>
       </Dialog>
     </div>
+    </>
   )
 }
 
