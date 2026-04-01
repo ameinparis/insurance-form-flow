@@ -36,6 +36,25 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
     return Number.isFinite(n) && n > 0;
   };
 
+  const getPremiumLabel = (status: string) => {
+    const s = status.toLowerCase();
+
+    if (s.includes("principal")) return "Monthly Premium Per Member";
+    if (s.includes("family")) return "Monthly Premium Per Family (includes spouse & children)";
+    if (s.includes("adult dependent")) return "Monthly Premium Per Adult Dependent";
+    if (s.includes("extended")) return "Monthly Premium Per Extended Member";
+
+    return `Monthly Premium Per ${status}`;
+  };
+
+  const monthlyPremiumRows = (outputs?.rows || [])
+    .filter((row: any) => hasMoney(row?.premiumPerBeneficiary) && Number(row?.numberOfBeneficiaries) > 0)
+    .map((row: any) => ({
+      memberStatus: row.memberStatus,
+      label: getPremiumLabel(row.memberStatus || ""),
+      value: row.premiumPerBeneficiary,
+    }));
+
   // Group cover rows by premium category
   const memberCoverRows = [
     { label: "Principal Member", cover: inputs?.principalMemberCover },
@@ -116,79 +135,27 @@ export const FuneralDisplay = ({ quote }: FuneralDisplayProps) => {
       )}
 
       {/* Monthly Premium */}
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-          MONTHLY PREMIUM
-        </h3>
+    <section className="space-y-4">
+  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+    MONTHLY PREMIUM
+  </h3>
 
-        {/* 1. Member */}
-        {hasMoney(premiumPerMemberPerBeneficiary) && (
-          <div className="space-y-1">
-            <h4 className="font-medium text-gray-700 dark:text-gray-300">
-              1. Member
-            </h4>
-            <Table>
-              <TableBody>
-                <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
-                  <TableCell>Monthly Premium Per Member</TableCell>
-                  <TableCell>{formatCurrency(premiumPerMemberPerBeneficiary)}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-        )}
-
-        {/* 2. Family */}
-        {hasMoney(premiumPerFamilyPerBeneficiary) && (
-          <div className="space-y-1">
-            <h4 className="font-medium text-gray-700 dark:text-gray-300">
-              {hasMoney(premiumPerMemberPerBeneficiary) ? "2" : "1"}. Member and Family
-            </h4>
-            <Table>
-              <TableBody>
-                <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
-                  <TableCell>Monthly Premium Per Family</TableCell>
-                  <TableCell>{formatCurrency(premiumPerFamilyPerBeneficiary)}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-        )}
-
-        {/* Parents */}
-        {hasMoney(premiumPerParent) && (
-          <div className="space-y-1">
-            <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">
-              {[hasMoney(premiumPerMemberPerBeneficiary), hasMoney(premiumPerFamilyPerBeneficiary)].filter(Boolean).length + 1}. Parents and Parents-in-Law
-            </h4>
-            <Table>
-              <TableBody>
-                <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
-                  <TableCell>Monthly Premium Per Parent</TableCell>
-                  <TableCell>{formatCurrency(premiumPerParent)}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-        )}
-
-        {/* Extended Family */}
-        {hasMoney(premiumPerExtended) && (
-          <div className="space-y-1">
-            <h4 className="font-medium text-gray-700 dark:text-gray-300 mt-6">
-              {[hasMoney(premiumPerMemberPerBeneficiary), hasMoney(premiumPerFamilyPerBeneficiary), hasMoney(premiumPerParent)].filter(Boolean).length + 1}. Extended Family Members
-            </h4>
-            <Table>
-              <TableBody>
-                <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
-                  <TableCell>Monthly Premium Per Member</TableCell>
-                  <TableCell>{formatCurrency(premiumPerExtended)}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </section>
+  {monthlyPremiumRows.map((row: any, index: number) => (
+    <div key={`${row.memberStatus}-${index}`} className="space-y-1">
+      <h4 className="font-medium text-gray-700 dark:text-gray-300">
+        {index + 1}. {row.memberStatus}
+      </h4>
+      <Table>
+        <TableBody>
+          <TableRow className="font-bold border-b border-gray-100 dark:border-gray-800">
+            <TableCell>{row.label}</TableCell>
+            <TableCell>{formatCurrency(row.value)}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+  ))}
+</section>
       {/* Policy Specs */}
       <section className="space-y-2">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mt-6">
