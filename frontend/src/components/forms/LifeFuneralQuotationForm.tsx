@@ -895,7 +895,21 @@ const LifeFuneralQuotationForm = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {premiumResult.rows?.map((row: any, index: number) => (
+                            {premiumResult.rows
+                              ?.filter((row: any) => {
+                                const status = (row.memberStatus || "").toLowerCase()
+                                // Principal always shown
+                                if (status.includes("principal")) return true
+                                // Family row shown only if spouse or children exist
+                                if (status.includes("family")) return showSpouse || showChildren
+                                // Adult dependent row
+                                if (status.includes("adult") || status.includes("parent")) return showAdultDependent
+                                // Extended row
+                                if (status.includes("extended")) return showExtended
+                                // Show any other rows by default
+                                return true
+                              })
+                              .map((row: any, index: number) => (
                               <>
                                 <tr key={index} className="border-b">
                                   <td className="p-2">{row.memberStatus}</td>
