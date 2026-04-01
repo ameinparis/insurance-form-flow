@@ -323,8 +323,13 @@ const LifeFuneralQuotationForm = () => {
       submitData.children6to15 = "0"
       submitData.children1to5 = "0"
       submitData.children0to1 = "0"
+      submitData.maxAgeChildren = "0"
+      submitData.currentMaxAgeChild = "0"
     }
-    if (!showExtended) submitData.extendedFamilyCover = "0"
+    if (!showExtended) {
+      submitData.extendedFamilyCover = "0"
+      submitData.maxExtendedFamilyMembers = "0"
+    }
     if (!showAdultDependent) submitData.parentsCover = "0"
 
     const syncedFormData = {
