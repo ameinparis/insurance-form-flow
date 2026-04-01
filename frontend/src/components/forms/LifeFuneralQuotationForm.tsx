@@ -9,7 +9,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Upload, Info, HelpCircle, Loader2 } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Switch } from "@/components/ui/switch"
+import { Upload, Info, HelpCircle, Loader2, Users } from "lucide-react"
 import { toast } from "sonner"
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
@@ -17,12 +19,34 @@ import { useBackgroundJob } from "@/contexts/BackgroundJobContext"
 import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 
+interface DetectedRoles {
+  principal: number
+  spouse: number
+  child: number
+  adultDependent: number
+  extended: number
+}
+
+const EMPTY_ROLES: DetectedRoles = { principal: 0, spouse: 0, child: 0, adultDependent: 0, extended: 0 }
+
+function classifyRelationship(raw: string): keyof DetectedRoles | null {
+  const rel = (raw || "").toString().trim().toLowerCase()
+  if (!rel) return null
+  if (["principal member", "principal", "member", "main member"].includes(rel)) return "principal"
+  if (rel === "spouse") return "spouse"
+  if (rel.includes("adult dependent")) return "adultDependent"
+  if (rel.includes("child")) return "child"
+  if (rel.includes("extended")) return "extended"
+  return null
+}
 
 const LifeFuneralQuotationForm = () => {
   const navigate = useNavigate()
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [premiumResult, setPremiumResult] = useState<any | null>(null)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
+  const [detectedRoles, setDetectedRoles] = useState<DetectedRoles>(EMPTY_ROLES)
+  const [showAllFields, setShowAllFields] = useState(false)
 
   const {
     addJob,
@@ -39,14 +63,12 @@ const LifeFuneralQuotationForm = () => {
     companyEmail: ""
   })
 
-  // Pre-fill companyName with societyName when the quote dialog opens
   useEffect(() => {
     if (showQuoteDialog && formData.societyName && !customerDetails.companyName) {
       setCustomerDetails((prev) => ({ ...prev, companyName: formData.societyName }))
     }
   }, [showQuoteDialog])
 
-  // Generate suggestions based on company name input
   const companySuggestions = useMemo((): AutocompleteSuggestion[] => {
     return searchClients(customerDetails.companyName, "corporate").map((client) => ({
       label: client.companyName || client.schemeName || "",
@@ -64,15 +86,6 @@ const LifeFuneralQuotationForm = () => {
       companyEmail: client.companyEmail || client.contactEmail || ""
     })
   }
-
-
-  // const termsAndConditions = `
-  //   This quotation outlines projected premiums for the selected funeral cover scheme. Premiums are based on the age, relationship, and cover amounts submitted, and are subject to change pending underwriting and validation of all data.
-
-  //   Exclusive Life reserves the right to review and adjust these premiums at policy issuance. This quotation does not constitute a binding contract. Actual policy terms and conditions will be provided upon application approval.
-
-  //   This quotation is confidential and may not be altered. Any unauthorized modifications will render this quote invalid.
-  // `
 
   const [formData, setFormData] = useState({
     profitTarget: "",
@@ -93,79 +106,50 @@ const LifeFuneralQuotationForm = () => {
     children0to1: "",
     parentsCover: ""
   })
-  // replace both formatCurrencyInput / unformatCurrencyInput with this:
-  const toNumericString = (val: string) => {
-    if (val == null) return "";
-    const cleaned = String(val).replace(/[^0-9.]/g, "");
-    return cleaned;
-  };
 
-  // put near your other constants
+  const toNumericString = (val: string) => {
+    if (val == null) return ""
+    return String(val).replace(/[^0-9.]/g, "")
+  }
+
   const NUMERIC_FIELDS = new Set([
-    "profitTarget",
-    "asAndWhenCommission",
-    "numberOfLives",
-    "maxExtendedFamilyMembers",
-    "maxAgeChildren",
-    "currentMaxAgeChild",
-    "principalMemberCover",
-    "spouseCover",
-    "extendedFamilyCover",
-    "children16toMax",
-    "children6to15",
-    "children1to5",
-    "children0to1",
-    "parentsCover",
-  ]);
+    "profitTarget", "asAndWhenCommission", "numberOfLives", "maxExtendedFamilyMembers",
+    "maxAgeChildren", "currentMaxAgeChild", "principalMemberCover", "spouseCover",
+    "extendedFamilyCover", "children16toMax", "children6to15", "children1to5",
+    "children0to1", "parentsCover",
+  ])
+
+  // Derived visibility flags
+  const hasFile = uploadedFile !== null
+  const totalDetected = detectedRoles.principal + detectedRoles.spouse + detectedRoles.child + detectedRoles.adultDependent + detectedRoles.extended
+
+  const showPrincipal = true // always shown
+  const showSpouse = showAllFields || detectedRoles.spouse > 0 || !hasFile
+  const showChildren = showAllFields || detectedRoles.child > 0 || !hasFile
+  const showExtended = showAllFields || detectedRoles.extended > 0 || !hasFile
+  const showAdultDependent = showAllFields || detectedRoles.adultDependent > 0 || !hasFile
 
   const handleInputChange = (field: string, value: string) => {
-    // only numeric fields get cleaned
-    const isNumeric = NUMERIC_FIELDS.has(field);
-    const clean = isNumeric ? toNumericString(value) : value;
+    const isNumeric = NUMERIC_FIELDS.has(field)
+    const clean = isNumeric ? toNumericString(value) : value
 
-    const updated: any = { ...formData, [field]: clean };
+    const updated: any = { ...formData, [field]: clean }
 
-    // auto-fill covers only when principal changes (numeric)
+    // Role-aware auto-fill when principal changes
     if (field === "principalMemberCover") {
-      const principal = parseFloat(toNumericString(value)) || 0;
-      updated.spouseCover = String(principal.toFixed(2));
-      updated.children16toMax = String((principal * 1).toFixed(2));
-      updated.children6to15 = String((principal * 0.75).toFixed(2));
-      updated.children1to5 = String((principal * 0.5).toFixed(2));
-      updated.children0to1 = String((principal * 0.25).toFixed(2));
-      updated.extendedFamilyCover = String(principal.toFixed(2));
+      const principal = parseFloat(toNumericString(value)) || 0
+      if (showSpouse) updated.spouseCover = String(principal.toFixed(2))
+      if (showChildren) {
+        updated.children16toMax = String((principal * 1).toFixed(2))
+        updated.children6to15 = String((principal * 0.75).toFixed(2))
+        updated.children1to5 = String((principal * 0.5).toFixed(2))
+        updated.children0to1 = String((principal * 0.25).toFixed(2))
+      }
+      if (showExtended) updated.extendedFamilyCover = String(principal.toFixed(2))
     }
 
-    setFormData(updated);
-  };
-
-
-  // const formatCurrencyInput = (raw: string) => {
-  //   const num = parseFloat(raw.replace(/[^0-9.]/g, ""))
-  //   if (isNaN(num)) return ""
-  //   return "BWP " + num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })
-  // }
-
-  // const unformatCurrencyInput = (val: string) => val.replace(/[^0-9.]/g, "")
-
-  // const handleInputChange = (field: string, value: string) => {
-  //   const updated = { ...formData, [field]: value }
-
-  //   // If updating principal cover, auto-populate the rest
-  //   if (field === "principalMemberCover") {
-  //     const principal = parseFloat(value) || 0
-
-  //     updated.spouseCover = String(principal.toFixed(2))
-  //     updated.children16toMax = String((principal * 1).toFixed(2))
-  //     updated.children6to15 = String((principal * 0.75).toFixed(2))
-  //     updated.children1to5 = String((principal * 0.5).toFixed(2))
-  //     updated.children0to1 = String((principal * 0.25).toFixed(2))
-  //     updated.extendedFamilyCover = String(principal.toFixed(2))
-  //   }
-
-  //   setFormData(updated)
-  // }
-
+    setFormData(updated)
+  }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -177,21 +161,26 @@ const LifeFuneralQuotationForm = () => {
     const parseData = (data: any[]) => {
       const cleanRows = data.filter((row) => Object.values(row).some(Boolean))
 
-      // Calculate current max age of children from DOB + Relationship
+      // Detect role composition
+      const roles: DetectedRoles = { principal: 0, spouse: 0, child: 0, adultDependent: 0, extended: 0 }
+
       const today = new Date()
       let maxChildAge = 0
       cleanRows.forEach((row) => {
-        const rel = (row["Relationship"] || row["Member Status"] || "").toString().toLowerCase()
+        const relRaw = (row["Relationship"] || row["Member Status"] || "").toString()
+        const role = classifyRelationship(relRaw)
+        if (role) roles[role]++
+
+        // Existing max child age logic
+        const rel = relRaw.toLowerCase()
         if (rel.includes("child")) {
           const dobRaw = row["DOB"] || row["Date of Birth"] || row["dob"] || row["date of birth"]
           if (dobRaw) {
             let dob: Date | null = null
             if (typeof dobRaw === "number") {
-              // Excel serial date
               dob = new Date(Math.round((dobRaw - 25569) * 86400 * 1000))
             } else {
               const s = String(dobRaw).trim()
-              // Try dd/mm/yyyy
               const ddmm = s.match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/)
               if (ddmm) {
                 dob = new Date(parseInt(ddmm[3]), parseInt(ddmm[2]) - 1, parseInt(ddmm[1]))
@@ -208,6 +197,8 @@ const LifeFuneralQuotationForm = () => {
           }
         }
       })
+
+      setDetectedRoles(roles)
 
       setFormData((prev) => ({
         ...prev,
@@ -238,57 +229,53 @@ const LifeFuneralQuotationForm = () => {
     }
   }
 
-  // 🔄 Poll job status until done
   const pollJob = (backendJobId: string, widgetJobId: string) => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(
           `http://localhost:5002/api/quotes/funeral/status/${backendJobId}`
-        );
-        const data = await res.json();
-        console.log("Polling job:", data);
+        )
+        const data = await res.json()
+        console.log("Polling job:", data)
 
-        // Update progress if available
         if (data.progress !== undefined) {
-          updateJob(widgetJobId, { progress: data.progress });
+          updateJob(widgetJobId, { progress: data.progress })
         }
 
         if (data.status === "done") {
-          clearInterval(interval);
-          updateJob(widgetJobId, { progress: 100, status: "done" });
-          setPremiumResult(data.result);
-          // Register callback to open dialog when "View Results" is clicked
+          clearInterval(interval)
+          updateJob(widgetJobId, { progress: 100, status: "done" })
+          setPremiumResult(data.result)
           setJobViewResultsCallback(widgetJobId, () => {
-            setShowQuoteDialog(true);
-          });
+            setShowQuoteDialog(true)
+          })
         }
 
         if (data.status === "error") {
-          clearInterval(interval);
+          clearInterval(interval)
           updateJob(widgetJobId, {
             progress: 0,
             status: "error",
             errorMessage: data.error || "Calculation failed"
-          });
+          })
         }
-
       } catch (err) {
-        clearInterval(interval);
+        clearInterval(interval)
         updateJob(widgetJobId, {
           progress: 0,
           status: "error",
           errorMessage: "Polling failed - please try again"
-        });
+        })
       }
-    }, 1000);
-  };
+    }, 1000)
+  }
 
   const handleSubmit = async () => {
     if (!uploadedFile) {
-      toast.error("Please upload a member file first.");
-      return;
+      toast.error("Please upload a member file first.")
+      return
     }
-    // ✅ Step 1: block submit if required fields are blank
+
     const required = [
       ["profitTarget", "Profit Target (%)"],
       ["societyName", "Society Name"],
@@ -296,120 +283,118 @@ const LifeFuneralQuotationForm = () => {
       ["schemeType", "Scheme Type"],
       ["coverLevelType", "Cover Levels"],
       ["principalMemberCover", "Principal Member Cover"],
-    ] as const;
+    ] as const
 
     const missing = required
       .filter(([key]) => !String((formData as any)[key] ?? "").trim())
-      .map(([, label]) => label);
+      .map(([, label]) => label)
 
     if (missing.length) {
-      toast.error(`Please fill in: ${missing.join(", ")}`);
-      return;
+      toast.error(`Please fill in: ${missing.join(", ")}`)
+      return
     }
 
-    // ✅ Step 2: block submit if required numeric fields are <= 0
     const mustBePositive = [
       ["profitTarget", "Profit Target (%)"],
       ["asAndWhenCommission", "As-and-When Commission (%)"],
       ["principalMemberCover", "Principal Member Cover"],
-    ] as const;
+    ] as const
 
     const invalidNums = mustBePositive
       .filter(([key]) => {
-        const raw = String((formData as any)[key] ?? "");
-        const num = parseFloat(toNumericString(raw));
-        return !isFinite(num) || num <= 0;
+        const raw = String((formData as any)[key] ?? "")
+        const num = parseFloat(toNumericString(raw))
+        return !isFinite(num) || num <= 0
       })
-      .map(([, label]) => label);
+      .map(([, label]) => label)
 
     if (invalidNums.length) {
-      toast.error(`These must be greater than 0: ${invalidNums.join(", ")}`);
-      return;
+      toast.error(`These must be greater than 0: ${invalidNums.join(", ")}`)
+      return
     }
 
-    // Create a new background job for this calculation
-    const widgetJobId = addJob(`Funeral: ${formData.societyName || "Calculation"}`);
+    const widgetJobId = addJob(`Funeral: ${formData.societyName || "Calculation"}`)
+
+    // Zero out hidden fields before submit
+    const submitData = { ...formData }
+    if (!showSpouse) submitData.spouseCover = "0"
+    if (!showChildren) {
+      submitData.children16toMax = "0"
+      submitData.children6to15 = "0"
+      submitData.children1to5 = "0"
+      submitData.children0to1 = "0"
+    }
+    if (!showExtended) submitData.extendedFamilyCover = "0"
+    if (!showAdultDependent) submitData.parentsCover = "0"
 
     const syncedFormData = {
-      ...formData,
-      spouseCover: formData.spouseCover || formData.principalMemberCover || "0",
-      extendedFamilyCover: formData.extendedFamilyCover || formData.principalMemberCover || "0",
-    };
+      ...submitData,
+      spouseCover: submitData.spouseCover || submitData.principalMemberCover || "0",
+      extendedFamilyCover: submitData.extendedFamilyCover || submitData.principalMemberCover || "0",
+    }
+
+    // If those sections are hidden, keep them as "0"
+    if (!showSpouse) syncedFormData.spouseCover = "0"
+    if (!showExtended) syncedFormData.extendedFamilyCover = "0"
 
     const OPTIONAL_NUMERIC_DEFAULT_ZERO = new Set([
-      "parentsCover",
-      "spouseCover",
-      "extendedFamilyCover",
-      "children16toMax",
-      "children6to15",
-      "children1to5",
-      "children0to1",
-      "maxExtendedFamilyMembers",
-      "maxAgeChildren",
-      "currentMaxAgeChild",
-    ]);
+      "parentsCover", "spouseCover", "extendedFamilyCover",
+      "children16toMax", "children6to15", "children1to5", "children0to1",
+      "maxExtendedFamilyMembers", "maxAgeChildren", "currentMaxAgeChild",
+    ])
 
-    //sanitize ALL fields to numeric strings (or keep plain text where applicable)
     const numericKeys = [
       "profitTarget", "asAndWhenCommission", "numberOfLives", "maxExtendedFamilyMembers",
       "maxAgeChildren", "currentMaxAgeChild", "principalMemberCover", "spouseCover",
       "extendedFamilyCover", "children16toMax", "children6to15", "children1to5", "children0to1", "parentsCover"
-    ];
+    ]
 
-    const cleanedFormData: Record<string, string> = {};
+    const cleanedFormData: Record<string, string> = {}
     Object.entries(syncedFormData).forEach(([k, v]) => {
       if (numericKeys.includes(k)) {
-        const s = toNumericString(String(v ?? ""));
+        const s = toNumericString(String(v ?? ""))
         if (s === "") {
-          // ✅ only optional numeric fields get forced to "0"
-          cleanedFormData[k] = OPTIONAL_NUMERIC_DEFAULT_ZERO.has(k) ? "0" : "";
+          cleanedFormData[k] = OPTIONAL_NUMERIC_DEFAULT_ZERO.has(k) ? "0" : ""
         } else {
-          cleanedFormData[k] = s;
+          cleanedFormData[k] = s
         }
       } else {
-        cleanedFormData[k] = String(v ?? "");
+        cleanedFormData[k] = String(v ?? "")
       }
+    })
 
-    });
-
-    const payload = new FormData();
-    payload.append("file", uploadedFile);
-    Object.entries(cleanedFormData).forEach(([key, value]) => payload.append(key, value));
+    const payload = new FormData()
+    payload.append("file", uploadedFile)
+    Object.entries(cleanedFormData).forEach(([key, value]) => payload.append(key, value))
 
     try {
-      // Start background job instead of waiting for full calculation
       const res = await fetch("http://localhost:5002/api/quotes/funeral/start", {
         method: "POST",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         body: payload
-      });
+      })
 
       if (!res.ok) {
         updateJob(widgetJobId, {
           progress: 0,
           status: "error",
           errorMessage: "Failed to start calculation"
-        });
-        return;
+        })
+        return
       }
 
-      const { jobId: backendJobId } = await res.json();
-      console.log("Started job:", backendJobId);
-
-      // Start polling for progress - progress indicator stays visible!
-      pollJob(backendJobId, widgetJobId);
-
+      const { jobId: backendJobId } = await res.json()
+      console.log("Started job:", backendJobId)
+      pollJob(backendJobId, widgetJobId)
     } catch (err: any) {
-      console.error("Quote error", err);
+      console.error("Quote error", err)
       updateJob(widgetJobId, {
         progress: 0,
         status: "error",
         errorMessage: err.message || "Failed to calculate"
-      });
+      })
     }
-  };
-
-
+  }
 
   const [isSavingQuote, setIsSavingQuote] = useState(false)
 
@@ -440,25 +425,18 @@ const LifeFuneralQuotationForm = () => {
       if (!res.ok) throw new Error("Failed to save quote")
 
       const data = await res.json()
-
       toast.success(`Quote ${data.quoteId} saved successfully!`)
       setShowQuoteDialog(false)
-
     } catch (err: any) {
       toast.error(err.message || "Failed to save quote")
       setIsSavingQuote(false)
     }
   }
 
-
-
-
   const isSchemeRules = formData.coverLevelType === "scheme-rules"
 
   const schemeTooltip = `An open scheme allows new members and is reviewed yearly. A closed scheme maintains the same premium unless members change rules.`
   const coverLevelTooltip = `"Scheme rules" apply fixed benefit levels to all members. "Member specified" means each member has custom cover defined in the uploaded data.`
-
-  // Note: View results callback is now registered per-job in pollJob when calculation completes
 
   return (
     <TooltipProvider>
@@ -543,6 +521,33 @@ const LifeFuneralQuotationForm = () => {
           </CardContent>
         </Card>
 
+        {/* Detected Composition Summary */}
+        {hasFile && totalDetected > 0 && (
+          <Alert className="border-primary/20 bg-primary/5">
+            <Users className="h-4 w-4" />
+            <AlertDescription>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+                <span className="font-semibold text-foreground">Detected Composition:</span>
+                {detectedRoles.principal > 0 && (
+                  <span>Principal Members: <strong>{detectedRoles.principal}</strong></span>
+                )}
+                {detectedRoles.spouse > 0 && (
+                  <span>Spouses: <strong>{detectedRoles.spouse}</strong></span>
+                )}
+                {detectedRoles.child > 0 && (
+                  <span>Children: <strong>{detectedRoles.child}</strong></span>
+                )}
+                {detectedRoles.adultDependent > 0 && (
+                  <span>Adult Dependents: <strong>{detectedRoles.adultDependent}</strong></span>
+                )}
+                {detectedRoles.extended > 0 && (
+                  <span>Extended Family: <strong>{detectedRoles.extended}</strong></span>
+                )}
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Quotation Setup Card */}
         <Card>
           <CardHeader>
@@ -550,7 +555,6 @@ const LifeFuneralQuotationForm = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              {/* Form Inputs */}
               <div className="space-y-1">
                 <Label htmlFor="profitTarget">Profit Target (%)<span className="text-red-500">*</span></Label>
                 <Input
@@ -643,7 +647,6 @@ const LifeFuneralQuotationForm = () => {
                   readOnly
                   className="bg-muted"
                 />
-
               </div>
 
               {/* Cover Levels Dropdown */}
@@ -667,8 +670,23 @@ const LifeFuneralQuotationForm = () => {
                 </div>
               </div>
 
+              {/* Manual Override Toggle */}
+              {hasFile && totalDetected > 0 && (
+                <div className="col-span-1 md:col-span-2 flex items-center gap-3 py-2">
+                  <Switch
+                    id="showAllFields"
+                    checked={showAllFields}
+                    onCheckedChange={setShowAllFields}
+                  />
+                  <Label htmlFor="showAllFields" className="cursor-pointer text-sm">
+                    {showAllFields ? "Showing all cover fields" : "Using uploaded member composition"}
+                  </Label>
+                </div>
+              )}
+
+              {/* Principal Member Cover - always visible */}
               <div className="space-y-1">
-                <Label htmlFor="principalMemberCover">Principal Member Cover<span className="text-red-500">*</span> </Label>
+                <Label htmlFor="principalMemberCover">Principal Member Cover<span className="text-red-500">*</span></Label>
                 <Input
                   id="principalMemberCover"
                   type="number"
@@ -679,96 +697,105 @@ const LifeFuneralQuotationForm = () => {
                 />
               </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="spouseCover">Spouse Cover (Same as Principal)</Label>
-                <Input
-                  id="spouseCover"
-                  type="number"
-                  step="1"
-                  inputMode="decimal"
-                  value={formData.spouseCover}
-                  onChange={(e) => handleInputChange("spouseCover", e.target.value)}
-                />
+              {/* Spouse Cover */}
+              {showSpouse && (
+                <div className="space-y-1">
+                  <Label htmlFor="spouseCover">Spouse Cover (Same as Principal)</Label>
+                  <Input
+                    id="spouseCover"
+                    type="number"
+                    step="1"
+                    inputMode="decimal"
+                    value={formData.spouseCover}
+                    onChange={(e) => handleInputChange("spouseCover", e.target.value)}
+                  />
+                </div>
+              )}
 
-              </div>
+              {/* Children Cover Fields */}
+              {showChildren && (
+                <>
+                  <div className="space-y-1">
+                    <Label htmlFor="children16toMax">
+                      Children age 16 to {formData.currentMaxAgeChild || "XX"}
+                    </Label>
+                    <Input
+                      id="children16toMax"
+                      type="number"
+                      step="1"
+                      inputMode="decimal"
+                      value={formData.children16toMax}
+                      onChange={(e) => handleInputChange("children16toMax", e.target.value)}
+                    />
+                  </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="children16toMax">
-                  Children age 16 to {formData.currentMaxAgeChild || "XX"}
-                </Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="children6to15">Children age 6 to 15</Label>
+                    <Input
+                      id="children6to15"
+                      type="number"
+                      step="1"
+                      inputMode="decimal"
+                      value={formData.children6to15}
+                      onChange={(e) => handleInputChange("children6to15", e.target.value)}
+                    />
+                  </div>
 
-                <Input
-                  id="children16toMax"
-                  type="number"
-                  step="1"
-                  inputMode="decimal"
-                  value={formData.children16toMax}
-                  onChange={(e) => handleInputChange("children16toMax", e.target.value)}
-                />
-              </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="children1to5">Children age 1 to 5</Label>
+                    <Input
+                      id="children1to5"
+                      type="number"
+                      step="1"
+                      inputMode="decimal"
+                      value={formData.children1to5}
+                      onChange={(e) => handleInputChange("children1to5", e.target.value)}
+                    />
+                  </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="children6to15">Children age 6 to 15</Label>
-                <Input
-                  id="children6to15"
-                  type="number"
-                  step="1"
-                  inputMode="decimal"
-                  value={formData.children6to15}
-                  onChange={(e) => handleInputChange("children6to15", e.target.value)}
-                />
+                  <div className="space-y-1">
+                    <Label htmlFor="children0to1">Children age 0 to 1</Label>
+                    <Input
+                      id="children0to1"
+                      type="number"
+                      step="1"
+                      inputMode="decimal"
+                      value={formData.children0to1}
+                      onChange={(e) => handleInputChange("children0to1", e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
 
-              </div>
+              {/* Extended Family Cover */}
+              {showExtended && (
+                <div className="space-y-1">
+                  <Label htmlFor="extendedFamilyCover">Extended Family Cover</Label>
+                  <Input
+                    id="extendedFamilyCover"
+                    type="number"
+                    step="1"
+                    inputMode="decimal"
+                    value={formData.extendedFamilyCover}
+                    onChange={(e) => handleInputChange("extendedFamilyCover", e.target.value)}
+                  />
+                </div>
+              )}
 
-              <div className="space-y-1">
-                <Label htmlFor="children1to5">Children age 1 to 5</Label>
-                <Input
-                  id="children1to5"
-                  type="number"
-                  step="1"
-                  inputMode="decimal"
-                  value={formData.children1to5}
-                  onChange={(e) => handleInputChange("children1to5", e.target.value)}
-                />
-
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="children0to1">Children age 0 to 1</Label>
-                <Input
-                  id="children0to1"
-                  type="number"
-                  step="1"
-                  inputMode="decimal"
-                  value={formData.children0to1}
-                  onChange={(e) => handleInputChange("children0to1", e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="extendedFamilyCover">Extended Family Cover</Label>
-                <Input
-                  id="extendedFamilyCover"
-                  type="number"
-                  step="1"
-                  inputMode="decimal"
-                  value={formData.extendedFamilyCover}
-                  onChange={(e) => handleInputChange("extendedFamilyCover", e.target.value)}
-                />
-
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="parentsCover">Parents Cover</Label>
-                <Input
-                  id="parentsCover"
-                  type="number"
-                  step="1"
-                  inputMode="decimal"
-                  value={formData.parentsCover}
-                  onChange={(e) => handleInputChange("parentsCover", e.target.value)}
-                />
-              </div>
+              {/* Parents / Adult Dependent Cover */}
+              {showAdultDependent && (
+                <div className="space-y-1">
+                  <Label htmlFor="parentsCover">Parents Cover</Label>
+                  <Input
+                    id="parentsCover"
+                    type="number"
+                    step="1"
+                    inputMode="decimal"
+                    value={formData.parentsCover}
+                    onChange={(e) => handleInputChange("parentsCover", e.target.value)}
+                  />
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -778,66 +805,6 @@ const LifeFuneralQuotationForm = () => {
             Calculate Quotation
           </Button>
         </div>
-
-        {/* {premiumResult && (
-          <Card className="bg-muted/50">
-            <CardHeader>
-              <CardTitle>Quotation Results</CardTitle>
-              <CardDescription>Calculated premiums based on your inputs</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {premiumResult?.quoteName && (
-                <div className="text-lg font-semibold text-primary">{premiumResult.quoteName}</div>
-              )}
-
-              <Separator />
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead className="bg-muted">
-                    <tr className="text-left">
-                      <th className="p-2 font-semibold">Member Status</th>
-                      <th className="p-2 font-semibold">Total Premium</th>
-                      <th className="p-2 font-semibold">Number of Beneficiaries</th>
-                      <th className="p-2 font-semibold">Premium per month per beneficiary type</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {premiumResult.rows?.map((row: any, index: number) => (
-                      <>
-                        <tr key={index} className="border-b">
-                          <td className="p-2">{row.memberStatus}</td>
-                          <td className="p-2">
-                            {row.totalPremium != null
-                              ? `BWP ${row.totalPremium.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                              : "–"}
-                          </td>
-                          <td className="p-2">{row.numberOfBeneficiaries ?? "–"}</td>
-                          <td className="p-2 bg-yellow-100 font-medium">
-                            {row.premiumPerBeneficiary != null
-                              ? `BWP ${row.premiumPerBeneficiary.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                              : "–"}
-                          </td>
-                        </tr>
-                        {row.memberStatus === "Premium Per Family" && (
-                          <tr>
-                            <td colSpan={4} className="text-xs text-muted-foreground italic px-2 pb-2">
-                              (Includes spouse and children)
-                            </td>
-                          </tr>
-                        )}
-                      </>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex justify-end pt-4">
-                <Button onClick={() => setShowQuoteDialog(true)}>Create Quote</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )} */}
 
         {/* Quote Dialog */}
         <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
@@ -850,7 +817,6 @@ const LifeFuneralQuotationForm = () => {
             </DialogHeader>
 
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Customer Details Card */}
               <Card>
                 <CardHeader>
                   <CardTitle>Customer Information</CardTitle>
@@ -897,10 +863,8 @@ const LifeFuneralQuotationForm = () => {
                     />
                   </div>
                 </CardContent>
-
               </Card>
 
-              {/* Quotation Summary Card */}
               <Card>
                 <CardHeader>
                   <CardTitle>Quotation Summary</CardTitle>
@@ -908,10 +872,6 @@ const LifeFuneralQuotationForm = () => {
                 <CardContent className="space-y-4">
                   {premiumResult ? (
                     <>
-                      {/* {premiumResult.quoteName && (
-                        <div className="font-semibold text-primary">{premiumResult.quoteName}</div>
-                      )} */}
-
                       <Separator />
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm border-collapse">
@@ -934,7 +894,7 @@ const LifeFuneralQuotationForm = () => {
                                       : "–"}
                                   </td>
                                   <td className="p-2">{row.numberOfBeneficiaries ?? "–"}</td>
-                                  <td className="p-2  font-medium">
+                                  <td className="p-2 font-medium">
                                     {row.premiumPerBeneficiary != null
                                       ? `BWP ${row.premiumPerBeneficiary.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                                       : "–"}
@@ -952,8 +912,6 @@ const LifeFuneralQuotationForm = () => {
                           </tbody>
                         </table>
                       </div>
-
-
                     </>
                   ) : (
                     <div className="text-muted-foreground text-sm">No quotation results available</div>
@@ -961,7 +919,7 @@ const LifeFuneralQuotationForm = () => {
                 </CardContent>
               </Card>
             </div>
-            {/* Actions */}
+
             <div className="flex justify-between mt-6">
               <Button variant="secondary" onClick={() => setShowQuoteDialog(false)}>
                 Cancel
@@ -979,8 +937,6 @@ const LifeFuneralQuotationForm = () => {
             </div>
           </DialogContent>
         </Dialog>
-
-
       </div>
     </TooltipProvider>
   )
