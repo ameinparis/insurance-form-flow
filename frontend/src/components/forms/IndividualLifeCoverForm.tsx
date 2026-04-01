@@ -14,12 +14,21 @@ import axios from "axios"
 import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 
+const GeneratingOverlay = () => (
+  <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+    <h2 className="text-xl font-semibold text-foreground">Generating Quote...</h2>
+    <p className="text-muted-foreground mt-2">Please wait while we prepare your quote</p>
+  </div>
+)
+
 const IndividualLifeCoverForm = () => {
   const navigate = useNavigate()
   const [isCalculating, setIsCalculating] = useState(false)
   const [result, setResult] = useState<any | null>(null)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
   const [isSavingQuote, setIsSavingQuote] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   const formatMoney = (v: any) => {
   const n = Number(v)
