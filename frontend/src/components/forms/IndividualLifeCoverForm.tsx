@@ -13,6 +13,7 @@ import { toast } from "sonner"
 import axios from "axios"
 import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
+import { getSavedQuoteId, waitForQuoteReady } from "@/lib/quoteUtils"
 
 const GeneratingOverlay = () => (
   <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -197,13 +198,28 @@ const displayValue = (row: any) => {
       throw new Error(data.message || data.error || "Failed to save quote")
     }
 
-    toast.success(`Quote ${data.quoteId} saved successfully!`)
+    const savedQuoteId = getSavedQuoteId(data)
+
+    if (!savedQuoteId) {
+      throw new Error("Quote saved, but no quote record ID was returned")
+    }
+
+    toast.success(`Quote ${data.quoteId || data.quote?.quoteId} saved successfully!`)
     setShowQuoteDialog(false)
     setIsSavingQuote(false)
     setIsRedirecting(true)
-    setTimeout(() => navigate(`/quotes/${data._id}`), 4000)
+
+    try {
+      await waitForQuoteReady(savedQuoteId, { minimumMs: 2500 })
+      navigate(`/quotes/${savedQuoteId}`)
+      return
+    } catch (readinessError) {
+      console.error("Quote readiness error:", readinessError)
+      throw new Error("Quote saved, but it is still being prepared. Please try again in a few seconds.")
+    }
   } catch (err: any) {
     console.error("Save quote error:", err)
+    setIsRedirecting(false)
     toast.error(err.message || "Failed to save quote")
     setIsSavingQuote(false)
   }

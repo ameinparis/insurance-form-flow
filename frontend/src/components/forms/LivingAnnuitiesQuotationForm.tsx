@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils"
 import axios from "axios"
 import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
+import { getSavedQuoteId, waitForQuoteReady } from "@/lib/quoteUtils"
 
 const GeneratingOverlay = () => (
   <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -289,14 +290,29 @@ Insurance will not accept liability for any losses incurred as a result of using
         }
       )
 
-      toast.success(`Quote ${data.quoteId} created successfully!`)
+      const savedQuoteId = getSavedQuoteId(data)
+
+      if (!savedQuoteId) {
+        throw new Error("Quote saved, but no quote record ID was returned")
+      }
+
+      toast.success(`Quote ${data.quoteId || data.quote?.quoteId} created successfully!`)
       setShowQuoteDialog(false)
       setIsSavingQuote(false)
       setIsRedirecting(true)
-      setTimeout(() => navigate(`/quotes/${data._id}`), 4000)
+
+      try {
+        await waitForQuoteReady(savedQuoteId, { minimumMs: 2500 })
+        navigate(`/quotes/${savedQuoteId}`)
+        return
+      } catch (readinessError) {
+        console.error("Quote readiness error:", readinessError)
+        throw new Error("Quote saved, but it is still being prepared. Please try again in a few seconds.")
+      }
 
     } catch (error: any) {
       console.error("Error saving quote:", error)
+      setIsRedirecting(false)
       toast.error("Failed to save quote. Please try again.")
       setIsSavingQuote(false)
     }

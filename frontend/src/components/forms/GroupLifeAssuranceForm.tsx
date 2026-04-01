@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog"
 import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
+import { getSavedQuoteId, waitForQuoteReady } from "@/lib/quoteUtils"
 
 const GeneratingOverlay = () => (
   <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -427,14 +428,28 @@ const GroupLifeAssuranceForm = () => {
       }
 
       const data = await res.json();
+      const savedQuoteId = getSavedQuoteId(data);
 
-      toast.success(`Quote ${data.quoteId} saved successfully!`);
+      if (!savedQuoteId) {
+        throw new Error("Quote saved, but no quote record ID was returned");
+      }
+
+      toast.success(`Quote ${data.quoteId || data.quote?.quoteId} saved successfully!`);
       setShowQuoteDialog(false);
       setIsSavingQuote(false);
       setIsRedirecting(true);
-      setTimeout(() => navigate(`/quotes/${data._id}`), 4000);
+
+      try {
+        await waitForQuoteReady(savedQuoteId, { minimumMs: 2500 });
+        navigate(`/quotes/${savedQuoteId}`);
+        return;
+      } catch (readinessError) {
+        console.error("Quote readiness error:", readinessError);
+        throw new Error("Quote saved, but it is still being prepared. Please try again in a few seconds.");
+      }
     } catch (err: any) {
       console.error("Save quote error:", err);
+      setIsRedirecting(false);
       toast.error(err.message || "Failed to save quote");
       setIsSavingQuote(false);
     }
