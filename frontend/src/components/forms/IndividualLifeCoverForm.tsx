@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,6 +15,7 @@ import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autoc
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 
 const IndividualLifeCoverForm = () => {
+  const navigate = useNavigate()
   const [isCalculating, setIsCalculating] = useState(false)
   const [result, setResult] = useState<any | null>(null)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
@@ -186,8 +188,9 @@ const displayValue = (row: any) => {
       throw new Error(data.message || data.error || "Failed to save quote")
     }
 
-    toast.success(`Quote ${data.quoteId} saved successfully!`)
+    toast.success(`Quote ${data.quoteId} saved successfully! Redirecting...`)
     setShowQuoteDialog(false)
+    setTimeout(() => navigate(`/quotes/${data._id}`), 1500)
   } catch (err: any) {
     console.error("Save quote error:", err)
     toast.error(err.message || "Failed to save quote")

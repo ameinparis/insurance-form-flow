@@ -430,8 +430,9 @@ const LifeFuneralQuotationForm = () => {
       if (!res.ok) throw new Error("Failed to save quote")
 
       const data = await res.json()
-      toast.success(`Quote ${data.quoteId} saved successfully!`)
+      toast.success(`Quote ${data.quoteId} saved successfully! Redirecting...`)
       setShowQuoteDialog(false)
+      setTimeout(() => navigate(`/quotes/${data._id}`), 1500)
     } catch (err: any) {
       toast.error(err.message || "Failed to save quote")
       setIsSavingQuote(false)
