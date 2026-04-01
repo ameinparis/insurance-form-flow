@@ -791,7 +791,7 @@ const LifeFuneralQuotationForm = () => {
               {/* Parents / Adult Dependent Cover */}
               {showAdultDependent && (
                 <div className="space-y-1">
-                  <Label htmlFor="parentsCover">Parents Cover</Label>
+                  <Label htmlFor="parentsCover">Adult Dependent / Parents Cover</Label>
                   <Input
                     id="parentsCover"
                     type="number"
