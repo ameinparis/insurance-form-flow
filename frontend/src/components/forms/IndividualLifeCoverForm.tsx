@@ -15,6 +15,7 @@ import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autoc
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 
 const IndividualLifeCoverForm = () => {
+  const navigate = useNavigate()
   const [isCalculating, setIsCalculating] = useState(false)
   const [result, setResult] = useState<any | null>(null)
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
