@@ -127,7 +127,7 @@ const QuoteDetail = () => {
       </div>
 
       {/* Quote Document Card */}
-      <Card className="border-0 shadow-none bg-white dark:bg-slate-900 rounded-3xl overflow-hidden">
+      <Card className="border-0 shadow-none bg-card rounded-3xl overflow-hidden">
         <CardContent className="p-0" id="quote-pdf">
           {/* Quote Header */}
           <QuoteHeader
