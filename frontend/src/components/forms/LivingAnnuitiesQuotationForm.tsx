@@ -288,9 +288,11 @@ Insurance will not accept liability for any losses incurred as a result of using
         }
       )
 
-      toast.success(`Quote ${data.quoteId} created successfully! Redirecting...`)
+      toast.success(`Quote ${data.quoteId} created successfully!`)
       setShowQuoteDialog(false)
-      setTimeout(() => navigate(`/quotes/${data._id}`), 1500)
+      setIsSavingQuote(false)
+      setIsRedirecting(true)
+      setTimeout(() => navigate(`/quotes/${data._id}`), 4000)
 
     } catch (error: any) {
       console.error("Error saving quote:", error)

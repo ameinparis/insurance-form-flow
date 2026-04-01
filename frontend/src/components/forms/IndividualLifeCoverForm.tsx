@@ -197,13 +197,14 @@ const displayValue = (row: any) => {
       throw new Error(data.message || data.error || "Failed to save quote")
     }
 
-    toast.success(`Quote ${data.quoteId} saved successfully! Redirecting...`)
+    toast.success(`Quote ${data.quoteId} saved successfully!`)
     setShowQuoteDialog(false)
-    setTimeout(() => navigate(`/quotes/${data._id}`), 1500)
+    setIsSavingQuote(false)
+    setIsRedirecting(true)
+    setTimeout(() => navigate(`/quotes/${data._id}`), 4000)
   } catch (err: any) {
     console.error("Save quote error:", err)
     toast.error(err.message || "Failed to save quote")
-  } finally {
     setIsSavingQuote(false)
   }
 }
