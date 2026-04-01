@@ -323,8 +323,13 @@ const LifeFuneralQuotationForm = () => {
       submitData.children6to15 = "0"
       submitData.children1to5 = "0"
       submitData.children0to1 = "0"
+      submitData.maxAgeChildren = "0"
+      submitData.currentMaxAgeChild = "0"
     }
-    if (!showExtended) submitData.extendedFamilyCover = "0"
+    if (!showExtended) {
+      submitData.extendedFamilyCover = "0"
+      submitData.maxExtendedFamilyMembers = "0"
+    }
     if (!showAdultDependent) submitData.parentsCover = "0"
 
     const syncedFormData = {
@@ -618,36 +623,42 @@ const LifeFuneralQuotationForm = () => {
                 />
               </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="maxExtendedFamilyMembers">Max Extended Family Members</Label>
-                <Input
-                  id="maxExtendedFamilyMembers"
-                  type="number"
-                  value={formData.maxExtendedFamilyMembers}
-                  onChange={(e) => handleInputChange("maxExtendedFamilyMembers", e.target.value)}
-                />
-              </div>
+              {showExtended && (
+                <div className="space-y-1">
+                  <Label htmlFor="maxExtendedFamilyMembers">Max Extended Family Members</Label>
+                  <Input
+                    id="maxExtendedFamilyMembers"
+                    type="number"
+                    value={formData.maxExtendedFamilyMembers}
+                    onChange={(e) => handleInputChange("maxExtendedFamilyMembers", e.target.value)}
+                  />
+                </div>
+              )}
 
-              <div className="space-y-1">
-                <Label htmlFor="maxAgeChildren">Max Age of Children Covered</Label>
-                <Input
-                  id="maxAgeChildren"
-                  type="number"
-                  value={formData.maxAgeChildren}
-                  onChange={(e) => handleInputChange("maxAgeChildren", e.target.value)}
-                />
-              </div>
+              {showChildren && (
+                <>
+                  <div className="space-y-1">
+                    <Label htmlFor="maxAgeChildren">Max Age of Children Covered</Label>
+                    <Input
+                      id="maxAgeChildren"
+                      type="number"
+                      value={formData.maxAgeChildren}
+                      onChange={(e) => handleInputChange("maxAgeChildren", e.target.value)}
+                    />
+                  </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="currentMaxAgeChild">Current Max Age of Child in Data</Label>
-                <Input
-                  id="currentMaxAgeChild"
-                  type="number"
-                  value={formData.currentMaxAgeChild}
-                  readOnly
-                  className="bg-muted"
-                />
-              </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="currentMaxAgeChild">Current Max Age of Child in Data</Label>
+                    <Input
+                      id="currentMaxAgeChild"
+                      type="number"
+                      value={formData.currentMaxAgeChild}
+                      readOnly
+                      className="bg-muted"
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Cover Levels Dropdown */}
               <div className="space-y-1 col-span-1 md:col-span-2">
@@ -785,7 +796,7 @@ const LifeFuneralQuotationForm = () => {
               {/* Parents / Adult Dependent Cover */}
               {showAdultDependent && (
                 <div className="space-y-1">
-                  <Label htmlFor="parentsCover">Parents Cover</Label>
+                  <Label htmlFor="parentsCover">Adult Dependent / Parents Cover</Label>
                   <Input
                     id="parentsCover"
                     type="number"
