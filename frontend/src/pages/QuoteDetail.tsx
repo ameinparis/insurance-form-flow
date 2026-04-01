@@ -145,9 +145,9 @@ const QuoteDetail = () => {
 
           {/* Terms and Conditions / Disclaimer */}
           {(quote.termsAndConditions || quote.disclaimerText) && (
-            <div className="border-t border-gray-100 dark:border-gray-800 p-8 bg-white dark:bg-slate-900">
-              <h3 className="text-xl font-semibold text-center mb-4 text-gray-800 dark:text-gray-100">Terms & Conditions</h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            <div className="border-t border-border p-8 bg-card">
+              <h3 className="text-xl font-semibold text-center mb-4 text-foreground">Terms & Conditions</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 {quote.termsAndConditions || quote.disclaimerText}
               </p>
             </div>
