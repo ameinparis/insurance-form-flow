@@ -136,8 +136,17 @@ export async function exportQuotePdf(
     getDisplayComponent(productType, quote)
   );
 
+  // 4b. Render terms & conditions if present
+  const termsText = quote.termsAndConditions || quote.disclaimerText;
+  const termsHtml = termsText
+    ? `<div style="border-top: 2px solid #d1d5db; padding: 2rem; margin-top: 2rem;">
+        <h3 style="font-size: 1.25rem; font-weight: 600; text-align: center; margin-bottom: 1rem;">Terms &amp; Conditions</h3>
+        <p style="font-size: 0.875rem; color: #4b5563; line-height: 1.625;">${termsText}</p>
+      </div>`
+    : "";
+
   // 5. Fix relative image URLs
-  const contentHtml = (headerHtml + displayHtml).replace(
+  const contentHtml = (headerHtml + displayHtml + termsHtml).replace(
     /src="\/([^"]+)"/g,
     `src="${baseUrl}/$1"`
   );
