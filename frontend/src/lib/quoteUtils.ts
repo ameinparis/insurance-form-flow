@@ -161,7 +161,12 @@ export const toTitleCase = (str: string | undefined | null): string => {
   return str
     .toLowerCase()
     .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) =>
+      word
+        .split("-")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join("-")
+    )
     .join(" ");
 };
 
