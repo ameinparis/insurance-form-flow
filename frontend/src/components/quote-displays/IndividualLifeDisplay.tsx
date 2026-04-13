@@ -10,110 +10,168 @@ export const IndividualLifeDisplay = ({ quote }: IndividualLifeDisplayProps) => 
   const i = inputs || {};
   const o = outputs?.raw || outputs || {};
 
+  const clientName = toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "";
+
   const formatPercent = (v: number | null | undefined) =>
     v == null ? "-" : `${Math.round(v)}%`;
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-8 space-y-8 text-sm text-gray-800 dark:text-gray-100">
-      {/* Header */}
-      <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 inline-block">
-          Individual Life Cover Quotation for {toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "Client Name"}
-        </h2>
+    <div className="bg-card p-8 space-y-8 text-sm text-foreground">
+      {/* Title Section */}
+      <div>
+        <h2 className="text-lg font-bold text-foreground">Quotation: Exclusive Life Cover</h2>
+        <div className="border-b border-border mt-1" />
       </div>
 
-      {/* Quotation Notice */}
-      <section className="space-y-4">
-        <p className="text-sm text-gray-700 dark:text-gray-300">
-          This is a quotation only, and it is not the intention to "HOLD COVERED" unless specifically endorsed in writing.
-        </p>
-        <p className="text-sm text-gray-700 dark:text-gray-300">
-          This quotation is based on the information supplied at the time of quoting. Any misrepresentation, material mis-description or non-disclosure shall render any item, section or entire policy avoidable.
-        </p>
-
-        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 pt-2">GENERAL CONDITIONS</h3>
-        <ul className="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-2">
-          <li>The standard individual life cover policy wording terms and conditions will apply unless otherwise agreed.</li>
-          <li>Any additional covers or extensions will be subject to additional premium.</li>
-          <li>All values quoted are inclusive of VAT unless otherwise stated.</li>
-          <li>This quote is valid for 30 days.</li>
-          <li>The quoted premium is inclusive of commission at 10% + VAT.</li>
-        </ul>
-      </section>
-
-
-      {/* Premium Section */}
-      <div>
-        <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
-          <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Premium</h3>
+      {/* Client Details - 2 column grid with underlines */}
+      <div className="space-y-5 mt-6">
+        <div className="grid grid-cols-2 gap-x-12">
+          <div>
+            <span className="text-muted-foreground">Name:</span>
+            <span className="ml-2 text-foreground font-medium">{clientName}</span>
+            <div className="border-b border-border mt-1" />
+          </div>
+          <div>
+            <span className="text-muted-foreground">Date of Birth:</span>
+            <span className="ml-2 text-foreground font-medium">{clientData?.dateOfBirth || i?.dateOfBirth || ""}</span>
+            <div className="border-b border-border mt-1" />
+          </div>
         </div>
-        <div className="overflow-x-auto">
+
+        <div className="grid grid-cols-2 gap-x-12">
+          <div>
+            <span className="text-muted-foreground">Gender:</span>
+            <span className="ml-2 text-foreground font-medium">{toTitleCase(i?.gender || clientData?.gender)}</span>
+            <div className="border-b border-border mt-1" />
+          </div>
+          <div>
+            <span className="text-muted-foreground">Age:</span>
+            <span className="ml-2 text-foreground font-medium">{i?.age || clientData?.age || ""}</span>
+            <div className="border-b border-border mt-1" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-x-12">
+          <div>
+            <span className="text-muted-foreground">Education:</span>
+            <span className="ml-2 text-foreground font-medium">{toTitleCase(i?.education)}</span>
+            <div className="border-b border-border mt-1" />
+          </div>
+          <div>
+            <span className="text-muted-foreground">Smoker Status:</span>
+            <span className="ml-2 text-foreground font-medium">{toTitleCase(i?.smokerStatus)}</span>
+            <div className="border-b border-border mt-1" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-x-12">
+          <div>
+            <span className="text-muted-foreground">Marriage Status:</span>
+            <span className="ml-2 text-foreground font-medium">{toTitleCase(i?.marriageStatus)}</span>
+            <div className="border-b border-border mt-1" />
+          </div>
+          <div>
+            <span className="text-muted-foreground">Income:</span>
+            <span className="ml-2 text-foreground font-medium">{i?.income || ""}</span>
+            <div className="border-b border-border mt-1" />
+          </div>
+        </div>
+      </div>
+
+      {/* Product Information */}
+      <div>
+        <h3 className="text-base font-bold text-foreground">Product Information</h3>
+        <div className="border-b border-border mt-1 mb-3" />
+        <div className="space-y-2">
+          <p className="text-muted-foreground">Product Type: <span className="text-foreground font-medium ml-1">{toTitleCase(i?.product)}</span></p>
+          <p className="text-muted-foreground">Term: <span className="text-foreground font-medium ml-1">{i?.term ? `${i.term} years` : ""}</span></p>
+          <p className="text-muted-foreground">Cashback Option: <span className="text-foreground font-medium ml-1">{toTitleCase(i?.cashbackOption)}</span></p>
+          <p className="text-muted-foreground">Death Benefit: <span className="text-foreground font-medium ml-1">{i?.deathCover ? formatCurrency(i.deathCover) : ""}</span></p>
+          <p className="text-muted-foreground">Disability Benefit: <span className="text-foreground font-medium ml-1">{i?.disabilityCover ? formatCurrency(i.disabilityCover) : ""}</span></p>
+          <p className="text-muted-foreground">Critical Illness Benefit: <span className="text-foreground font-medium ml-1">{i?.ciCover ? formatCurrency(i.ciCover) : ""}</span></p>
+        </div>
+        <div className="border-b border-border mt-3" />
+      </div>
+
+      {/* Premium Details */}
+      <div>
+        <h3 className="text-base font-bold text-foreground">Premium Details</h3>
+        <div className="border-b border-border mt-1 mb-4" />
+
+        <div className="rounded-xl overflow-hidden border border-border">
           <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-border bg-muted/50">
+                <th className="py-2.5 px-4 text-left font-semibold text-foreground">Benefit Type</th>
+                <th className="py-2.5 px-4 text-left font-semibold text-foreground">Benefit Amount</th>
+                <th className="py-2.5 px-4 text-left font-semibold text-foreground">Term</th>
+                <th className="py-2.5 px-4 text-right font-semibold text-foreground">Premium</th>
+              </tr>
+            </thead>
             <tbody>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="py-2 pr-4 text-gray-700 dark:text-gray-300">Base premium</td>
-                <td className="py-2 text-right font-medium text-gray-800 dark:text-gray-100">
-                  {formatCurrency(o.basePremium)}
-                </td>
+              <tr className="border-b border-border">
+                <td className="py-2.5 px-4 text-muted-foreground">Life Cover</td>
+                <td className="py-2.5 px-4 text-foreground">{i?.deathCover ? formatCurrency(i.deathCover) : "—"}</td>
+                <td className="py-2.5 px-4 text-foreground">{i?.term ? `${i.term} years` : "—"}</td>
+                <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.deathCoverPremium)}</td>
               </tr>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="py-2 pr-4 text-gray-700 dark:text-gray-300">Cashback premium</td>
-                <td className="py-2 text-right font-medium text-gray-800 dark:text-gray-100">
-                  {formatCurrency(o.cashbackPremium)}
-                </td>
+              <tr className="border-b border-border">
+                <td className="py-2.5 px-4 text-muted-foreground">Disability Benefit</td>
+                <td className="py-2.5 px-4 text-foreground">{i?.disabilityCover ? formatCurrency(i.disabilityCover) : "—"}</td>
+                <td className="py-2.5 px-4 text-foreground">{i?.term ? `${i.term} years` : "—"}</td>
+                <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.disabilityCoverPremium)}</td>
               </tr>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="py-2 pr-4 text-gray-700 dark:text-gray-300">Death cover premium</td>
-                <td className="py-2 text-right font-medium text-gray-800 dark:text-gray-100">
-                  {formatCurrency(o.deathCoverPremium)}
-                </td>
+              <tr className="border-b border-border">
+                <td className="py-2.5 px-4 text-muted-foreground">Critical Illness</td>
+                <td className="py-2.5 px-4 text-foreground">{i?.ciCover ? formatCurrency(i.ciCover) : "—"}</td>
+                <td className="py-2.5 px-4 text-foreground">{i?.term ? `${i.term} years` : "—"}</td>
+                <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.ciCoverPremium)}</td>
               </tr>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="py-2 pr-4 text-gray-700 dark:text-gray-300">Disability cover premium</td>
-                <td className="py-2 text-right font-medium text-gray-800 dark:text-gray-100">
-                  {formatCurrency(o.disabilityCoverPremium)}
-                </td>
+              <tr className="border-b border-border">
+                <td className="py-2.5 px-4 text-muted-foreground">Policy Fees</td>
+                <td className="py-2.5 px-4 text-foreground">—</td>
+                <td className="py-2.5 px-4 text-foreground">—</td>
+                <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.basePremium)}</td>
               </tr>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="py-2 pr-4 text-gray-700 dark:text-gray-300">Critical illness cover premium</td>
-                <td className="py-2 text-right font-medium text-gray-800 dark:text-gray-100">
-                  {formatCurrency(o.ciCoverPremium)}
-                </td>
-              </tr>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="py-2 pr-4 text-gray-700 dark:text-gray-300">Cover adjustment factor</td>
-                <td className="py-2 text-right font-medium text-gray-800 dark:text-gray-100">
-                  {formatPercent(o.coverAdjustmentFactorPercent)}
-                </td>
-              </tr>
-              <tr className="border-t-2 border-gray-200 dark:border-gray-700">
-                <td className="py-3 pr-4 font-bold text-gray-800 dark:text-gray-100">Total premium</td>
-                <td className="py-3 text-right font-bold text-gray-800 dark:text-gray-100">
-                  {formatCurrency(o.totalPremium)}
-                </td>
+              <tr>
+                <td colSpan={3} className="py-3 px-4 font-bold text-foreground">Total Monthly Premium</td>
+                <td className="py-3 px-4 text-right font-bold text-foreground">{formatCurrency(o.totalPremium)}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Customer Acceptance Signature Section */}
-      <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
-        <h3 className="text-lg font-semibold mb-6 text-gray-800 dark:text-gray-100">
-          Customer Acceptance
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {/* Medical Underwriting */}
+      <div>
+        <h3 className="text-base font-bold text-foreground">Medical Underwriting</h3>
+        <div className="border border-border rounded-lg p-4 mt-2 min-h-[40px]">
+          {/* Empty box for medical underwriting notes */}
+        </div>
+      </div>
+
+      {/* Important Disclosures */}
+      <div>
+        <h3 className="text-base font-bold text-foreground">Important Disclosures</h3>
+        <ul className="list-disc list-inside text-sm text-muted-foreground space-y-2 mt-3">
+          <li>This is a quotation only and does not constitute a policy contract. Cover will commence after acceptance and payment of first premium.</li>
+          <li>This quotation is based on the information provided at the time of quoting. Non-disclosure or misrepresentation may make the policy voidable.</li>
+          <li>The quotation is subject to the Exclusive Life Cover policy wording terms and conditions.</li>
+        </ul>
+      </div>
+
+      {/* Customer Acceptance */}
+      <div className="pt-6">
+        <h3 className="text-base font-bold text-foreground mb-6">Customer Acceptance</h3>
+        <div className="border-b-2 border-border mb-4" />
+        <div className="grid grid-cols-2 gap-x-12">
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Signature:
-            </label>
-            <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
+            <span className="text-sm text-muted-foreground">Signature:</span>
+            <div className="border-b-2 border-border h-10 mt-1" />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Date:
-            </label>
-            <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
+            <span className="text-sm text-muted-foreground">Date:</span>
+            <div className="border-b-2 border-border h-10 mt-1" />
           </div>
         </div>
       </div>
