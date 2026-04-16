@@ -136,7 +136,17 @@ export async function exportQuotePdf(
     getDisplayComponent(productType, quote)
   );
 
-  // 4b. Render terms & conditions if present
+  // 4b. Render medical underwriting notes (Individual Life) if present
+  const medNotes = (quote as any).medicalUnderwritingNotes;
+  const medNotesHtml =
+    productType === "Individual Life Cover" && medNotes && String(medNotes).trim()
+      ? `<div style="padding: 0 2rem 1rem 2rem;">
+          <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">Medical Underwriting</h3>
+          <p style="font-size: 0.875rem; color: #0f172a; line-height: 1.5; white-space: pre-wrap; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">${String(medNotes).replace(/</g, "&lt;")}</p>
+        </div>`
+      : "";
+
+  // 4c. Render terms & conditions if present
   const termsText = quote.termsAndConditions || quote.disclaimerText;
   const termsHtml = termsText
     ? `<div style="border-top: 2px solid #d1d5db; padding: 2rem; margin-top: 2rem;">
@@ -146,7 +156,7 @@ export async function exportQuotePdf(
     : "";
 
   // 5. Fix relative image URLs
-  const contentHtml = (headerHtml + displayHtml + termsHtml).replace(
+  const contentHtml = (headerHtml + displayHtml + medNotesHtml + termsHtml).replace(
     /src="\/([^"]+)"/g,
     `src="${baseUrl}/$1"`
   );
