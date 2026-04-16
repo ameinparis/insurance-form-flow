@@ -1240,6 +1240,23 @@ app.get("/api/new-quotes/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// Update notes (e.g., medical underwriting) on a quote
+app.patch("/api/new-quotes/:id/notes", authenticateToken, async (req, res) => {
+  try {
+    const { medicalUnderwritingNotes } = req.body;
+    const q = await Quotes.findByIdAndUpdate(
+      req.params.id,
+      { $set: { medicalUnderwritingNotes: medicalUnderwritingNotes ?? "" } },
+      { new: true }
+    );
+    if (!q) return res.status(404).json({ message: "Quote not found" });
+    res.json({ message: "Notes updated", medicalUnderwritingNotes: q.medicalUnderwritingNotes });
+  } catch (e) {
+    console.error("Update quote notes error:", e);
+    res.status(500).json({ message: "Failed to update notes" });
+  }
+});
+
 // Delete new quote
 app.delete("/api/new-quotes/:id", authenticateToken, async (req, res) => {
   try {

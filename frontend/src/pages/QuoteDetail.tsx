@@ -54,6 +54,29 @@ const QuoteDetail = () => {
   }, [id, searchParams, toast]);
 
 
+  const handleSaveNotes = async (medicalUnderwritingNotes: string) => {
+    if (!id) return;
+    const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${apiBase}/api/new-quotes/${id}/notes`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ medicalUnderwritingNotes }),
+      });
+      if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+      setQuote((prev) => (prev ? { ...prev, medicalUnderwritingNotes } : prev));
+      toast({ title: "Saved", description: "Medical underwriting notes updated." });
+    } catch (err) {
+      console.error("Save notes failed:", err);
+      toast({ title: "Error", description: "Failed to save notes.", variant: "destructive" });
+      throw err;
+    }
+  };
+
   const handleDownloadPdf = async () => {
     if (!quote) return;
     try {
@@ -106,7 +129,7 @@ const QuoteDetail = () => {
       case "Exclusive Life Assurance":
         return <LifeDisplay quote={quote} />;
       case "Individual Life Cover":
-        return <IndividualLifeDisplay quote={quote} />;
+        return <IndividualLifeDisplay quote={quote} onSaveNotes={isLegacyAnnuity ? undefined : handleSaveNotes} />;
       default:
         return <GenericDisplay quote={quote} />;
     }

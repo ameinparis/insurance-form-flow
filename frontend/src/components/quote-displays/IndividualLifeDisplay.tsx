@@ -1,10 +1,31 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { formatCurrency, toTitleCase } from "@/lib/quoteUtils";
 
 interface IndividualLifeDisplayProps {
   quote: any;
+  onSaveNotes?: (notes: string) => Promise<void>;
 }
 
-export const IndividualLifeDisplay = ({ quote }: IndividualLifeDisplayProps) => {
+export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisplayProps) => {
+  const initialNotes = quote?.medicalUnderwritingNotes || "";
+  const [notes, setNotes] = useState<string>(initialNotes);
+  const [savedNotes, setSavedNotes] = useState<string>(initialNotes);
+  const [saving, setSaving] = useState(false);
+  const isDirty = notes !== savedNotes;
+
+  const handleSave = async () => {
+    if (!onSaveNotes) return;
+    try {
+      setSaving(true);
+      await onSaveNotes(notes);
+      setSavedNotes(notes);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const { client, inputs, outputs } = quote || {};
   const clientData = client || {};
   const i = inputs || {};
@@ -144,11 +165,28 @@ export const IndividualLifeDisplay = ({ quote }: IndividualLifeDisplayProps) => 
 
       {/* Medical Underwriting */}
       <div>
-        <h3 className="text-base font-bold text-foreground">Medical Underwriting</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-foreground">Medical Underwriting</h3>
+          {onSaveNotes && (
+            <span className="text-xs text-muted-foreground">
+              {saving ? "Saving..." : isDirty ? "Unsaved changes" : savedNotes ? "Saved" : ""}
+            </span>
+          )}
+        </div>
         <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
           className="w-full border border-border rounded-lg p-4 mt-2 min-h-[80px] bg-card text-foreground text-sm placeholder:text-muted-foreground resize-y focus:outline-none focus:ring-1 focus:ring-primary"
           placeholder="Enter medical underwriting notes..."
         />
+        {onSaveNotes && (
+          <div className="flex justify-end mt-2">
+            <Button size="sm" onClick={handleSave} disabled={!isDirty || saving}>
+              {saving && <Loader2 className="h-3 w-3 animate-spin" />}
+              Save Notes
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Important Disclosures */}
