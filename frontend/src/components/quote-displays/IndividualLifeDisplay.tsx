@@ -83,12 +83,12 @@ export const IndividualLifeDisplay = ({ quote }: IndividualLifeDisplayProps) => 
         <h3 className="text-base font-bold text-foreground">Product Information</h3>
         <div className="border-b border-border mt-1 mb-3" />
         <div className="space-y-2">
-          <p className="text-muted-foreground">Product Type: <span className="text-foreground font-medium ml-1">{toTitleCase(i?.product)}</span></p>
-          <p className="text-muted-foreground">Term: <span className="text-foreground font-medium ml-1">{i?.term ? `${i.term} years` : ""}</span></p>
-          <p className="text-muted-foreground">Cashback Option: <span className="text-foreground font-medium ml-1">{toTitleCase(i?.cashbackOption)}</span></p>
-          <p className="text-muted-foreground">Death Benefit: <span className="text-foreground font-medium ml-1">{i?.deathCover ? formatCurrency(i.deathCover) : ""}</span></p>
-          <p className="text-muted-foreground">Disability Benefit: <span className="text-foreground font-medium ml-1">{i?.disabilityCover ? formatCurrency(i.disabilityCover) : ""}</span></p>
-          <p className="text-muted-foreground">Critical Illness Benefit: <span className="text-foreground font-medium ml-1">{i?.ciCover ? formatCurrency(i.ciCover) : ""}</span></p>
+          <div className="flex justify-between"><span className="text-muted-foreground">Product Type:</span><span className="text-foreground font-medium">{toTitleCase(i?.product)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Term:</span><span className="text-foreground font-medium">{i?.term ? `${i.term} years` : ""}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Cashback Option:</span><span className="text-foreground font-medium">{toTitleCase(i?.cashbackOption)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Death Benefit:</span><span className="text-foreground font-medium">{i?.deathCover ? formatCurrency(i.deathCover) : ""}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Disability Benefit:</span><span className="text-foreground font-medium">{i?.disabilityCover ? formatCurrency(i.disabilityCover) : ""}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Critical Illness Benefit:</span><span className="text-foreground font-medium">{i?.ciCover ? formatCurrency(i.ciCover) : ""}</span></div>
         </div>
         <div className="border-b border-border mt-3" />
       </div>
@@ -128,7 +128,7 @@ export const IndividualLifeDisplay = ({ quote }: IndividualLifeDisplayProps) => 
                 <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.ciCoverPremium)}</td>
               </tr>
               <tr className="border-b border-border">
-                <td className="py-2.5 px-4 text-muted-foreground">Policy Fees</td>
+                <td className="py-2.5 px-4 text-muted-foreground">Base Premium + Cashback</td>
                 <td className="py-2.5 px-4 text-foreground">—</td>
                 <td className="py-2.5 px-4 text-foreground">—</td>
                 <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.basePremium)}</td>
@@ -145,9 +145,10 @@ export const IndividualLifeDisplay = ({ quote }: IndividualLifeDisplayProps) => 
       {/* Medical Underwriting */}
       <div>
         <h3 className="text-base font-bold text-foreground">Medical Underwriting</h3>
-        <div className="border border-border rounded-lg p-4 mt-2 min-h-[40px]">
-          {/* Empty box for medical underwriting notes */}
-        </div>
+        <textarea
+          className="w-full border border-border rounded-lg p-4 mt-2 min-h-[80px] bg-card text-foreground text-sm placeholder:text-muted-foreground resize-y focus:outline-none focus:ring-1 focus:ring-primary"
+          placeholder="Enter medical underwriting notes..."
+        />
       </div>
 
       {/* Important Disclosures */}
