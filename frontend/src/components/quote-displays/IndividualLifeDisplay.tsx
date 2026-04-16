@@ -149,10 +149,16 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
                 <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.ciCoverPremium)}</td>
               </tr>
               <tr className="border-b border-border">
-                <td className="py-2.5 px-4 text-muted-foreground">Base Premium + Cashback</td>
+                <td className="py-2.5 px-4 text-muted-foreground">Base Premium</td>
                 <td className="py-2.5 px-4 text-foreground">—</td>
                 <td className="py-2.5 px-4 text-foreground">—</td>
                 <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.basePremium)}</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-2.5 px-4 text-muted-foreground">Cashback Premium</td>
+                <td className="py-2.5 px-4 text-foreground">—</td>
+                <td className="py-2.5 px-4 text-foreground">—</td>
+                <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.cashbackPremium)}</td>
               </tr>
               <tr>
                 <td colSpan={3} className="py-3 px-4 font-bold text-foreground">Total Monthly Premium</td>
