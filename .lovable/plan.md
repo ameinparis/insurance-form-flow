@@ -1,32 +1,35 @@
 
 
-## Clean Up Redundant Root-Level Files
+## Plan: Make Medical Underwriting Notes Editable & Saveable
 
-Based on the project structure, the Vite config sets `root: "frontend"`, meaning everything outside `frontend/` that duplicates its purpose is unnecessary.
+### Problem
+The Medical Underwriting textarea in IndividualLifeDisplay is a plain HTML element with no state — anything typed is lost on navigation/refresh and won't appear in PDF exports.
 
-### Files to Delete
+### Approach
+Since there's no PATCH/PUT endpoint for quotes on the backend, we'll store the notes locally within the quote's existing data structure and add a backend endpoint to update it.
 
-| File | Reason |
-|------|--------|
-| `index.html` (root) | Duplicate — `frontend/index.html` is the active entry point |
-| `vite.config.mjs` | Duplicate — `vite.config.ts` already exists with the same config |
-| `public/logo-darkmode.png` | Not referenced anywhere in the frontend code; the `frontend/public/` folder is the correct location for static assets |
+### Changes
 
-### Files to Keep (root level)
+**1. Backend — Add a PATCH endpoint for quote notes** (`backend/server.js`)
+- Add `app.patch("/api/new-quotes/:id/notes", ...)` that updates a `medicalUnderwritingNotes` field on the quote document using `$set`.
+- The Mixed schema already allows arbitrary fields, so no schema migration needed.
 
-| File | Reason |
-|------|--------|
-| `package.json` | Required — defines dependencies and scripts |
-| `package-lock.json` / `bun.lock` | Lock files for dependency resolution |
-| `vite.config.ts` | Active Vite configuration |
-| `.gitignore` | Git configuration |
-| `node_modules/` | Installed dependencies |
+**2. IndividualLifeDisplay — Add state + save button**
+- Accept an `onSaveNotes` callback prop and a `quoteId` prop.
+- Add `useState` for the textarea value, initialized from `quote.medicalUnderwritingNotes` or empty string.
+- Add a "Save Notes" button below the textarea that calls `onSaveNotes(notes)`.
+- Show a subtle saved/unsaved indicator.
 
-### Technical Steps
+**3. QuoteDetail.tsx — Wire up the save handler**
+- Pass `quoteId` and an `onSaveNotes` async function to `IndividualLifeDisplay`.
+- The handler calls `PATCH /api/new-quotes/:id/notes` with `{ medicalUnderwritingNotes }`.
+- Show a toast on success/failure.
 
-1. Delete `index.html` from root
-2. Delete `vite.config.mjs` from root
-3. Delete `public/logo-darkmode.png` (and the empty `public/` directory)
+**4. PDF Export — Include the notes** (`frontend/src/lib/pdfExport.ts`)
+- When generating HTML for Individual Life Cover quotes, check for `medicalUnderwritingNotes` on the quote object and render it in the PDF output.
 
-No code changes needed — just file removals.
+### Technical Details
+- The quote MongoDB schema uses `mongoose.Schema.Types.Mixed` for flexible fields, so adding `medicalUnderwritingNotes` requires no schema change.
+- The PATCH endpoint will be auth-protected using the existing `authenticateToken` middleware.
+- The save button will use the accent color for consistency.
 
