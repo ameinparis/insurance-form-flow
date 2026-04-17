@@ -152,12 +152,14 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
                 <td className="py-2.5 px-4 text-foreground">{i?.term ? `${i.term} years` : "—"}</td>
                 <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.disabilityCoverPremium)}</td>
               </tr>
-              <tr className="border-b border-border">
-                <td className="py-2.5 px-4 text-muted-foreground">Critical Illness</td>
-                <td className="py-2.5 px-4 text-foreground">{i?.ciCover ? formatCurrency(i.ciCover) : "—"}</td>
-                <td className="py-2.5 px-4 text-foreground">{i?.term ? `${i.term} years` : "—"}</td>
-                <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.ciCoverPremium)}</td>
-              </tr>
+              {Number(o.ciCoverPremium) > 0 && (
+                <tr className="border-b border-border">
+                  <td className="py-2.5 px-4 text-muted-foreground">Critical Illness</td>
+                  <td className="py-2.5 px-4 text-foreground">{i?.ciCover ? formatCurrency(i.ciCover) : "—"}</td>
+                  <td className="py-2.5 px-4 text-foreground">{i?.term ? `${i.term} years` : "—"}</td>
+                  <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.ciCoverPremium)}</td>
+                </tr>
+              )}
               <tr className="border-b border-border">
                 <td className="py-2.5 px-4 text-muted-foreground">Policy Fees</td>
                 <td className="py-2.5 px-4 text-foreground">—</td>
