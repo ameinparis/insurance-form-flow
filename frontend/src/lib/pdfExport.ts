@@ -141,8 +141,8 @@ export async function exportQuotePdf(
   const medNotesHtml =
     productType === "Individual Life Cover" && medNotes && String(medNotes).trim()
       ? `<div style="padding: 0 2rem 1rem 2rem;">
-          <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">Medical Underwriting</h3>
-          <p style="font-size: 0.875rem; color: #0f172a; line-height: 1.5; white-space: pre-wrap; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">${String(medNotes).replace(/</g, "&lt;")}</p>
+          <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem;">Medical Underwriting</h3>
+          <p style="font-size: 0.875rem; color: #4b5563; line-height: 1.625; white-space: pre-wrap; margin: 0;">${String(medNotes).replace(/</g, "&lt;")}</p>
         </div>`
       : "";
 
