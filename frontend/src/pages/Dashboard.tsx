@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
+import { useQuotesList, QUOTES_LIST_KEY } from "@/hooks/useQuotesList"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -25,8 +27,9 @@ import {
 
 const Dashboard = () => {
   const navigate = useNavigate()
-  const [recentQuotes, setRecentQuotes] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const { data: recentQuotes = [], isLoading, isFetching } = useQuotesList()
+  const loading = isLoading && recentQuotes.length === 0
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [deleteQuoteId, setDeleteQuoteId] = useState<string | null>(null)
   const { userRole } = useAuth()
@@ -51,69 +54,10 @@ const Dashboard = () => {
     return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-300 dark:border-gray-700"
   }
 
-  useEffect(() => {
-    const fetchQuotes = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-
-        const [oldRes, newRes] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes`, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-        ]);
-
-        if (!oldRes.ok || !newRes.ok) throw new Error("Failed to fetch quotes");
-
-        const oldQuotes = await oldRes.json();
-        const newQuotes = await newRes.json();
-
-        const mappedOld = oldQuotes.map((q: any) => ({
-          id: q._id,
-          quoteId: q.quoteId,
-          fullName: q.fullName,
-          email: q.email,
-          contactNumber: q.contactNumber,
-          type: "Exclusive Annuity",
-          createdByName: q.createdByName || q.createdBy?.firstName || "",
-          createdAt: q.createdAt,
-          isLegacy: true,
-        }));
-
-        const mappedNew = newQuotes.map((q: any) => ({
-          id: q._id,
-          quoteId: q.quoteId || "—",
-          clientName: q.client?.fullName || q.client?.companyName || q.client?.schemeName || "Unnamed",
-          email: q.client?.email || q.client?.companyEmail || "—",
-          type: q.productType,
-          createdByName: q.createdBy?.firstName || "",
-          createdAt: q.createdAt,
-        }));
-
-
-        setRecentQuotes([...mappedOld, ...mappedNew].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        ));
-      } catch (err) {
-        console.error("Error fetching quotes:", err);
-        toast.error("Failed to load quotes");
-        setRecentQuotes([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchQuotes();
-  }, []);
-
-
   const handleDeleteQuote = async (quoteId: string, isLegacy: boolean = false) => {
     try {
       const token = localStorage.getItem("token")
-      const endpoint = isLegacy 
+      const endpoint = isLegacy
         ? `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes/${quoteId}`
         : `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes/${quoteId}`
       const res = await fetch(endpoint, {
@@ -122,7 +66,9 @@ const Dashboard = () => {
       })
 
       if (!res.ok) throw new Error("Failed to delete quote")
-      setRecentQuotes((quotes) => quotes.filter((q) => q.id !== quoteId))
+      queryClient.setQueryData<any[]>(QUOTES_LIST_KEY, (old) =>
+        (old || []).filter((q) => q.id !== quoteId)
+      )
       toast.success("Quote deleted successfully")
     } catch (err) {
       console.error("Error deleting quote:", err)
