@@ -39,11 +39,18 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
   const formatCashbackOption = (val: any): string => {
     if (val == null || val === "") return "";
     const s = String(val).trim();
-    if (/^none$/i.test(s)) return "None";
+    if (/^(none|no[-_ ]?cashback)$/i.test(s)) return "No Cashback";
     // Match patterns like "10-after-5", "10-After5", "10after5", "10_after_5"
     const m = s.match(/(\d+)\s*[-_ ]?\s*after\s*[-_ ]?\s*(\d+)/i);
     if (m) return `${m[1]}% after ${m[2]} years`;
-    return toTitleCase(s);
+    return prettifyText(s);
+  };
+
+  // Convert raw values like "non-smoker", "single_parent" → "Non Smoker", "Single Parent"
+  const prettifyText = (val: any): string => {
+    if (val == null || val === "") return "";
+    const cleaned = String(val).replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
+    return toTitleCase(cleaned);
   };
 
   return (
@@ -72,7 +79,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
         <div className="grid grid-cols-2 gap-x-12">
           <div>
             <span className="text-muted-foreground">Gender:</span>
-            <span className="ml-2 text-foreground font-medium">{toTitleCase(i?.gender || clientData?.gender)}</span>
+            <span className="ml-2 text-foreground font-medium">{prettifyText(i?.gender || clientData?.gender)}</span>
             <div className="border-b border-border mt-1" />
           </div>
           <div>
@@ -85,12 +92,12 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
         <div className="grid grid-cols-2 gap-x-12">
           <div>
             <span className="text-muted-foreground">Education:</span>
-            <span className="ml-2 text-foreground font-medium">{toTitleCase(i?.education)}</span>
+            <span className="ml-2 text-foreground font-medium">{prettifyText(i?.education)}</span>
             <div className="border-b border-border mt-1" />
           </div>
           <div>
             <span className="text-muted-foreground">Smoker Status:</span>
-            <span className="ml-2 text-foreground font-medium">{toTitleCase(i?.smokerStatus)}</span>
+            <span className="ml-2 text-foreground font-medium">{prettifyText(i?.smokerStatus)}</span>
             <div className="border-b border-border mt-1" />
           </div>
         </div>
@@ -98,7 +105,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
         <div className="grid grid-cols-2 gap-x-12">
           <div>
             <span className="text-muted-foreground">Marriage Status:</span>
-            <span className="ml-2 text-foreground font-medium">{toTitleCase(i?.marriageStatus)}</span>
+            <span className="ml-2 text-foreground font-medium">{prettifyText(i?.marriageStatus)}</span>
             <div className="border-b border-border mt-1" />
           </div>
           <div>
@@ -114,7 +121,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
         <h3 className="text-base font-bold text-foreground">Product Information</h3>
         <div className="border-b border-border mt-1 mb-3" />
         <div className="space-y-2">
-          <div className="flex justify-between"><span className="text-muted-foreground">Product Type:</span><span className="text-foreground font-medium">{toTitleCase(i?.product)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Product Type:</span><span className="text-foreground font-medium">{prettifyText(i?.product)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Term:</span><span className="text-foreground font-medium">{i?.term ? `${i.term} years` : ""}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Cashback Option:</span><span className="text-foreground font-medium">{formatCashbackOption(i?.cashbackOption)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Death Benefit:</span><span className="text-foreground font-medium">{i?.deathCover ? formatCurrency(i.deathCover) : ""}</span></div>
