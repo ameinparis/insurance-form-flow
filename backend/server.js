@@ -125,6 +125,7 @@ const newQuoteSchema = new mongoose.Schema({
   quoteId: { type: String, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   termsAndConditions: { type: String },
+  medicalUnderwritingNotes: { type: String, default: "" },
 
 }, { timestamps: true });
 
