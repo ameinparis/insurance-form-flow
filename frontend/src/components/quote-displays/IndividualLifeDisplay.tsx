@@ -58,7 +58,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
   const prettifyText = (val: any): string => {
     if (val == null || val === "") return "";
     const cleaned = String(val).replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
-    return toTitleCase(cleaned);
+    return toTitleCase(cleaned).replace(/(\d+)\s*k\b/gi, "$1K");
   };
 
   return (
