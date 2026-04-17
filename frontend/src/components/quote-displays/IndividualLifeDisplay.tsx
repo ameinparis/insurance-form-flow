@@ -105,7 +105,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
         <div className="grid grid-cols-2 gap-x-12">
           <div>
             <span className="text-muted-foreground">Marriage Status:</span>
-            <span className="ml-2 text-foreground font-medium">{toTitleCase(i?.marriageStatus)}</span>
+            <span className="ml-2 text-foreground font-medium">{prettifyText(i?.marriageStatus)}</span>
             <div className="border-b border-border mt-1" />
           </div>
           <div>
