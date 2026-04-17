@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import { useQuotesList, QUOTES_LIST_KEY } from "@/hooks/useQuotesList"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -29,11 +31,12 @@ import {
 
 const Quotes = () => {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { globalSearchTerm, setGlobalSearchTerm } = useGlobalSearch()
   const [localSearchTerm, setLocalSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("date")
-  const [quotes, setQuotes] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: quotes = [], isLoading } = useQuotesList()
+  const loading = isLoading && quotes.length === 0
   const [currentPage, setCurrentPage] = useState(1)
   const [deleteQuoteId, setDeleteQuoteId] = useState<string | null>(null)
   const { userRole } = useAuth()
@@ -73,69 +76,6 @@ const Quotes = () => {
     return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-300 dark:border-gray-700"
   }
 
-  useEffect(() => {
-    const fetchQuotes = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-
-        const [oldRes, newRes] = await Promise.all([
-          fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-
-        if (!oldRes.ok || !newRes.ok) throw new Error("Failed to fetch quotes");
-
-        const oldQuotes = await oldRes.json();
-        const newQuotes = await newRes.json();
-
-        const mappedOld = oldQuotes.map((q: any) => ({
-          id: q._id,
-          quoteId: q.quoteId,
-          fullName: q.fullName || "Unnamed",
-          email: q.email || "—",
-          contactNumber: q.contactNumber || "—",
-          type: "Exclusive Annuity",
-          createdByName: q.createdByName || q.createdBy?.firstName || "—",
-          createdAt: q.createdAt,
-          isLegacy: true,
-        }));
-
-        const mappedNew = newQuotes.map((q: any) => ({
-          id: q._id,
-          quoteId: q.quoteId,
-          fullName: q.client?.fullName || q.client?.schemeName || "Unnamed",
-          email: q.client?.email || "—",
-          contactNumber: q.client?.contactNumber || "—",
-          type: q.productType || "Unknown",
-          createdByName:
-            q.createdByName ||
-            (q.createdBy?.firstName ? `${q.createdBy.firstName} ${q.createdBy.lastName || ""}` : "—"),
-          createdAt: q.createdAt,
-          isLegacy: false,
-        }));
-
-        setQuotes(
-          [...mappedOld, ...mappedNew].sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          )
-        );
-      } catch (err) {
-        console.error("Error fetching quotes:", err);
-        toast.error("Failed to load quotes");
-        setQuotes([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchQuotes();
-  }, []);
-
   const handleDeleteQuote = async (quoteId: string, isLegacy: boolean = false, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
 
@@ -145,23 +85,20 @@ const Quotes = () => {
         ? `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes/${quoteId}`
         : `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes/${quoteId}`
 
-      console.log("Deleting:", { quoteId, isLegacy, endpoint, token })
-
       const res = await fetch(endpoint, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       })
 
       const data = await res.json().catch(() => ({}))
-      console.log("Delete response:", res.status, data)
 
       if (!res.ok) {
         throw new Error(data.message || `Failed to delete quote (${res.status})`)
       }
 
-      setQuotes((quotes) => quotes.filter((q) => q.id !== quoteId))
+      queryClient.setQueryData<any[]>(QUOTES_LIST_KEY, (old) =>
+        (old || []).filter((q) => q.id !== quoteId)
+      )
       toast.success("Quote deleted successfully")
     } catch (err) {
       console.error("Error deleting quote:", err)
