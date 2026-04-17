@@ -92,12 +92,12 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
         <div className="grid grid-cols-2 gap-x-12">
           <div>
             <span className="text-muted-foreground">Education:</span>
-            <span className="ml-2 text-foreground font-medium">{toTitleCase(i?.education)}</span>
+            <span className="ml-2 text-foreground font-medium">{prettifyText(i?.education)}</span>
             <div className="border-b border-border mt-1" />
           </div>
           <div>
             <span className="text-muted-foreground">Smoker Status:</span>
-            <span className="ml-2 text-foreground font-medium">{toTitleCase(i?.smokerStatus)}</span>
+            <span className="ml-2 text-foreground font-medium">{prettifyText(i?.smokerStatus)}</span>
             <div className="border-b border-border mt-1" />
           </div>
         </div>
