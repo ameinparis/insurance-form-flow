@@ -46,6 +46,14 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
     return prettifyText(s);
   };
 
+  const formatDOB = (val: any): string => {
+    if (val == null || val === "") return "";
+    const s = String(val).trim();
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return s;
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  };
+
   // Convert raw values like "non-smoker", "single_parent" → "Non Smoker", "Single Parent"
   const prettifyText = (val: any): string => {
     if (val == null || val === "") return "";
@@ -71,7 +79,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
           </div>
           <div>
             <span className="text-muted-foreground">Date of Birth:</span>
-            <span className="ml-2 text-foreground font-medium">{clientData?.dateOfBirth || i?.dateOfBirth || ""}</span>
+            <span className="ml-2 text-foreground font-medium">{formatDOB(clientData?.dateOfBirth || i?.dateOfBirth)}</span>
             <div className="border-b border-border mt-1" />
           </div>
         </div>
