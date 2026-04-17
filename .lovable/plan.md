@@ -1,35 +1,47 @@
 
+What I found
 
-## Plan: Make Medical Underwriting Notes Editable & Saveable
+- The delay is coming from repeated heavy data loading, not just the page transition itself.
+- Both `Dashboard.tsx` and `Quotes.tsx` refetch both quote collections every time the page mounts, then merge and sort everything on the client.
+- The backend list endpoints currently return full quote documents, which is more data than those list screens need.
+- `QuoteDetail.tsx` uses `navigate(-1)`, so going back remounts the previous page and triggers that full reload again.
+- React Query is already installed in the app, but these pages are not using cached queries yet.
 
-### Problem
-The Medical Underwriting textarea in IndividualLifeDisplay is a plain HTML element with no state — anything typed is lost on navigation/refresh and won't appear in PDF exports.
+Plan
 
-### Approach
-Since there's no PATCH/PUT endpoint for quotes on the backend, we'll store the notes locally within the quote's existing data structure and add a backend endpoint to update it.
+1. Create one shared cached quote-list source
+- Add a shared frontend fetcher for quote lists.
+- Use React Query so Dashboard and Quotes reuse the same cached data instead of refetching from scratch on every return.
+- Set it up to keep previous data visible while refreshing in the background.
 
-### Changes
+2. Make the backend list endpoints lightweight
+- Update `/api/quotes` and `/api/new-quotes` list handlers to return only summary fields needed for tables and dashboard stats.
+- Use `select(...)` and `lean()` so the payload is much smaller and faster.
 
-**1. Backend — Add a PATCH endpoint for quote notes** (`backend/server.js`)
-- Add `app.patch("/api/new-quotes/:id/notes", ...)` that updates a `medicalUnderwritingNotes` field on the quote document using `$set`.
-- The Mixed schema already allows arbitrary fields, so no schema migration needed.
+3. Refactor Dashboard to use the shared cached data
+- Keep the current stats cards and recent quotes UI.
+- Stop doing a fresh full-page loader every time the user comes back from a quote.
+- Use the cached list for stats + latest quotes.
 
-**2. IndividualLifeDisplay — Add state + save button**
-- Accept an `onSaveNotes` callback prop and a `quoteId` prop.
-- Add `useState` for the textarea value, initialized from `quote.medicalUnderwritingNotes` or empty string.
-- Add a "Save Notes" button below the textarea that calls `onSaveNotes(notes)`.
-- Show a subtle saved/unsaved indicator.
+4. Refactor Quotes to use the same shared cached data
+- Reuse the same normalized quote list for search, sorting, and pagination.
+- This should make returning to Quotes much faster after viewing a quote.
 
-**3. QuoteDetail.tsx — Wire up the save handler**
-- Pass `quoteId` and an `onSaveNotes` async function to `IndividualLifeDisplay`.
-- The handler calls `PATCH /api/new-quotes/:id/notes` with `{ medicalUnderwritingNotes }`.
-- Show a toast on success/failure.
+5. Improve Quote Detail back navigation
+- Pass the source route when opening a quote.
+- Replace raw `navigate(-1)` with route-aware back behavior so the user returns to the correct screen cleanly, with its cached state.
 
-**4. PDF Export — Include the notes** (`frontend/src/lib/pdfExport.ts`)
-- When generating HTML for Individual Life Cover quotes, check for `medicalUnderwritingNotes` on the quote object and render it in the PDF output.
+Files likely affected
 
-### Technical Details
-- The quote MongoDB schema uses `mongoose.Schema.Types.Mixed` for flexible fields, so adding `medicalUnderwritingNotes` requires no schema change.
-- The PATCH endpoint will be auth-protected using the existing `authenticateToken` middleware.
-- The save button will use the accent color for consistency.
+- `frontend/src/pages/Dashboard.tsx`
+- `frontend/src/pages/Quotes.tsx`
+- `frontend/src/pages/QuoteDetail.tsx`
+- `frontend/src/App.tsx`
+- `frontend/src/lib/quoteUtils.ts` or a new shared quotes list helper
+- `backend/server.js`
 
+Technical details
+
+- The real issue is repeated remount + repeated fetching of both quote collections.
+- Using cache plus slimmer list responses is the main fix, not just changing the loader.
+- This should make going from quote detail back to Dashboard or Quotes feel near-instant after the first load.
