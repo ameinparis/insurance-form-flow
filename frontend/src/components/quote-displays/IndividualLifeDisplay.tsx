@@ -119,7 +119,9 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
           <div className="flex justify-between"><span className="text-muted-foreground">Cashback Option:</span><span className="text-foreground font-medium">{formatCashbackOption(i?.cashbackOption)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Death Benefit:</span><span className="text-foreground font-medium">{i?.deathCover ? formatCurrency(i.deathCover) : ""}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Disability Benefit:</span><span className="text-foreground font-medium">{i?.disabilityCover ? formatCurrency(i.disabilityCover) : ""}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Critical Illness Benefit:</span><span className="text-foreground font-medium">{i?.ciCover ? formatCurrency(i.ciCover) : ""}</span></div>
+          {Number(o.ciCoverPremium) > 0 && (
+            <div className="flex justify-between"><span className="text-muted-foreground">Critical Illness Benefit:</span><span className="text-foreground font-medium">{i?.ciCover ? formatCurrency(i.ciCover) : ""}</span></div>
+          )}
         </div>
         <div className="border-b border-border mt-3" />
       </div>
@@ -152,12 +154,14 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
                 <td className="py-2.5 px-4 text-foreground">{i?.term ? `${i.term} years` : "—"}</td>
                 <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.disabilityCoverPremium)}</td>
               </tr>
-              <tr className="border-b border-border">
-                <td className="py-2.5 px-4 text-muted-foreground">Critical Illness</td>
-                <td className="py-2.5 px-4 text-foreground">{i?.ciCover ? formatCurrency(i.ciCover) : "—"}</td>
-                <td className="py-2.5 px-4 text-foreground">{i?.term ? `${i.term} years` : "—"}</td>
-                <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.ciCoverPremium)}</td>
-              </tr>
+              {Number(o.ciCoverPremium) > 0 && (
+                <tr className="border-b border-border">
+                  <td className="py-2.5 px-4 text-muted-foreground">Critical Illness</td>
+                  <td className="py-2.5 px-4 text-foreground">{i?.ciCover ? formatCurrency(i.ciCover) : "—"}</td>
+                  <td className="py-2.5 px-4 text-foreground">{i?.term ? `${i.term} years` : "—"}</td>
+                  <td className="py-2.5 px-4 text-right text-foreground">{formatCurrency(o.ciCoverPremium)}</td>
+                </tr>
+              )}
               <tr className="border-b border-border">
                 <td className="py-2.5 px-4 text-muted-foreground">Policy Fees</td>
                 <td className="py-2.5 px-4 text-foreground">—</td>
