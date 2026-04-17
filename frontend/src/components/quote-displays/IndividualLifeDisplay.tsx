@@ -116,7 +116,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
         <div className="space-y-2">
           <div className="flex justify-between"><span className="text-muted-foreground">Product Type:</span><span className="text-foreground font-medium">{toTitleCase(i?.product)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Term:</span><span className="text-foreground font-medium">{i?.term ? `${i.term} years` : ""}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Cashback Option:</span><span className="text-foreground font-medium">{toTitleCase(i?.cashbackOption)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Cashback Option:</span><span className="text-foreground font-medium">{formatCashbackOption(i?.cashbackOption)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Death Benefit:</span><span className="text-foreground font-medium">{i?.deathCover ? formatCurrency(i.deathCover) : ""}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Disability Benefit:</span><span className="text-foreground font-medium">{i?.disabilityCover ? formatCurrency(i.disabilityCover) : ""}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Critical Illness Benefit:</span><span className="text-foreground font-medium">{i?.ciCover ? formatCurrency(i.ciCover) : ""}</span></div>
