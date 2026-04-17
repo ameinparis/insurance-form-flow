@@ -36,6 +36,16 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
   const formatPercent = (v: number | null | undefined) =>
     v == null ? "-" : `${Math.round(v)}%`;
 
+  const formatCashbackOption = (val: any): string => {
+    if (val == null || val === "") return "";
+    const s = String(val).trim();
+    if (/^none$/i.test(s)) return "None";
+    // Match patterns like "10-after-5", "10-After5", "10after5", "10_after_5"
+    const m = s.match(/(\d+)\s*[-_ ]?\s*after\s*[-_ ]?\s*(\d+)/i);
+    if (m) return `${m[1]}% after ${m[2]} years`;
+    return toTitleCase(s);
+  };
+
   return (
     <div className="bg-card p-8 space-y-8 text-sm text-foreground">
       {/* Title Section */}
@@ -106,7 +116,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
         <div className="space-y-2">
           <div className="flex justify-between"><span className="text-muted-foreground">Product Type:</span><span className="text-foreground font-medium">{toTitleCase(i?.product)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Term:</span><span className="text-foreground font-medium">{i?.term ? `${i.term} years` : ""}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">Cashback Option:</span><span className="text-foreground font-medium">{toTitleCase(i?.cashbackOption)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Cashback Option:</span><span className="text-foreground font-medium">{formatCashbackOption(i?.cashbackOption)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Death Benefit:</span><span className="text-foreground font-medium">{i?.deathCover ? formatCurrency(i.deathCover) : ""}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Disability Benefit:</span><span className="text-foreground font-medium">{i?.disabilityCover ? formatCurrency(i.disabilityCover) : ""}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Critical Illness Benefit:</span><span className="text-foreground font-medium">{i?.ciCover ? formatCurrency(i.ciCover) : ""}</span></div>
