@@ -58,7 +58,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
   const prettifyText = (val: any): string => {
     if (val == null || val === "") return "";
     const cleaned = String(val).replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
-    return toTitleCase(cleaned);
+    return toTitleCase(cleaned).replace(/(\d+)\s*k\b/gi, "$1K");
   };
 
   return (
@@ -118,7 +118,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
           </div>
           <div>
             <span className="text-muted-foreground">Income:</span>
-            <span className="ml-2 text-foreground font-medium">{i?.income || ""}</span>
+            <span className="ml-2 text-foreground font-medium">{prettifyText(i?.income)}</span>
             <div className="border-b border-border mt-1" />
           </div>
         </div>
