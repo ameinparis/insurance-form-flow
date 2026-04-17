@@ -39,11 +39,18 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
   const formatCashbackOption = (val: any): string => {
     if (val == null || val === "") return "";
     const s = String(val).trim();
-    if (/^none$/i.test(s)) return "None";
+    if (/^(none|no[-_ ]?cashback)$/i.test(s)) return "No Cashback";
     // Match patterns like "10-after-5", "10-After5", "10after5", "10_after_5"
     const m = s.match(/(\d+)\s*[-_ ]?\s*after\s*[-_ ]?\s*(\d+)/i);
     if (m) return `${m[1]}% after ${m[2]} years`;
-    return toTitleCase(s);
+    return prettifyText(s);
+  };
+
+  // Convert raw values like "non-smoker", "single_parent" → "Non Smoker", "Single Parent"
+  const prettifyText = (val: any): string => {
+    if (val == null || val === "") return "";
+    const cleaned = String(val).replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
+    return toTitleCase(cleaned);
   };
 
   return (
