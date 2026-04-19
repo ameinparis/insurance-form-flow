@@ -138,7 +138,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
         <h3 className="text-base font-bold text-foreground">Product Information</h3>
         <div className="border-b border-border mt-1 mb-3" />
         <div className="space-y-2">
-          <div className="flex justify-between"><span className="text-muted-foreground">Product Type:</span><span className="text-foreground font-medium">{prettifyText(i?.product)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Product Type:</span><span className="text-foreground font-medium">{formatProductType(i?.product)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Term:</span><span className="text-foreground font-medium">{i?.term ? `${i.term} years` : ""}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Cashback Option:</span><span className="text-foreground font-medium">{formatCashbackOption(i?.cashbackOption)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Death Benefit:</span><span className="text-foreground font-medium">{i?.deathCover ? formatCurrency(i.deathCover) : ""}</span></div>
