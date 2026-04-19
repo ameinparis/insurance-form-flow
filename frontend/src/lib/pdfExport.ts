@@ -155,10 +155,12 @@ export async function exportQuotePdf(
   // Strip the "Save Notes" button area (only present when onSaveNotes is provided)
   processedDisplayHtml = processedDisplayHtml.replace(/<button\b[^>]*>[\s\S]*?Save Notes[\s\S]*?<\/button>/gi, "");
   if (medNotesText) {
-    // Inject styled paragraph where the textarea was — right after the heading
+    // Replace the entire flex header (heading + status span) with a plain heading,
+    // then append the notes paragraph BELOW it so it doesn't sit opposite the title.
+    const escaped = medNotesText.replace(/</g, "&lt;");
     processedDisplayHtml = processedDisplayHtml.replace(
-      /(<h3[^>]*>\s*Medical Underwriting\s*<\/h3>)/i,
-      `$1<p style="font-size: 0.875rem; color: #4b5563; line-height: 1.625; margin: 0.75rem 0 0 0; white-space: pre-wrap;">${medNotesText.replace(/</g, "&lt;")}</p>`
+      /<div[^>]*class="[^"]*flex[^"]*items-center[^"]*justify-between[^"]*"[^>]*>\s*(<h3[^>]*>\s*Medical Underwriting\s*<\/h3>)[\s\S]*?<\/div>/i,
+      `$1<p style="font-size: 0.875rem; color: #4b5563; line-height: 1.625; margin: 0.75rem 0 0 0; white-space: pre-wrap;">${escaped}</p>`
     );
   } else {
     // No notes — remove the entire Medical Underwriting section wrapper
