@@ -61,6 +61,15 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
     return toTitleCase(cleaned).replace(/(\d+)\s*k\b/gi, "$1K");
   };
 
+  // Product type: "meduw" → "Medical Underwriting", "non"/"non-meduw" → "Non Medical Underwriting"
+  const formatProductType = (val: any): string => {
+    if (val == null || val === "") return "";
+    const s = String(val).trim().toLowerCase().replace(/[-_\s]+/g, "");
+    if (s === "meduw" || s === "medical" || s === "medicalunderwriting") return "Medical Underwriting";
+    if (s === "non" || s === "nonmeduw" || s === "nonmedical" || s === "nonmedicalunderwriting") return "Non Medical Underwriting";
+    return prettifyText(val);
+  };
+
   return (
     <div className="bg-card p-8 space-y-8 text-sm text-foreground">
       {/* Title Section */}
