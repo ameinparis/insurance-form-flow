@@ -61,6 +61,15 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
     return toTitleCase(cleaned).replace(/(\d+)\s*k\b/gi, "$1K");
   };
 
+  // Product type: "meduw" → "Medical Underwriting", "non"/"non-meduw" → "Non Medical Underwriting"
+  const formatProductType = (val: any): string => {
+    if (val == null || val === "") return "";
+    const s = String(val).trim().toLowerCase().replace(/[-_\s]+/g, "");
+    if (s === "meduw" || s === "medical" || s === "medicalunderwriting") return "Medical Underwriting";
+    if (s === "non" || s === "nonmeduw" || s === "nonmedical" || s === "nonmedicalunderwriting") return "Non Medical Underwriting";
+    return prettifyText(val);
+  };
+
   return (
     <div className="bg-card p-8 space-y-8 text-sm text-foreground">
       {/* Title Section */}
@@ -129,7 +138,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
         <h3 className="text-base font-bold text-foreground">Product Information</h3>
         <div className="border-b border-border mt-1 mb-3" />
         <div className="space-y-2">
-          <div className="flex justify-between"><span className="text-muted-foreground">Product Type:</span><span className="text-foreground font-medium">{prettifyText(i?.product)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Product Type:</span><span className="text-foreground font-medium">{formatProductType(i?.product)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Term:</span><span className="text-foreground font-medium">{i?.term ? `${i.term} years` : ""}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Cashback Option:</span><span className="text-foreground font-medium">{formatCashbackOption(i?.cashbackOption)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Death Benefit:</span><span className="text-foreground font-medium">{i?.deathCover ? formatCurrency(i.deathCover) : ""}</span></div>
