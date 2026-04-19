@@ -46,6 +46,8 @@ const PDF_STYLES = `
   .flex { display: flex; }
   .justify-between { justify-content: space-between; }
   .items-start { align-items: flex-start; }
+  .items-baseline { align-items: baseline; }
+  .gap-2 { gap: 0.5rem; }
   .mb-8 { margin-bottom: 2rem; }
   .text-right { text-align: right; }
   .text-sm { font-size: 0.875rem; }
