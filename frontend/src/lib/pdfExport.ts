@@ -136,16 +136,29 @@ export async function exportQuotePdf(
     getDisplayComponent(productType, quote)
   );
 
-  // 4b. Render medical underwriting notes (Individual Life) if present.
-  // Match Important Disclosures styling — plain text, no textbox visuals.
+  // 4b. Replace the on-screen Medical Underwriting <textarea> with plain styled
+  // text matching Important Disclosures. If empty, remove the whole section so
+  // it doesn't appear in the PDF at all.
   const medNotes = (quote as any).medicalUnderwritingNotes;
-  const medNotesHtml =
-    productType === "Individual Life Cover" && medNotes && String(medNotes).trim()
-      ? `<div style="padding: 0 2rem 1rem 2rem;">
-          <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0 0 0.75rem 0;">Medical Underwriting</h3>
-          <p style="font-size: 0.875rem; color: #4b5563; line-height: 1.625; margin: 0; white-space: pre-wrap;">${String(medNotes).replace(/</g, "&lt;")}</p>
-        </div>`
-      : "";
+  const medNotesText = medNotes && String(medNotes).trim() ? String(medNotes).trim() : "";
+  let processedDisplayHtml = displayHtml;
+  // Strip the textarea (with or without value attribute)
+  processedDisplayHtml = processedDisplayHtml.replace(/<textarea\b[^>]*>[\s\S]*?<\/textarea>/gi, "");
+  // Strip the "Save Notes" button area (only present when onSaveNotes is provided)
+  processedDisplayHtml = processedDisplayHtml.replace(/<button\b[^>]*>[\s\S]*?Save Notes[\s\S]*?<\/button>/gi, "");
+  if (medNotesText) {
+    // Inject styled paragraph where the textarea was — right after the heading
+    processedDisplayHtml = processedDisplayHtml.replace(
+      /(<h3[^>]*>\s*Medical Underwriting\s*<\/h3>)/i,
+      `$1<p style="font-size: 0.875rem; color: #4b5563; line-height: 1.625; margin: 0.75rem 0 0 0; white-space: pre-wrap;">${medNotesText.replace(/</g, "&lt;")}</p>`
+    );
+  } else {
+    // Remove the Medical Underwriting heading when there are no notes
+    processedDisplayHtml = processedDisplayHtml.replace(
+      /<h3[^>]*>\s*Medical Underwriting\s*<\/h3>/i,
+      ""
+    );
+  }
 
   // 4c. Render terms & conditions if present
   const termsText = quote.termsAndConditions || quote.disclaimerText;
@@ -157,7 +170,7 @@ export async function exportQuotePdf(
     : "";
 
   // 5. Fix relative image URLs
-  const contentHtml = (headerHtml + displayHtml + medNotesHtml + termsHtml).replace(
+  const contentHtml = (headerHtml + processedDisplayHtml + termsHtml).replace(
     /src="\/([^"]+)"/g,
     `src="${baseUrl}/$1"`
   );
