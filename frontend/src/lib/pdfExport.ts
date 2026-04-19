@@ -153,9 +153,9 @@ export async function exportQuotePdf(
       `$1<p style="font-size: 0.875rem; color: #4b5563; line-height: 1.625; margin: 0.75rem 0 0 0; white-space: pre-wrap;">${medNotesText.replace(/</g, "&lt;")}</p>`
     );
   } else {
-    // Remove the Medical Underwriting heading when there are no notes
+    // No notes — remove the entire Medical Underwriting section wrapper
     processedDisplayHtml = processedDisplayHtml.replace(
-      /<h3[^>]*>\s*Medical Underwriting\s*<\/h3>/i,
+      /<div[^>]*data-section="medical-underwriting"[^>]*>[\s\S]*?<\/div>\s*<\/div>/i,
       ""
     );
   }

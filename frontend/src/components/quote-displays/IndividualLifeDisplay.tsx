@@ -202,7 +202,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
       </div>
 
       {/* Medical Underwriting */}
-      <div>
+      <div data-section="medical-underwriting">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-bold text-foreground">Medical Underwriting</h3>
           {onSaveNotes && (
