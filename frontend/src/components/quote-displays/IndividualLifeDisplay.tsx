@@ -81,46 +81,62 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
       {/* Client Details - 2 column grid with underlines */}
       <div className="grid grid-cols-2 gap-x-12 gap-y-6 mt-6">
         <div>
-          <div className="text-muted-foreground">Name:</div>
-          <div className="text-foreground font-medium mt-1">{clientName}</div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-muted-foreground">Name:</span>
+            <span className="text-foreground font-medium">{clientName}</span>
+          </div>
           <div className="border-b border-border mt-1" />
         </div>
         <div>
-          <div className="text-muted-foreground">Date of Birth:</div>
-          <div className="text-foreground font-medium mt-1">{formatDOB(clientData?.dateOfBirth || i?.dateOfBirth)}</div>
-          <div className="border-b border-border mt-1" />
-        </div>
-
-        <div>
-          <div className="text-muted-foreground">Gender:</div>
-          <div className="text-foreground font-medium mt-1">{prettifyText(i?.gender || clientData?.gender)}</div>
-          <div className="border-b border-border mt-1" />
-        </div>
-        <div>
-          <div className="text-muted-foreground">Age:</div>
-          <div className="text-foreground font-medium mt-1">{i?.age || clientData?.age || ""}</div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-muted-foreground">Date of Birth:</span>
+            <span className="text-foreground font-medium">{formatDOB(clientData?.dateOfBirth || i?.dateOfBirth)}</span>
+          </div>
           <div className="border-b border-border mt-1" />
         </div>
 
         <div>
-          <div className="text-muted-foreground">Education:</div>
-          <div className="text-foreground font-medium mt-1">{prettifyText(i?.education)}</div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-muted-foreground">Gender:</span>
+            <span className="text-foreground font-medium">{prettifyText(i?.gender || clientData?.gender)}</span>
+          </div>
           <div className="border-b border-border mt-1" />
         </div>
         <div>
-          <div className="text-muted-foreground">Smoker Status:</div>
-          <div className="text-foreground font-medium mt-1">{prettifyText(i?.smokerStatus)}</div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-muted-foreground">Age:</span>
+            <span className="text-foreground font-medium">{i?.age || clientData?.age || ""}</span>
+          </div>
           <div className="border-b border-border mt-1" />
         </div>
 
         <div>
-          <div className="text-muted-foreground">Marriage Status:</div>
-          <div className="text-foreground font-medium mt-1">{prettifyText(i?.marriageStatus)}</div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-muted-foreground">Education:</span>
+            <span className="text-foreground font-medium">{prettifyText(i?.education)}</span>
+          </div>
           <div className="border-b border-border mt-1" />
         </div>
         <div>
-          <div className="text-muted-foreground">Income:</div>
-          <div className="text-foreground font-medium mt-1">{prettifyText(i?.income)}</div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-muted-foreground">Smoker Status:</span>
+            <span className="text-foreground font-medium">{prettifyText(i?.smokerStatus)}</span>
+          </div>
+          <div className="border-b border-border mt-1" />
+        </div>
+
+        <div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-muted-foreground">Marriage Status:</span>
+            <span className="text-foreground font-medium">{prettifyText(i?.marriageStatus)}</span>
+          </div>
+          <div className="border-b border-border mt-1" />
+        </div>
+        <div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-muted-foreground">Income:</span>
+            <span className="text-foreground font-medium">{prettifyText(i?.income)}</span>
+          </div>
           <div className="border-b border-border mt-1" />
         </div>
       </div>
