@@ -58,9 +58,17 @@ const PDF_STYLES = `
   .max-w-7xl { max-width: 80rem; }
   .grid { display: grid; }
   .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .md\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .gap-x-12 { column-gap: 3rem; }
   .gap-y-4 { row-gap: 1rem; }
+  .gap-y-6 { row-gap: 1.5rem; }
+  .mt-1 { margin-top: 0.25rem; }
+  .mt-6 { margin-top: 1.5rem; }
+  .font-medium { font-weight: 500; }
+  .text-muted-foreground { color: #6b7280; }
+  .text-foreground { color: #0f172a; }
+  .border-border { border-color: #e5e7eb; }
   .border-b { border-bottom: 1px solid #e5e7eb; }
   .border-gray-300 { border-color: #d1d5db; }
   .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
