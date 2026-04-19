@@ -136,13 +136,14 @@ export async function exportQuotePdf(
     getDisplayComponent(productType, quote)
   );
 
-  // 4b. Render medical underwriting notes (Individual Life) if present
+  // 4b. Render medical underwriting notes (Individual Life) if present.
+  // Match Important Disclosures styling — plain text, no textbox visuals.
   const medNotes = (quote as any).medicalUnderwritingNotes;
   const medNotesHtml =
     productType === "Individual Life Cover" && medNotes && String(medNotes).trim()
       ? `<div style="padding: 0 2rem 1rem 2rem;">
-          <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem;">Medical Underwriting</h3>
-          <p style="font-size: 0.875rem; color: #4b5563; line-height: 1.625; white-space: pre-wrap; margin: 0;">${String(medNotes).replace(/</g, "&lt;")}</p>
+          <h3 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0 0 0.75rem 0;">Medical Underwriting</h3>
+          <p style="font-size: 0.875rem; color: #4b5563; line-height: 1.625; margin: 0; white-space: pre-wrap;">${String(medNotes).replace(/</g, "&lt;")}</p>
         </div>`
       : "";
 
