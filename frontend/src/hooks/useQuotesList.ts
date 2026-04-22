@@ -15,7 +15,7 @@ export interface NormalizedQuote {
   premium?: number;
 }
 
-const apiBase = () => import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
+const apiBase = () => import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw";
 
 const fetchQuotesList = async (): Promise<NormalizedQuote[]> => {
   const token = localStorage.getItem("token");

@@ -118,7 +118,7 @@ const displayValue = (row: any) => {
       const token = localStorage.getItem("token")
 
       const res = await fetch(
-        "http://localhost:5002/api/quotes/calculate-individual-life",
+        "https://njs.exclusivelife.co.bw/api/quotes/calculate-individual-life",
         {
           method: "POST",
           headers: {
@@ -183,7 +183,7 @@ const displayValue = (row: any) => {
       outputs: result, // or result.output if your API returns { output: {...} }
     }
 
-    const res = await fetch("http://localhost:5002/api/new-quotes", {
+    const res = await fetch("https://njs.exclusivelife.co.bw/api/new-quotes", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

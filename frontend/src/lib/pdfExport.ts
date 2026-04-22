@@ -117,7 +117,7 @@ export async function exportQuotePdf(
   isLegacy: boolean
 ): Promise<void> {
   const baseUrl = window.location.origin;
-  const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
+  const apiBase = import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw";
 
   // 1. Fetch full quote data
   const quote = await fetchQuoteDetails(quoteMongoId, isLegacy);
