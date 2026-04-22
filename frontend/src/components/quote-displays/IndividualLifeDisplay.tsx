@@ -31,6 +31,8 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
   const i = inputs || {};
   const o = outputs?.raw || outputs || {};
   const hasCriticalIllnessCover = Number(i?.ciCover) > 0;
+  const normalizedProductType = String(i?.product || "").trim().toLowerCase().replace(/[-_\s]+/g, "");
+  const showMedicalUnderwritingSection = !["non", "nomeduw", "nonmeduw", "nonmedical", "nonmedicalunderwriting"].includes(normalizedProductType);
 
   const clientName = toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "";
 
@@ -67,7 +69,7 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
     if (val == null || val === "") return "";
     const s = String(val).trim().toLowerCase().replace(/[-_\s]+/g, "");
     if (s === "meduw" || s === "medical" || s === "medicalunderwriting") return "Medical Underwriting";
-    if (s === "non" || s === "nonmeduw" || s === "nonmedical" || s === "nonmedicalunderwriting") return "Non Medical Underwriting";
+    if (s === "non" || s === "nomeduw" || s === "nonmeduw" || s === "nonmedical" || s === "nonmedicalunderwriting") return "No Medical Underwriting";
     return prettifyText(val);
   };
 
@@ -211,30 +213,32 @@ export const IndividualLifeDisplay = ({ quote, onSaveNotes }: IndividualLifeDisp
       </div>
 
       {/* Medical Underwriting */}
-      <div data-section="medical-underwriting">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-foreground">Medical Underwriting</h3>
+      {showMedicalUnderwritingSection && (
+        <div data-section="medical-underwriting">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-foreground">Medical Underwriting</h3>
+            {onSaveNotes && (
+              <span className="text-xs text-muted-foreground">
+                {saving ? "Saving..." : isDirty ? "Unsaved changes" : savedNotes ? "Saved" : ""}
+              </span>
+            )}
+          </div>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="w-full border border-border rounded-lg p-4 mt-2 min-h-[80px] bg-card text-foreground text-sm placeholder:text-muted-foreground resize-y focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="Enter medical underwriting notes..."
+          />
           {onSaveNotes && (
-            <span className="text-xs text-muted-foreground">
-              {saving ? "Saving..." : isDirty ? "Unsaved changes" : savedNotes ? "Saved" : ""}
-            </span>
+            <div className="flex justify-end mt-2">
+              <Button size="sm" onClick={handleSave} disabled={!isDirty || saving}>
+                {saving && <Loader2 className="h-3 w-3 animate-spin" />}
+                Save Notes
+              </Button>
+            </div>
           )}
         </div>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className="w-full border border-border rounded-lg p-4 mt-2 min-h-[80px] bg-card text-foreground text-sm placeholder:text-muted-foreground resize-y focus:outline-none focus:ring-1 focus:ring-primary"
-          placeholder="Enter medical underwriting notes..."
-        />
-        {onSaveNotes && (
-          <div className="flex justify-end mt-2">
-            <Button size="sm" onClick={handleSave} disabled={!isDirty || saving}>
-              {saving && <Loader2 className="h-3 w-3 animate-spin" />}
-              Save Notes
-            </Button>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Important Disclosures */}
       <div>
