@@ -451,40 +451,49 @@ const displayValue = (row: any) => {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="deathCover">Death Cover</Label>
-                  <Input
-                    id="deathCover"
-                    type="number"
-                    value={formData.deathCover}
-                    onChange={(e) => handleInputChange("deathCover", e.target.value)}
-                    placeholder="Enter death cover amount"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="disabilityCover">Disability Cover</Label>
-                  <Input
-                    id="disabilityCover"
-                    type="number"
-                    value={formData.disabilityCover}
-                    onChange={(e) => handleInputChange("disabilityCover", e.target.value)}
-                    placeholder="Enter disability cover amount"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="ciCover">Critical Illness Cover</Label>
-                  <Input
-                    id="ciCover"
-                    type="number"
-                    value={formData.ciCover}
-                    onChange={(e) => handleInputChange("ciCover", e.target.value)}
-                    placeholder="Enter CI cover amount (optional)"
-                  />
-                </div>
+                {(["deathCover", "disabilityCover", "ciCover"] as const).map((field) => {
+                  const labels = {
+                    deathCover: "Death Cover",
+                    disabilityCover: "Disability Cover",
+                    ciCover: "Critical Illness Cover",
+                  } as const
+                  const placeholders = {
+                    deathCover: "Enter death cover amount",
+                    disabilityCover: "Enter disability cover amount",
+                    ciCover: "Enter CI cover amount (optional)",
+                  } as const
+                  const limits = getLimits(field)
+                  const error = getFieldError(field)
+                  const isRequired = field !== "ciCover"
+                  return (
+                    <div key={field} className="space-y-2">
+                      <Label htmlFor={field}>{labels[field]}</Label>
+                      <Input
+                        id={field}
+                        type="number"
+                        value={formData[field]}
+                        onChange={(e) => handleInputChange(field, e.target.value)}
+                        placeholder={placeholders[field]}
+                        min={limits?.min}
+                        max={limits?.max}
+                        required={isRequired}
+                        aria-invalid={!!error}
+                        className={error ? "border-destructive focus-visible:ring-destructive" : ""}
+                      />
+                      {limits ? (
+                        <p className={`text-xs ${error ? "text-destructive" : "text-muted-foreground"}`}>
+                          {error
+                            ? error
+                            : limits.min === limits.max
+                              ? `Fixed: BWP ${formatLimit(limits.min)}`
+                              : `Min BWP ${formatLimit(limits.min)} – Max BWP ${formatLimit(limits.max)}`}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Select a product to see allowed range</p>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
