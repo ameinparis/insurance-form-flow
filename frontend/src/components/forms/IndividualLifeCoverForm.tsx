@@ -104,6 +104,68 @@ const displayValue = (row: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  // Cover limits based on product type (per Exclusive Life underwriting rules)
+  const COVER_LIMITS: Record<string, Record<string, { min: number; max: number }>> = {
+    meduw: {
+      deathCover: { min: 500000, max: 10000000 },
+      disabilityCover: { min: 500000, max: 6000000 },
+      ciCover: { min: 250000, max: 2000000 },
+    },
+    nomeduw: {
+      deathCover: { min: 500000, max: 1000000 },
+      disabilityCover: { min: 500000, max: 1000000 },
+      ciCover: { min: 250000, max: 250000 },
+    },
+  }
+
+  const getLimits = (field: "deathCover" | "disabilityCover" | "ciCover") => {
+    if (!formData.product) return null
+    return COVER_LIMITS[formData.product]?.[field] || null
+  }
+
+  const formatLimit = (n: number) => n.toLocaleString()
+
+  const getFieldError = (field: "deathCover" | "disabilityCover" | "ciCover"): string | null => {
+    const limits = getLimits(field)
+    if (!limits) return null
+    const raw = formData[field]
+    if (raw === "" || raw === undefined || raw === null) {
+      // ciCover is optional — only error if required field is empty
+      if (field === "ciCover") return null
+      return null
+    }
+    const v = Number(raw)
+    if (!Number.isFinite(v)) return "Enter a valid number"
+    if (v < limits.min) return `Minimum is BWP ${formatLimit(limits.min)}`
+    if (v > limits.max) return `Maximum is BWP ${formatLimit(limits.max)}`
+    return null
+  }
+
+  const validateCovers = (): string | null => {
+    if (!formData.product) return "Please select a product first"
+    const fields: Array<"deathCover" | "disabilityCover" | "ciCover"> = [
+      "deathCover",
+      "disabilityCover",
+      "ciCover",
+    ]
+    const labels: Record<string, string> = {
+      deathCover: "Death Cover",
+      disabilityCover: "Disability Cover",
+      ciCover: "Critical Illness Cover",
+    }
+    for (const f of fields) {
+      const limits = getLimits(f)
+      if (!limits) continue
+      const raw = formData[f]
+      if (f === "ciCover" && (raw === "" || raw === undefined || raw === null)) continue
+      const v = Number(raw)
+      if (!Number.isFinite(v)) return `${labels[f]} must be a number`
+      if (v < limits.min) return `${labels[f]} minimum is BWP ${formatLimit(limits.min)}`
+      if (v > limits.max) return `${labels[f]} maximum is BWP ${formatLimit(limits.max)}`
+    }
+    return null
+  }
+
   const handleCustomerDetailsChange = (field: string, value: string) => {
     setCustomerDetails(prev => ({ ...prev, [field]: value }))
   }
