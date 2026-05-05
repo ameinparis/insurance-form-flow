@@ -480,16 +480,8 @@ const displayValue = (row: any) => {
                         aria-invalid={!!error}
                         className={error ? "border-destructive focus-visible:ring-destructive" : ""}
                       />
-                      {limits ? (
-                        <p className={`text-xs ${error ? "text-destructive" : "text-muted-foreground"}`}>
-                          {error
-                            ? error
-                            : limits.min === limits.max
-                              ? `Fixed: BWP ${formatLimit(limits.min)}`
-                              : `Min BWP ${formatLimit(limits.min)} – Max BWP ${formatLimit(limits.max)}`}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">Select a product to see allowed range</p>
+                      {error && (
+                        <p className="text-xs text-destructive">{error}</p>
                       )}
                     </div>
                   )

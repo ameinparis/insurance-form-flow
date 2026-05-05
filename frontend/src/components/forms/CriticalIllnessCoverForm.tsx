@@ -1,79 +1,25 @@
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "sonner"
+import { Card, CardContent } from "@/components/ui/card"
+import { Construction } from "lucide-react"
 
 const CriticalIllnessCoverForm = () => {
-  const [formData, setFormData] = useState({
-    age: "",
-    gender: "",
-    coverAmount: "",
-  })
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    toast.success("Critical Illness Cover quotation submitted successfully!")
-    console.log("Critical Illness Cover Form Data:", formData)
-  }
-
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">Critical Illness Cover</CardTitle>
-        <CardDescription>
-          Financial protection against major critical illnesses and medical conditions
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="age">Age</Label>
-              <Input
-                id="age"
-                type="number"
-                value={formData.age}
-                onChange={(e) => handleInputChange("age", e.target.value)}
-                placeholder="Enter age"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
-              <Select onValueChange={(value) => handleInputChange("gender", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="coverAmount">Cover Amount (BWP)</Label>
-              <Input
-                id="coverAmount"
-                type="number"
-                value={formData.coverAmount}
-                onChange={(e) => handleInputChange("coverAmount", e.target.value)}
-                placeholder="Enter cover amount"
-                required
-              />
+      <CardContent className="py-20">
+        <div className="flex flex-col items-center justify-center text-center space-y-6">
+          <div className="relative">
+            <div className="absolute inset-0 bg-[#009fe3]/20 blur-3xl rounded-full" />
+            <div className="relative bg-[#009fe3]/10 p-8 rounded-full border-2 border-[#009fe3]/30">
+              <Construction className="h-16 w-16 text-[#009fe3]" strokeWidth={1.5} />
             </div>
           </div>
-
-          <Button type="submit" className="w-full">
-            Get Critical Illness Cover Quote
-          </Button>
-        </form>
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold text-foreground">Form Coming Soon</h2>
+            <p className="text-muted-foreground max-w-md">
+              We're working hard to bring you the Critical Illness Cover calculator.
+              Please check back soon.
+            </p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )
