@@ -465,11 +465,10 @@ const displayValue = (row: any) => {
                   const limits = getLimits(field)
                   const error = getFieldError(field)
                   const isRequired = field !== "ciCover"
+                  const displayVal = formData[field]
+                    ? `BWP ${Number(formData[field]).toLocaleString("en-US")}`
+                    : ""
                   return (
-                    const displayVal = formData[field]
-                      ? `BWP ${Number(formData[field]).toLocaleString("en-US")}`
-                      : ""
-                    return (
                     <div key={field} className="space-y-2">
                       <Label htmlFor={field}>{labels[field]}</Label>
                       <Input
