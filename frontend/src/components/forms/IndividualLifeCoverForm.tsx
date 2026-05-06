@@ -466,16 +466,22 @@ const displayValue = (row: any) => {
                   const error = getFieldError(field)
                   const isRequired = field !== "ciCover"
                   return (
+                    const displayVal = formData[field]
+                      ? `BWP ${Number(formData[field]).toLocaleString("en-US")}`
+                      : ""
+                    return (
                     <div key={field} className="space-y-2">
                       <Label htmlFor={field}>{labels[field]}</Label>
                       <Input
                         id={field}
-                        type="number"
-                        value={formData[field]}
-                        onChange={(e) => handleInputChange(field, e.target.value)}
+                        type="text"
+                        inputMode="numeric"
+                        value={displayVal}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/[^0-9]/g, "")
+                          handleInputChange(field, digits)
+                        }}
                         placeholder={placeholders[field]}
-                        min={limits?.min}
-                        max={limits?.max}
                         required={isRequired}
                         aria-invalid={!!error}
                         className={error ? "border-destructive focus-visible:ring-destructive" : ""}
