@@ -587,9 +587,10 @@ const GroupLifeAssuranceForm = () => {
                       </td>
                       <td className="p-2">
                         <Input
-                          type="number"
-                          value={row.annualSalary}
-                          onChange={(e) => handleInputChange(index, "annualSalary", e.target.value)}
+                          type="text"
+                          inputMode="numeric"
+                          value={row.annualSalary ? `BWP ${Number(row.annualSalary).toLocaleString("en-US")}` : ""}
+                          onChange={(e) => handleInputChange(index, "annualSalary", e.target.value.replace(/[^0-9.]/g, ""))}
                         />
                       </td>
                       <td className="p-2 text-center">
