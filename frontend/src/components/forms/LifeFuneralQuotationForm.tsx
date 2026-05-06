@@ -138,6 +138,14 @@ const LifeFuneralQuotationForm = () => {
   const showExtended = showAllFields || detectedRoles.extended > 0 || !hasFile
   const showAdultDependent = showAllFields || detectedRoles.adultDependent > 0 || !hasFile
 
+  const formatMoneyDisplay = (v: string) => {
+    if (v === "" || v == null) return ""
+    const n = Number(v)
+    if (!Number.isFinite(n)) return ""
+    return `BWP ${n.toLocaleString("en-US")}`
+  }
+  const stripMoney = (v: string) => v.replace(/[^0-9.]/g, "")
+
   const handleInputChange = (field: string, value: string) => {
     const isNumeric = NUMERIC_FIELDS.has(field)
     const clean = isNumeric ? toNumericString(value) : value
