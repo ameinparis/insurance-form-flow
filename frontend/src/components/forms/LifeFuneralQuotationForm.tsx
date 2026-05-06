@@ -738,11 +738,10 @@ const LifeFuneralQuotationForm = () => {
                 <Label htmlFor="principalMemberCover">Principal Member Cover<span className="text-red-500">*</span></Label>
                 <Input
                   id="principalMemberCover"
-                  type="number"
-                  step="1"
-                  inputMode="decimal"
-                  value={formData.principalMemberCover}
-                  onChange={(e) => handleInputChange("principalMemberCover", e.target.value)}
+                  type="text"
+                  inputMode="numeric"
+                  value={formatMoneyDisplay(formData.principalMemberCover)}
+                  onChange={(e) => handleInputChange("principalMemberCover", stripMoney(e.target.value))}
                 />
               </div>
 
@@ -752,11 +751,10 @@ const LifeFuneralQuotationForm = () => {
                   <Label htmlFor="spouseCover">Spouse Cover (Same as Principal)</Label>
                   <Input
                     id="spouseCover"
-                    type="number"
-                    step="1"
-                    inputMode="decimal"
-                    value={formData.spouseCover}
-                    onChange={(e) => handleInputChange("spouseCover", e.target.value)}
+                    type="text"
+                    inputMode="numeric"
+                    value={formatMoneyDisplay(formData.spouseCover)}
+                    onChange={(e) => handleInputChange("spouseCover", stripMoney(e.target.value))}
                   />
                 </div>
               )}
@@ -770,11 +768,10 @@ const LifeFuneralQuotationForm = () => {
                     </Label>
                     <Input
                       id="children16toMax"
-                      type="number"
-                      step="1"
-                      inputMode="decimal"
-                      value={formData.children16toMax}
-                      onChange={(e) => handleInputChange("children16toMax", e.target.value)}
+                      type="text"
+                      inputMode="numeric"
+                      value={formatMoneyDisplay(formData.children16toMax)}
+                      onChange={(e) => handleInputChange("children16toMax", stripMoney(e.target.value))}
                     />
                   </div>
 
@@ -782,11 +779,10 @@ const LifeFuneralQuotationForm = () => {
                     <Label htmlFor="children6to15">Children age 6 to 15</Label>
                     <Input
                       id="children6to15"
-                      type="number"
-                      step="1"
-                      inputMode="decimal"
-                      value={formData.children6to15}
-                      onChange={(e) => handleInputChange("children6to15", e.target.value)}
+                      type="text"
+                      inputMode="numeric"
+                      value={formatMoneyDisplay(formData.children6to15)}
+                      onChange={(e) => handleInputChange("children6to15", stripMoney(e.target.value))}
                     />
                   </div>
 
@@ -794,11 +790,10 @@ const LifeFuneralQuotationForm = () => {
                     <Label htmlFor="children1to5">Children age 1 to 5</Label>
                     <Input
                       id="children1to5"
-                      type="number"
-                      step="1"
-                      inputMode="decimal"
-                      value={formData.children1to5}
-                      onChange={(e) => handleInputChange("children1to5", e.target.value)}
+                      type="text"
+                      inputMode="numeric"
+                      value={formatMoneyDisplay(formData.children1to5)}
+                      onChange={(e) => handleInputChange("children1to5", stripMoney(e.target.value))}
                     />
                   </div>
 
@@ -806,11 +801,10 @@ const LifeFuneralQuotationForm = () => {
                     <Label htmlFor="children0to1">Children age 0 to 1</Label>
                     <Input
                       id="children0to1"
-                      type="number"
-                      step="1"
-                      inputMode="decimal"
-                      value={formData.children0to1}
-                      onChange={(e) => handleInputChange("children0to1", e.target.value)}
+                      type="text"
+                      inputMode="numeric"
+                      value={formatMoneyDisplay(formData.children0to1)}
+                      onChange={(e) => handleInputChange("children0to1", stripMoney(e.target.value))}
                     />
                   </div>
                 </>
@@ -822,11 +816,10 @@ const LifeFuneralQuotationForm = () => {
                   <Label htmlFor="extendedFamilyCover">Extended Family Cover</Label>
                   <Input
                     id="extendedFamilyCover"
-                    type="number"
-                    step="1"
-                    inputMode="decimal"
-                    value={formData.extendedFamilyCover}
-                    onChange={(e) => handleInputChange("extendedFamilyCover", e.target.value)}
+                    type="text"
+                    inputMode="numeric"
+                    value={formatMoneyDisplay(formData.extendedFamilyCover)}
+                    onChange={(e) => handleInputChange("extendedFamilyCover", stripMoney(e.target.value))}
                   />
                 </div>
               )}
@@ -837,11 +830,10 @@ const LifeFuneralQuotationForm = () => {
                   <Label htmlFor="parentsCover">Adult Dependent / Parents Cover</Label>
                   <Input
                     id="parentsCover"
-                    type="number"
-                    step="1"
-                    inputMode="decimal"
-                    value={formData.parentsCover}
-                    onChange={(e) => handleInputChange("parentsCover", e.target.value)}
+                    type="text"
+                    inputMode="numeric"
+                    value={formatMoneyDisplay(formData.parentsCover)}
+                    onChange={(e) => handleInputChange("parentsCover", stripMoney(e.target.value))}
                   />
                 </div>
               )}
