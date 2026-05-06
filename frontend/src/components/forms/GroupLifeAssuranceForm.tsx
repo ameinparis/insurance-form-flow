@@ -587,9 +587,10 @@ const GroupLifeAssuranceForm = () => {
                       </td>
                       <td className="p-2">
                         <Input
-                          type="number"
-                          value={row.annualSalary}
-                          onChange={(e) => handleInputChange(index, "annualSalary", e.target.value)}
+                          type="text"
+                          inputMode="numeric"
+                          value={row.annualSalary ? `BWP ${Number(row.annualSalary).toLocaleString("en-US")}` : ""}
+                          onChange={(e) => handleInputChange(index, "annualSalary", e.target.value.replace(/[^0-9.]/g, ""))}
                         />
                       </td>
                       <td className="p-2 text-center">
@@ -630,20 +631,22 @@ const GroupLifeAssuranceForm = () => {
                 <Label htmlFor="maxDeathBenefit">Maximum Death Benefit</Label>
                 <Input
                   id="maxDeathBenefit"
-                  type="number"
-                  placeholder="e.g. 500000"
-                  value={maxDeathBenefit}
-                  onChange={(e) => setMaxDeathBenefit(e.target.value)}
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="e.g. BWP 500,000"
+                  value={maxDeathBenefit ? `BWP ${Number(maxDeathBenefit).toLocaleString("en-US")}` : ""}
+                  onChange={(e) => setMaxDeathBenefit(e.target.value.replace(/[^0-9.]/g, ""))}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="maxODB">Maximum ODB</Label>
                 <Input
                   id="maxODB"
-                  type="number"
-                  placeholder="e.g. 250000"
-                  value={maxODB}
-                  onChange={(e) => setMaxODB(e.target.value)}
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="e.g. BWP 250,000"
+                  value={maxODB ? `BWP ${Number(maxODB).toLocaleString("en-US")}` : ""}
+                  onChange={(e) => setMaxODB(e.target.value.replace(/[^0-9.]/g, ""))}
                 />
               </div>
             </div>
