@@ -129,18 +129,10 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
         <div className="lg:col-span-2 grid grid-cols-2 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="rounded-2xl border-0 animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-24 bg-muted rounded"></div>
-              </CardContent>
-            </Card>
+            <div key={i} className="bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 p-6 rounded-[2rem] shadow-xl shadow-slate-200/30 animate-pulse h-32" />
           ))}
         </div>
-        <Card className="lg:col-span-3 bg-card rounded-2xl border-0 animate-pulse">
-          <CardContent className="p-6">
-            <div className="h-full bg-muted rounded"></div>
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-3 bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-[2rem] shadow-xl shadow-slate-200/30 animate-pulse h-full min-h-[280px]" />
       </div>
     )
   }
