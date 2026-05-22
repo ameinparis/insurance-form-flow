@@ -1,5 +1,4 @@
 import { useMemo } from "react"
-import { Card, CardContent } from "@/components/ui/card"
 import { FileText, Users, TrendingUp, Calendar, ArrowUp, ArrowDown } from "lucide-react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 
