@@ -237,7 +237,7 @@ const Dashboard = () => {
                                       }}
                                       title="Delete Quote"
                                     >
-                                      <Trash2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                                      <Trash2 className="h-4 w-4 text-[#1B405B] dark:text-[#DFF3EB]" />
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
