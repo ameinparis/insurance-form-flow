@@ -27,12 +27,12 @@ const COLORS = [
   "hsl(0, 60%, 70%)",    // Light Red
 ]
 
-// Pastel card backgrounds matching the reference image
+// Glass card accent styles — soft tinted glows behind frosted panels
 const CARD_STYLES = [
-  { bg: "bg-blue-100 dark:bg-blue-900/60", iconBg: "bg-blue-200/80 dark:bg-blue-700/50", iconColor: "text-blue-700 dark:text-blue-200" },
-  { bg: "bg-emerald-100 dark:bg-emerald-900/60", iconBg: "bg-emerald-200/80 dark:bg-emerald-700/50", iconColor: "text-emerald-700 dark:text-emerald-200" },
-  { bg: "bg-purple-100 dark:bg-purple-900/60", iconBg: "bg-purple-200/80 dark:bg-purple-700/50", iconColor: "text-purple-700 dark:text-purple-200" },
-  { bg: "bg-orange-100 dark:bg-orange-900/60", iconBg: "bg-orange-200/80 dark:bg-orange-700/50", iconColor: "text-orange-700 dark:text-orange-200" },
+  { iconBg: "bg-[#009fe3]/15", iconColor: "text-[#009fe3]", glow: "bg-cyan-200/40 dark:bg-cyan-500/20" },
+  { iconBg: "bg-emerald-500/15", iconColor: "text-emerald-600 dark:text-emerald-400", glow: "bg-emerald-200/40 dark:bg-emerald-500/20" },
+  { iconBg: "bg-violet-500/15", iconColor: "text-violet-600 dark:text-violet-400", glow: "bg-violet-200/40 dark:bg-violet-500/20" },
+  { iconBg: "bg-amber-500/15", iconColor: "text-amber-600 dark:text-amber-400", glow: "bg-amber-200/40 dark:bg-amber-500/20" },
 ]
 
 export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: StatsCardsProps) => {
