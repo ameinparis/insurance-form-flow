@@ -311,12 +311,7 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
           </div>
         )}
       </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-              No data available
-            </div>
-          )}
-      </div>
     </div>
   )
 }
+
