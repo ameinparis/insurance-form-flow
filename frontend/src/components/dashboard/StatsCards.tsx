@@ -192,14 +192,14 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
                   ) : (
                     <ArrowDown className="h-3 w-3 text-rose-500" />
                   )}
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${card.change >= 0 ? 'text-emerald-600 bg-emerald-50/60 dark:bg-emerald-500/10' : 'text-rose-600 bg-rose-50/60 dark:bg-rose-500/10'}`}>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full tracking-wide ${card.change >= 0 ? 'text-emerald-600 bg-emerald-50/60 dark:bg-emerald-500/10' : 'text-rose-600 bg-rose-50/60 dark:bg-rose-500/10'}`}>
                     {card.change >= 0 ? '+' : ''}{card.change}%
                   </span>
                 </div>
               </div>
-              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{card.title}</p>
-              <p className="font-heading text-3xl font-extrabold text-slate-800 dark:text-slate-100">{card.value}</p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">{card.subtitle}</p>
+              <p className="text-sm font-semibold text-[#1B405B]/70 dark:text-[#DFF3EB]/60 tracking-wide mb-1">{card.title}</p>
+              <p className="font-heading text-3xl font-extrabold text-[#163144] dark:text-[#DFF3EB] tracking-tight">{card.value}</p>
+              <p className="text-xs text-[#1B405B]/60 dark:text-[#DFF3EB]/50 mt-1 tracking-wide">{card.subtitle}</p>
             </div>
           </div>
         ))}
@@ -208,7 +208,7 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
       {/* Right side - Pie Chart */}
       <div className="lg:col-span-3 relative overflow-hidden bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-[2rem] shadow-xl shadow-slate-200/30 dark:shadow-black/20 p-6 flex flex-col">
         <div className="absolute -right-10 -top-10 w-40 h-40 bg-cyan-200/30 dark:bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-        <h3 className="font-heading text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 relative">Quotes by Type</h3>
+        <h3 className="font-heading text-lg font-bold text-[#163144] dark:text-[#DFF3EB] mb-4 relative tracking-tight">Quotes by Type</h3>
           {stats.pieData.length > 0 ? (
             <div className="flex-1 min-h-[220px] flex flex-col items-center justify-center">
               <ResponsiveContainer width="100%" height={180}>
@@ -246,8 +246,8 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
                 </PieChart>
               </ResponsiveContainer>
               <div className="text-center mb-2">
-                <p className="text-2xl font-bold text-foreground">{stats.totalQuotes}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-2xl font-bold text-[#163144] dark:text-[#DFF3EB] tracking-tight">{stats.totalQuotes}</p>
+                <p className="text-sm text-[#1B405B]/70 dark:text-[#DFF3EB]/60 tracking-wide">
                   {activeFilter ? `Filtered: ${activeFilter}` : 'Total Quotes'}
                 </p>
               </div>
@@ -268,7 +268,7 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
                         opacity: activeFilter && activeFilter !== entry.name ? 0.4 : 1
                       }}
                     />
-                    <span className="text-xs text-muted-foreground">{entry.name}</span>
+                    <span className="text-sm text-[#1B405B]/80 dark:text-[#DFF3EB]/70 tracking-wide">{entry.name}</span>
                   </button>
                 ))}
               </div>
