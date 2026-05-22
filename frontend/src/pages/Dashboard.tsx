@@ -116,10 +116,10 @@ const Dashboard = () => {
 
       <div className="relative space-y-6">
         <div className="flex items-center justify-between px-1">
-          <h2 className="font-heading text-3xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">Dashboard</h2>
+          <h2 className="font-heading text-3xl font-extrabold tracking-tight text-[#163144] dark:text-[#DFF3EB]">Dashboard</h2>
           <Button
             onClick={() => navigate("/calculator")}
-            className="px-6 py-2.5 bg-[#009fe3] hover:bg-[#0089c4] text-white rounded-full font-bold text-sm shadow-lg shadow-[#009fe3]/30 transition-all active:scale-95"
+            className="px-6 py-2.5 bg-[#009fe3] hover:bg-[#0089c4] text-white rounded-full font-bold text-sm tracking-wide shadow-lg shadow-[#009fe3]/30 transition-all active:scale-95"
           >
             New Quote
           </Button>
@@ -137,14 +137,14 @@ const Dashboard = () => {
         <Card className="bg-white/20 dark:bg-slate-800/30 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-[2.5rem] shadow-2xl shadow-slate-200/20 dark:shadow-black/20">
           <CardHeader className="flex flex-row items-center justify-between px-8 pt-8 pb-4">
             <div>
-              <CardTitle className="font-heading text-xl font-bold text-slate-800 dark:text-slate-100">Recently Created</CardTitle>
-              <CardDescription className="text-xs text-slate-500 dark:text-slate-400 mt-1">Latest quotes created by your team</CardDescription>
+              <CardTitle className="font-heading text-xl font-bold text-[#163144] dark:text-[#DFF3EB] tracking-tight">Recently Created</CardTitle>
+              <CardDescription className="text-sm text-[#1B405B]/70 dark:text-[#DFF3EB]/60 mt-1 tracking-wide">Latest quotes created by your team</CardDescription>
             </div>
             {recentQuotes.length > maxDisplayQuotes && (
               <Button
                 variant="outline"
                 onClick={() => navigate("/quotes")}
-                className="px-5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 rounded-full hover:bg-white transition-all"
+                className="px-5 py-2 text-sm font-semibold text-[#163144] dark:text-[#DFF3EB] bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 rounded-full hover:bg-white transition-all tracking-wide"
               >
                 Show All
               </Button>
@@ -162,22 +162,22 @@ const Dashboard = () => {
                   <Table className="w-full">
                     <TableHeader>
                       <TableRow className="border-b border-white/30 dark:border-white/10 hover:bg-transparent">
-                        <TableHead className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-4 pl-4">
+                        <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 pl-4 normal-case">
                           Quote ID
                         </TableHead>
-                        <TableHead className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-4">
+                        <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 normal-case">
                           Client Name
                         </TableHead>
-                        <TableHead className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-4">
+                        <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 normal-case">
                           Type
                         </TableHead>
-                        <TableHead className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-4">
+                        <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 normal-case">
                           Created By
                         </TableHead>
-                        <TableHead className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-4">
+                        <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 normal-case">
                           Date
                         </TableHead>
-                        <TableHead className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-4 text-right pr-4">
+                        <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 text-right pr-4 normal-case">
                           Actions
                         </TableHead>
                       </TableRow>
@@ -193,24 +193,24 @@ const Dashboard = () => {
                           <TableCell className="py-5 pl-4">
                             <div className="flex items-center gap-3">
                               <PdfIcon size="sm" />
-                              <span className="font-bold text-sm text-slate-700 dark:text-slate-200">{quote.quoteId}</span>
+                              <span className="font-semibold text-sm text-[#163144] dark:text-[#DFF3EB] tracking-wide">{quote.quoteId}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="py-5 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                          <TableCell className="py-5 text-sm font-semibold text-[#163144] dark:text-[#DFF3EB] tracking-wide">
                             {toTitleCase(quote.clientName || quote.fullName || quote.schemeName || "Unnamed")}
                           </TableCell>
                           <TableCell className="py-5">
                             <Badge
                               variant="outline"
-                              className={`rounded-full px-3 py-1 text-[10px] font-bold border whitespace-nowrap ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
+                              className={`rounded-full px-3 py-1 text-xs font-semibold border whitespace-nowrap tracking-wide ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
                             >
                               {quote.type || "Unknown"}
                             </Badge>
                           </TableCell>
-                          <TableCell className="py-5 text-sm text-slate-600 dark:text-slate-300">
+                          <TableCell className="py-5 text-sm text-[#1B405B]/80 dark:text-[#DFF3EB]/70 tracking-wide">
                             {quote.createdByName || "—"}
                           </TableCell>
-                          <TableCell className="py-5 text-sm text-slate-500 dark:text-slate-400">
+                          <TableCell className="py-5 text-sm text-[#1B405B]/70 dark:text-[#DFF3EB]/60 tracking-wide">
                             {new Date(quote.createdAt).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="py-5 text-right pr-4">
@@ -222,7 +222,7 @@ const Dashboard = () => {
                                 onClick={(e) => handleDownloadPdf(e, quote.quoteId, quote.id, quote.isLegacy || false)}
                                 title="Download PDF"
                               >
-                                <Download className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                                <Download className="h-4 w-4 text-[#1B405B] dark:text-[#DFF3EB]" />
                               </Button>
                               {userRole === "superuser" && (
                                 <AlertDialog>
