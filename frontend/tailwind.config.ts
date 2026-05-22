@@ -19,8 +19,8 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['Outfit', 'Open Sans', 'system-ui', 'sans-serif'],
-				heading: ['Wix Madefor Display', 'Outfit', 'Open Sans', 'system-ui', 'sans-serif'],
+				sans: ['Urbanist', 'Open Sans', 'system-ui', 'sans-serif'],
+				heading: ['Wix Madefor Display', 'Urbanist', 'Open Sans', 'system-ui', 'sans-serif'],
 				montserrat: ['Montserrat', 'sans-serif'],
 				inter: ['Inter'],
 				raleway: ['Raleway', 'sans-serif'],
