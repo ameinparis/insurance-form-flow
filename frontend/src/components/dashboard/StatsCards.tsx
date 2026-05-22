@@ -268,7 +268,7 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
                         opacity: activeFilter && activeFilter !== entry.name ? 0.4 : 1
                       }}
                     />
-                    <span className="text-xs text-muted-foreground">{entry.name}</span>
+                    <span className="text-sm text-[#1B405B]/80 dark:text-[#DFF3EB]/70 tracking-wide">{entry.name}</span>
                   </button>
                 ))}
               </div>
