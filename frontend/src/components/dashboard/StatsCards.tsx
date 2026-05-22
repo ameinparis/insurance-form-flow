@@ -192,14 +192,14 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
                   ) : (
                     <ArrowDown className="h-3 w-3 text-rose-500" />
                   )}
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${card.change >= 0 ? 'text-emerald-600 bg-emerald-50/60 dark:bg-emerald-500/10' : 'text-rose-600 bg-rose-50/60 dark:bg-rose-500/10'}`}>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full tracking-wide ${card.change >= 0 ? 'text-emerald-600 bg-emerald-50/60 dark:bg-emerald-500/10' : 'text-rose-600 bg-rose-50/60 dark:bg-rose-500/10'}`}>
                     {card.change >= 0 ? '+' : ''}{card.change}%
                   </span>
                 </div>
               </div>
-              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{card.title}</p>
-              <p className="font-heading text-3xl font-extrabold text-slate-800 dark:text-slate-100">{card.value}</p>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">{card.subtitle}</p>
+              <p className="text-sm font-semibold text-[#1B405B]/70 dark:text-[#DFF3EB]/60 tracking-wide mb-1">{card.title}</p>
+              <p className="font-heading text-3xl font-extrabold text-[#163144] dark:text-[#DFF3EB] tracking-tight">{card.value}</p>
+              <p className="text-xs text-[#1B405B]/60 dark:text-[#DFF3EB]/50 mt-1 tracking-wide">{card.subtitle}</p>
             </div>
           </div>
         ))}
