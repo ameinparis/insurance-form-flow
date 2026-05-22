@@ -190,28 +190,32 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
         {statCards.map((card, index) => (
           <div
             key={index}
-            className="relative overflow-hidden bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 p-5 rounded-[2rem] shadow-xl shadow-slate-200/30 dark:shadow-black/20 transition-all hover:-translate-y-0.5"
+            className="group relative overflow-hidden bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/60 dark:border-white/10 p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 dark:shadow-black/20 transition-all hover:-translate-y-0.5"
           >
-            <div className={`absolute -right-4 -top-4 w-24 h-24 ${card.style.glow} rounded-full blur-3xl`} />
-            <div className="relative">
-              <div className="flex items-center justify-between mb-3">
-                <div className={`p-2.5 rounded-2xl ${card.style.iconBg}`}>
-                  <card.icon className={`h-5 w-5 ${card.style.iconColor}`} />
+            <div className="relative flex flex-col h-full">
+              {/* Top row: icon blob + label + arrow */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`relative w-11 h-11 rounded-full ${card.style.iconGradient} ${card.style.shadow} flex items-center justify-center shrink-0`}>
+                    <div className="absolute top-1.5 left-2 w-2.5 h-2 rounded-full bg-white/50 blur-[1px]" />
+                    <card.icon className="h-5 w-5 text-white relative z-10" strokeWidth={2.25} />
+                  </div>
+                  <p className="font-heading text-base font-semibold text-[#163144] dark:text-[#DFF3EB] tracking-tight truncate">
+                    {card.title}
+                  </p>
                 </div>
-                <div className="flex items-center gap-1">
-                  {card.change >= 0 ? (
-                    <ArrowUp className="h-3 w-3 text-emerald-500" />
-                  ) : (
-                    <ArrowDown className="h-3 w-3 text-rose-500" />
-                  )}
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full tracking-wide ${card.change >= 0 ? 'text-emerald-600 bg-emerald-50/60 dark:bg-emerald-500/10' : 'text-rose-600 bg-rose-50/60 dark:bg-rose-500/10'}`}>
-                    {card.change >= 0 ? '+' : ''}{card.change}%
-                  </span>
+                <div className="w-8 h-8 rounded-full border border-[#163144]/15 dark:border-white/15 flex items-center justify-center shrink-0 transition-colors group-hover:border-[#163144]/40">
+                  <ArrowUpRight className="h-4 w-4 text-[#163144]/60 dark:text-[#DFF3EB]/60" strokeWidth={2} />
                 </div>
               </div>
-              <p className="text-sm font-semibold text-[#1B405B]/70 dark:text-[#DFF3EB]/60 tracking-wide mb-1">{card.title}</p>
-              <p className="font-heading text-3xl font-extrabold text-[#163144] dark:text-[#DFF3EB] tracking-tight">{card.value}</p>
-              <p className="text-xs text-[#1B405B]/60 dark:text-[#DFF3EB]/50 mt-1 tracking-wide">{card.subtitle}</p>
+
+              {/* Big value */}
+              <p className="font-heading text-4xl font-extrabold text-[#163144] dark:text-[#DFF3EB] tracking-tight mt-4">
+                {card.value}
+              </p>
+              <p className="text-xs text-[#1B405B]/55 dark:text-[#DFF3EB]/45 mt-1 tracking-wide">
+                {card.subtitle}
+              </p>
             </div>
           </div>
         ))}
