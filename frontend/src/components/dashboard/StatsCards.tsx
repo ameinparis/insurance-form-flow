@@ -208,34 +208,53 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
       {/* Right side - Pie Chart */}
       <div className="lg:col-span-3 relative overflow-hidden bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-[2rem] shadow-xl shadow-slate-200/30 dark:shadow-black/20 p-6 flex flex-col">
         <div className="absolute -right-10 -top-10 w-40 h-40 bg-cyan-200/30 dark:bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-        <h3 className="font-heading text-lg font-bold text-[#163144] dark:text-[#DFF3EB] mb-4 relative tracking-tight">Quotes by Type</h3>
-          {stats.pieData.length > 0 ? (
-            <div className="flex-1 min-h-[220px] flex flex-col items-center justify-center">
-              <ResponsiveContainer width="100%" height={180}>
+        <div className="relative mb-2">
+          <h3 className="font-heading text-xl font-bold text-[#163144] dark:text-[#DFF3EB] tracking-tight">Quotes by Type</h3>
+          <p className="text-sm text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide mt-0.5">Track quotes by type easily</p>
+        </div>
+        {stats.pieData.length > 0 ? (
+          <div className="flex-1 grid grid-cols-[1fr_auto] gap-6 items-center min-h-[220px]">
+            {/* Chart with diagonal stripe pattern */}
+            <div className="relative h-full min-h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
+                  <defs>
+                    {COLORS.map((color, i) => (
+                      <pattern
+                        key={i}
+                        id={`stripe-${i}`}
+                        patternUnits="userSpaceOnUse"
+                        width="8"
+                        height="8"
+                        patternTransform="rotate(45)"
+                      >
+                        <rect width="8" height="8" fill={color} fillOpacity="0.08" />
+                        <line x1="0" y1="0" x2="0" y2="8" stroke={color} strokeWidth="3.5" />
+                      </pattern>
+                    ))}
+                  </defs>
                   <Pie
                     data={stats.pieData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={50}
-                    outerRadius={75}
-                    paddingAngle={3}
+                    innerRadius={55}
+                    outerRadius={95}
+                    paddingAngle={2}
                     dataKey="value"
-                    strokeWidth={0}
-                    cornerRadius={8}
+                    stroke="none"
                     onClick={(_, index) => handlePieClick(stats.pieData[index])}
                     style={{ cursor: 'pointer' }}
                   >
-                    {stats.pieData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={COLORS[index % COLORS.length]} 
-                        opacity={activeFilter && activeFilter !== entry.name ? 0.4 : 1}
+                    {stats.pieData.map((_, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={`url(#stripe-${index % COLORS.length})`}
+                        opacity={activeFilter && activeFilter !== stats.pieData[index].name ? 0.35 : 1}
                       />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
+                  <Tooltip
+                    contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px',
@@ -245,42 +264,53 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
                   />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="text-center mb-2">
-                <p className="text-2xl font-bold text-[#163144] dark:text-[#DFF3EB] tracking-tight">{stats.totalQuotes}</p>
-                <p className="text-sm text-[#1B405B]/70 dark:text-[#DFF3EB]/60 tracking-wide">
-                  {activeFilter ? `Filtered: ${activeFilter}` : 'Total Quotes'}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <p className="font-heading text-3xl font-extrabold text-[#163144] dark:text-[#DFF3EB] tracking-tight">{stats.totalQuotes}</p>
+                <p className="text-xs text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide">
+                  {activeFilter ? activeFilter : 'Total'}
                 </p>
               </div>
-              {/* Legend */}
-              <div className="flex flex-wrap justify-center gap-3 mt-2">
-                {stats.pieData.map((entry, index) => (
+            </div>
+
+            {/* Legend on the right with percentages */}
+            <div className="flex flex-col gap-3 min-w-[120px]">
+              {stats.pieData.map((entry, index) => {
+                const pct = Math.round((entry.value / stats.totalQuotes) * 100)
+                const isActive = activeFilter === entry.name
+                const isDimmed = activeFilter && !isActive
+                return (
                   <button
                     key={entry.name}
                     onClick={() => handlePieClick(entry)}
-                    className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all hover:bg-muted ${
-                      activeFilter === entry.name ? 'bg-muted ring-1 ring-border' : ''
-                    }`}
+                    className={`flex items-center gap-2.5 text-left transition-opacity ${isDimmed ? 'opacity-40' : 'opacity-100'}`}
                   >
-                    <div 
-                      className="w-3 h-3 rounded-sm" 
-                      style={{ 
-                        backgroundColor: COLORS[index % COLORS.length],
-                        opacity: activeFilter && activeFilter !== entry.name ? 0.4 : 1
-                      }}
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
                     />
-                    <span className="text-sm text-[#1B405B]/80 dark:text-[#DFF3EB]/70 tracking-wide">{entry.name}</span>
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-sm font-medium text-[#1B405B]/80 dark:text-[#DFF3EB]/70 tracking-wide">{entry.name}</span>
+                      <span className="text-base font-bold text-[#163144] dark:text-[#DFF3EB] tracking-tight">{pct}%</span>
+                    </div>
                   </button>
-                ))}
-              </div>
+                )
+              })}
               {activeFilter && (
                 <button
                   onClick={() => onTypeFilter?.(null)}
-                  className="mt-3 text-xs text-muted-foreground hover:text-foreground underline"
+                  className="text-xs text-muted-foreground hover:text-foreground underline text-left mt-1"
                 >
                   Clear filter
                 </button>
               )}
             </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+            No data available
+          </div>
+        )}
+      </div>
           ) : (
             <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
               No data available
