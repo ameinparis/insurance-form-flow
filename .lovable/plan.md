@@ -1,44 +1,37 @@
+## Font system swap
 
-Looking at the two images:
+Replace Plus Jakarta Sans / Norms / Avenir with the new Google Fonts trio.
 
-**Image 1 (target/reference docx):** Two-column grid layout. Left column: Name, Gender, Education, Marriage Status. Right column: Date of Birth, Age, Smoker Status, Income. Each field has a label on top with a value below, separated by an underline. Product Information section also styled cleanly.
+### Mapping
+- **Headings (h1–h6, `font-heading`)** → Wix Madefor Display
+- **Body + UI (`font-sans`, default)** → Outfit
+- **Fallback** → Open Sans (then system-ui, sans-serif)
 
-**Image 2 (current PDF export):** Single-column stacked list. Each field is a row with `Label:Value` (no space after colon, e.g., "Name:Test", "Date of Birth:3 January 1990"). All squeezed on the left side. Product Information is two-column (label left, value right) which is fine.
+### Files to change
 
-**No, they don't match.** Differences:
-1. Personal info layout: current is single-column stacked; target is 2-column grid (label above, value below).
-2. Missing space after colon ("Name:Test" instead of "Name: Test").
-3. "Marriage Status" — both look fine label-wise, but layout differs.
-
-## Plan
-
-Fix the Individual Life PDF export so the personal info section matches the reference docx layout.
-
-### Changes to `IndividualLifeDisplay.tsx` (Personal Information section)
-
-Restructure into a **2-column grid** where each cell shows:
-- Label on top (muted color, small)
-- Value below (regular weight)
-- Bottom border separator under each cell
-
-Layout (left col / right col):
-```
-Name              | Date of Birth
-Gender            | Age
-Education         | Smoker Status
-Marriage Status   | Income
+**1. `frontend/index.html`**
+Replace the current Plus Jakarta Sans `<link>` with:
+```html
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Wix+Madefor+Display:wght@400..800&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
 ```
 
-Use `grid grid-cols-2 gap-x-12 gap-y-6` with each cell containing stacked label/value and a `border-b border-border pb-2`.
+**2. `frontend/src/index.css`**
+- Remove the local `@font-face` blocks for Avenir and Norms (no longer used).
+- Body already inherits `font-sans` — no change needed there.
 
-### Why this works
-- Matches reference docx exactly.
-- Adds breathing room and proper spacing (no more "Name:Test" cramming).
-- PDF export already renders the component HTML directly via `pdfExport.ts`, so updating the display component automatically fixes the PDF.
+**3. `tailwind.config.ts` and `frontend/tailwind.config.ts`** (both files, kept in sync)
+```ts
+fontFamily: {
+  sans: ['Outfit', 'Open Sans', 'system-ui', 'sans-serif'],
+  heading: ['Wix Madefor Display', 'Outfit', 'Open Sans', 'system-ui', 'sans-serif'],
+  // keep montserrat / inter / raleway as-is in case anything references them
+}
+```
 
-### Files to edit
-- `frontend/src/components/quote-displays/IndividualLifeDisplay.tsx` — Personal Information block only. Product Information section stays as-is (already matches).
+**4. Memory update (`mem://index.md` + `mem://design/typography-and-fonts-v2`)**
+Update the Core "Typography" line and the typography memory to reflect Outfit (body) + Wix Madefor Display (headings) + Open Sans fallback.
 
 ### Out of scope
-- No changes to `pdfExport.ts` (already handles Medical Underwriting correctly).
-- No changes to other display components.
+- No size/weight/spacing changes — pure family swap.
+- Leave `font-montserrat`, `font-inter`, `font-raleway` utility classes alone (unused in app, harmless).
+- No PDF template font changes unless you want me to also update server-side HTML/PDF rendering — say the word and I'll include `backend/` templates.
