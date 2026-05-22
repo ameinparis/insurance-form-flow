@@ -271,7 +271,7 @@ const Dashboard = () => {
                 </div>
 
                 <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/30 dark:border-white/10">
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  <p className="text-sm font-medium text-[#1B405B]/70 dark:text-[#DFF3EB]/60 tracking-wide">
                     Showing {displayQuotes.length} of {filteredQuotes.length} quotes{typeFilter && ` (filtered by ${typeFilter})`}
                   </p>
                 </div>
