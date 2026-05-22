@@ -208,7 +208,7 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
       {/* Right side - Pie Chart */}
       <div className="lg:col-span-3 relative overflow-hidden bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-[2rem] shadow-xl shadow-slate-200/30 dark:shadow-black/20 p-6 flex flex-col">
         <div className="absolute -right-10 -top-10 w-40 h-40 bg-cyan-200/30 dark:bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-        <h3 className="font-heading text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 relative">Quotes by Type</h3>
+        <h3 className="font-heading text-lg font-bold text-[#163144] dark:text-[#DFF3EB] mb-4 relative tracking-tight">Quotes by Type</h3>
           {stats.pieData.length > 0 ? (
             <div className="flex-1 min-h-[220px] flex flex-col items-center justify-center">
               <ResponsiveContainer width="100%" height={180}>
