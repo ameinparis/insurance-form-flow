@@ -18,12 +18,12 @@ interface StatsCardsProps {
 }
 
 const COLORS = [
-  "hsl(207, 90%, 70%)",  // Light Blue
-  "hsl(270, 60%, 70%)",  // Light Purple
-  "hsl(142, 60%, 60%)",  // Light Green
-  "hsl(35, 85%, 65%)",   // Light Orange/Yellow
-  "hsl(190, 70%, 60%)",  // Light Cyan
-  "hsl(0, 60%, 70%)",    // Light Red
+  "#009fe3",  // Cyan
+  "#a855f7",  // Purple
+  "#10b981",  // Emerald
+  "#f59e0b",  // Amber
+  "#ef4444",  // Red
+  "#ec4899",  // Pink
 ]
 
 // Glass card accent styles — soft tinted glows behind frosted panels
