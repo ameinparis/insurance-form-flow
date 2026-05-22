@@ -246,8 +246,8 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
                 </PieChart>
               </ResponsiveContainer>
               <div className="text-center mb-2">
-                <p className="text-2xl font-bold text-foreground">{stats.totalQuotes}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-2xl font-bold text-[#163144] dark:text-[#DFF3EB] tracking-tight">{stats.totalQuotes}</p>
+                <p className="text-sm text-[#1B405B]/70 dark:text-[#DFF3EB]/60 tracking-wide">
                   {activeFilter ? `Filtered: ${activeFilter}` : 'Total Quotes'}
                 </p>
               </div>
