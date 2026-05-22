@@ -287,8 +287,7 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
               No data available
             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }
