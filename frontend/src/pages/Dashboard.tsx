@@ -109,166 +109,177 @@ const Dashboard = () => {
   const displayQuotes = filteredQuotes.slice(0, maxDisplayQuotes)
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold font-heading">Dashboard</h2>
-      </div>
+    <div className="relative min-h-full -m-6 p-6 bg-gradient-to-br from-[#f2f5f7] via-[#e8f3f1] to-[#e0ebf5] dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+      {/* Ambient blur orbs */}
+      <div className="pointer-events-none absolute -top-20 -right-10 w-96 h-96 bg-cyan-200/30 dark:bg-cyan-500/10 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/2 -left-20 w-80 h-80 bg-emerald-100/40 dark:bg-emerald-500/10 rounded-full blur-3xl" />
 
-      {/* Stats Cards */}
-      <StatsCards 
-        quotes={recentQuotes} 
-        loading={loading} 
-        onTypeFilter={setTypeFilter}
-        activeFilter={typeFilter}
-      />
+      <div className="relative space-y-6">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="font-heading text-3xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">Dashboard</h2>
+          <Button
+            onClick={() => navigate("/calculator")}
+            className="px-6 py-2.5 bg-[#009fe3] hover:bg-[#0089c4] text-white rounded-full font-bold text-sm shadow-lg shadow-[#009fe3]/30 transition-all active:scale-95"
+          >
+            New Quote
+          </Button>
+        </div>
 
-      {/* Recent Quotes Table */}
-      <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="font-heading">Recently Created</CardTitle>
-            <CardDescription>Latest quotes created by your team</CardDescription>
-          </div>
-          {recentQuotes.length > maxDisplayQuotes && (
-            <Button
-              variant="outline"
-              onClick={() => navigate("/quotes")}
-              className="text-[#009fe3] border-[#009fe3] hover:bg-[#009fe3]/10"
-            >
-              Show All
-            </Button>
-          )}
-        </CardHeader>
+        {/* Stats Cards */}
+        <StatsCards
+          quotes={recentQuotes}
+          loading={loading}
+          onTypeFilter={setTypeFilter}
+          activeFilter={typeFilter}
+        />
 
-        <CardContent className="p-6">
-          {loading ? (
-            <PageLoader />
-          ) : recentQuotes.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">No quotes found.</div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <Table className="border-separate border-spacing-y-3 w-full">
+        {/* Recent Quotes Table */}
+        <Card className="bg-white/20 dark:bg-slate-800/30 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-[2.5rem] shadow-2xl shadow-slate-200/20 dark:shadow-black/20">
+          <CardHeader className="flex flex-row items-center justify-between px-8 pt-8 pb-4">
+            <div>
+              <CardTitle className="font-heading text-xl font-bold text-slate-800 dark:text-slate-100">Recently Created</CardTitle>
+              <CardDescription className="text-xs text-slate-500 dark:text-slate-400 mt-1">Latest quotes created by your team</CardDescription>
+            </div>
+            {recentQuotes.length > maxDisplayQuotes && (
+              <Button
+                variant="outline"
+                onClick={() => navigate("/quotes")}
+                className="px-5 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 rounded-full hover:bg-white transition-all"
+              >
+                Show All
+              </Button>
+            )}
+          </CardHeader>
 
-                  <TableHeader className="sticky top-0 z-10">
-                    <TableRow className="bg-gray-200 dark:bg-slate-700 border-b border-gray-300 dark:border-gray-600 rounded-xl">
-                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
-                        Quote IDsss
-                      </TableHead>
-                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
-                        Client Name
-                      </TableHead>
-                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
-                        Type
-                      </TableHead>
-                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
-                        Created By
-                      </TableHead>
-                      <TableHead className="font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
-                        Date
-                      </TableHead>
-                      <TableHead className="text-right font-medium text-gray-900 dark:text-gray-100 py-4 px-6 text-sm">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-
-                  <TableBody>
-                    {displayQuotes.map((quote) => (
-                      <TableRow
-                        key={quote.id}
-                        onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
-                        className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm hover:bg-sky-100 dark:hover:bg-sky-900/30 hover:border-sky-200 dark:hover:border-sky-700 transition-all duration-200 my-2 overflow-hidden cursor-pointer"
-                      >
-                        <TableCell className="py-5 px-6 rounded-l-xl">
-                          <div className="flex items-center gap-3">
-                            <PdfIcon size="sm" />
-                            <span className="text-gray-700 dark:text-gray-300 font-small">{quote.quoteId}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
-                          {toTitleCase(quote.clientName || quote.fullName || quote.schemeName || "Unnamed")}
-                        </TableCell>
-                        <TableCell className="py-5 px-6">
-                          <Badge
-                            variant="outline"
-                            className={`rounded-full px-2 py-1.5 text-xs font-medium border whitespace-nowrap ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
-                          >
-                            {quote.type || "Unknown"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
-                          {quote.createdByName || "—"}
-                        </TableCell>
-                        <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal">
-                          {new Date(quote.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell className="py-5 px-6 text-right rounded-r-xl">
-                          <div className="flex justify-end gap-3">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={(e) => handleDownloadPdf(e, quote.quoteId, quote.id, quote.isLegacy || false)}
-                              title="Download PDF"
-                            >
-                              <Download className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                            </Button>
-                            {userRole === "superuser" && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setDeleteQuoteId(quote.id)
-                                    }}
-                                    title="Delete Quote"
-                                  >
-                                    <Trash2 className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure you want to delete?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This action cannot be undone. This will permanently delete the quote.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel onClick={() => setDeleteQuoteId(null)}>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => {
-                                        handleDeleteQuote(quote.id, quote.isLegacy || false)
-                                        setDeleteQuoteId(null)
-                                      }}
-                                      className="bg-red-500 hover:bg-red-600 text-white"
-                                    >
-                                      Yes, Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            )}
-                          </div>
-                        </TableCell>
+          <CardContent className="px-8 pb-8">
+            {loading ? (
+              <PageLoader />
+            ) : recentQuotes.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">No quotes found.</div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <Table className="w-full">
+                    <TableHeader>
+                      <TableRow className="border-b border-white/30 dark:border-white/10 hover:bg-transparent">
+                        <TableHead className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-4 pl-4">
+                          Quote ID
+                        </TableHead>
+                        <TableHead className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-4">
+                          Client Name
+                        </TableHead>
+                        <TableHead className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-4">
+                          Type
+                        </TableHead>
+                        <TableHead className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-4">
+                          Created By
+                        </TableHead>
+                        <TableHead className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-4">
+                          Date
+                        </TableHead>
+                        <TableHead className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-4 text-right pr-4">
+                          Actions
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
 
-              <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-800">
-                <p className="text-sm text-muted-foreground">
-                  Showing {displayQuotes.length} of {filteredQuotes.length} quotes{typeFilter && ` (filtered by ${typeFilter})`}
-                </p>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+                    <TableBody className="divide-y divide-white/30 dark:divide-white/5">
+                      {displayQuotes.map((quote) => (
+                        <TableRow
+                          key={quote.id}
+                          onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
+                          className="group border-0 hover:bg-white/40 dark:hover:bg-white/5 transition-all duration-300 cursor-pointer"
+                        >
+                          <TableCell className="py-5 pl-4">
+                            <div className="flex items-center gap-3">
+                              <PdfIcon size="sm" />
+                              <span className="font-bold text-sm text-slate-700 dark:text-slate-200">{quote.quoteId}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-5 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                            {toTitleCase(quote.clientName || quote.fullName || quote.schemeName || "Unnamed")}
+                          </TableCell>
+                          <TableCell className="py-5">
+                            <Badge
+                              variant="outline"
+                              className={`rounded-full px-3 py-1 text-[10px] font-bold border whitespace-nowrap ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
+                            >
+                              {quote.type || "Unknown"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="py-5 text-sm text-slate-600 dark:text-slate-300">
+                            {quote.createdByName || "—"}
+                          </TableCell>
+                          <TableCell className="py-5 text-sm text-slate-500 dark:text-slate-400">
+                            {new Date(quote.createdAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="py-5 text-right pr-4">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full bg-white/60 dark:bg-white/5 hover:bg-white border border-white/50 dark:border-white/10"
+                                onClick={(e) => handleDownloadPdf(e, quote.quoteId, quote.id, quote.isLegacy || false)}
+                                title="Download PDF"
+                              >
+                                <Download className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                              </Button>
+                              {userRole === "superuser" && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 rounded-full bg-white/60 dark:bg-white/5 hover:bg-rose-50 border border-white/50 dark:border-white/10"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setDeleteQuoteId(quote.id)
+                                      }}
+                                      title="Delete Quote"
+                                    >
+                                      <Trash2 className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you sure you want to delete?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete the quote.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel onClick={() => setDeleteQuoteId(null)}>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => {
+                                          handleDeleteQuote(quote.id, quote.isLegacy || false)
+                                          setDeleteQuoteId(null)
+                                        }}
+                                        className="bg-red-500 hover:bg-red-600 text-white"
+                                      >
+                                        Yes, Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/30 dark:border-white/10">
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    Showing {displayQuotes.length} of {filteredQuotes.length} quotes{typeFilter && ` (filtered by ${typeFilter})`}
+                  </p>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

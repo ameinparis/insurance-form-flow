@@ -1,5 +1,4 @@
 import { useMemo } from "react"
-import { Card, CardContent } from "@/components/ui/card"
 import { FileText, Users, TrendingUp, Calendar, ArrowUp, ArrowDown } from "lucide-react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 
@@ -27,12 +26,12 @@ const COLORS = [
   "hsl(0, 60%, 70%)",    // Light Red
 ]
 
-// Pastel card backgrounds matching the reference image
+// Glass card accent styles — soft tinted glows behind frosted panels
 const CARD_STYLES = [
-  { bg: "bg-blue-100 dark:bg-blue-900/60", iconBg: "bg-blue-200/80 dark:bg-blue-700/50", iconColor: "text-blue-700 dark:text-blue-200" },
-  { bg: "bg-emerald-100 dark:bg-emerald-900/60", iconBg: "bg-emerald-200/80 dark:bg-emerald-700/50", iconColor: "text-emerald-700 dark:text-emerald-200" },
-  { bg: "bg-purple-100 dark:bg-purple-900/60", iconBg: "bg-purple-200/80 dark:bg-purple-700/50", iconColor: "text-purple-700 dark:text-purple-200" },
-  { bg: "bg-orange-100 dark:bg-orange-900/60", iconBg: "bg-orange-200/80 dark:bg-orange-700/50", iconColor: "text-orange-700 dark:text-orange-200" },
+  { iconBg: "bg-[#009fe3]/15", iconColor: "text-[#009fe3]", glow: "bg-cyan-200/40 dark:bg-cyan-500/20" },
+  { iconBg: "bg-emerald-500/15", iconColor: "text-emerald-600 dark:text-emerald-400", glow: "bg-emerald-200/40 dark:bg-emerald-500/20" },
+  { iconBg: "bg-violet-500/15", iconColor: "text-violet-600 dark:text-violet-400", glow: "bg-violet-200/40 dark:bg-violet-500/20" },
+  { iconBg: "bg-amber-500/15", iconColor: "text-amber-600 dark:text-amber-400", glow: "bg-amber-200/40 dark:bg-amber-500/20" },
 ]
 
 export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: StatsCardsProps) => {
@@ -129,18 +128,10 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
         <div className="lg:col-span-2 grid grid-cols-2 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="rounded-2xl border-0 animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-24 bg-muted rounded"></div>
-              </CardContent>
-            </Card>
+            <div key={i} className="bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 p-6 rounded-[2rem] shadow-xl shadow-slate-200/30 animate-pulse h-32" />
           ))}
         </div>
-        <Card className="lg:col-span-3 bg-card rounded-2xl border-0 animate-pulse">
-          <CardContent className="p-6">
-            <div className="h-full bg-muted rounded"></div>
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-3 bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-[2rem] shadow-xl shadow-slate-200/30 animate-pulse h-full min-h-[280px]" />
       </div>
     )
   }
@@ -185,39 +176,39 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
       {/* Left side - 2x2 Stats Grid */}
       <div className="lg:col-span-2 grid grid-cols-2 gap-4">
         {statCards.map((card, index) => (
-          <Card key={index} className={`${card.style.bg} rounded-2xl border-0 shadow-sm`}>
-            <CardContent className="p-5">
+          <div
+            key={index}
+            className="relative overflow-hidden bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 p-5 rounded-[2rem] shadow-xl shadow-slate-200/30 dark:shadow-black/20 transition-all hover:-translate-y-0.5"
+          >
+            <div className={`absolute -right-4 -top-4 w-24 h-24 ${card.style.glow} rounded-full blur-3xl`} />
+            <div className="relative">
               <div className="flex items-center justify-between mb-3">
-                <div className={`p-2.5 rounded-full ${card.style.iconBg}`}>
+                <div className={`p-2.5 rounded-2xl ${card.style.iconBg}`}>
                   <card.icon className={`h-5 w-5 ${card.style.iconColor}`} />
                 </div>
-              </div>
-              <p className="text-sm font-medium text-foreground mb-0.5">{card.title}</p>
-              <p className="text-xs text-muted-foreground mb-3">{card.subtitle}</p>
-              <div className="flex items-center justify-between">
-                <p className="text-3xl font-bold text-foreground">{card.value}</p>
                 <div className="flex items-center gap-1">
-                  <div className={`p-1 rounded-full ${card.change >= 0 ? 'bg-foreground' : 'bg-destructive'}`}>
-                    {card.change >= 0 ? (
-                      <ArrowUp className="h-3 w-3 text-background" />
-                    ) : (
-                      <ArrowDown className="h-3 w-3 text-white" />
-                    )}
-                  </div>
-                  <span className={`text-xs font-medium ${card.change >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                  {card.change >= 0 ? (
+                    <ArrowUp className="h-3 w-3 text-emerald-500" />
+                  ) : (
+                    <ArrowDown className="h-3 w-3 text-rose-500" />
+                  )}
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${card.change >= 0 ? 'text-emerald-600 bg-emerald-50/60 dark:bg-emerald-500/10' : 'text-rose-600 bg-rose-50/60 dark:bg-rose-500/10'}`}>
                     {card.change >= 0 ? '+' : ''}{card.change}%
                   </span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{card.title}</p>
+              <p className="font-heading text-3xl font-extrabold text-slate-800 dark:text-slate-100">{card.value}</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">{card.subtitle}</p>
+            </div>
+          </div>
         ))}
       </div>
 
       {/* Right side - Pie Chart */}
-      <Card className="lg:col-span-3 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border-0 shadow-sm">
-        <CardContent className="p-5 h-full flex flex-col">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Quotes by Type</h3>
+      <div className="lg:col-span-3 relative overflow-hidden bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 rounded-[2rem] shadow-xl shadow-slate-200/30 dark:shadow-black/20 p-6 flex flex-col">
+        <div className="absolute -right-10 -top-10 w-40 h-40 bg-cyan-200/30 dark:bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <h3 className="font-heading text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 relative">Quotes by Type</h3>
           {stats.pieData.length > 0 ? (
             <div className="flex-1 min-h-[220px] flex flex-col items-center justify-center">
               <ResponsiveContainer width="100%" height={180}>
@@ -295,8 +286,7 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
               No data available
             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
     </div>
   )
 }
