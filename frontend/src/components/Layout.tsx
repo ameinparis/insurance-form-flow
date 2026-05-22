@@ -63,15 +63,20 @@ export function Layout({ children }: LayoutProps) {
     <SidebarProvider>
       <div className="w-full h-screen overflow-hidden bg-background">
         {/* Fixed Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 mx-8 mt-6 h-[72px] flex items-center px-8 justify-between bg-card rounded-[40px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-0">
+        <header className="fixed top-0 left-0 right-0 z-50 mx-8 mt-6 h-[96px] flex items-center px-8 justify-between bg-card rounded-[40px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-0">
           {/* Logo */}
-          <div className="flex items-center min-w-[200px]">
-            <img 
-              src={isDarkMode ? darkModeLogo : lightModeLogo} 
-              alt="Exclusive Life Insurance" 
-              className="h-10 w-auto object-contain"
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="flex items-center min-w-[200px] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-xl"
+            aria-label="Go to dashboard"
+          >
+            <img
+              src={isDarkMode ? darkModeLogo : lightModeLogo}
+              alt="Exclusive Life Insurance"
+              className="h-14 w-auto object-contain"
             />
-          </div>
+          </button>
 
           {/* Center Search */}
           <div className="flex-1 max-w-2xl mx-8">
