@@ -126,8 +126,8 @@ export function Layout({ children }: LayoutProps) {
         </header>
 
         {/* Sidebar and Main Content - aligned below header */}
-        <div className="flex gap-6 px-8 pt-[130px] pb-6 h-[calc(100vh)]">
-          <div className="flex-shrink-0 h-[calc(100vh-130px)]">
+        <div className="flex gap-6 px-8 pt-[118px] pb-6 h-[calc(100vh)]">
+          <div className="flex-shrink-0 h-[calc(100vh-118px)]">
             <AppSidebar />
           </div>
           <main className="flex-1 overflow-auto bg-card rounded-3xl p-6 shadow-sm">
