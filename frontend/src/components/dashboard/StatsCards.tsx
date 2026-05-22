@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { FileText, Users, TrendingUp, Calendar, ArrowUp, ArrowDown } from "lucide-react"
+import { FileText, Users, TrendingUp, Calendar, ArrowUpRight } from "lucide-react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 
 interface Quote {
@@ -26,12 +26,24 @@ const COLORS = [
   "#ec4899",  // Pink
 ]
 
-// Glass card accent styles — soft tinted glows behind frosted panels
+// Gradient blob icon styles — soft-3D glossy spheres like the reference
 const CARD_STYLES = [
-  { iconBg: "bg-[#009fe3]/15", iconColor: "text-[#009fe3]", glow: "bg-cyan-200/40 dark:bg-cyan-500/20" },
-  { iconBg: "bg-emerald-500/15", iconColor: "text-emerald-600 dark:text-emerald-400", glow: "bg-emerald-200/40 dark:bg-emerald-500/20" },
-  { iconBg: "bg-violet-500/15", iconColor: "text-violet-600 dark:text-violet-400", glow: "bg-violet-200/40 dark:bg-violet-500/20" },
-  { iconBg: "bg-amber-500/15", iconColor: "text-amber-600 dark:text-amber-400", glow: "bg-amber-200/40 dark:bg-amber-500/20" },
+  {
+    iconGradient: "bg-[radial-gradient(circle_at_30%_25%,#a5d8ff_0%,#4dabf7_45%,#1c7ed6_100%)]",
+    shadow: "shadow-[0_8px_20px_-6px_rgba(28,126,214,0.55)]",
+  },
+  {
+    iconGradient: "bg-[radial-gradient(circle_at_30%_25%,#b2f2bb_0%,#51cf66_45%,#2f9e44_100%)]",
+    shadow: "shadow-[0_8px_20px_-6px_rgba(47,158,68,0.5)]",
+  },
+  {
+    iconGradient: "bg-[radial-gradient(circle_at_30%_25%,#e599f7_0%,#cc5de8_45%,#9c36b5_100%)]",
+    shadow: "shadow-[0_8px_20px_-6px_rgba(156,54,181,0.55)]",
+  },
+  {
+    iconGradient: "bg-[radial-gradient(circle_at_30%_25%,#ffc9a8_0%,#ff8a65_45%,#e8542b_100%)]",
+    shadow: "shadow-[0_8px_20px_-6px_rgba(232,84,43,0.55)]",
+  },
 ]
 
 export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: StatsCardsProps) => {
@@ -178,28 +190,32 @@ export const StatsCards = ({ quotes, loading, onTypeFilter, activeFilter }: Stat
         {statCards.map((card, index) => (
           <div
             key={index}
-            className="relative overflow-hidden bg-white/40 dark:bg-white/5 backdrop-blur-xl border border-white/50 dark:border-white/10 p-5 rounded-[2rem] shadow-xl shadow-slate-200/30 dark:shadow-black/20 transition-all hover:-translate-y-0.5"
+            className="group relative overflow-hidden bg-white/70 dark:bg-white/5 backdrop-blur-xl border border-white/60 dark:border-white/10 p-5 rounded-[2rem] shadow-xl shadow-slate-200/40 dark:shadow-black/20 transition-all hover:-translate-y-0.5"
           >
-            <div className={`absolute -right-4 -top-4 w-24 h-24 ${card.style.glow} rounded-full blur-3xl`} />
-            <div className="relative">
-              <div className="flex items-center justify-between mb-3">
-                <div className={`p-2.5 rounded-2xl ${card.style.iconBg}`}>
-                  <card.icon className={`h-5 w-5 ${card.style.iconColor}`} />
+            <div className="relative flex flex-col h-full">
+              {/* Top row: icon blob + label + arrow */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`relative w-11 h-11 rounded-full ${card.style.iconGradient} ${card.style.shadow} flex items-center justify-center shrink-0`}>
+                    <div className="absolute top-1.5 left-2 w-2.5 h-2 rounded-full bg-white/50 blur-[1px]" />
+                    <card.icon className="h-5 w-5 text-white relative z-10" strokeWidth={2.25} />
+                  </div>
+                  <p className="font-heading text-base font-semibold text-[#163144] dark:text-[#DFF3EB] tracking-tight truncate">
+                    {card.title}
+                  </p>
                 </div>
-                <div className="flex items-center gap-1">
-                  {card.change >= 0 ? (
-                    <ArrowUp className="h-3 w-3 text-emerald-500" />
-                  ) : (
-                    <ArrowDown className="h-3 w-3 text-rose-500" />
-                  )}
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full tracking-wide ${card.change >= 0 ? 'text-emerald-600 bg-emerald-50/60 dark:bg-emerald-500/10' : 'text-rose-600 bg-rose-50/60 dark:bg-rose-500/10'}`}>
-                    {card.change >= 0 ? '+' : ''}{card.change}%
-                  </span>
+                <div className="w-8 h-8 rounded-full border border-[#163144]/15 dark:border-white/15 flex items-center justify-center shrink-0 transition-colors group-hover:border-[#163144]/40">
+                  <ArrowUpRight className="h-4 w-4 text-[#163144]/60 dark:text-[#DFF3EB]/60" strokeWidth={2} />
                 </div>
               </div>
-              <p className="text-sm font-semibold text-[#1B405B]/70 dark:text-[#DFF3EB]/60 tracking-wide mb-1">{card.title}</p>
-              <p className="font-heading text-3xl font-extrabold text-[#163144] dark:text-[#DFF3EB] tracking-tight">{card.value}</p>
-              <p className="text-xs text-[#1B405B]/60 dark:text-[#DFF3EB]/50 mt-1 tracking-wide">{card.subtitle}</p>
+
+              {/* Big value */}
+              <p className="font-heading text-4xl font-extrabold text-[#163144] dark:text-[#DFF3EB] tracking-tight mt-4">
+                {card.value}
+              </p>
+              <p className="text-xs text-[#1B405B]/55 dark:text-[#DFF3EB]/45 mt-1 tracking-wide">
+                {card.subtitle}
+              </p>
             </div>
           </div>
         ))}
