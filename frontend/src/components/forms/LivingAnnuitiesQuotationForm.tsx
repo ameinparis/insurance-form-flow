@@ -734,69 +734,107 @@ Insurance will not accept liability for any losses incurred as a result of using
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="font-medium">Age at start of Living Annuity</span>
-                    <span>{age} years</span>
+                    <span>{age} years</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">Purchase Amount</span>
                     <span>{fmtMoney(toNum(amountRaw))}</span>
                   </div>
 
-                  <div className="flex justify-between">
-                    <span className="font-medium">Living Annuity Drawdown Percentage (%)</span>
-                    <span>{drawdown}%</span>
-                  </div>
-
-                  <Separator />
-
-                  {livingResult && (
+                  {selectedScenarios.length > 0 ? (
                     <>
-                      <div className="space-y-2">
-                        <h4 className="font-semibold text-primary">Living Annuity</h4>
-                        <div className="flex justify-between">
-                          <span>Guarantee Period:</span>
-                          <span>{livingResult.guarantee_period} years</span>
+                      <Separator />
+                      {selectedScenarios.map((s, idx) => (
+                        <div key={s.id} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold text-primary">{s.label}</h4>
+                            <span className="text-xs text-muted-foreground">
+                              Drawdown {s.inputs.drawdown}% · {s.inputs.frequency}
+                            </span>
+                          </div>
+                          {s.outputs.living && (
+                            <div className="space-y-1 pl-1">
+                              <div className="flex justify-between">
+                                <span>Guarantee Period:</span>
+                                <span>{s.outputs.living.guarantee_period} years</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>{s.inputs.frequency} Payment:</span>
+                                <span>{fmtMoney(s.outputs.living.guaranteed_annuity)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Funds Remaining at {s.inputs.guaranteedStartAge}:</span>
+                                <span>{fmtMoney(s.outputs.living.funds_remaining)}</span>
+                              </div>
+                            </div>
+                          )}
+                          {s.outputs.life && (
+                            <div className="space-y-1 pl-1 pt-1">
+                              <div className="flex justify-between">
+                                <span>Monthly Life Annuity:</span>
+                                <span>{fmtMoney(s.outputs.life.monthly_annuity)}</span>
+                              </div>
+                            </div>
+                          )}
+                          {idx < selectedScenarios.length - 1 && <Separator className="mt-3" />}
                         </div>
-                        <div className="flex justify-between">
-                          <span>{frequency} Payment:</span>
-                          {/* focus here match to actual quote */}
-                          <span>{fmtMoney(livingResult.guaranteed_annuity)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Funds Remaining at {guaranteedStartAge}:</span>
-                          <span>{fmtMoney(livingResult.funds_remaining)}</span>
-                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Living Annuity Drawdown Percentage (%)</span>
+                        <span>{drawdown}%</span>
                       </div>
-                      {upfrontCommission && (
-                        <div className="flex justify-between">
-                          <span>Upfront Commission (Year 1):</span>
-                          <span>{upfrontCommission}%</span>
-                        </div>
-                      )}
-                      {ongoingCommission && (
-                        <div className="flex justify-between">
-                          <span>Ongoing Commission (Year 2+):</span>
-                          <span>{ongoingCommission}%</span>
-                        </div>
-                      )}
-
 
                       <Separator />
-                    </>
-                  )}
-                  {lifeResult && (
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-primary">Life Annuity</h4>
-                      {/* ADD THIS LINE */}
-                      <div className="flex justify-between">
-                        <span>Guarantee Period:</span>
-                        <span>{guaranteePeriod} years</span>
-                      </div>
 
-                      <div className="flex justify-between">
-                        <span>Monthly Life Annuity:</span>
-                        <span>{fmtMoney(lifeResult.monthly_annuity)}</span>
-                      </div>
-                    </div>
+                      {livingResult && (
+                        <>
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-primary">Living Annuity</h4>
+                            <div className="flex justify-between">
+                              <span>Guarantee Period:</span>
+                              <span>{livingResult.guarantee_period} years</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>{frequency} Payment:</span>
+                              <span>{fmtMoney(livingResult.guaranteed_annuity)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Funds Remaining at {guaranteedStartAge}:</span>
+                              <span>{fmtMoney(livingResult.funds_remaining)}</span>
+                            </div>
+                          </div>
+                          {upfrontCommission && (
+                            <div className="flex justify-between">
+                              <span>Upfront Commission (Year 1):</span>
+                              <span>{upfrontCommission}%</span>
+                            </div>
+                          )}
+                          {ongoingCommission && (
+                            <div className="flex justify-between">
+                              <span>Ongoing Commission (Year 2+):</span>
+                              <span>{ongoingCommission}%</span>
+                            </div>
+                          )}
+                          <Separator />
+                        </>
+                      )}
+                      {lifeResult && (
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-primary">Life Annuity</h4>
+                          <div className="flex justify-between">
+                            <span>Guarantee Period:</span>
+                            <span>{guaranteePeriod} years</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Monthly Life Annuity:</span>
+                            <span>{fmtMoney(lifeResult.monthly_annuity)}</span>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </CardContent>
