@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import Calculate from "./pages/Calculate";
 import Team from "./pages/Team";
 import Clients from "./pages/Clients";
+import ClientDetail from "./pages/ClientDetail";
 import Administration from "./pages/Administration";
 import CalculateForm from "./pages/CalculateForm";
 import FormRouter from "./components/FormRouter";
@@ -115,6 +116,11 @@ const App = () => (
               <Route path="/clients" element={
                 <Layout>
                   <Clients />
+                </Layout>
+              } />
+              <Route path="/clients/:id" element={
+                <Layout>
+                  <ClientDetail />
                 </Layout>
               } />
               <Route path="/administration" element={
