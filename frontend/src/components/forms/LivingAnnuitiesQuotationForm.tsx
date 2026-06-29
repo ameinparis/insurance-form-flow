@@ -18,6 +18,9 @@ import axios from "axios"
 import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 import { getSavedQuoteId, waitForQuoteReady } from "@/lib/quoteUtils"
+import { useAnnuityScenarios } from "@/hooks/useAnnuityScenarios"
+import AnnuityScenarioDrawer, { ScenarioDrawerTrigger } from "./AnnuityScenarioDrawer"
+import { Plus } from "lucide-react"
 
 const GeneratingOverlay = () => (
   <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
