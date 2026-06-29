@@ -34,15 +34,20 @@ export type AnnuityScenario = {
 
 const STORAGE_KEY = "annuity_scenarios_v1"
 
-const letterFor = (n: number) => {
-  // A, B, C ... Z, AA, AB
-  let s = ""
-  let i = n
-  do {
-    s = String.fromCharCode(65 + (i % 26)) + s
-    i = Math.floor(i / 26) - 1
-  } while (i >= 0)
-  return s
+const buildAutoLabel = (inputs: AnnuityScenarioInputs, outputs: AnnuityScenarioOutputs) => {
+  const dd = Number.isFinite(inputs.drawdown) ? `${inputs.drawdown}% Drawdown` : null
+  const gp = outputs.living?.guarantee_period ?? inputs.guaranteePeriod
+  const gpStr = Number.isFinite(gp as number) ? `${gp}-Year Guarantee` : null
+  const freq = inputs.frequency ? inputs.frequency : null
+  const parts = [dd, gpStr, freq].filter(Boolean) as string[]
+  return parts.length ? parts.join(" · ") : "Scenario"
+}
+
+const ensureUniqueLabel = (base: string, existing: string[]) => {
+  if (!existing.includes(base)) return base
+  let i = 2
+  while (existing.includes(`${base} (${i})`)) i++
+  return `${base} (${i})`
 }
 
 export const useAnnuityScenarios = () => {
