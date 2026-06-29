@@ -37,6 +37,9 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
     }
   };
 
+  const scenarios: Array<any> = Array.isArray(quote?.outputs?.scenarios) ? quote.outputs.scenarios : [];
+  const hasScenarios = scenarios.length > 1;
+
   return (
     <div className="bg-white dark:bg-slate-900 p-8 space-y-8">
       {/* Personal & Annuity Details */}
