@@ -69,14 +69,24 @@ interface ActivityItem {
 const Dashboard = () => {
   const navigate = useNavigate()
   const { data: recentQuotes = [] } = useQuotesList()
+  const [convertOpen, setConvertOpen] = useState(false)
+  const [crmStats, setCrmStats] = useState<CRMStats>(() => getCRMStats())
+
+  useEffect(() => {
+    const refresh = () => setCrmStats(getCRMStats())
+    refresh()
+    const unsub = subscribeCRM(refresh)
+    return unsub
+  }, [])
 
   const statCards = [
     { title: "Total Quotations", subtitle: "All records (draft, pending, converted, rejected)", value: recentQuotes.length, icon: FileText, style: CARD_STYLES[0] },
-    { title: "Converted Quotations", subtitle: "Accepted, ready for onboarding", value: 0, icon: CheckCircle2, style: CARD_STYLES[1] },
-    { title: "Active Clients", subtitle: "Linked after quotation conversion", value: 0, icon: Users, style: CARD_STYLES[2] },
-    { title: "Active Policies", subtitle: "Setup, verified and activated", value: 0, icon: ShieldCheck, style: CARD_STYLES[3] },
-    { title: "Pending Verification", subtitle: "Awaiting admin / compliance review", value: 0, icon: Clock, style: CARD_STYLES[4] },
+    { title: "Converted Quotations", subtitle: "Accepted, ready for onboarding", value: crmStats.convertedQuotes, icon: CheckCircle2, style: CARD_STYLES[1] },
+    { title: "Active Clients", subtitle: "Linked after quotation conversion", value: crmStats.totalClients, icon: Users, style: CARD_STYLES[2] },
+    { title: "Active Policies", subtitle: "Setup, verified and activated", value: crmStats.activePolicies, icon: ShieldCheck, style: CARD_STYLES[3] },
+    { title: "Pending Verification", subtitle: "Awaiting admin / compliance review", value: crmStats.pendingVerification, icon: Clock, style: CARD_STYLES[4] },
   ]
+
 
   // Build mock recent activity feed using real names from quotes
   const activity: ActivityItem[] = useMemo(() => {
