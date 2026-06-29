@@ -42,14 +42,24 @@ const CARD_STYLES = [
   },
 ]
 
-const ACTIVITY_TYPES = [
-  { label: "Quote Created", icon: FilePlus, badgeClass: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-300 dark:border-blue-700" },
-  { label: "Quote Converted", icon: CheckCircle2, badgeClass: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-300 dark:border-green-700" },
-  { label: "Client Added", icon: UserPlus, badgeClass: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-300 dark:border-purple-700" },
-  { label: "Policy Activated", icon: FileSignature, badgeClass: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700" },
-  { label: "Document Uploaded", icon: Upload, badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-300 dark:border-amber-700" },
-  { label: "Policy Updated", icon: RefreshCw, badgeClass: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700" },
-]
+const STATUS_BADGES: Record<string, { text: string; className: string }> = {
+  draft: { text: "DRAFT", className: "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600" },
+  converted: { text: "CONVERTED", className: "bg-[#163144] text-white border-[#163144] dark:bg-white dark:text-[#163144] dark:border-white" },
+  new: { text: "NEW", className: "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600" },
+  action: { text: "ACTION REQ.", className: "bg-white text-red-700 border-red-400 dark:bg-transparent dark:text-red-400 dark:border-red-500" },
+  system: { text: "SYSTEM", className: "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600" },
+}
+
+interface ActivityItem {
+  id: string
+  icon: typeof FileText
+  iconColor: string
+  title: string
+  highlight: string
+  highlightIsRed?: boolean
+  time: string
+  statusKey: keyof typeof STATUS_BADGES
+}
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -64,27 +74,41 @@ const Dashboard = () => {
   ]
 
   // Build mock recent activity feed using real names from quotes
-  const activity = useMemo(() => {
+  const activity: ActivityItem[] = useMemo(() => {
     const sample = recentQuotes.slice(0, 8)
+    const templates: ActivityItem[] = [
+      { id: "a1", icon: FilePlus, iconColor: "text-[#163144] dark:text-[#DFF3EB]", title: "Draft Quote Created for ", highlight: "", time: "Today at 10:45 AM", statusKey: "draft" },
+      { id: "a2", icon: CheckCircle2, iconColor: "text-[#163144] dark:text-[#DFF3EB]", title: "Quote ", highlight: "#AQ-12345", time: "Today at 08:32 AM", statusKey: "converted" },
+      { id: "a3", icon: UserPlus, iconColor: "text-[#163144] dark:text-[#DFF3EB]", title: "New Client Profile: ", highlight: "", time: "Yesterday at 4:15 PM", statusKey: "new" },
+      { id: "a4", icon: AlertCircle, iconColor: "text-red-500", title: "Verification Failed for Policy ", highlight: "", highlightIsRed: true, time: "Yesterday at 11:10 AM", statusKey: "action" },
+      { id: "a5", icon: RefreshCw, iconColor: "text-[#163144] dark:text-[#DFF3EB]", title: "Market Rate Update Applied to ", highlight: "", time: "Yesterday at 09:00 AM", statusKey: "system" },
+      { id: "a6", icon: FileSignature, iconColor: "text-[#163144] dark:text-[#DFF3EB]", title: "Policy Activated for ", highlight: "", time: "Jun 27 at 2:30 PM", statusKey: "converted" },
+      { id: "a7", icon: Upload, iconColor: "text-[#163144] dark:text-[#DFF3EB]", title: "Document Uploaded for ", highlight: "", time: "Jun 27 at 11:00 AM", statusKey: "new" },
+      { id: "a8", icon: FilePlus, iconColor: "text-[#163144] dark:text-[#DFF3EB]", title: "Draft Quote Created for ", highlight: "", time: "Jun 26 at 4:20 PM", statusKey: "draft" },
+    ]
+
     return sample.map((q, i) => {
-      const t = ACTIVITY_TYPES[i % ACTIVITY_TYPES.length]
+      const base = templates[i % templates.length]
       const name = toTitleCase(q.clientName || q.fullName || q.schemeName || "Unnamed")
-      const desc: Record<string, string> = {
-        "Quote Created": `New ${q.type} quote created for ${name}`,
-        "Quote Converted": `${name}'s quote accepted — ready for onboarding`,
-        "Client Added": `${name} added to active clients`,
-        "Policy Activated": `Policy for ${name} activated`,
-        "Document Uploaded": `KYC document uploaded for ${name}`,
-        "Policy Updated": `Servicing update on ${name}'s policy`,
+      let title = base.title
+      let highlight = base.highlight || name
+
+      if (base.id === "a2") {
+        title = `Quote ${highlight} Converted to Active Policy`
+        highlight = ""
+      } else if (base.id === "a5") {
+        title = `Market Rate Update Applied to Fixed Annuity Tier ${String.fromCharCode(65 + (i % 3))}`
+        highlight = ""
+      } else if (base.id === "a4") {
+        title = `Verification Failed for Policy ${q.quoteId || "#VP-8821"}`
+        highlight = ""
       }
+
       return {
+        ...base,
         id: q.id + "-" + i,
-        type: t.label,
-        icon: t.icon,
-        badgeClass: t.badgeClass,
-        description: desc[t.label],
-        actor: q.createdByName || "System",
-        date: q.createdAt,
+        title,
+        highlight,
       }
     })
   }, [recentQuotes])
@@ -98,7 +122,7 @@ const Dashboard = () => {
         <div className="flex items-center justify-between px-1">
           <h2 className="font-heading text-3xl font-extrabold tracking-tight text-[#163144] dark:text-[#DFF3EB]">Dashboard</h2>
           <Button
-            onClick={() => navigate("/calculator")}
+            onClick={() => {}}
             className="px-6 py-2.5 bg-[#009fe3] hover:bg-[#0089c4] text-white rounded-full font-bold text-sm tracking-wide shadow-lg shadow-[#009fe3]/30 transition-all active:scale-95"
           >
             New Quote
@@ -135,53 +159,64 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Activity */}
-        <Card className="bg-white/20 dark:bg-slate-800/30 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-[2.5rem] shadow-2xl shadow-slate-200/20 dark:shadow-black/20">
-          <CardHeader className="px-8 pt-8 pb-4">
-            <CardTitle className="font-heading text-xl font-bold text-[#163144] dark:text-[#DFF3EB] tracking-tight">Recent Activity</CardTitle>
-            <CardDescription className="text-sm text-[#1B405B]/70 dark:text-[#DFF3EB]/60 mt-1 tracking-wide">
-              Latest important actions across quotes, clients, policies, documents, and servicing
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-8 pb-8">
-            <div className="overflow-x-auto">
-              <Table className="w-full">
-                <TableHeader>
-                  <TableRow className="border-b border-white/30 dark:border-white/10 hover:bg-transparent">
-                    <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 pl-4 normal-case">Activity</TableHead>
-                    <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 normal-case">Description</TableHead>
-                    <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 normal-case">Performed By</TableHead>
-                    <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 pr-4 normal-case">When</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-white/30 dark:divide-white/5">
-                  {activity.length === 0 ? (
-                    <TableRow><TableCell colSpan={4} className="text-center py-12 text-muted-foreground">No activity yet.</TableCell></TableRow>
-                  ) : activity.map((a) => (
-                    <TableRow key={a.id} className="border-0 hover:bg-white/40 dark:hover:bg-white/5 transition-all duration-300">
-                      <TableCell className="py-5 pl-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-white/70 dark:bg-white/5 border border-white/60 dark:border-white/10 flex items-center justify-center shrink-0">
-                            <a.icon className="h-4 w-4 text-[#163144] dark:text-[#DFF3EB]" strokeWidth={2.25} />
-                          </div>
-                          <Badge variant="outline" className={`rounded-full px-3 py-1 text-xs font-semibold border whitespace-nowrap tracking-wide ${a.badgeClass}`}>
-                            {a.type}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-5 text-sm font-medium text-[#163144] dark:text-[#DFF3EB] tracking-wide">
-                        {a.description}
-                      </TableCell>
-                      <TableCell className="py-5 text-sm text-[#1B405B]/80 dark:text-[#DFF3EB]/70 tracking-wide">
-                        {a.actor}
-                      </TableCell>
-                      <TableCell className="py-5 text-sm text-[#1B405B]/70 dark:text-[#DFF3EB]/60 tracking-wide pr-4">
-                        {new Date(a.date).toLocaleString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+        <Card className="bg-white/20 dark:bg-slate-800/30 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-[2.5rem] shadow-2xl shadow-slate-200/20 dark:shadow-black/20 overflow-hidden">
+          <CardHeader className="px-8 pt-8 pb-4 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="font-heading text-xl font-bold text-[#163144] dark:text-[#DFF3EB] tracking-tight">Recent Activity</CardTitle>
+              <CardDescription className="text-sm text-[#1B405B]/70 dark:text-[#DFF3EB]/60 mt-1 tracking-wide">
+                Latest important actions across quotes, clients, policies, documents, and servicing
+              </CardDescription>
             </div>
+            <button className="text-sm font-medium text-[#1B405B]/70 dark:text-[#DFF3EB]/60 hover:text-[#163144] dark:hover:text-[#DFF3EB] tracking-wide transition-colors">
+              View All
+            </button>
+          </CardHeader>
+          <CardContent className="px-0 pb-0">
+            {activity.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">No activity yet.</div>
+            ) : (
+              <div className="divide-y divide-slate-200/60 dark:divide-white/10">
+                {activity.map((a) => {
+                  const badge = STATUS_BADGES[a.statusKey]
+                  const Icon = a.icon
+                  return (
+                    <div
+                      key={a.id}
+                      className="flex items-center gap-4 px-8 py-5 hover:bg-white/30 dark:hover:bg-white/5 transition-colors"
+                    >
+                      {/* Icon circle */}
+                      <div className="w-10 h-10 rounded-full border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                        <Icon className={`h-5 w-5 ${a.iconColor}`} strokeWidth={2} />
+                      </div>
+
+                      {/* Text */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[#163144] dark:text-[#DFF3EB] tracking-wide leading-snug">
+                          {a.highlight ? (
+                            <>
+                              {a.title}
+                              <span className={`font-bold ${a.highlightIsRed ? "text-red-600 dark:text-red-400" : ""}`}>{a.highlight}</span>
+                            </>
+                          ) : (
+                            a.title
+                          )}
+                        </p>
+                        <p className="text-xs text-[#1B405B]/50 dark:text-[#DFF3EB]/40 tracking-wide mt-0.5">
+                          {a.time}
+                        </p>
+                      </div>
+
+                      {/* Status badge */}
+                      <span
+                        className={`inline-flex items-center rounded-sm border px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase whitespace-nowrap ${badge.className}`}
+                      >
+                        {badge.text}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
