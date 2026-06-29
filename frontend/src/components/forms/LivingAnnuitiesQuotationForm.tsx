@@ -371,6 +371,7 @@ Insurance will not accept liability for any losses incurred as a result of using
       setShowQuoteDialog(false)
       setIsSavingQuote(false)
       setIsRedirecting(true)
+      if (generatingFromScenarios) clearAll()
 
       try {
         await waitForQuoteReady(savedQuoteId, { minimumMs: 2500 })
