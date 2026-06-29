@@ -80,7 +80,8 @@ export const useAnnuityScenarios = () => {
     (data: Omit<AnnuityScenario, "id" | "label" | "createdAt"> & { label?: string }) => {
       const id = `sc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
       setScenarios((prev) => {
-        const label = data.label ?? `Scenario ${letterFor(prev.length)}`
+        const base = data.label ?? buildAutoLabel(data.inputs, data.outputs)
+        const label = ensureUniqueLabel(base, prev.map((s) => s.label))
         const next: AnnuityScenario = {
           id,
           label,
