@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Download, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Loader2, UserCheck } from "lucide-react";
 import { QuoteHeader } from "@/components/QuoteHeader";
 import { AnnuityDisplay } from "@/components/quote-displays/AnnuityDisplay";
 import { FuneralDisplay } from "@/components/quote-displays/FuneralDisplay";
@@ -13,6 +13,7 @@ import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 import { fetchQuoteDetails, getClientInfo, formatDate, QuoteData } from "@/lib/quoteUtils";
 import { exportQuotePdf } from "@/lib/pdfExport";
 import { useToast } from "@/hooks/use-toast";
+import { convertQuoteToPolicy } from "@/lib/clientStore";
 
 const QuoteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +24,7 @@ const QuoteDetail = () => {
   const [quote, setQuote] = useState<QuoteData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [converting, setConverting] = useState(false);
 
   useEffect(() => {
     const loadQuote = async () => {
@@ -87,6 +89,31 @@ const QuoteDetail = () => {
       toast({ title: "Error", description: "Failed to export styled PDF." });
     }
   };
+
+  const handleConvertToPolicy = async () => {
+    if (!quote) return;
+    setConverting(true);
+    try {
+      // Simulate the conversion / draft-creation step
+      await new Promise((r) => setTimeout(r, 1400));
+      const { client, policy } = convertQuoteToPolicy(quote);
+      toast({
+        title: "Policy created",
+        description: `Draft policy ${policy.policyNumber} created for ${client.fullName}.`,
+      });
+      navigate(`/clients/${client.id}`);
+    } catch (err) {
+      console.error("Convert to policy failed:", err);
+      toast({
+        title: "Conversion failed",
+        description: "Could not convert this quote to a policy.",
+        variant: "destructive",
+      });
+    } finally {
+      setConverting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -143,10 +170,29 @@ const QuoteDetail = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
-        <Button onClick={handleDownloadPdf}>
-          <Download className="h-4 w-4 mr-2" />
-          Download PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleDownloadPdf} variant="outline" className="rounded-full">
+            <Download className="h-4 w-4 mr-2" />
+            Download PDF
+          </Button>
+          <Button
+            onClick={handleConvertToPolicy}
+            disabled={converting}
+            className="rounded-full bg-[#163144] hover:bg-[#163144]/90 text-white"
+          >
+            {converting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Converting...
+              </>
+            ) : (
+              <>
+                <UserCheck className="h-4 w-4 mr-2" />
+                Convert to Policy
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Quote Document Card */}
