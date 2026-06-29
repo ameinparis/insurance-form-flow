@@ -314,24 +314,39 @@ Insurance will not accept liability for any losses incurred as a result of using
       const safeNum = (n: number) => (Number.isFinite(n) ? n : undefined)
 
       // 🔹 Construct the payload (similar to the funeral one)
-      const payload = {
+      const useScenarios = generatingFromScenarios && selectedScenarios.length > 0
+      const primary = useScenarios ? selectedScenarios[0] : null
+
+      const payload: any = {
         productType: "Exclusive Annuity",
         client: customerDetails,
-        inputs: {
-          age: toNum(age),
-          purchaseAmount: toNum(amountRaw),
-          drawdown: toNum(drawdown),
-          frequency,
-          guaranteedStartAge: toNum(guaranteedStartAge),
-          lifePurchaseAmount: toNum(lifePurchaseAmount),
-          upfrontCommission: safeNum(upfrontNum),
-          ongoingCommission: safeNum(ongoingNum),
-
-        },
-        outputs: {
-          living: livingResult,
-          life: lifeResult,
-        },
+        inputs: useScenarios
+          ? { ...primary!.inputs, scenarioCount: selectedScenarios.length }
+          : {
+              age: toNum(age),
+              purchaseAmount: toNum(amountRaw),
+              drawdown: toNum(drawdown),
+              frequency,
+              guaranteedStartAge: toNum(guaranteedStartAge),
+              lifePurchaseAmount: toNum(lifePurchaseAmount),
+              upfrontCommission: safeNum(upfrontNum),
+              ongoingCommission: safeNum(ongoingNum),
+            },
+        outputs: useScenarios
+          ? {
+              living: primary!.outputs.living,
+              life: primary!.outputs.life,
+              scenarios: selectedScenarios.map((s) => ({
+                id: s.id,
+                label: s.label,
+                inputs: s.inputs,
+                outputs: s.outputs,
+              })),
+            }
+          : {
+              living: livingResult,
+              life: lifeResult,
+            },
         termsAndConditions,
       }
 
