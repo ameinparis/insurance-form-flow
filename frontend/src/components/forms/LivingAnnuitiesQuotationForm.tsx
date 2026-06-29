@@ -75,6 +75,19 @@ const AnnuityQuotationForm = () => {
   const { searchClients, loading: clientsLoading } = useClientSuggestions()
 
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [generatingFromScenarios, setGeneratingFromScenarios] = useState(false)
+  const {
+    scenarios,
+    selectedIds,
+    addScenario,
+    removeScenario,
+    renameScenario,
+    toggleSelected,
+    selectAll,
+    clearSelected,
+    clearAll,
+  } = useAnnuityScenarios()
   const [customerDetails, setCustomerDetails] = useState({
     fullName: "",
     dateOfBirth: "",
