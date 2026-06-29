@@ -1,77 +1,37 @@
-## CRM Dashboard Restructure Plan
+## Font system swap
 
-Keeps the current dark glassmorphism look. Moves quotation metrics out of Dashboard into Quote Management, and turns Dashboard into a CRM lifecycle overview.
+Replace Plus Jakarta Sans / Norms / Avenir with the new Google Fonts trio.
 
----
+### Mapping
+- **Headings (h1–h6, `font-heading`)** → Wix Madefor Display
+- **Body + UI (`font-sans`, default)** → Outfit
+- **Fallback** → Open Sans (then system-ui, sans-serif)
 
-### 1. Quote Management page (`frontend/src/pages/Quotes.tsx`)
+### Files to change
 
-Add a quotation summary block at the top, reusing the existing StatsCards visual language (glass tiles + donut chart).
+**1. `frontend/index.html`**
+Replace the current Plus Jakarta Sans `<link>` with:
+```html
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Wix+Madefor+Display:wght@400..800&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+```
 
-**New `QuoteStatsCards` component** (`frontend/src/components/quotes/QuoteStatsCards.tsx`):
-- Tiles: Total Quotations, Draft, Pending, Converted, Rejected, This Month, This Week
-- Right-side donut: **Quotations by Type** (moved from Dashboard)
-- Same glass styling, gradient icon blobs, info `i` tooltip per metric
+**2. `frontend/src/index.css`**
+- Remove the local `@font-face` blocks for Avenir and Norms (no longer used).
+- Body already inherits `font-sans` — no change needed there.
 
-**Status tabs** above the table: All / Draft / Pending / Converted / Rejected
-(no "Approved" — Converted = approved/accepted)
+**3. `tailwind.config.ts` and `frontend/tailwind.config.ts`** (both files, kept in sync)
+```ts
+fontFamily: {
+  sans: ['Outfit', 'Open Sans', 'system-ui', 'sans-serif'],
+  heading: ['Wix Madefor Display', 'Outfit', 'Open Sans', 'system-ui', 'sans-serif'],
+  // keep montserrat / inter / raleway as-is in case anything references them
+}
+```
 
-**Table columns** (replace current):
-Quote Number · Applicant Name · ID Number · Product Type · Investment Amount · Status · Created By · Date Created · Action
+**4. Memory update (`mem://index.md` + `mem://design/typography-and-fonts-v2`)**
+Update the Core "Typography" line and the typography memory to reflect Outfit (body) + Wix Madefor Display (headings) + Open Sans fallback.
 
-**Row actions**:
-- All rows: View Quote
-- Converted rows: extra actions → *Create / Link Client*, *Continue Policy Setup* (stubs that toast "Coming soon" for now — no policy module yet)
-
-Status derivation: until backend has a `status` field, default everything existing to `Draft` and surface a TODO. Filters operate on this field.
-
----
-
-### 2. Dashboard page (`frontend/src/pages/Dashboard.tsx`)
-
-Strip quotation-centric content. Rebuild as CRM overview using the same glass cards.
-
-**Top summary tiles** (`CrmSummaryCards` component):
-Total Clients · Active Policies · Draft Policies · Pending Verification · Converted Quotes · Policies Activated This Month
-Each with an info `i` tooltip using the copy provided.
-
-**Policy Status Overview** (`PolicyStatusOverview` component):
-Horizontal segmented bar or small donut showing: Draft, Pending Verification, Approved, Active, Suspended, Cancelled, Claimed, Closed. Empty-state friendly (zeros allowed).
-
-**Recent Activity** (`RecentActivity` component):
-Vertical timeline list — Quote converted, Client created, Draft policy created, Documents uploaded, Policy activated, Beneficiary updated, Portfolio allocation updated. Sourced from existing audit log hook (`useAuditLogs`) where possible, otherwise placeholder rows.
-
-**Pending Verification** table:
-Client Name · Policy Number · Missing/Pending Documents · Status · Assigned User · Action
-
-**Recent Converted Quotes** table:
-Quote Number · Applicant Name · Investment Amount · Converted Date · Action
-
-Tooltips on each section heading using exact copy supplied.
-
-Until the policy/client backend exists, these sections render with empty-state placeholders ("No active policies yet") so the layout is real and ready to wire up.
-
----
-
-### 3. Shared bits
-
-- `InfoTooltip` small component (`Info` icon from lucide + shadcn Tooltip) for reuse on Dashboard and Quote Management.
-- StatsCards file kept but no longer rendered on Dashboard (used as visual reference for QuoteStatsCards).
-
----
-
-### 4. Out of scope (deferred)
-- Real policy/client data model & API — added when policy module is built.
-- Create/Link Client and Continue Policy Setup flows — wired as stubs.
-- Sidebar already matches spec; no changes.
-
-### Files
-- create: `frontend/src/components/quotes/QuoteStatsCards.tsx`
-- create: `frontend/src/components/dashboard/CrmSummaryCards.tsx`
-- create: `frontend/src/components/dashboard/PolicyStatusOverview.tsx`
-- create: `frontend/src/components/dashboard/RecentActivity.tsx`
-- create: `frontend/src/components/dashboard/PendingVerification.tsx`
-- create: `frontend/src/components/dashboard/RecentConvertedQuotes.tsx`
-- create: `frontend/src/components/ui/info-tooltip.tsx`
-- edit:   `frontend/src/pages/Dashboard.tsx`
-- edit:   `frontend/src/pages/Quotes.tsx`
+### Out of scope
+- No size/weight/spacing changes — pure family swap.
+- Leave `font-montserrat`, `font-inter`, `font-raleway` utility classes alone (unused in app, harmless).
+- No PDF template font changes unless you want me to also update server-side HTML/PDF rendering — say the word and I'll include `backend/` templates.
