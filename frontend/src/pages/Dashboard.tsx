@@ -1,5 +1,8 @@
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { ConvertQuoteDialog } from "@/components/ConvertQuoteDialog"
+import { getCRMStats, subscribeCRM, type CRMStats } from "@/lib/clientStore"
+
 import { useQuotesList } from "@/hooks/useQuotesList"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,7 +19,9 @@ import {
   Upload,
   RefreshCw,
   AlertCircle,
+  Repeat2,
 } from "lucide-react"
+
 import { toTitleCase } from "@/lib/quoteUtils"
 
 const CARD_STYLES = [
@@ -64,14 +69,24 @@ interface ActivityItem {
 const Dashboard = () => {
   const navigate = useNavigate()
   const { data: recentQuotes = [] } = useQuotesList()
+  const [convertOpen, setConvertOpen] = useState(false)
+  const [crmStats, setCrmStats] = useState<CRMStats>(() => getCRMStats())
+
+  useEffect(() => {
+    const refresh = () => setCrmStats(getCRMStats())
+    refresh()
+    const unsub = subscribeCRM(refresh)
+    return unsub
+  }, [])
 
   const statCards = [
     { title: "Total Quotations", subtitle: "All records (draft, pending, converted, rejected)", value: recentQuotes.length, icon: FileText, style: CARD_STYLES[0] },
-    { title: "Converted Quotations", subtitle: "Accepted, ready for onboarding", value: 0, icon: CheckCircle2, style: CARD_STYLES[1] },
-    { title: "Active Clients", subtitle: "Linked after quotation conversion", value: 0, icon: Users, style: CARD_STYLES[2] },
-    { title: "Active Policies", subtitle: "Setup, verified and activated", value: 0, icon: ShieldCheck, style: CARD_STYLES[3] },
-    { title: "Pending Verification", subtitle: "Awaiting admin / compliance review", value: 0, icon: Clock, style: CARD_STYLES[4] },
+    { title: "Converted Quotations", subtitle: "Accepted, ready for onboarding", value: crmStats.convertedQuotes, icon: CheckCircle2, style: CARD_STYLES[1] },
+    { title: "Active Clients", subtitle: "Linked after quotation conversion", value: crmStats.totalClients, icon: Users, style: CARD_STYLES[2] },
+    { title: "Active Policies", subtitle: "Setup, verified and activated", value: crmStats.activePolicies, icon: ShieldCheck, style: CARD_STYLES[3] },
+    { title: "Pending Verification", subtitle: "Awaiting admin / compliance review", value: crmStats.pendingVerification, icon: Clock, style: CARD_STYLES[4] },
   ]
+
 
   // Build mock recent activity feed using real names from quotes
   const activity: ActivityItem[] = useMemo(() => {
@@ -121,12 +136,23 @@ const Dashboard = () => {
       <div className="relative space-y-6">
         <div className="flex items-center justify-between px-1">
           <h2 className="font-heading text-3xl font-extrabold tracking-tight text-[#163144] dark:text-[#DFF3EB]">Dashboard</h2>
-          <Button
-            onClick={() => {}}
-            className="px-6 py-2.5 bg-[#009fe3] hover:bg-[#0089c4] text-white rounded-full font-bold text-sm tracking-wide shadow-lg shadow-[#009fe3]/30 transition-all active:scale-95"
-          >
-            New Quote
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setConvertOpen(true)}
+              variant="outline"
+              className="px-5 py-2.5 rounded-full font-semibold text-sm tracking-wide bg-white/70 dark:bg-white/5 backdrop-blur-xl border-[#163144]/20 dark:border-white/15 text-[#163144] dark:text-[#DFF3EB] hover:bg-white"
+            >
+              <Repeat2 className="h-4 w-4 mr-1.5" />
+              Convert Quote to Policy
+            </Button>
+            <Button
+              onClick={() => navigate("/calculate")}
+              className="px-6 py-2.5 bg-[#009fe3] hover:bg-[#0089c4] text-white rounded-full font-bold text-sm tracking-wide shadow-lg shadow-[#009fe3]/30 transition-all active:scale-95"
+            >
+              New Quote
+            </Button>
+          </div>
+
         </div>
 
         {/* Stat cards */}
@@ -220,8 +246,11 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <ConvertQuoteDialog open={convertOpen} onOpenChange={setConvertOpen} />
     </div>
   )
 }
+
 
 export default Dashboard
