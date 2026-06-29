@@ -158,21 +158,22 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
       )}
 
       {/* Life Annuity Section */}
-      <div>
-        <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Life Annuity</h3>
+      {!hasScenarios && (
+        <div>
+          <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Life Annuity</h3>
+          </div>
+          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-3">
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Monthly Life Annuity:</span>
+            <span className="font-bold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.life?.monthly_annuity)}</span>
+          </div>
+          {outputData?.life?.guarantee_period != null && (
+            <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
+              * Life annuity is calculated based on guaranteed period of {outputData.life.guarantee_period} years
+            </p>
+          )}
         </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-3">
-          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Monthly Life Annuity:</span>
-          <span className="font-bold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.life?.monthly_annuity)}</span>
-        </div>
-        {/* The below should pick from  Guarantee under Living Annuity from the dropdown */}
-        {outputData?.life?.guarantee_period != null && (
-          <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
-            * Life annuity is calculated based on guaranteed period of {outputData.life.guarantee_period} years
-          </p>
-        )}
-      </div>
+      )}
 
       {/* Fees Section */}
       <div>
