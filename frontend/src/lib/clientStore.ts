@@ -59,9 +59,12 @@ const read = (): CRMClient[] => {
   }
 }
 
+const CHANGE_EVENT = "annuity_crm_clients_changed"
+
 const write = (clients: CRMClient[]) => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(clients))
+    window.dispatchEvent(new Event(CHANGE_EVENT))
   } catch {
     /* ignore quota errors */
   }
@@ -71,6 +74,39 @@ export const listClients = (): CRMClient[] => read()
 
 export const getClient = (id: string): CRMClient | undefined =>
   read().find((c) => c.id === id)
+
+export interface CRMStats {
+  totalClients: number
+  totalPolicies: number
+  convertedQuotes: number
+  activePolicies: number
+  pendingVerification: number
+}
+
+export const getCRMStats = (): CRMStats => {
+  const clients = read()
+  const policies = clients.flatMap((c) => c.policies)
+  return {
+    totalClients: clients.length,
+    totalPolicies: policies.length,
+    convertedQuotes: policies.length,
+    activePolicies: policies.filter((p) => p.status === "Active").length,
+    pendingVerification: policies.filter(
+      (p) => p.status === "Draft" || p.status === "Pending Verification"
+    ).length,
+  }
+}
+
+export const subscribeCRM = (cb: () => void): (() => void) => {
+  const handler = () => cb()
+  window.addEventListener(CHANGE_EVENT, handler)
+  window.addEventListener("storage", handler)
+  return () => {
+    window.removeEventListener(CHANGE_EVENT, handler)
+    window.removeEventListener("storage", handler)
+  }
+}
+
 
 const genId = (prefix: string) =>
   `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
