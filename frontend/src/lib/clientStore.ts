@@ -161,9 +161,13 @@ export const convertQuoteToPolicy = (
     client.email = email || client.email
   }
 
-  const inputs = quote.inputs || {}
-  const living = quote.outputs?.living || {}
-  const life = quote.outputs?.life || {}
+  const scenarios: any[] = Array.isArray(quote.outputs?.scenarios) ? quote.outputs.scenarios : []
+  const selectedScenario = scenarioId ? scenarios.find((s) => s.id === scenarioId) : undefined
+
+  const inputs = selectedScenario?.inputs || quote.inputs || {}
+  const living = selectedScenario?.outputs?.living || quote.outputs?.living || {}
+  const life = selectedScenario?.outputs?.life || quote.outputs?.life || {}
+
 
   const policy: ClientPolicy = {
     id: genId("pol"),
