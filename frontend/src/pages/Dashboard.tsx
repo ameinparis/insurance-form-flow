@@ -136,12 +136,23 @@ const Dashboard = () => {
       <div className="relative space-y-6">
         <div className="flex items-center justify-between px-1">
           <h2 className="font-heading text-3xl font-extrabold tracking-tight text-[#163144] dark:text-[#DFF3EB]">Dashboard</h2>
-          <Button
-            onClick={() => {}}
-            className="px-6 py-2.5 bg-[#009fe3] hover:bg-[#0089c4] text-white rounded-full font-bold text-sm tracking-wide shadow-lg shadow-[#009fe3]/30 transition-all active:scale-95"
-          >
-            New Quote
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setConvertOpen(true)}
+              variant="outline"
+              className="px-5 py-2.5 rounded-full font-semibold text-sm tracking-wide bg-white/70 dark:bg-white/5 backdrop-blur-xl border-[#163144]/20 dark:border-white/15 text-[#163144] dark:text-[#DFF3EB] hover:bg-white"
+            >
+              <Repeat2 className="h-4 w-4 mr-1.5" />
+              Convert Quote to Policy
+            </Button>
+            <Button
+              onClick={() => navigate("/calculate")}
+              className="px-6 py-2.5 bg-[#009fe3] hover:bg-[#0089c4] text-white rounded-full font-bold text-sm tracking-wide shadow-lg shadow-[#009fe3]/30 transition-all active:scale-95"
+            >
+              New Quote
+            </Button>
+          </div>
+
         </div>
 
         {/* Stat cards */}
