@@ -246,8 +246,11 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <ConvertQuoteDialog open={convertOpen} onOpenChange={setConvertOpen} />
     </div>
   )
 }
+
 
 export default Dashboard
