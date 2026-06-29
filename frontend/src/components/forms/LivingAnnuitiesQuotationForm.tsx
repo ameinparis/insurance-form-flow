@@ -608,7 +608,9 @@ Insurance will not accept liability for any losses incurred as a result of using
           <DialogHeader>
             <DialogTitle>Create Customer Quotation</DialogTitle>
             <DialogDescription>
-              Enter customer details and review calculation results
+              {generatingFromScenarios && selectedScenarios.length > 0
+                ? `This quote will bundle ${selectedScenarios.length} scenario${selectedScenarios.length === 1 ? "" : "s"}: ${selectedScenarios.map((s) => s.label).join(", ")}`
+                : "Enter customer details and review calculation results"}
             </DialogDescription>
           </DialogHeader>
 
