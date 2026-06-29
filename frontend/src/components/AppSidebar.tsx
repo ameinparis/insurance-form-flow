@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Calculator, Home, FileText, Settings, LogOut, Users, ShieldCheck, ChevronDown, FilePlus, FolderOpen } from "lucide-react"
+import { Calculator, Home, FileText, Settings, LogOut, Users, ShieldCheck, ClipboardList, ChevronDown, FilePlus, FolderOpen } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import {
   Sidebar,
@@ -19,6 +19,7 @@ const menuItems = [
     children: quotationChildren,
   },
   { title: "Clients", url: "/clients", icon: Users },
+  { title: "Claims", url: "/claims", icon: ClipboardList },
   { title: "Administration", url: "/administration", icon: ShieldCheck },
 ]
 
