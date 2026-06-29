@@ -18,6 +18,9 @@ import axios from "axios"
 import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 import { getSavedQuoteId, waitForQuoteReady } from "@/lib/quoteUtils"
+import { useAnnuityScenarios } from "@/hooks/useAnnuityScenarios"
+import AnnuityScenarioDrawer, { ScenarioDrawerTrigger } from "./AnnuityScenarioDrawer"
+import { Plus } from "lucide-react"
 
 const GeneratingOverlay = () => (
   <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -72,6 +75,19 @@ const AnnuityQuotationForm = () => {
   const { searchClients, loading: clientsLoading } = useClientSuggestions()
 
   const [showQuoteDialog, setShowQuoteDialog] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [generatingFromScenarios, setGeneratingFromScenarios] = useState(false)
+  const {
+    scenarios,
+    selectedIds,
+    addScenario,
+    removeScenario,
+    renameScenario,
+    toggleSelected,
+    selectAll,
+    clearSelected,
+    clearAll,
+  } = useAnnuityScenarios()
   const [customerDetails, setCustomerDetails] = useState({
     fullName: "",
     dateOfBirth: "",
@@ -234,8 +250,48 @@ Insurance will not accept liability for any losses incurred as a result of using
       toast.error("Calculate the Living Annuity first.")
       return
     }
+    setGeneratingFromScenarios(false)
     setShowQuoteDialog(true)
   }
+
+  const handleAddScenario = () => {
+    if (!livingResult) {
+      toast.error("Calculate the Living Annuity first.")
+      return
+    }
+    const safeNum = (n: number) => (Number.isFinite(n) ? n : undefined)
+    addScenario({
+      inputs: {
+        age: toNum(age),
+        purchaseAmount: toNum(amountRaw),
+        drawdown: toNum(drawdown),
+        frequency,
+        guaranteedStartAge: toNum(guaranteedStartAge),
+        lifePurchaseAmount: toNum(lifePurchaseAmount),
+        upfrontCommission: safeNum(upfrontNum),
+        ongoingCommission: safeNum(ongoingNum),
+        guaranteePeriod: toNum(guaranteePeriod),
+      },
+      outputs: {
+        living: livingResult,
+        life: lifeResult,
+      },
+    })
+    toast.success("Added to scenarios")
+    setDrawerOpen(true)
+  }
+
+  const handleGenerateFromDrawer = () => {
+    if (selectedIds.length === 0) {
+      toast.error("Select at least one scenario.")
+      return
+    }
+    setGeneratingFromScenarios(true)
+    setDrawerOpen(false)
+    setShowQuoteDialog(true)
+  }
+
+  const selectedScenarios = scenarios.filter((s) => selectedIds.includes(s.id))
 
   const handleCustomerDetailsChange = (field: string, value: string) => {
     setCustomerDetails(prev => ({ ...prev, [field]: value }))
@@ -258,24 +314,39 @@ Insurance will not accept liability for any losses incurred as a result of using
       const safeNum = (n: number) => (Number.isFinite(n) ? n : undefined)
 
       // 🔹 Construct the payload (similar to the funeral one)
-      const payload = {
+      const useScenarios = generatingFromScenarios && selectedScenarios.length > 0
+      const primary = useScenarios ? selectedScenarios[0] : null
+
+      const payload: any = {
         productType: "Exclusive Annuity",
         client: customerDetails,
-        inputs: {
-          age: toNum(age),
-          purchaseAmount: toNum(amountRaw),
-          drawdown: toNum(drawdown),
-          frequency,
-          guaranteedStartAge: toNum(guaranteedStartAge),
-          lifePurchaseAmount: toNum(lifePurchaseAmount),
-          upfrontCommission: safeNum(upfrontNum),
-          ongoingCommission: safeNum(ongoingNum),
-
-        },
-        outputs: {
-          living: livingResult,
-          life: lifeResult,
-        },
+        inputs: useScenarios
+          ? { ...primary!.inputs, scenarioCount: selectedScenarios.length }
+          : {
+              age: toNum(age),
+              purchaseAmount: toNum(amountRaw),
+              drawdown: toNum(drawdown),
+              frequency,
+              guaranteedStartAge: toNum(guaranteedStartAge),
+              lifePurchaseAmount: toNum(lifePurchaseAmount),
+              upfrontCommission: safeNum(upfrontNum),
+              ongoingCommission: safeNum(ongoingNum),
+            },
+        outputs: useScenarios
+          ? {
+              living: primary!.outputs.living,
+              life: primary!.outputs.life,
+              scenarios: selectedScenarios.map((s) => ({
+                id: s.id,
+                label: s.label,
+                inputs: s.inputs,
+                outputs: s.outputs,
+              })),
+            }
+          : {
+              living: livingResult,
+              life: lifeResult,
+            },
         termsAndConditions,
       }
 
@@ -300,6 +371,7 @@ Insurance will not accept liability for any losses incurred as a result of using
       setShowQuoteDialog(false)
       setIsSavingQuote(false)
       setIsRedirecting(true)
+      if (generatingFromScenarios) clearAll()
 
       try {
         await waitForQuoteReady(savedQuoteId, { minimumMs: 2500 })
@@ -491,17 +563,44 @@ Insurance will not accept liability for any losses incurred as a result of using
       </Card>
 
       {/* Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Button variant="secondary" onClick={() => {
           setAge(""); setAmountRaw(""); setFrequency("Monthly"); setDrawdown(""); setGuaranteedStartAge("")
           setLivingResult(null); setShowLifeForm(false); setLifePurchaseAmount(""); setLifeResult(null)
         }}>
           Reset
         </Button>
+        <Button
+          variant="outline"
+          onClick={handleAddScenario}
+          disabled={!livingResult}
+        >
+          <Plus className="mr-1 h-4 w-4" />
+          Add as Scenario
+        </Button>
         <Button onClick={handleCreateQuote} disabled={!livingResult}>
           Create Quote
         </Button>
+        {scenarios.length > 0 && (
+          <span className="text-xs text-muted-foreground ml-auto">
+            {scenarios.length} scenario{scenarios.length === 1 ? "" : "s"} saved · open the right pane to compare
+          </span>
+        )}
       </div>
+
+      <ScenarioDrawerTrigger count={scenarios.length} onClick={() => setDrawerOpen(true)} />
+      <AnnuityScenarioDrawer
+        scenarios={scenarios}
+        selectedIds={selectedIds}
+        onToggle={toggleSelected}
+        onSelectAll={selectAll}
+        onClearSelected={clearSelected}
+        onRemove={removeScenario}
+        onRename={renameScenario}
+        onGenerate={handleGenerateFromDrawer}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+      />
 
       {/* Quote Dialog */}
       <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
@@ -509,7 +608,9 @@ Insurance will not accept liability for any losses incurred as a result of using
           <DialogHeader>
             <DialogTitle>Create Customer Quotation</DialogTitle>
             <DialogDescription>
-              Enter customer details and review calculation results
+              {generatingFromScenarios && selectedScenarios.length > 0
+                ? `This quote will bundle ${selectedScenarios.length} scenario${selectedScenarios.length === 1 ? "" : "s"}: ${selectedScenarios.map((s) => s.label).join(", ")}`
+                : "Enter customer details and review calculation results"}
             </DialogDescription>
           </DialogHeader>
 
