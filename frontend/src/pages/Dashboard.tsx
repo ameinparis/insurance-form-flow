@@ -125,13 +125,8 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        {/* Stats Cards */}
-        <StatsCards
-          quotes={recentQuotes}
-          loading={loading}
-          onTypeFilter={setTypeFilter}
-          activeFilter={typeFilter}
-        />
+
+
 
         {/* Recent Quotes Table */}
         <Card className="bg-white/20 dark:bg-slate-800/30 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-[2.5rem] shadow-2xl shadow-slate-200/20 dark:shadow-black/20">

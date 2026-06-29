@@ -17,6 +17,7 @@ import { PdfIcon } from "@/components/PdfIcon"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { exportQuotePdf } from "@/lib/pdfExport"
 import { PageLoader } from "@/components/PageLoader"
+import { StatsCards } from "@/components/dashboard/StatsCards"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +40,7 @@ const Quotes = () => {
   const loading = isLoading && quotes.length === 0
   const [currentPage, setCurrentPage] = useState(1)
   const [deleteQuoteId, setDeleteQuoteId] = useState<string | null>(null)
+  const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const { userRole } = useAuth()
   const itemsPerPage = 50
 
@@ -121,6 +123,10 @@ const Quotes = () => {
   const filteredAndSortedQuotes = useMemo(() => {
     let filtered = quotes
 
+    if (typeFilter) {
+      filtered = filtered.filter(quote => quote.type === typeFilter)
+    }
+
     if (searchTerm) {
       filtered = filtered.filter(quote =>
         (quote.fullName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -148,7 +154,7 @@ const Quotes = () => {
     })
 
     return filtered
-  }, [quotes, searchTerm, sortBy])
+  }, [quotes, searchTerm, sortBy, typeFilter])
 
   // Pagination logic
   const totalPages = Math.ceil(filteredAndSortedQuotes.length / itemsPerPage)
@@ -164,16 +170,23 @@ const Quotes = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold mb-2">Quotation Management</h2>
+          <h2 className="font-heading text-3xl font-extrabold tracking-tight text-[#163144] dark:text-[#DFF3EB] mb-2">Quotation Management</h2>
           <p className="text-muted-foreground">Manage and view all your insurance quotes.</p>
         </div>
-        <Button asChild>
-          <Link to="/calculate">
-            <Calculator className="h-4 w-4 mr-2" />
-            New Quote
-          </Link>
+        <Button
+          onClick={() => navigate("/calculate")}
+          className="px-6 py-2.5 bg-[#009fe3] hover:bg-[#0089c4] text-white rounded-full font-bold text-sm tracking-wide shadow-lg shadow-[#009fe3]/30 transition-all active:scale-95"
+        >
+          New Quote
         </Button>
       </div>
+
+      <StatsCards
+        quotes={quotes}
+        loading={loading}
+        onTypeFilter={(t) => { setTypeFilter(t); setCurrentPage(1) }}
+        activeFilter={typeFilter}
+      />
 
       <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
         <CardHeader>
