@@ -250,8 +250,48 @@ Insurance will not accept liability for any losses incurred as a result of using
       toast.error("Calculate the Living Annuity first.")
       return
     }
+    setGeneratingFromScenarios(false)
     setShowQuoteDialog(true)
   }
+
+  const handleAddScenario = () => {
+    if (!livingResult) {
+      toast.error("Calculate the Living Annuity first.")
+      return
+    }
+    const safeNum = (n: number) => (Number.isFinite(n) ? n : undefined)
+    addScenario({
+      inputs: {
+        age: toNum(age),
+        purchaseAmount: toNum(amountRaw),
+        drawdown: toNum(drawdown),
+        frequency,
+        guaranteedStartAge: toNum(guaranteedStartAge),
+        lifePurchaseAmount: toNum(lifePurchaseAmount),
+        upfrontCommission: safeNum(upfrontNum),
+        ongoingCommission: safeNum(ongoingNum),
+        guaranteePeriod: toNum(guaranteePeriod),
+      },
+      outputs: {
+        living: livingResult,
+        life: lifeResult,
+      },
+    })
+    toast.success("Added to scenarios")
+    setDrawerOpen(true)
+  }
+
+  const handleGenerateFromDrawer = () => {
+    if (selectedIds.length === 0) {
+      toast.error("Select at least one scenario.")
+      return
+    }
+    setGeneratingFromScenarios(true)
+    setDrawerOpen(false)
+    setShowQuoteDialog(true)
+  }
+
+  const selectedScenarios = scenarios.filter((s) => selectedIds.includes(s.id))
 
   const handleCustomerDetailsChange = (field: string, value: string) => {
     setCustomerDetails(prev => ({ ...prev, [field]: value }))
