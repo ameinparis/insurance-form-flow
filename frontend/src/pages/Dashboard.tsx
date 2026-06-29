@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom"
 import { useQuotesList } from "@/hooks/useQuotesList"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   FileText,
   CheckCircle2,
@@ -17,6 +15,7 @@ import {
   FileSignature,
   Upload,
   RefreshCw,
+  AlertCircle,
 } from "lucide-react"
 import { toTitleCase } from "@/lib/quoteUtils"
 
