@@ -563,17 +563,44 @@ Insurance will not accept liability for any losses incurred as a result of using
       </Card>
 
       {/* Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Button variant="secondary" onClick={() => {
           setAge(""); setAmountRaw(""); setFrequency("Monthly"); setDrawdown(""); setGuaranteedStartAge("")
           setLivingResult(null); setShowLifeForm(false); setLifePurchaseAmount(""); setLifeResult(null)
         }}>
           Reset
         </Button>
+        <Button
+          variant="outline"
+          onClick={handleAddScenario}
+          disabled={!livingResult}
+        >
+          <Plus className="mr-1 h-4 w-4" />
+          Add as Scenario
+        </Button>
         <Button onClick={handleCreateQuote} disabled={!livingResult}>
           Create Quote
         </Button>
+        {scenarios.length > 0 && (
+          <span className="text-xs text-muted-foreground ml-auto">
+            {scenarios.length} scenario{scenarios.length === 1 ? "" : "s"} saved · open the right pane to compare
+          </span>
+        )}
       </div>
+
+      <ScenarioDrawerTrigger count={scenarios.length} onClick={() => setDrawerOpen(true)} />
+      <AnnuityScenarioDrawer
+        scenarios={scenarios}
+        selectedIds={selectedIds}
+        onToggle={toggleSelected}
+        onSelectAll={selectAll}
+        onClearSelected={clearSelected}
+        onRemove={removeScenario}
+        onRename={renameScenario}
+        onGenerate={handleGenerateFromDrawer}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+      />
 
       {/* Quote Dialog */}
       <Dialog open={showQuoteDialog} onOpenChange={setShowQuoteDialog}>
