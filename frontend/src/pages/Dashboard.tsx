@@ -19,7 +19,9 @@ import {
   Upload,
   RefreshCw,
   AlertCircle,
+  Repeat2,
 } from "lucide-react"
+
 import { toTitleCase } from "@/lib/quoteUtils"
 
 const CARD_STYLES = [
