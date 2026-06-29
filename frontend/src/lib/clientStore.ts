@@ -121,7 +121,11 @@ const genPolicyNumber = () => {
  * Create (or update) a client from a converted quote and attach a
  * Draft policy pre-populated with the quote inputs/outputs.
  */
-export const convertQuoteToPolicy = (quote: QuoteData): { client: CRMClient; policy: ClientPolicy } => {
+export const convertQuoteToPolicy = (
+  quote: QuoteData,
+  scenarioId?: string
+): { client: CRMClient; policy: ClientPolicy } => {
+
   const clients = read()
 
   const fullName = (quote.client?.fullName || quote.fullName || "").trim() || "Unnamed Client"
