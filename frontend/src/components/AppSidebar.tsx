@@ -19,6 +19,7 @@ const menuItems = [
     children: quotationChildren,
   },
   { title: "Clients", url: "/clients", icon: Users },
+  { title: "Claims", url: "/claims", icon: ClipboardList },
   { title: "Administration", url: "/administration", icon: ShieldCheck },
 ]
 
