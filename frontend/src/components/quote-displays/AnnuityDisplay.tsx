@@ -69,26 +69,30 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
           <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Purchase Premium:</span>
           <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(inputData?.purchaseAmount)}</span>
         </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Drawdown %:</span>
-          <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.drawdown || "N/A"}%</span>
-        </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
-            Living Annuity per Month{inputData?.age && inputData?.guaranteedStartAge ? ` (Age ${inputData.age} to ${inputData.guaranteedStartAge})` : ''}:
-          </span>
-          <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
-            {formatCurrency(outputData?.living?.guaranteed_annuity)}
-          </span>
-        </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Funds Remaining:</span>
-          <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.living?.funds_remaining)}</span>
-        </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Frequency:</span>
-          <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.frequency || "N/A"}</span>
-        </div>
+        {!hasScenarios && (
+          <>
+            <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Drawdown %:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.drawdown || "N/A"}%</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+                Living Annuity per Month{inputData?.age && inputData?.guaranteedStartAge ? ` (Age ${inputData.age} to ${inputData.guaranteedStartAge})` : ''}:
+              </span>
+              <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
+                {formatCurrency(outputData?.living?.guaranteed_annuity)}
+              </span>
+            </div>
+            <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Funds Remaining:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.living?.funds_remaining)}</span>
+            </div>
+            <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Frequency:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.frequency || "N/A"}</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Additional Scenarios */}
@@ -96,7 +100,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
         <div>
           <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-              Comparison Scenarios ({scenarios.length})
+              Annuity Income Options ({scenarios.length})
             </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -154,21 +158,22 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
       )}
 
       {/* Life Annuity Section */}
-      <div>
-        <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Life Annuity</h3>
+      {!hasScenarios && (
+        <div>
+          <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Life Annuity</h3>
+          </div>
+          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-3">
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Monthly Life Annuity:</span>
+            <span className="font-bold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.life?.monthly_annuity)}</span>
+          </div>
+          {outputData?.life?.guarantee_period != null && (
+            <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
+              * Life annuity is calculated based on guaranteed period of {outputData.life.guarantee_period} years
+            </p>
+          )}
         </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-3">
-          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Monthly Life Annuity:</span>
-          <span className="font-bold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.life?.monthly_annuity)}</span>
-        </div>
-        {/* The below should pick from  Guarantee under Living Annuity from the dropdown */}
-        {outputData?.life?.guarantee_period != null && (
-          <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
-            * Life annuity is calculated based on guaranteed period of {outputData.life.guarantee_period} years
-          </p>
-        )}
-      </div>
+      )}
 
       {/* Fees Section */}
       <div>
