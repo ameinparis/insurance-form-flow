@@ -44,9 +44,13 @@ export interface CRMClient {
   dateOfBirth?: string
   contactNumber?: string
   email?: string
+  gender?: string
+  countryOfOrigin?: string
+  tin?: string
   createdAt: string
   policies: ClientPolicy[]
 }
+
 
 const read = (): CRMClient[] => {
   try {
