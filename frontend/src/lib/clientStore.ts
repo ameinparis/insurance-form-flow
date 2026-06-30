@@ -115,10 +115,18 @@ export const subscribeCRM = (cb: () => void): (() => void) => {
 const genId = (prefix: string) =>
   `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
 
-const genPolicyNumber = () => {
+export const generatePolicyNumber = () => {
   const year = new Date().getFullYear()
   const seq = Math.floor(1000 + Math.random() * 9000)
   return `POL-${year}-${seq}`
+}
+
+export interface PolicyDetailsInput {
+  idNumber: string
+  gender: string
+  countryOfOrigin: string
+  tin: string
+  policyNumber?: string
 }
 
 /**
@@ -127,13 +135,14 @@ const genPolicyNumber = () => {
  */
 export const convertQuoteToPolicy = (
   quote: QuoteData,
-  scenarioId?: string
+  scenarioId?: string,
+  details?: PolicyDetailsInput
 ): { client: CRMClient; policy: ClientPolicy } => {
 
   const clients = read()
 
   const fullName = (quote.client?.fullName || quote.fullName || "").trim() || "Unnamed Client"
-  const idNumber = quote.client?.idNumber || quote.idNumber
+  const idNumber = details?.idNumber || quote.client?.idNumber || quote.idNumber
   const email = quote.client?.email || quote.email
   const contactNumber = quote.client?.contactNumber || quote.contactNumber
   const dateOfBirth = quote.client?.dateOfBirth || quote.dateOfBirth
@@ -153,16 +162,22 @@ export const convertQuoteToPolicy = (
       dateOfBirth,
       contactNumber,
       email,
+      gender: details?.gender,
+      countryOfOrigin: details?.countryOfOrigin,
+      tin: details?.tin,
       createdAt: new Date().toISOString(),
       policies: [],
     }
     clients.push(client)
   } else {
-    // Refresh contact fields from latest quote
-    client.idNumber = client.idNumber || idNumber
+    // Refresh contact fields from latest quote / submitted details
+    client.idNumber = idNumber || client.idNumber
     client.dateOfBirth = client.dateOfBirth || dateOfBirth
     client.contactNumber = contactNumber || client.contactNumber
     client.email = email || client.email
+    if (details?.gender) client.gender = details.gender
+    if (details?.countryOfOrigin) client.countryOfOrigin = details.countryOfOrigin
+    if (details?.tin) client.tin = details.tin
   }
 
   const scenarios: any[] = Array.isArray(quote.outputs?.scenarios) ? quote.outputs.scenarios : []
@@ -175,7 +190,7 @@ export const convertQuoteToPolicy = (
 
   const policy: ClientPolicy = {
     id: genId("pol"),
-    policyNumber: genPolicyNumber(),
+    policyNumber: details?.policyNumber || generatePolicyNumber(),
     productName: quote.productType || quote.type || "Exclusive Annuity",
     status: "Draft",
     createdAt: new Date().toISOString(),
@@ -198,3 +213,4 @@ export const convertQuoteToPolicy = (
   write(clients)
   return { client, policy }
 }
+
