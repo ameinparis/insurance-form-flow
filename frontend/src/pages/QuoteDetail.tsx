@@ -24,8 +24,8 @@ const QuoteDetail = () => {
   const [quote, setQuote] = useState<QuoteData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [converting, setConverting] = useState(false);
   const [policyDialogOpen, setPolicyDialogOpen] = useState(false);
+
 
 
   useEffect(() => {
