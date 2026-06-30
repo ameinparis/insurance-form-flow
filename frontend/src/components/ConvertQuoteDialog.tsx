@@ -176,38 +176,36 @@ export const ConvertQuoteDialog = ({ open, onOpenChange }: Props) => {
                   setPickedQuote(null)
                   setSelectedScenarioId(null)
                 }}
-                disabled={converting}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
               <Button
-                onClick={() => pickedQuote && doConvert(pickedQuote, selectedScenarioId || undefined)}
-                disabled={!selectedScenarioId || converting}
+                onClick={() => pickedQuote && openDetails(pickedQuote)}
+                disabled={!selectedScenarioId}
                 className="bg-[#163144] hover:bg-[#163144]/90 text-white"
               >
-                {converting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Converting...
-                  </>
-                ) : (
-                  <>
-                    <UserCheck className="h-4 w-4 mr-2" />
-                    Convert to Policy
-                  </>
-                )}
+                <UserCheck className="h-4 w-4 mr-2" />
+                Continue
               </Button>
             </DialogFooter>
           </div>
         )}
-
-        {step === "search" && converting && (
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground pt-2">
-            <Loader2 className="h-4 w-4 animate-spin" /> Converting...
-          </div>
-        )}
       </DialogContent>
+
+      <PolicyDetailsDialog
+        open={detailsOpen}
+        onOpenChange={(v) => {
+          setDetailsOpen(v)
+          if (!v) {
+            setPickedQuote(null)
+            setSelectedScenarioId(null)
+          }
+        }}
+        quote={pickedQuote}
+        scenarioId={selectedScenarioId || undefined}
+      />
     </Dialog>
   )
 }
+
