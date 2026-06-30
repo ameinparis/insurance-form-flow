@@ -13,7 +13,7 @@ import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 import { fetchQuoteDetails, getClientInfo, formatDate, QuoteData } from "@/lib/quoteUtils";
 import { exportQuotePdf } from "@/lib/pdfExport";
 import { useToast } from "@/hooks/use-toast";
-import { convertQuoteToPolicy } from "@/lib/clientStore";
+import { PolicyDetailsDialog } from "@/components/PolicyDetailsDialog";
 
 const QuoteDetail = () => {
   const { id } = useParams<{ id: string }>();
