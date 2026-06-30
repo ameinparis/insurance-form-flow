@@ -198,8 +198,15 @@ const QuoteDetail = () => {
           )}
         </CardContent>
       </Card>
+
+      <PolicyDetailsDialog
+        open={policyDialogOpen}
+        onOpenChange={setPolicyDialogOpen}
+        quote={quote}
+      />
     </div>
   );
 };
+
 
 export default QuoteDetail;
