@@ -161,21 +161,12 @@ const QuoteDetail = () => {
           </Button>
           <Button
             onClick={handleConvertToPolicy}
-            disabled={converting}
             className="rounded-full bg-[#163144] hover:bg-[#163144]/90 text-white"
           >
-            {converting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Converting...
-              </>
-            ) : (
-              <>
-                <UserCheck className="h-4 w-4 mr-2" />
-                Convert to Policy
-              </>
-            )}
+            <UserCheck className="h-4 w-4 mr-2" />
+            Convert to Policy
           </Button>
+
         </div>
       </div>
 
