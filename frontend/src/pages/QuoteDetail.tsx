@@ -13,7 +13,7 @@ import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 import { fetchQuoteDetails, getClientInfo, formatDate, QuoteData } from "@/lib/quoteUtils";
 import { exportQuotePdf } from "@/lib/pdfExport";
 import { useToast } from "@/hooks/use-toast";
-import { convertQuoteToPolicy } from "@/lib/clientStore";
+import { PolicyDetailsDialog } from "@/components/PolicyDetailsDialog";
 
 const QuoteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,7 +24,9 @@ const QuoteDetail = () => {
   const [quote, setQuote] = useState<QuoteData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [converting, setConverting] = useState(false);
+  const [policyDialogOpen, setPolicyDialogOpen] = useState(false);
+
+
 
   useEffect(() => {
     const loadQuote = async () => {
@@ -90,29 +92,11 @@ const QuoteDetail = () => {
     }
   };
 
-  const handleConvertToPolicy = async () => {
+  const handleConvertToPolicy = () => {
     if (!quote) return;
-    setConverting(true);
-    try {
-      // Simulate the conversion / draft-creation step
-      await new Promise((r) => setTimeout(r, 1400));
-      const { client, policy } = convertQuoteToPolicy(quote);
-      toast({
-        title: "Policy created",
-        description: `Draft policy ${policy.policyNumber} created for ${client.fullName}.`,
-      });
-      navigate(`/clients/${client.id}`);
-    } catch (err) {
-      console.error("Convert to policy failed:", err);
-      toast({
-        title: "Conversion failed",
-        description: "Could not convert this quote to a policy.",
-        variant: "destructive",
-      });
-    } finally {
-      setConverting(false);
-    }
+    setPolicyDialogOpen(true);
   };
+
 
   if (loading) {
     return (
@@ -177,21 +161,12 @@ const QuoteDetail = () => {
           </Button>
           <Button
             onClick={handleConvertToPolicy}
-            disabled={converting}
             className="rounded-full bg-[#163144] hover:bg-[#163144]/90 text-white"
           >
-            {converting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Converting...
-              </>
-            ) : (
-              <>
-                <UserCheck className="h-4 w-4 mr-2" />
-                Convert to Policy
-              </>
-            )}
+            <UserCheck className="h-4 w-4 mr-2" />
+            Convert to Policy
           </Button>
+
         </div>
       </div>
 
@@ -223,8 +198,15 @@ const QuoteDetail = () => {
           )}
         </CardContent>
       </Card>
+
+      <PolicyDetailsDialog
+        open={policyDialogOpen}
+        onOpenChange={setPolicyDialogOpen}
+        quote={quote}
+      />
     </div>
   );
 };
+
 
 export default QuoteDetail;
