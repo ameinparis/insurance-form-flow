@@ -25,6 +25,8 @@ const QuoteDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [converting, setConverting] = useState(false);
+  const [policyDialogOpen, setPolicyDialogOpen] = useState(false);
+
 
   useEffect(() => {
     const loadQuote = async () => {
