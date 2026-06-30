@@ -1,14 +1,14 @@
 import { useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Loader2, Search, UserCheck, FileText, ArrowLeft } from "lucide-react"
 import { useQuotesList } from "@/hooks/useQuotesList"
 import { fetchQuoteDetails, QuoteData } from "@/lib/quoteUtils"
-import { convertQuoteToPolicy } from "@/lib/clientStore"
 import { useToast } from "@/hooks/use-toast"
 import { toTitleCase } from "@/lib/quoteUtils"
+import { PolicyDetailsDialog } from "@/components/PolicyDetailsDialog"
+
 
 interface Props {
   open: boolean
