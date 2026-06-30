@@ -18,7 +18,6 @@ interface Props {
 type Step = "search" | "scenario"
 
 export const ConvertQuoteDialog = ({ open, onOpenChange }: Props) => {
-  const navigate = useNavigate()
   const { toast } = useToast()
   const { data: quotes = [] } = useQuotesList()
   const [term, setTerm] = useState("")
@@ -26,7 +25,7 @@ export const ConvertQuoteDialog = ({ open, onOpenChange }: Props) => {
   const [loadingQuoteId, setLoadingQuoteId] = useState<string | null>(null)
   const [pickedQuote, setPickedQuote] = useState<QuoteData | null>(null)
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null)
-  const [converting, setConverting] = useState(false)
+  const [detailsOpen, setDetailsOpen] = useState(false)
 
   const matches = useMemo(() => {
     const q = term.trim().toLowerCase()
@@ -42,7 +41,12 @@ export const ConvertQuoteDialog = ({ open, onOpenChange }: Props) => {
     setPickedQuote(null)
     setSelectedScenarioId(null)
     setLoadingQuoteId(null)
-    setConverting(false)
+  }
+
+  const openDetails = (quote: QuoteData) => {
+    setPickedQuote(quote)
+    onOpenChange(false)
+    setDetailsOpen(true)
   }
 
   const handlePickQuote = async (quoteId: string, isLegacy: boolean) => {
@@ -54,7 +58,7 @@ export const ConvertQuoteDialog = ({ open, onOpenChange }: Props) => {
       if (scenarios.length > 1) {
         setStep("scenario")
       } else {
-        await doConvert(full)
+        openDetails(full)
       }
     } catch (err) {
       console.error(err)
@@ -64,28 +68,9 @@ export const ConvertQuoteDialog = ({ open, onOpenChange }: Props) => {
     }
   }
 
-  const doConvert = async (quote: QuoteData, scenarioId?: string) => {
-    setConverting(true)
-    try {
-      await new Promise((r) => setTimeout(r, 900))
-      const { client, policy } = convertQuoteToPolicy(quote, scenarioId)
-      toast({
-        title: "Policy created",
-        description: `Draft policy ${policy.policyNumber} created for ${client.fullName}.`,
-      })
-      onOpenChange(false)
-      reset()
-      navigate(`/clients/${client.id}`)
-    } catch (err) {
-      console.error(err)
-      toast({ title: "Conversion failed", description: "Please try again.", variant: "destructive" })
-    } finally {
-      setConverting(false)
-    }
-  }
-
   const scenarios: any[] =
     pickedQuote && Array.isArray(pickedQuote.outputs?.scenarios) ? pickedQuote.outputs.scenarios : []
+
 
   return (
     <Dialog
