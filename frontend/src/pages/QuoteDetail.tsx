@@ -92,29 +92,11 @@ const QuoteDetail = () => {
     }
   };
 
-  const handleConvertToPolicy = async () => {
+  const handleConvertToPolicy = () => {
     if (!quote) return;
-    setConverting(true);
-    try {
-      // Simulate the conversion / draft-creation step
-      await new Promise((r) => setTimeout(r, 1400));
-      const { client, policy } = convertQuoteToPolicy(quote);
-      toast({
-        title: "Policy created",
-        description: `Draft policy ${policy.policyNumber} created for ${client.fullName}.`,
-      });
-      navigate(`/clients/${client.id}`);
-    } catch (err) {
-      console.error("Convert to policy failed:", err);
-      toast({
-        title: "Conversion failed",
-        description: "Could not convert this quote to a policy.",
-        variant: "destructive",
-      });
-    } finally {
-      setConverting(false);
-    }
+    setPolicyDialogOpen(true);
   };
+
 
   if (loading) {
     return (
