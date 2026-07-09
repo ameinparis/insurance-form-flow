@@ -1,7 +1,5 @@
-const API_BASE_URL = 'https://njs.exclusivelife.co.bw
-/api'
-const BASE_URL = "https://njs.exclusivelife.co.bw
-/api"
+const API_BASE_URL = 'https://njs.exclusivelife.co.bw/api'
+const BASE_URL = "https://njs.exclusivelife.co.bw/api"
 
 export interface Quote {
   _id: string
