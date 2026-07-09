@@ -103,56 +103,84 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
               Annuity Income Options ({scenarios.length})
             </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {scenarios.map((sc, idx) => {
-              const sIn = sc?.inputs || {};
-              const sLiving = sc?.outputs?.living || {};
-              const sLife = sc?.outputs?.life || null;
-              return (
-                <div
-                  key={sc.id || idx}
-                  className="border border-gray-200 dark:border-gray-800 rounded-xl p-4 bg-gray-50 dark:bg-slate-800/40"
-                >
-                  <h4 className="font-semibold text-sm text-gray-800 dark:text-gray-100 mb-3">
-                    {sc.label || `Scenario ${idx + 1}`}
-                  </h4>
-                  <div className="space-y-1.5 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Drawdown:</span>
-                      <span className="text-gray-800 dark:text-gray-100">{sIn.drawdown ?? "—"}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Frequency:</span>
-                      <span className="text-gray-800 dark:text-gray-100">{sIn.frequency ?? "—"}</span>
-                    </div>
-                    {sLiving.guarantee_period != null && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Guarantee Period:</span>
-                        <span className="text-gray-800 dark:text-gray-100">{sLiving.guarantee_period} years</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">
-                        Living Annuity / {String(sIn.frequency || "period").toLowerCase()}:
-                      </span>
-                      <span className="font-semibold text-gray-800 dark:text-gray-100">
-                        {formatCurrency(sLiving.guaranteed_annuity)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400">Funds Remaining:</span>
-                      <span className="text-gray-800 dark:text-gray-100">{formatCurrency(sLiving.funds_remaining)}</span>
-                    </div>
-                    {sLife?.monthly_annuity != null && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">Monthly Life Annuity:</span>
-                        <span className="text-gray-800 dark:text-gray-100">{formatCurrency(sLife.monthly_annuity)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left border-collapse">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
+                    Option
+                  </th>
+                  {scenarios.map((sc, idx) => (
+                    <th
+                      key={sc.id || idx}
+                      className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40 min-w-[160px]"
+                    >
+                      {sc.label || `Scenario ${idx + 1}`}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="text-gray-700 dark:text-gray-300">
+                <tr className="border-b border-gray-100 dark:border-gray-800">
+                  <td className="px-4 py-2 font-medium">Drawdown</td>
+                  {scenarios.map((sc, idx) => (
+                    <td key={idx} className="px-4 py-2 text-gray-800 dark:text-gray-100">
+                      {(sc?.inputs?.drawdown ?? "—")}%
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-gray-100 dark:border-gray-800">
+                  <td className="px-4 py-2 font-medium">Frequency</td>
+                  {scenarios.map((sc, idx) => (
+                    <td key={idx} className="px-4 py-2 text-gray-800 dark:text-gray-100">
+                      {sc?.inputs?.frequency ?? "—"}
+                    </td>
+                  ))}
+                </tr>
+                {scenarios.some((sc) => sc?.outputs?.living?.guarantee_period != null) && (
+                  <tr className="border-b border-gray-100 dark:border-gray-800">
+                    <td className="px-4 py-2 font-medium">Guarantee Period</td>
+                    {scenarios.map((sc, idx) => (
+                      <td key={idx} className="px-4 py-2 text-gray-800 dark:text-gray-100">
+                        {sc?.outputs?.living?.guarantee_period != null
+                          ? `${sc.outputs.living.guarantee_period} years`
+                          : "—"}
+                      </td>
+                    ))}
+                  </tr>
+                )}
+                <tr className="border-b border-gray-100 dark:border-gray-800">
+                  <td className="px-4 py-2 font-medium">
+                    Living Annuity / {String(scenarios[0]?.inputs?.frequency || "period").toLowerCase()}
+                  </td>
+                  {scenarios.map((sc, idx) => (
+                    <td key={idx} className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100">
+                      {formatCurrency(sc?.outputs?.living?.guaranteed_annuity)}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-gray-100 dark:border-gray-800">
+                  <td className="px-4 py-2 font-medium">Funds Remaining</td>
+                  {scenarios.map((sc, idx) => (
+                    <td key={idx} className="px-4 py-2 text-gray-800 dark:text-gray-100">
+                      {formatCurrency(sc?.outputs?.living?.funds_remaining)}
+                    </td>
+                  ))}
+                </tr>
+                {scenarios.some((sc) => sc?.outputs?.life?.monthly_annuity != null) && (
+                  <tr className="border-b border-gray-100 dark:border-gray-800">
+                    <td className="px-4 py-2 font-medium">Monthly Life Annuity</td>
+                    {scenarios.map((sc, idx) => (
+                      <td key={idx} className="px-4 py-2 text-gray-800 dark:text-gray-100">
+                        {sc?.outputs?.life?.monthly_annuity != null
+                          ? formatCurrency(sc.outputs.life.monthly_annuity)
+                          : "—"}
+                      </td>
+                    ))}
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
