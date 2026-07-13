@@ -37,7 +37,12 @@ type LivingResult = {
   retirement_annuity: number
 }
 
-type LifeResult = { monthly_annuity: number }
+type LifeResult = {
+  monthly_annuity: number
+  byPeriod?: Record<number, number>
+}
+
+const GUARANTEE_PERIODS = [5, 10, 15, 20] as const
 
 const MIN_AGE = 0
 const MAX_AGE = 85
@@ -226,17 +231,33 @@ Insurance will not accept liability for any losses incurred as a result of using
     }
     setLifeLoading(true)
     try {
-      const payload = {
-        annuityType: "life",
-        age: gsaNum,
-        purchaseAmount: toNum(lifePurchaseAmount),
-        guaranteePeriod: toNum(guaranteePeriod)
-      }
-      const { data } = await axios.post("https://njs.exclusivelife.co.bw/api/quotes/calculate-annuity", payload)
-      const res = data.output
+      // Calculate the Life Annuity for ALL supported guarantee periods (5/10/15/20) in parallel
+      const results = await Promise.all(
+        GUARANTEE_PERIODS.map(async (gp) => {
+          const payload = {
+            annuityType: "life",
+            age: gsaNum,
+            purchaseAmount: toNum(lifePurchaseAmount),
+            guaranteePeriod: gp,
+          }
+          const { data } = await axios.post(
+            "https://njs.exclusivelife.co.bw/api/quotes/calculate-annuity",
+            payload
+          )
+          return { gp, monthly: Number(data?.output?.monthly_annuity) }
+        })
+      )
 
-      setLifeResult(res)
-      toast.success("Life annuity calculated")
+      const byPeriod: Record<number, number> = {}
+      results.forEach(({ gp, monthly }) => {
+        if (Number.isFinite(monthly)) byPeriod[gp] = monthly
+      })
+
+      const selectedGp = toNum(guaranteePeriod)
+      const selectedMonthly = byPeriod[selectedGp] ?? results[0]?.monthly ?? 0
+
+      setLifeResult({ monthly_annuity: selectedMonthly, byPeriod })
+      toast.success("Life annuity calculated for all guarantee periods")
     } catch (e: any) {
       console.error(e)
       toast.error("Failed to calculate life annuity")
@@ -553,8 +574,34 @@ Insurance will not accept liability for any losses incurred as a result of using
                 </Button>
               </div>
               {lifeResult && (
-                <div className="col-span-2 mt-4 border p-4 rounded bg-muted/50 text-sm">
-                  <strong>Monthly Life Annuity:</strong> {fmtMoney(lifeResult.monthly_annuity, 0)}
+                <div className="col-span-2 mt-4 border p-4 rounded bg-muted/50 text-sm space-y-2">
+                  <div>
+                    <strong>Monthly Life Annuity ({guaranteePeriod}-year guarantee):</strong>{" "}
+                    {fmtMoney(lifeResult.monthly_annuity, 0)}
+                  </div>
+                  {lifeResult.byPeriod && (
+                    <div>
+                      <div className="font-medium mb-1">All guarantee periods:</div>
+                      <table className="w-full text-xs border-collapse">
+                        <thead>
+                          <tr>
+                            {GUARANTEE_PERIODS.map((gp) => (
+                              <th key={gp} className="border px-2 py-1 text-left">{gp} years</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            {GUARANTEE_PERIODS.map((gp) => (
+                              <td key={gp} className="border px-2 py-1">
+                                {lifeResult.byPeriod?.[gp] != null ? fmtMoney(lifeResult.byPeriod[gp], 0) : "—"}
+                              </td>
+                            ))}
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
