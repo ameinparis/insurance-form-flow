@@ -147,6 +147,18 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
               <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Frequency:</span>
               <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.frequency || "N/A"}</span>
             </div>
+            {knownPeriod != null && (
+              <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+                <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Selected Guarantee Period:</span>
+                <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{knownPeriod} years</span>
+              </div>
+            )}
+            {knownAnnuity != null && (
+              <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+                <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Monthly Life Annuity (Selected):</span>
+                <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(knownAnnuity)}</span>
+              </div>
+            )}
           </>
         )}
       </div>

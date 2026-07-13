@@ -553,8 +553,9 @@ Insurance will not accept liability for any losses incurred as a result of using
                 </Button>
               </div>
               {lifeResult && (
-                <div className="col-span-2 mt-4 border p-4 rounded bg-muted/50 text-sm">
-                  <strong>Monthly Life Annuity:</strong> {fmtMoney(lifeResult.monthly_annuity, 0)}
+                <div className="col-span-2 mt-4 border p-4 rounded bg-muted/50 text-sm space-y-1">
+                  <div><strong>Guarantee Period:</strong> {guaranteePeriod} years</div>
+                  <div><strong>Monthly Life Annuity:</strong> {fmtMoney(lifeResult.monthly_annuity, 0)}</div>
                 </div>
               )}
             </div>
