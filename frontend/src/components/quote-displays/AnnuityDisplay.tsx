@@ -207,7 +207,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
                 </tr>
                 {scenarios.some((sc) => sc?.outputs?.living?.guarantee_period != null) && (
                   <tr className="border-b border-gray-100 dark:border-gray-800">
-                    <td className="px-4 py-2 font-medium">Guarantee Period</td>
+                    <td className="px-4 py-2 font-medium">Living Guarantee Period</td>
                     {scenarios.map((sc, idx) => (
                       <td key={idx} className="px-4 py-2 text-gray-800 dark:text-gray-100">
                         {sc?.outputs?.living?.guarantee_period != null
@@ -235,6 +235,18 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
                     </td>
                   ))}
                 </tr>
+                {scenarios.some((sc) => sc?.outputs?.life?.guarantee_period != null) && (
+                  <tr className="border-b border-gray-100 dark:border-gray-800">
+                    <td className="px-4 py-2 font-medium">Life Guarantee Period</td>
+                    {scenarios.map((sc, idx) => (
+                      <td key={idx} className="px-4 py-2 text-gray-800 dark:text-gray-100">
+                        {sc?.outputs?.life?.guarantee_period != null
+                          ? `${sc.outputs.life.guarantee_period} years`
+                          : "—"}
+                      </td>
+                    ))}
+                  </tr>
+                )}
                 {scenarios.some((sc) => sc?.outputs?.life?.monthly_annuity != null) && (
                   <tr className="border-b border-gray-100 dark:border-gray-800">
                     <td className="px-4 py-2 font-medium">Monthly Life Annuity</td>
