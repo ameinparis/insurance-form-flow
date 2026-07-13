@@ -190,14 +190,11 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
                   style={{
                     pageBreakInside: "avoid",
                     breakInside: "avoid",
-                    ...(chunkIdx > 0
-                      ? { pageBreakBefore: "always", breakBefore: "page" as any }
-                      : {}),
                   }}
                 >
                   {chunks.length > 1 && (
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                      Scenarios {startIdx + 1}–{endIdx} of {scenarios.length}
+                      Annuity Options {startIdx + 1}–{endIdx} of {scenarios.length}
                     </p>
                   )}
                   <div className="overflow-x-auto">
