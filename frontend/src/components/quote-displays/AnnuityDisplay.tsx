@@ -186,64 +186,22 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
       )}
 
       {/* Life Annuity Section */}
-      {!hasScenarios && (() => {
-        const byPeriod = (outputData?.life as any)?.byPeriod as Record<string, number> | undefined;
-        const periods = [5, 10, 15, 20];
-        const hasByPeriod = byPeriod && periods.some((p) => byPeriod[p] != null || byPeriod[String(p)] != null);
-        return (
-          <div>
-            <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Life Annuity</h3>
-            </div>
-            {hasByPeriod ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left border-collapse">
-                  <thead>
-                    <tr>
-                      <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
-                        Guarantee Period
-                      </th>
-                      {periods.map((p) => (
-                        <th key={p} className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40 min-w-[140px]">
-                          {p} years
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="text-gray-700 dark:text-gray-300">
-                    <tr className="border-b border-gray-100 dark:border-gray-800">
-                      <td className="px-4 py-2 font-medium">Monthly Life Annuity</td>
-                      {periods.map((p) => {
-                        const v = byPeriod?.[p] ?? byPeriod?.[String(p)];
-                        return (
-                          <td key={p} className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100">
-                            {v != null ? formatCurrency(v) : "—"}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  </tbody>
-                </table>
-                <p className="text-xs italic text-gray-600 dark:text-gray-400 mt-3">
-                  * Life annuity income shown for each available guarantee period.
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-3">
-                  <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Monthly Life Annuity:</span>
-                  <span className="font-bold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.life?.monthly_annuity)}</span>
-                </div>
-                {outputData?.life?.guarantee_period != null && (
-                  <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
-                    * Life annuity is calculated based on guaranteed period of {outputData.life.guarantee_period} years
-                  </p>
-                )}
-              </>
-            )}
+      {!hasScenarios && (
+        <div>
+          <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Life Annuity</h3>
           </div>
-        );
-      })()}
+          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-3">
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Monthly Life Annuity:</span>
+            <span className="font-bold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.life?.monthly_annuity)}</span>
+          </div>
+          {outputData?.life?.guarantee_period != null && (
+            <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
+              * Life annuity is calculated based on guaranteed period of {outputData.life.guarantee_period} years
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Fees Section */}
       <div>
