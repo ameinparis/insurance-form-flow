@@ -21,6 +21,7 @@ export type AnnuityScenarioOutputs = {
   } | null
   life: {
     monthly_annuity: number
+    guarantee_period?: number
   } | null
 }
 
