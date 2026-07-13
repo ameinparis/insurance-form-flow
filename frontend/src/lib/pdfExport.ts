@@ -7,6 +7,7 @@ import { FuneralDisplay } from "@/components/quote-displays/FuneralDisplay";
 import { LifeDisplay } from "@/components/quote-displays/LifeDisplay";
 import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLifeDisplay";
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
+import { fetchLifeAnnuityPeriods } from "@/lib/lifeAnnuityPeriods";
 
 const PDF_STYLES = `
   @font-face {
