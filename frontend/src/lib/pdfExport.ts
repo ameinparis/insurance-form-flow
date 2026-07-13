@@ -90,11 +90,9 @@ const PDF_STYLES = `
   .signature-line.long { height: 3rem; }
   section.space-y-4 > div + p { margin-top: 1.5rem; }
   .scenario-chunk { page-break-inside: avoid; break-inside: avoid; }
-  .scenario-chunk + .scenario-chunk { page-break-before: always; break-before: page; }
   table { page-break-inside: avoid; }
   @media print {
     .scenario-chunk { page-break-inside: avoid; break-inside: avoid; }
-    .scenario-chunk + .scenario-chunk { page-break-before: always; break-before: page; }
   }
 
 `;
