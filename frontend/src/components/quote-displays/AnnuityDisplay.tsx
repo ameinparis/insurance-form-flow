@@ -47,6 +47,55 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
   const scenarios: Array<any> = Array.isArray(quote?.outputs?.scenarios) ? quote.outputs.scenarios : [];
   const hasScenarios = scenarios.length > 1;
 
+  // Life annuity guarantee-period table (5/10/15/20 years).
+  // If the pdf/export layer already pre-fetched them and attached to the quote,
+  // use those directly (avoids an async fetch inside renderToStaticMarkup).
+  const preInjected: LifePeriodResult[] | undefined = quote?.outputs?.life?.periods;
+  const knownPeriod = outputData?.life?.guarantee_period;
+  const knownAnnuity = outputData?.life?.monthly_annuity;
+
+  const initialPeriods: LifePeriodResult[] =
+    preInjected && Array.isArray(preInjected) && preInjected.length > 0
+      ? preInjected
+      : LIFE_ANNUITY_PERIODS.map((p) => ({
+          guarantee_period: p,
+          monthly_annuity:
+            knownPeriod === p && typeof knownAnnuity === "number" ? knownAnnuity : null,
+        }));
+
+  const [lifePeriods, setLifePeriods] = useState<LifePeriodResult[]>(initialPeriods);
+  const [loadingPeriods, setLoadingPeriods] = useState<boolean>(
+    !preInjected && !hasScenarios
+  );
+
+  const lifeAge = Number(inputData?.guaranteedStartAge);
+  const lifeAmount = Number(inputData?.lifePurchaseAmount ?? inputData?.purchaseAmount);
+
+  useEffect(() => {
+    if (hasScenarios || preInjected) return;
+    let cancelled = false;
+    const needsFetch = initialPeriods.some((p) => p.monthly_annuity == null);
+    if (!needsFetch) {
+      setLoadingPeriods(false);
+      return;
+    }
+    (async () => {
+      const results = await fetchLifeAnnuityPeriods(lifeAge, lifeAmount, {
+        guarantee_period: knownPeriod,
+        monthly_annuity: knownAnnuity,
+      });
+      if (!cancelled) {
+        setLifePeriods(results);
+        setLoadingPeriods(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lifeAge, lifeAmount, knownPeriod, knownAnnuity, hasScenarios]);
+
+
   return (
     <div className="bg-white dark:bg-slate-900 p-8 space-y-8">
       {/* Personal & Annuity Details */}
