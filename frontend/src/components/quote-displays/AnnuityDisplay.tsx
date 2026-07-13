@@ -1,4 +1,10 @@
+import { useEffect, useState } from "react";
 import { formatCurrency, toTitleCase } from "@/lib/quoteUtils";
+import {
+  fetchLifeAnnuityPeriods,
+  LIFE_ANNUITY_PERIODS,
+  LifePeriodResult,
+} from "@/lib/lifeAnnuityPeriods";
 
 interface AnnuityDisplayProps {
   quote: any;
