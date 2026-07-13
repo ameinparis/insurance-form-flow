@@ -186,11 +186,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
               return (
                 <div
                   key={chunkIdx}
-                  className="scenario-chunk mb-8"
-                  style={{
-                    pageBreakInside: "avoid",
-                    breakInside: "avoid",
-                  }}
+                  className={`scenario-chunk ${chunkIdx < chunks.length - 1 ? "mb-6" : ""}`}
                 >
                   {chunks.length > 1 && (
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
