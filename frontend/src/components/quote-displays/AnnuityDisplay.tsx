@@ -31,16 +31,6 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
     ongoingCommission: quote.ongoingCommission,
     guaranteePeriod: quote.guaranteePeriod
   };
-  const _unused_inputData = {
-    purchaseAmount: quote.singlePurchasePremium,
-    drawdown: quote.drawdown,
-    frequency: quote.frequency,
-    guaranteedStartAge: quote.guaranteedStartAge,
-    age: null,
-    upfrontCommission: quote.upfrontCommission,
-    ongoingCommission: quote.ongoingCommission,
-    guaranteePeriod: quote.guaranteePeriod
-  };
 
   const outputData = quote.outputs || {
     living: {
