@@ -89,11 +89,10 @@ const PDF_STYLES = `
   .signature-line { border-bottom: 1px solid #c4c7cc; height: 1.8rem; margin-bottom: 1rem; }
   .signature-line.long { height: 3rem; }
   section.space-y-4 > div + p { margin-top: 1.5rem; }
-  .scenario-chunk { page-break-inside: avoid; break-inside: avoid; }
-  table { page-break-inside: avoid; }
-  @media print {
-    .scenario-chunk { page-break-inside: avoid; break-inside: avoid; }
-  }
+  .scenario-chunk { break-inside: auto; page-break-inside: auto; }
+  .scenario-chunk table { break-inside: auto; page-break-inside: auto; }
+  .scenario-chunk thead { display: table-header-group; }
+  .scenario-chunk tr { break-inside: avoid; page-break-inside: avoid; }
 
 `;
 
