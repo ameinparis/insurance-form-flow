@@ -37,7 +37,12 @@ type LivingResult = {
   retirement_annuity: number
 }
 
-type LifeResult = { monthly_annuity: number }
+type LifeResult = {
+  monthly_annuity: number
+  byPeriod?: Record<number, number>
+}
+
+const GUARANTEE_PERIODS = [5, 10, 15, 20] as const
 
 const MIN_AGE = 0
 const MAX_AGE = 85
@@ -226,17 +231,33 @@ Insurance will not accept liability for any losses incurred as a result of using
     }
     setLifeLoading(true)
     try {
-      const payload = {
-        annuityType: "life",
-        age: gsaNum,
-        purchaseAmount: toNum(lifePurchaseAmount),
-        guaranteePeriod: toNum(guaranteePeriod)
-      }
-      const { data } = await axios.post("https://njs.exclusivelife.co.bw/api/quotes/calculate-annuity", payload)
-      const res = data.output
+      // Calculate the Life Annuity for ALL supported guarantee periods (5/10/15/20) in parallel
+      const results = await Promise.all(
+        GUARANTEE_PERIODS.map(async (gp) => {
+          const payload = {
+            annuityType: "life",
+            age: gsaNum,
+            purchaseAmount: toNum(lifePurchaseAmount),
+            guaranteePeriod: gp,
+          }
+          const { data } = await axios.post(
+            "https://njs.exclusivelife.co.bw/api/quotes/calculate-annuity",
+            payload
+          )
+          return { gp, monthly: Number(data?.output?.monthly_annuity) }
+        })
+      )
 
-      setLifeResult(res)
-      toast.success("Life annuity calculated")
+      const byPeriod: Record<number, number> = {}
+      results.forEach(({ gp, monthly }) => {
+        if (Number.isFinite(monthly)) byPeriod[gp] = monthly
+      })
+
+      const selectedGp = toNum(guaranteePeriod)
+      const selectedMonthly = byPeriod[selectedGp] ?? results[0]?.monthly ?? 0
+
+      setLifeResult({ monthly_annuity: selectedMonthly, byPeriod })
+      toast.success("Life annuity calculated for all guarantee periods")
     } catch (e: any) {
       console.error(e)
       toast.error("Failed to calculate life annuity")
