@@ -574,8 +574,34 @@ Insurance will not accept liability for any losses incurred as a result of using
                 </Button>
               </div>
               {lifeResult && (
-                <div className="col-span-2 mt-4 border p-4 rounded bg-muted/50 text-sm">
-                  <strong>Monthly Life Annuity:</strong> {fmtMoney(lifeResult.monthly_annuity, 0)}
+                <div className="col-span-2 mt-4 border p-4 rounded bg-muted/50 text-sm space-y-2">
+                  <div>
+                    <strong>Monthly Life Annuity ({guaranteePeriod}-year guarantee):</strong>{" "}
+                    {fmtMoney(lifeResult.monthly_annuity, 0)}
+                  </div>
+                  {lifeResult.byPeriod && (
+                    <div>
+                      <div className="font-medium mb-1">All guarantee periods:</div>
+                      <table className="w-full text-xs border-collapse">
+                        <thead>
+                          <tr>
+                            {GUARANTEE_PERIODS.map((gp) => (
+                              <th key={gp} className="border px-2 py-1 text-left">{gp} years</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            {GUARANTEE_PERIODS.map((gp) => (
+                              <td key={gp} className="border px-2 py-1">
+                                {lifeResult.byPeriod?.[gp] != null ? fmtMoney(lifeResult.byPeriod[gp], 0) : "—"}
+                              </td>
+                            ))}
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
