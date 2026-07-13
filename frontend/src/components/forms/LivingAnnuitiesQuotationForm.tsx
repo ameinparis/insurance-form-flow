@@ -274,7 +274,9 @@ Insurance will not accept liability for any losses incurred as a result of using
       },
       outputs: {
         living: livingResult,
-        life: lifeResult,
+        life: lifeResult
+          ? { ...lifeResult, guarantee_period: toNum(guaranteePeriod) }
+          : null,
       },
     })
     toast.success("Added to scenarios")
@@ -345,7 +347,9 @@ Insurance will not accept liability for any losses incurred as a result of using
             }
           : {
               living: livingResult,
-              life: lifeResult,
+              life: lifeResult
+                ? { ...lifeResult, guarantee_period: toNum(guaranteePeriod) }
+                : null,
             },
         termsAndConditions,
       }
