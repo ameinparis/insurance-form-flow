@@ -245,17 +245,61 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
       {!hasScenarios && (
         <div>
           <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Life Annuity</h3>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+              Life Annuity — Guarantee Period Options
+            </h3>
           </div>
-          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-3">
-            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Monthly Life Annuity:</span>
-            <span className="font-bold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.life?.monthly_annuity)}</span>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left border-collapse">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
+                    Guarantee Period
+                  </th>
+                  <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
+                    Monthly Life Annuity
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-700 dark:text-gray-300">
+                {lifePeriods.map((row) => {
+                  const isSelected = row.guarantee_period === knownPeriod;
+                  return (
+                    <tr
+                      key={row.guarantee_period}
+                      className="border-b border-gray-100 dark:border-gray-800"
+                    >
+                      <td className="px-4 py-2 font-medium text-gray-800 dark:text-gray-100">
+                        {row.guarantee_period} years
+                        {isSelected && (
+                          <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
+                            (selected)
+                          </span>
+                        )}
+                      </td>
+                      <td
+                        className={
+                          "px-4 py-2 " +
+                          (isSelected
+                            ? "font-semibold text-gray-900 dark:text-white"
+                            : "text-gray-800 dark:text-gray-100")
+                        }
+                      >
+                        {row.monthly_annuity != null
+                          ? formatCurrency(row.monthly_annuity)
+                          : loadingPeriods
+                          ? "Calculating…"
+                          : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          {outputData?.life?.guarantee_period != null && (
-            <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
-              * Life annuity is calculated based on guaranteed period of {outputData.life.guarantee_period} years
-            </p>
-          )}
+          <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
+            * Monthly life annuity values shown for the standard guarantee periods of 5, 10, 15 and 20 years.
+          </p>
         </div>
       )}
 
