@@ -7,6 +7,7 @@ import { FuneralDisplay } from "@/components/quote-displays/FuneralDisplay";
 import { LifeDisplay } from "@/components/quote-displays/LifeDisplay";
 import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLifeDisplay";
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
+import { fetchLifeAnnuityPeriods } from "@/lib/lifeAnnuityPeriods";
 
 const PDF_STYLES = `
   @font-face {
@@ -125,6 +126,38 @@ export async function exportQuotePdf(
   // 2. Determine product type
   const isLegacyAnnuity = !quote.productType && !!quote.guaranteedAnnuity;
   const productType = quote.productType || quote.type || (isLegacyAnnuity ? "annuity" : "Insurance Quote");
+
+  // 2b. For annuity quotes without pre-computed guarantee-period options,
+  // fetch monthly life annuity values for 5/10/15/20 years so the PDF shows
+  // all options synchronously (renderToStaticMarkup can't await effects).
+  const isAnnuity =
+    productType === "Exclusive Annuity" || productType === "annuity";
+  const hasScenarios =
+    Array.isArray((quote as any)?.outputs?.scenarios) &&
+    (quote as any).outputs.scenarios.length > 1;
+  if (isAnnuity && !hasScenarios) {
+    const inputs = (quote as any).inputs || {};
+    const outputsLife = ((quote as any).outputs && (quote as any).outputs.life) || {};
+    const age = Number(inputs.guaranteedStartAge ?? (quote as any).guaranteedStartAge);
+    const amount = Number(
+      inputs.lifePurchaseAmount ??
+        inputs.purchaseAmount ??
+        (quote as any).lifePurchaseAmount ??
+        (quote as any).singlePurchasePremium
+    );
+    try {
+      const periods = await fetchLifeAnnuityPeriods(age, amount, {
+        guarantee_period: outputsLife.guarantee_period,
+        monthly_annuity: outputsLife.monthly_annuity,
+      });
+      (quote as any).outputs = {
+        ...((quote as any).outputs || {}),
+        life: { ...outputsLife, periods },
+      };
+    } catch (err) {
+      console.warn("Failed to pre-fetch life annuity periods for PDF:", err);
+    }
+  }
 
   // 3. Get client info for header
   const clientInfo = getClientInfo(quote);
