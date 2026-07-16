@@ -163,133 +163,25 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
         )}
       </div>
 
-      {/* Additional Scenarios */}
-      {hasScenarios && (() => {
-        const SCENARIOS_PER_CHUNK = 6;
-        const chunks: Array<Array<any>> = [];
-        for (let i = 0; i < scenarios.length; i += SCENARIOS_PER_CHUNK) {
-          chunks.push(scenarios.slice(i, i + SCENARIOS_PER_CHUNK));
-        }
-        const showLivingGP = scenarios.some((sc) => sc?.outputs?.living?.guarantee_period != null);
-        const showLifeGP = scenarios.some((sc) => sc?.outputs?.life?.guarantee_period != null);
-        const showLifeMA = scenarios.some((sc) => sc?.outputs?.life?.monthly_annuity != null);
-        return (
-          <div>
-            <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                Annuity Income Options ({scenarios.length})
-              </h3>
-            </div>
-            {chunks.map((chunk, chunkIdx) => {
-              const startIdx = chunkIdx * SCENARIOS_PER_CHUNK;
-              const endIdx = startIdx + chunk.length;
-              return (
-                <div
-                  key={chunkIdx}
-                  className={`scenario-chunk ${chunkIdx < chunks.length - 1 ? "mb-6" : ""}`}
-                >
-                  {chunks.length > 1 && (
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                      Annuity Options {startIdx + 1}–{endIdx} of {scenarios.length}
-                    </p>
-                  )}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left border-collapse" style={{ tableLayout: "fixed" }}>
-                      <thead>
-                        <tr>
-                          <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
-                            Option
-                          </th>
-                          {chunk.map((sc, idx) => (
-                            <th
-                              key={sc.id || idx}
-                              className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40"
-                            >
-                              {sc.label || `Scenario ${startIdx + idx + 1}`}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="text-gray-700 dark:text-gray-300">
-                        <tr className="border-b border-gray-100 dark:border-gray-800">
-                          <td className="px-4 py-2 font-medium">Drawdown</td>
-                          {chunk.map((sc, idx) => (
-                            <td key={idx} className="px-4 py-2 text-gray-800 dark:text-gray-100">
-                              {(sc?.inputs?.drawdown ?? "—")}%
-                            </td>
-                          ))}
-                        </tr>
-                        <tr className="border-b border-gray-100 dark:border-gray-800">
-                          <td className="px-4 py-2 font-medium">Frequency</td>
-                          {chunk.map((sc, idx) => (
-                            <td key={idx} className="px-4 py-2 text-gray-800 dark:text-gray-100">
-                              {sc?.inputs?.frequency ?? "—"}
-                            </td>
-                          ))}
-                        </tr>
-                        {showLivingGP && (
-                          <tr className="border-b border-gray-100 dark:border-gray-800">
-                            <td className="px-4 py-2 font-medium">Living Guarantee Period</td>
-                            {chunk.map((sc, idx) => (
-                              <td key={idx} className="px-4 py-2 text-gray-800 dark:text-gray-100">
-                                {sc?.outputs?.living?.guarantee_period != null
-                                  ? `${sc.outputs.living.guarantee_period} years`
-                                  : "—"}
-                              </td>
-                            ))}
-                          </tr>
-                        )}
-                        <tr className="border-b border-gray-100 dark:border-gray-800">
-                          <td className="px-4 py-2 font-medium">
-                            Living Annuity / {String(chunk[0]?.inputs?.frequency || "period").toLowerCase()}
-                          </td>
-                          {chunk.map((sc, idx) => (
-                            <td key={idx} className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100">
-                              {formatCurrency(sc?.outputs?.living?.guaranteed_annuity)}
-                            </td>
-                          ))}
-                        </tr>
-                        <tr className="border-b border-gray-100 dark:border-gray-800">
-                          <td className="px-4 py-2 font-medium">Funds Remaining</td>
-                          {chunk.map((sc, idx) => (
-                            <td key={idx} className="px-4 py-2 text-gray-800 dark:text-gray-100">
-                              {formatCurrency(sc?.outputs?.living?.funds_remaining)}
-                            </td>
-                          ))}
-                        </tr>
-                        {showLifeGP && (
-                          <tr className="border-b border-gray-100 dark:border-gray-800">
-                            <td className="px-4 py-2 font-medium">Life Guarantee Period</td>
-                            {chunk.map((sc, idx) => (
-                              <td key={idx} className="px-4 py-2 text-gray-800 dark:text-gray-100">
-                                {sc?.outputs?.life?.guarantee_period != null
-                                  ? `${sc.outputs.life.guarantee_period} years`
-                                  : "—"}
-                              </td>
-                            ))}
-                          </tr>
-                        )}
-                        {showLifeMA && (
-                          <tr className="border-b border-gray-100 dark:border-gray-800">
-                            <td className="px-4 py-2 font-medium">Monthly Life Annuity</td>
-                            {chunk.map((sc, idx) => (
-                              <td key={idx} className="px-4 py-2 text-gray-800 dark:text-gray-100">
-                                {sc?.outputs?.life?.monthly_annuity != null
-                                  ? formatCurrency(sc.outputs.life.monthly_annuity)
-                                  : "—"}
-                              </td>
-                            ))}
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              );
-            })}
+      {/* Additional Scenarios — one block per scenario */}
+      {hasScenarios && (
+        <div>
+          <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+              Annuity Income Options ({scenarios.length})
+            </h3>
           </div>
-        );
-      })()}
+          <div className="space-y-8">
+            {scenarios.map((sc: any, idx: number) => (
+              <ScenarioBlock
+                key={sc.id || idx}
+                scenario={sc}
+                index={idx}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
 
       {/* Life Annuity Section */}
@@ -300,54 +192,11 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
               Life Annuity — Guarantee Period Options
             </h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left border-collapse">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
-                    Guarantee Period
-                  </th>
-                  <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
-                    Monthly Life Annuity
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="text-gray-700 dark:text-gray-300">
-                {lifePeriods.map((row) => {
-                  const isSelected = row.guarantee_period === knownPeriod;
-                  return (
-                    <tr
-                      key={row.guarantee_period}
-                      className="border-b border-gray-100 dark:border-gray-800"
-                    >
-                      <td className="px-4 py-2 font-medium text-gray-800 dark:text-gray-100">
-                        {row.guarantee_period} years
-                        {isSelected && (
-                          <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
-                            (selected)
-                          </span>
-                        )}
-                      </td>
-                      <td
-                        className={
-                          "px-4 py-2 " +
-                          (isSelected
-                            ? "font-semibold text-gray-900 dark:text-white"
-                            : "text-gray-800 dark:text-gray-100")
-                        }
-                      >
-                        {row.monthly_annuity != null
-                          ? formatCurrency(row.monthly_annuity)
-                          : loadingPeriods
-                          ? "Calculating…"
-                          : "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <LifePeriodsTable
+            periods={lifePeriods}
+            selectedPeriod={knownPeriod}
+            loading={loadingPeriods}
+          />
           <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
             * Monthly life annuity values shown for the standard guarantee periods of 5, 10, 15 and 20 years.
           </p>
@@ -438,4 +287,181 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
     </div>
   );
 };
+
+// -------------------- Sub-components --------------------
+
+interface LifePeriodsTableProps {
+  periods: LifePeriodResult[];
+  selectedPeriod?: number | null;
+  loading?: boolean;
+}
+
+const LifePeriodsTable = ({ periods, selectedPeriod, loading }: LifePeriodsTableProps) => (
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm text-left border-collapse">
+      <thead>
+        <tr>
+          <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
+            Guarantee Period
+          </th>
+          <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
+            Monthly Life Annuity
+          </th>
+        </tr>
+      </thead>
+      <tbody className="text-gray-700 dark:text-gray-300">
+        {periods.map((row) => {
+          const isSelected = row.guarantee_period === selectedPeriod;
+          return (
+            <tr key={row.guarantee_period} className="border-b border-gray-100 dark:border-gray-800">
+              <td className="px-4 py-2 font-medium text-gray-800 dark:text-gray-100">
+                {row.guarantee_period} years
+                {isSelected && (
+                  <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
+                    (selected)
+                  </span>
+                )}
+              </td>
+              <td
+                className={
+                  "px-4 py-2 " +
+                  (isSelected
+                    ? "font-semibold text-gray-900 dark:text-white"
+                    : "text-gray-800 dark:text-gray-100")
+                }
+              >
+                {row.monthly_annuity != null
+                  ? formatCurrency(row.monthly_annuity)
+                  : loading
+                  ? "Calculating…"
+                  : "—"}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+);
+
+interface ScenarioBlockProps {
+  scenario: any;
+  index: number;
+}
+
+const ScenarioBlock = ({ scenario, index }: ScenarioBlockProps) => {
+  const inputs = scenario?.inputs || {};
+  const living = scenario?.outputs?.living || {};
+  const life = scenario?.outputs?.life || {};
+  const lifePeriod = life?.guarantee_period ?? null;
+  const lifeAnnuity = life?.monthly_annuity ?? null;
+
+  const preInjected: LifePeriodResult[] | undefined = life?.periods;
+  const initial: LifePeriodResult[] =
+    preInjected && Array.isArray(preInjected) && preInjected.length > 0
+      ? preInjected
+      : LIFE_ANNUITY_PERIODS.map((p) => ({
+          guarantee_period: p,
+          monthly_annuity: lifePeriod === p && typeof lifeAnnuity === "number" ? lifeAnnuity : null,
+        }));
+
+  const [periods, setPeriods] = useState<LifePeriodResult[]>(initial);
+  const [loading, setLoading] = useState<boolean>(
+    !preInjected && initial.some((p) => p.monthly_annuity == null)
+  );
+
+  const age = Number(inputs.guaranteedStartAge);
+  const amount = Number(inputs.lifePurchaseAmount ?? inputs.purchaseAmount);
+
+  useEffect(() => {
+    if (preInjected) return;
+    if (!initial.some((p) => p.monthly_annuity == null)) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const results = await fetchLifeAnnuityPeriods(age, amount, {
+        guarantee_period: lifePeriod,
+        monthly_annuity: lifeAnnuity,
+      });
+      if (!cancelled) {
+        setPeriods(results);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [age, amount, lifePeriod, lifeAnnuity]);
+
+  const frequency = inputs.frequency || "period";
+  const livingLabel = `Living Annuity / ${String(frequency).toLowerCase()}`;
+
+  return (
+    <div className="scenario-block border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+      <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
+        Option {index + 1}
+        {scenario?.label ? ` — ${scenario.label}` : ""}
+      </h4>
+
+      {/* Living Annuity summary */}
+      <div className="mb-5">
+        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+          Living Annuity
+        </h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1">
+          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Drawdown:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">
+              {inputs.drawdown ?? "—"}%
+            </span>
+          </div>
+          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Frequency:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">
+              {inputs.frequency ?? "—"}
+            </span>
+          </div>
+          {living?.guarantee_period != null && (
+            <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+                Living Guarantee Period:
+              </span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">
+                {living.guarantee_period} years
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+              {livingLabel}:
+            </span>
+            <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
+              {formatCurrency(living?.guaranteed_annuity)}
+            </span>
+          </div>
+          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+              Funds Remaining:
+            </span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">
+              {formatCurrency(living?.funds_remaining)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Life annuity guarantee period options */}
+      <div>
+        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+          Life Annuity — Guarantee Period Options
+        </h5>
+        <LifePeriodsTable periods={periods} selectedPeriod={lifePeriod} loading={loading} />
+      </div>
+    </div>
+  );
+};
+
 

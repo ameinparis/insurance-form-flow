@@ -1,43 +1,55 @@
-# Fit many annuity scenarios on-screen and in the PDF
+## Goal
 
-## Problem
+Restructure the multi-scenario annuity quote output so each Living Annuity calculation is shown as its own block, with a Life Annuity table for the standard 5 / 10 / 15 / 20-year guarantee periods underneath it — matching the client's description and the first/last uploaded sketches.
 
-The annuity quote output renders one column per scenario. With 12 scenarios:
-- On screen, the table overflows horizontally and requires scrolling right.
-- In the exported PDF, columns are cut off at the page edge because there's only one wide table with no break.
+## Current behaviour
 
-## Approach
+- **Single scenario**: already shows Living Annuity details, then a "Life Annuity — Guarantee Period Options" table with 5/10/15/20-year rows. This is the shape the client wants.
+- **Multi-scenario ("Annuity Income Options")**: renders a wide side-by-side table where each column is one scenario and the Life Annuity is one row with a single guarantee period. This is the format to replace.
 
-Keep the current column-per-scenario layout (users are used to it), but **chunk scenarios into groups of N per table** (default **6**). Render one table per chunk, stacked vertically. In the PDF, add a page break between chunks so each table fits within one A4/Letter page.
+## New layout (multi-scenario mode)
+
+For each saved scenario, render a self-contained vertical block:
+
+```text
+─────────────────────────────────────────────
+Option 1 — 6% Drawdown · 30-Year Guarantee · Monthly
+
+  Living Annuity
+    Drawdown                6%
+    Frequency               Monthly
+    Living Guarantee        30 years
+    Living Annuity/month    BWP 4,000.00
+    Funds Remaining         BWP 5,811,118.20
+
+  Life Annuity — Guarantee Period Options
+    5 years    BWP …
+    10 years   BWP …
+    15 years   BWP …   (selected)
+    20 years   BWP …
+─────────────────────────────────────────────
+Option 2 — …
+```
+
+Blocks stack vertically, no horizontal scrolling, natural page flow in the PDF.
 
 ## Changes
 
-### 1. `frontend/src/components/quote-displays/AnnuityDisplay.tsx`
-- Compute `chunks = chunk(scenarios, 6)`.
-- Replace the single scenarios table with a `chunks.map(...)` that renders one `<table>` per chunk (same headers/rows as today, but only the scenarios in that chunk).
-- Wrap each chunk in a container with `style={{ pageBreakInside: "avoid", breakInside: "avoid" }}` and add `style={{ pageBreakBefore: "always", breakBefore: "page" }}` on every chunk after the first — this only affects PDF/print, not screen.
-- Add a small heading above each chunk when there is more than one: "Annuity Income Options (Scenarios 1–6 of 12)", etc.
-- Remove the horizontal-scroll wrapper (or keep it as a safety net for very narrow screens) since each chunk of 6 fits standard widths.
+### `frontend/src/components/quote-displays/AnnuityDisplay.tsx`
+- Extract the existing single-scenario Life table into an internal `LifePeriodsTable` component so it can be reused per scenario.
+- Replace the chunked wide table in the `hasScenarios` branch with `scenarios.map(...)` rendering one block per scenario:
+  1. Small heading: `Option N — {scenario.label}`.
+  2. Compact 2-column "Living Annuity" summary (Drawdown, Frequency, Living Guarantee Period, Living Annuity per period, Funds Remaining) reusing the current detail-row styling.
+  3. `LifePeriodsTable` for 5/10/15/20 years — marking the scenario's own `outputs.life.guarantee_period` as `(selected)` with bold value.
+- Fetch life periods per scenario via `fetchLifeAnnuityPeriods(scenario.inputs.guaranteedStartAge, scenario.inputs.lifePurchaseAmount ?? scenario.inputs.purchaseAmount, { guarantee_period, monthly_annuity })`, seeded with the scenario's known value so only the missing 3 periods hit the API. Prefer `scenario.outputs.life.periods` when pre-injected.
+- Remove the chunking logic (`SCENARIOS_PER_CHUNK`, `scenario-chunk` wrappers).
 
-### 2. `frontend/src/lib/pdfExport.ts`
-- Add print CSS to `PDF_STYLES` so the page-break hints above are honored by the html-to-pdf renderer:
-  ```css
-  @media print {
-    .scenario-chunk { page-break-inside: avoid; break-inside: avoid; }
-    .scenario-chunk + .scenario-chunk { page-break-before: always; break-before: page; }
-    table { page-break-inside: avoid; }
-  }
-  ```
-- No changes to the backend PDF endpoint; the existing HTML-to-PDF pipeline respects CSS page breaks.
-
-### 3. Chunk size
-- Default 6 per table (fits portrait A4 comfortably with the current column widths).
-- Expose as a single constant `SCENARIOS_PER_CHUNK = 6` at the top of `AnnuityDisplay.tsx` for easy tuning.
+### `frontend/src/lib/pdfExport.ts`
+- Drop the now-unused `.scenario-chunk` CSS rules. Keep `thead { display: table-header-group }` and `tr { break-inside: avoid }` so per-scenario tables paginate cleanly without forced breaks.
+- If existing code pre-fetches `outputs.life.periods` for PDF export in the single-scenario case, extend it to populate the same field on each scenario before rendering; otherwise the runtime fetch in `AnnuityDisplay` covers the on-screen view and the PDF renderer will pick up whatever is populated at render time.
 
 ## Out of scope
-- No changes to the calculator forms, backend, or scenario data model.
-- No transpose/redesign — this is a layout-only fix so client-facing output stays visually consistent with quotes they've already seen.
 
-## Result
-- Screen: 12 scenarios render as two stacked tables of 6, no horizontal scroll.
-- PDF: table 1 on page N, table 2 on page N+1, nothing clipped, works for any scenario count.
+- No backend/calculation changes — reuses `fetchLifeAnnuityPeriods` and the existing `/api/quotes/calculate-annuity` endpoint.
+- No changes to the input form or scenario-saving flow.
+- Single-scenario view unchanged.
