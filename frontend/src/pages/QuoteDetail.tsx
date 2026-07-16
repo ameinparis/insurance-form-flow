@@ -143,9 +143,9 @@ const QuoteDetail = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="-m-6 min-h-screen bg-card">
       {/* Sticky Action Bar */}
-      <div className="sticky -top-6 z-30 -mx-6 -mt-6 bg-card px-6 pt-6">
+      <div className="sticky top-0 z-30 bg-card">
         <div className="max-w-5xl mx-auto flex justify-between items-center px-6 py-4">
           <Button
             variant="outline"
