@@ -291,11 +291,11 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
 
 interface LifePeriodsTableProps {
   periods: LifePeriodResult[];
-  selectedPeriod?: number | null;
+  selectedPeriods?: number[];
   loading?: boolean;
 }
 
-const LifePeriodsTable = ({ periods, selectedPeriod, loading }: LifePeriodsTableProps) => (
+const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriodsTableProps) => (
   <div className="overflow-x-auto">
     <table className="w-full text-sm text-left border-collapse">
       <thead>
@@ -310,7 +310,7 @@ const LifePeriodsTable = ({ periods, selectedPeriod, loading }: LifePeriodsTable
       </thead>
       <tbody className="text-gray-700 dark:text-gray-300">
         {periods.map((row) => {
-          const isSelected = row.guarantee_period === selectedPeriod;
+          const isSelected = selectedPeriods.includes(row.guarantee_period);
           return (
             <tr key={row.guarantee_period} className="border-b border-gray-100 dark:border-gray-800">
               <td className="px-4 py-2 font-medium text-gray-800 dark:text-gray-100">
@@ -343,25 +343,85 @@ const LifePeriodsTable = ({ periods, selectedPeriod, loading }: LifePeriodsTable
   </div>
 );
 
-interface ScenarioBlockProps {
-  scenario: any;
+// -------------------- Grouping helpers --------------------
+
+const roundish = (v: any) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : v ?? null;
+};
+
+const livingSignature = (sc: any) => {
+  const i = sc?.inputs || {};
+  const l = sc?.outputs?.living || {};
+  return JSON.stringify({
+    drawdown: roundish(i.drawdown),
+    frequency: (i.frequency ?? "").toString().toLowerCase(),
+    age: roundish(i.guaranteedStartAge),
+    purchase: roundish(i.purchaseAmount),
+    lifePurchase: roundish(i.lifePurchaseAmount ?? i.purchaseAmount),
+    livGuarantee: roundish(l.guarantee_period),
+    livAnnuity: roundish(l.guaranteed_annuity),
+    livFunds: roundish(l.funds_remaining),
+  });
+};
+
+interface ScenarioGroup {
+  signature: string;
+  scenarios: any[];
+}
+
+const groupScenariosByLiving = (scenarios: any[]): ScenarioGroup[] => {
+  const map = new Map<string, ScenarioGroup>();
+  for (const sc of scenarios) {
+    const sig = livingSignature(sc);
+    const existing = map.get(sig);
+    if (existing) existing.scenarios.push(sc);
+    else map.set(sig, { signature: sig, scenarios: [sc] });
+  }
+  return Array.from(map.values());
+};
+
+// -------------------- Group block --------------------
+
+interface ScenarioGroupBlockProps {
+  group: ScenarioGroup;
   index: number;
 }
 
-const ScenarioBlock = ({ scenario, index }: ScenarioBlockProps) => {
-  const inputs = scenario?.inputs || {};
-  const living = scenario?.outputs?.living || {};
-  const life = scenario?.outputs?.life || {};
-  const lifePeriod = life?.guarantee_period ?? null;
-  const lifeAnnuity = life?.monthly_annuity ?? null;
+const ScenarioGroupBlock = ({ group, index }: ScenarioGroupBlockProps) => {
+  // Representative scenario for shared living details
+  const rep = group.scenarios[0];
+  const inputs = rep?.inputs || {};
+  const living = rep?.outputs?.living || {};
 
-  const preInjected: LifePeriodResult[] | undefined = life?.periods;
+  // Collect selected life guarantee periods across all scenarios in the group
+  const selectedPeriods = Array.from(
+    new Set(
+      group.scenarios
+        .map((s) => s?.outputs?.life?.guarantee_period)
+        .filter((p): p is number => typeof p === "number")
+    )
+  ).sort((a, b) => a - b);
+
+  // Merge pre-injected periods from any scenario that has them
+  const preInjected: LifePeriodResult[] | undefined = group.scenarios
+    .map((s) => s?.outputs?.life?.periods)
+    .find((p) => Array.isArray(p) && p.length > 0);
+
+  // Seed table with any known (period, monthly_annuity) pairs from group members
+  const knownByPeriod = new Map<number, number>();
+  for (const s of group.scenarios) {
+    const gp = s?.outputs?.life?.guarantee_period;
+    const ma = s?.outputs?.life?.monthly_annuity;
+    if (typeof gp === "number" && typeof ma === "number") knownByPeriod.set(gp, ma);
+  }
+
   const initial: LifePeriodResult[] =
-    preInjected && Array.isArray(preInjected) && preInjected.length > 0
+    preInjected && preInjected.length > 0
       ? preInjected
       : LIFE_ANNUITY_PERIODS.map((p) => ({
           guarantee_period: p,
-          monthly_annuity: lifePeriod === p && typeof lifeAnnuity === "number" ? lifeAnnuity : null,
+          monthly_annuity: knownByPeriod.has(p) ? knownByPeriod.get(p)! : null,
         }));
 
   const [periods, setPeriods] = useState<LifePeriodResult[]>(initial);
@@ -380,12 +440,21 @@ const ScenarioBlock = ({ scenario, index }: ScenarioBlockProps) => {
     }
     let cancelled = false;
     (async () => {
+      // Fetch any missing periods; use first known as the "known" hint
+      const firstKnownPeriod = selectedPeriods[0];
+      const firstKnownAnnuity = firstKnownPeriod != null ? knownByPeriod.get(firstKnownPeriod) : undefined;
       const results = await fetchLifeAnnuityPeriods(age, amount, {
-        guarantee_period: lifePeriod,
-        monthly_annuity: lifeAnnuity,
+        guarantee_period: firstKnownPeriod ?? null,
+        monthly_annuity: firstKnownAnnuity ?? null,
       });
+      // Overlay any known values we already have
+      const merged = results.map((r) =>
+        knownByPeriod.has(r.guarantee_period)
+          ? { ...r, monthly_annuity: knownByPeriod.get(r.guarantee_period)! }
+          : r
+      );
       if (!cancelled) {
-        setPeriods(results);
+        setPeriods(merged);
         setLoading(false);
       }
     })();
@@ -393,7 +462,7 @@ const ScenarioBlock = ({ scenario, index }: ScenarioBlockProps) => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [age, amount, lifePeriod, lifeAnnuity]);
+  }, [age, amount]);
 
   const frequency = inputs.frequency || "period";
   const livingLabel = `Living Annuity / ${String(frequency).toLowerCase()}`;
@@ -402,10 +471,10 @@ const ScenarioBlock = ({ scenario, index }: ScenarioBlockProps) => {
     <div className="scenario-block border border-gray-200 dark:border-gray-800 rounded-lg p-5">
       <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
         Option {index + 1}
-        {scenario?.label ? ` — ${scenario.label}` : ""}
+        {inputs.drawdown != null ? ` — ${inputs.drawdown}% Drawdown` : ""}
       </h4>
 
-      {/* Living Annuity summary */}
+      {/* Living Annuity summary — shared across grouped scenarios */}
       <div className="mb-5">
         <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
           Living Annuity
@@ -452,12 +521,12 @@ const ScenarioBlock = ({ scenario, index }: ScenarioBlockProps) => {
         </div>
       </div>
 
-      {/* Life annuity guarantee period options */}
+      {/* Life annuity guarantee period comparison */}
       <div>
         <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
           Life Annuity — Guarantee Period Options
         </h5>
-        <LifePeriodsTable periods={periods} selectedPeriod={lifePeriod} loading={loading} />
+        <LifePeriodsTable periods={periods} selectedPeriods={selectedPeriods} loading={loading} />
       </div>
     </div>
   );
