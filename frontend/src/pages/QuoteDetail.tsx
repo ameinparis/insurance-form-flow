@@ -79,13 +79,17 @@ const QuoteDetail = () => {
   };
 
   const handleDownloadPdf = async () => {
-    if (!quote) return;
+    if (!quote || downloading) return;
+    setDownloading(true);
     try {
       const isLegacy = searchParams.get("legacy") === "true";
       await exportQuotePdf(id!, quote.quoteId, isLegacy);
+      toast({ title: "Downloaded", description: "Your quote PDF has been downloaded." });
     } catch (err) {
       console.error("Export PDF failed:", err);
-      toast({ title: "Error", description: "Failed to export styled PDF." });
+      toast({ title: "Error", description: "Failed to export PDF. Please try again.", variant: "destructive" });
+    } finally {
+      setDownloading(false);
     }
   };
   if (loading) {
