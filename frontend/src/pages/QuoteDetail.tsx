@@ -85,9 +85,10 @@ const QuoteDetail = () => {
       const isLegacy = searchParams.get("legacy") === "true";
       await exportQuotePdf(id!, quote.quoteId, isLegacy);
       toast({ title: "Downloaded", description: "Your quote PDF has been downloaded." });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Export PDF failed:", err);
-      toast({ title: "Error", description: "Failed to export PDF. Please try again.", variant: "destructive" });
+      const msg = err?.message || "Failed to export PDF. Please try again.";
+      toast({ title: "Download failed", description: msg, variant: "destructive" });
     } finally {
       setDownloading(false);
     }
@@ -141,9 +142,9 @@ const QuoteDetail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-slate-950 -m-6 p-0">
+    <div className="min-h-screen -m-6 p-0 bg-gradient-to-b from-gray-100 via-gray-200/70 to-gray-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       {/* Sticky Action Bar */}
-      <div className="sticky top-0 z-30 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-gray-200 dark:border-slate-800">
+      <div className="sticky top-0 z-30 backdrop-blur-md bg-white/70 dark:bg-slate-900/70 border-b border-gray-200/70 dark:border-slate-800/70">
         <div className="max-w-5xl mx-auto flex justify-between items-center px-6 py-4">
           <Button variant="outline" onClick={() => navigate(-1)} className="rounded-full">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -165,9 +166,12 @@ const QuoteDetail = () => {
         </div>
       </div>
 
-      {/* Paper Document */}
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        <div className="bg-white dark:bg-slate-900 shadow-xl rounded-lg overflow-hidden ring-1 ring-gray-200 dark:ring-slate-800" id="quote-pdf">
+      {/* Paper Document floating on the section background */}
+      <div className="max-w-5xl mx-auto px-6 py-12">
+        <div
+          className="bg-white dark:bg-slate-900 shadow-2xl rounded-xl overflow-hidden ring-1 ring-gray-200/80 dark:ring-slate-800"
+          id="quote-pdf"
+        >
           <QuoteHeader
             quoteId={quote.quoteId}
             clientName={clientInfo.fullName}

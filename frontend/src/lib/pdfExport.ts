@@ -267,14 +267,32 @@ export async function exportQuotePdf(
   <body>${contentHtml}</body>
 </html>`;
 
-  // 6. Send to backend
-  const res = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ html }),
-  });
+  // 6. Send to backend with a hard timeout so the UI doesn't spin forever
+  const controller = new AbortController();
+  const timeoutMs = 60_000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!res.ok) throw new Error(`PDF generation failed: ${res.status}`);
+  let res: Response;
+  try {
+    res = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html }),
+      signal: controller.signal,
+    });
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err?.name === "AbortError") {
+      throw new Error(`PDF generation timed out after ${timeoutMs / 1000}s. The server may be down or slow — please try again.`);
+    }
+    throw new Error(`Could not reach the PDF service: ${err?.message || err}`);
+  }
+  clearTimeout(timeoutId);
+
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => "");
+    throw new Error(`PDF generation failed (${res.status}). ${bodyText.slice(0, 200)}`);
+  }
 
   const blob = await res.blob();
   const objUrl = URL.createObjectURL(blob);
