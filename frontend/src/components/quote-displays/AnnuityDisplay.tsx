@@ -183,8 +183,8 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
       })()}
 
 
-      {/* Life Annuity Section */}
-      {!hasScenarios && (
+      {/* Life Annuity Section — only if a life guarantee period was selected */}
+      {!hasScenarios && typeof knownPeriod === "number" && (
         <div>
           <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
@@ -192,13 +192,10 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
             </h3>
           </div>
           <LifePeriodsTable
-            periods={lifePeriods}
-            selectedPeriods={typeof knownPeriod === "number" ? [knownPeriod] : []}
+            periods={lifePeriods.filter((p) => p.guarantee_period === knownPeriod)}
+            selectedPeriods={[knownPeriod]}
             loading={loadingPeriods}
           />
-          <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
-            * Monthly life annuity values shown for the standard guarantee periods of 5, 10, 15 and 20 years.
-          </p>
         </div>
       )}
 
