@@ -163,25 +163,24 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
         )}
       </div>
 
-      {/* Additional Scenarios — one block per scenario */}
-      {hasScenarios && (
-        <div>
-          <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-              Annuity Income Options ({scenarios.length})
-            </h3>
+      {/* Additional Scenarios — grouped by identical Living Annuity inputs/outputs */}
+      {hasScenarios && (() => {
+        const groups = groupScenariosByLiving(scenarios);
+        return (
+          <div>
+            <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                Annuity Income Options ({groups.length})
+              </h3>
+            </div>
+            <div className="space-y-8">
+              {groups.map((group, idx) => (
+                <ScenarioGroupBlock key={idx} group={group} index={idx} />
+              ))}
+            </div>
           </div>
-          <div className="space-y-8">
-            {scenarios.map((sc: any, idx: number) => (
-              <ScenarioBlock
-                key={sc.id || idx}
-                scenario={sc}
-                index={idx}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
 
       {/* Life Annuity Section */}
