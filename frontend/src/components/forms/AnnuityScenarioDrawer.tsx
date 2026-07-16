@@ -164,14 +164,7 @@ const AnnuityScenarioDrawer = ({
                           </div>
                           <div>Funds remaining: {fmt(s.outputs.living?.funds_remaining)}</div>
                           {s.outputs.life && (
-                            <div className="pt-1">
-                              {typeof s.outputs.life.guarantee_period === "number" && (
-                                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                                  {s.outputs.life.guarantee_period}-Year Guarantee
-                                </div>
-                              )}
-                              <div>Life annuity: {fmt(s.outputs.life.monthly_annuity)} / month</div>
-                            </div>
+                            <div>Life annuity: {fmt(s.outputs.life.monthly_annuity)} / month</div>
                           )}
                         </div>
                       </div>

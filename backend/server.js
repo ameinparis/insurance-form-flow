@@ -32,9 +32,8 @@ app.use(cors({
   ].filter(Boolean),
   credentials: true,
 }));
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true }));
 
 /* -------------------------- Database connect ------------------------- */
 const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;

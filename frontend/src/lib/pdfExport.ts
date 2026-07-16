@@ -267,27 +267,26 @@ export async function exportQuotePdf(
   <body>${contentHtml}</body>
 </html>`;
 
-  // 6. Send to html-to-pdf endpoint
-  const response = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
+  // 6. Send to backend
+  const res = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ html }),
   });
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(`PDF generation failed: ${response.status} ${text}`);
-  }
+  if (!res.ok) throw new Error(`PDF generation failed: ${res.status}`);
 
-  // 7. Download the blob
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
+  const blob = await res.blob();
+  const objUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
+  a.href = objUrl;
   a.download = `quote-${quoteId}.pdf`;
+  a.target = "_blank";
+  a.style.display = "none";
   document.body.appendChild(a);
   a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => {
+    URL.revokeObjectURL(objUrl);
+    a.remove();
+  }, 3000);
 }
-
