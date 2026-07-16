@@ -885,36 +885,6 @@ Insurance will not accept liability for any losses incurred as a result of using
             </Card>
           </div>
 
-          {/* Terms and Conditions */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Terms and Conditions</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm space-y-3">
-              <p>
-                This quotation outlines the guaranteed monthly income you could receive from a conventional life annuity,
-                as well as the projected monthly income from a living annuity based on various drawdown rates. The income
-                from the life annuity is affected by the prevailing interest rates at the time of the quote. Please note
-                that Exclusive Life reserves the right to adjust any annuity income before the first payment.
-              </p>
-              <p>
-                The income you receive during the living annuity phase is guaranteed until the transition date. However,
-                you can change your annual drawdown rate on each policy anniversary, subject to policy limits. The income
-                you earn after the transition date will be recalculated as of the transition date and will depend on your
-                chosen drawdown rate, future investment returns, and any fees applicable to your fund.
-              </p>
-              <p>
-                All annuity income is subject to taxation under Botswana income tax laws. The applicable tax rate is
-                determined by your total monthly income, according to the PAYE tax tables issued by the Commissioner of
-                Taxes. If there are any changes to the legislation, Exclusive Life Insurance will adjust the tax deducted
-                accordingly.
-              </p>
-              <p className="font-medium">
-                This quotation is confidential, and any unauthorized alterations will render it invalid. Exclusive Life
-                Insurance will not accept liability for any losses incurred as a result of using an altered quotation.
-              </p>
-            </CardContent>
-          </Card>
 
           {/* Dialog Actions */}
           <div className="flex justify-between mt-6">
