@@ -9,26 +9,8 @@ import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLif
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 
 const PDF_STYLES = `
-  @font-face {
-    font-family: 'Avenir';
-    src: url('__BASE_URL__/Assets/Fonts/Avenir Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-  }
-  @font-face {
-    font-family: 'Avenir';
-    src: url('__BASE_URL__/Assets/Fonts/Avenir Heavy.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-  }
-  @font-face {
-    font-family: 'Avenir';
-    src: url('__BASE_URL__/Assets/Fonts/Avenir Light.ttf') format('truetype');
-    font-weight: 300;
-    font-style: normal;
-  }
   body {
-    font-family: 'Avenir', sans-serif;
+    font-family: Avenir, Arial, sans-serif;
     background: white;
     color: #0f172a;
     margin: 0;
@@ -101,6 +83,22 @@ const PDF_STYLES = `
   .gap-y-1 { row-gap: 0.25rem; }
 
 `;
+
+async function assetToDataUrl(path: string): Promise<string | null> {
+  try {
+    const response = await fetch(path);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(typeof reader.result === "string" ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
 
 function getDisplayComponent(productType: string, quote: QuoteData) {
   switch (productType) {
@@ -194,13 +192,17 @@ export async function exportQuotePdf(
       </div>`
     : "";
 
-  // 5. Fix relative image URLs
-  const contentHtml = (headerHtml + processedDisplayHtml + termsHtml).replace(
+  // 5. Fix relative image URLs. Embed the logo so the PDF server never waits on localhost/preview assets.
+  const logoDataUrl = await assetToDataUrl("/exclusive.png");
+  let contentHtml = (headerHtml + processedDisplayHtml + termsHtml).replace(
     /src="\/([^"]+)"/g,
     `src="${baseUrl}/$1"`
   );
+  if (logoDataUrl) {
+    contentHtml = contentHtml.replace(/src="[^"]*\/exclusive\.png"/g, `src="${logoDataUrl}"`);
+  }
 
-  const styles = PDF_STYLES.replace(/__BASE_URL__/g, baseUrl);
+  const styles = PDF_STYLES;
 
   const html = `<!DOCTYPE html>
 <html>
