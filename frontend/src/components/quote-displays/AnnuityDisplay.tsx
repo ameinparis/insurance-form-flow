@@ -409,11 +409,11 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
   ).sort((a, b) => a - b);
 
   // Merge pre-injected periods from any scenario that has them
-  const preInjected: LifePeriodResult[] | undefined = group.scenarios
+  const preInjectedRaw: LifePeriodResult[] | undefined = group.scenarios
     .map((s) => s?.outputs?.life?.periods)
     .find((p) => Array.isArray(p) && p.length > 0);
 
-  // Seed table with any known (period, monthly_annuity) pairs from group members
+  // Seed known (period, monthly_annuity) pairs from group members
   const knownByPeriod = new Map<number, number>();
   for (const s of group.scenarios) {
     const gp = s?.outputs?.life?.guarantee_period;
@@ -421,45 +421,52 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
     if (typeof gp === "number" && typeof ma === "number") knownByPeriod.set(gp, ma);
   }
 
+  // Only show columns for periods actually selected within this group
+  const hasLife = selectedPeriods.length > 0;
+
+  const preInjected = preInjectedRaw
+    ? preInjectedRaw.filter((p) => selectedPeriods.includes(p.guarantee_period))
+    : undefined;
+
   const initial: LifePeriodResult[] =
     preInjected && preInjected.length > 0
       ? preInjected
-      : LIFE_ANNUITY_PERIODS.map((p) => ({
+      : selectedPeriods.map((p) => ({
           guarantee_period: p,
           monthly_annuity: knownByPeriod.has(p) ? knownByPeriod.get(p)! : null,
         }));
 
   const [periods, setPeriods] = useState<LifePeriodResult[]>(initial);
   const [loading, setLoading] = useState<boolean>(
-    !preInjected && initial.some((p) => p.monthly_annuity == null)
+    hasLife && !preInjected && initial.some((p) => p.monthly_annuity == null)
   );
 
   const age = Number(inputs.guaranteedStartAge);
   const amount = Number(inputs.lifePurchaseAmount ?? inputs.purchaseAmount);
 
   useEffect(() => {
-    if (preInjected) return;
+    if (!hasLife || preInjected) return;
     if (!initial.some((p) => p.monthly_annuity == null)) {
       setLoading(false);
       return;
     }
     let cancelled = false;
     (async () => {
-      // Fetch any missing periods; use first known as the "known" hint
       const firstKnownPeriod = selectedPeriods[0];
       const firstKnownAnnuity = firstKnownPeriod != null ? knownByPeriod.get(firstKnownPeriod) : undefined;
       const results = await fetchLifeAnnuityPeriods(age, amount, {
         guarantee_period: firstKnownPeriod ?? null,
         monthly_annuity: firstKnownAnnuity ?? null,
       });
-      // Overlay any known values we already have
-      const merged = results.map((r) =>
-        knownByPeriod.has(r.guarantee_period)
-          ? { ...r, monthly_annuity: knownByPeriod.get(r.guarantee_period)! }
-          : r
-      );
+      const filtered = results
+        .filter((r) => selectedPeriods.includes(r.guarantee_period))
+        .map((r) =>
+          knownByPeriod.has(r.guarantee_period)
+            ? { ...r, monthly_annuity: knownByPeriod.get(r.guarantee_period)! }
+            : r
+        );
       if (!cancelled) {
-        setPeriods(merged);
+        setPeriods(filtered);
         setLoading(false);
       }
     })();
