@@ -89,7 +89,7 @@ async function assetToDataUrl(path: string): Promise<string | null> {
     const response = await fetch(path);
     if (!response.ok) return null;
     const blob = await response.blob();
-    return await new Promise((resolve) => {
+    return await new Promise<string | null>((resolve) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(typeof reader.result === "string" ? reader.result : null);
       reader.onerror = () => resolve(null);
