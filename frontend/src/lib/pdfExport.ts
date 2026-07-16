@@ -7,29 +7,10 @@ import { FuneralDisplay } from "@/components/quote-displays/FuneralDisplay";
 import { LifeDisplay } from "@/components/quote-displays/LifeDisplay";
 import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLifeDisplay";
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
-import { fetchLifeAnnuityPeriods } from "@/lib/lifeAnnuityPeriods";
 
 const PDF_STYLES = `
-  @font-face {
-    font-family: 'Avenir';
-    src: url('__BASE_URL__/Assets/Fonts/Avenir Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-  }
-  @font-face {
-    font-family: 'Avenir';
-    src: url('__BASE_URL__/Assets/Fonts/Avenir Heavy.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
-  }
-  @font-face {
-    font-family: 'Avenir';
-    src: url('__BASE_URL__/Assets/Fonts/Avenir Light.ttf') format('truetype');
-    font-weight: 300;
-    font-style: normal;
-  }
   body {
-    font-family: 'Avenir', sans-serif;
+    font-family: Avenir, Arial, sans-serif;
     background: white;
     color: #0f172a;
     margin: 0;
@@ -103,6 +84,22 @@ const PDF_STYLES = `
 
 `;
 
+async function assetToDataUrl(path: string): Promise<string | null> {
+  try {
+    const response = await fetch(path);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return await new Promise<string | null>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(typeof reader.result === "string" ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 function getDisplayComponent(productType: string, quote: QuoteData) {
   switch (productType) {
     case "Exclusive Annuity":
@@ -127,72 +124,18 @@ function getDisplayComponent(productType: string, quote: QuoteData) {
 export async function exportQuotePdf(
   quoteMongoId: string,
   quoteId: string,
-  isLegacy: boolean
+  isLegacy: boolean,
+  quoteOverride?: QuoteData
 ): Promise<void> {
   const baseUrl = window.location.origin;
   const apiBase = import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw";
 
-  // 1. Fetch full quote data
-  const quote = await fetchQuoteDetails(quoteMongoId, isLegacy);
+  // 1. Use the quote already loaded on the page when available, otherwise fetch it.
+  const quote = quoteOverride ?? (await fetchQuoteDetails(quoteMongoId, isLegacy));
 
   // 2. Determine product type
   const isLegacyAnnuity = !quote.productType && !!quote.guaranteedAnnuity;
   const productType = quote.productType || quote.type || (isLegacyAnnuity ? "annuity" : "Insurance Quote");
-
-  // 2b. For annuity quotes without pre-computed guarantee-period options,
-  // fetch monthly life annuity values for 5/10/15/20 years so the PDF shows
-  // all options synchronously (renderToStaticMarkup can't await effects).
-  const isAnnuity =
-    productType === "Exclusive Annuity" || productType === "annuity";
-  const hasScenarios =
-    Array.isArray((quote as any)?.outputs?.scenarios) &&
-    (quote as any).outputs.scenarios.length > 1;
-  if (isAnnuity && !hasScenarios) {
-    const inputs = (quote as any).inputs || {};
-    const outputsLife = ((quote as any).outputs && (quote as any).outputs.life) || {};
-    const age = Number(inputs.guaranteedStartAge ?? (quote as any).guaranteedStartAge);
-    const amount = Number(
-      inputs.lifePurchaseAmount ??
-        inputs.purchaseAmount ??
-        (quote as any).lifePurchaseAmount ??
-        (quote as any).singlePurchasePremium
-    );
-    try {
-      const periods = await fetchLifeAnnuityPeriods(age, amount, {
-        guarantee_period: outputsLife.guarantee_period,
-        monthly_annuity: outputsLife.monthly_annuity,
-      });
-      (quote as any).outputs = {
-        ...((quote as any).outputs || {}),
-        life: { ...outputsLife, periods },
-      };
-    } catch (err) {
-      console.warn("Failed to pre-fetch life annuity periods for PDF:", err);
-    }
-  } else if (isAnnuity && hasScenarios) {
-    const scenarios = (quote as any).outputs.scenarios as any[];
-    try {
-      await Promise.all(
-        scenarios.map(async (sc) => {
-          const scInputs = sc?.inputs || {};
-          const scLife = sc?.outputs?.life || {};
-          if (Array.isArray(scLife.periods) && scLife.periods.length > 0) return;
-          const scAge = Number(scInputs.guaranteedStartAge);
-          const scAmount = Number(scInputs.lifePurchaseAmount ?? scInputs.purchaseAmount);
-          const periods = await fetchLifeAnnuityPeriods(scAge, scAmount, {
-            guarantee_period: scLife.guarantee_period,
-            monthly_annuity: scLife.monthly_annuity,
-          });
-          sc.outputs = {
-            ...(sc.outputs || {}),
-            life: { ...scLife, periods },
-          };
-        })
-      );
-    } catch (err) {
-      console.warn("Failed to pre-fetch scenario life annuity periods:", err);
-    }
-  }
 
   // 3. Get client info for header
   const clientInfo = getClientInfo(quote);
@@ -249,13 +192,17 @@ export async function exportQuotePdf(
       </div>`
     : "";
 
-  // 5. Fix relative image URLs
-  const contentHtml = (headerHtml + processedDisplayHtml + termsHtml).replace(
+  // 5. Fix relative image URLs. Embed the logo so the PDF server never waits on localhost/preview assets.
+  const logoDataUrl = await assetToDataUrl("/exclusive.png");
+  let contentHtml = (headerHtml + processedDisplayHtml + termsHtml).replace(
     /src="\/([^"]+)"/g,
     `src="${baseUrl}/$1"`
   );
+  if (logoDataUrl) {
+    contentHtml = contentHtml.replace(/src="[^"]*\/exclusive\.png"/g, `src="${logoDataUrl}"`);
+  }
 
-  const styles = PDF_STYLES.replace(/__BASE_URL__/g, baseUrl);
+  const styles = PDF_STYLES;
 
   const html = `<!DOCTYPE html>
 <html>
