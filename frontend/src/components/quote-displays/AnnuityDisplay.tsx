@@ -390,9 +390,10 @@ const groupScenariosByLiving = (scenarios: any[]): ScenarioGroup[] => {
 interface ScenarioGroupBlockProps {
   group: ScenarioGroup;
   index: number;
+  showOptionLabel?: boolean;
 }
 
-const ScenarioGroupBlock = ({ group, index }: ScenarioGroupBlockProps) => {
+const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGroupBlockProps) => {
   // Representative scenario for shared living details
   const rep = group.scenarios[0];
   const inputs = rep?.inputs || {};
