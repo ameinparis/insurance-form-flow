@@ -187,16 +187,20 @@ export async function exportQuotePdf(
     contentHtml = contentHtml.replace(/src="[^"]*\/exclusive\.png"/g, `src="${logoDataUrl}"`);
   }
 
-  const styles = PDF_STYLES;
+  const appStyles = await collectAppStyles();
 
   const html = `<!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>Quote PDF</title>
-    <style>${styles}</style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&family=Wix+Madefor+Display:wght@400..800&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
+    <style>${appStyles}</style>
+    <style>${PDF_EXTRA_STYLES}</style>
   </head>
-  <body>${contentHtml}</body>
+  <body><div class="max-w-5xl mx-auto bg-white">${contentHtml}</div></body>
 </html>`;
 
   // 6. Send to html-to-pdf endpoint
