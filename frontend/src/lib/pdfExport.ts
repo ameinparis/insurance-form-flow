@@ -267,26 +267,31 @@ export async function exportQuotePdf(
   <body>${contentHtml}</body>
 </html>`;
 
-  // 6. Send to backend
-  const res = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ html }),
-  });
+  // 6. Submit via a hidden form POST targeting a new tab. The browser handles
+  //    the streaming PDF response natively (its own progress UI, no JS blob
+  //    buffering), so the UI never has to sit on a spinner while puppeteer
+  //    churns on the server.
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = `${apiBase}/api/quotes/html-to-pdf`;
+  form.target = "_blank";
+  form.rel = "noopener";
+  form.style.display = "none";
 
-  if (!res.ok) throw new Error(`PDF generation failed: ${res.status}`);
+  const htmlInput = document.createElement("input");
+  htmlInput.type = "hidden";
+  htmlInput.name = "html";
+  htmlInput.value = html;
+  form.appendChild(htmlInput);
 
-  const blob = await res.blob();
-  const objUrl = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = objUrl;
-  a.download = `quote-${quoteId}.pdf`;
-  a.rel = "noopener";
-  a.style.display = "none";
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    URL.revokeObjectURL(objUrl);
-    a.remove();
-  }, 3000);
+  const filenameInput = document.createElement("input");
+  filenameInput.type = "hidden";
+  filenameInput.name = "filename";
+  filenameInput.value = `quote-${quoteId}.pdf`;
+  form.appendChild(filenameInput);
+
+  document.body.appendChild(form);
+  form.submit();
+  setTimeout(() => form.remove(), 1000);
 }
+
