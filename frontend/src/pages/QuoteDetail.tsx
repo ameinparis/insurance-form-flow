@@ -85,9 +85,10 @@ const QuoteDetail = () => {
       const isLegacy = searchParams.get("legacy") === "true";
       await exportQuotePdf(id!, quote.quoteId, isLegacy);
       toast({ title: "Downloaded", description: "Your quote PDF has been downloaded." });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Export PDF failed:", err);
-      toast({ title: "Error", description: "Failed to export PDF. Please try again.", variant: "destructive" });
+      const msg = err?.message || "Failed to export PDF. Please try again.";
+      toast({ title: "Download failed", description: msg, variant: "destructive" });
     } finally {
       setDownloading(false);
     }
