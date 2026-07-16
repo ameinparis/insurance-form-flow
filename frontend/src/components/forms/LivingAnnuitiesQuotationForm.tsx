@@ -749,41 +749,80 @@ Insurance will not accept liability for any losses incurred as a result of using
                   {selectedScenarios.length > 0 ? (
                     <>
                       <Separator />
-                      {selectedScenarios.map((s, idx) => (
-                        <div key={s.id} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold text-primary">{s.label}</h4>
-                            <span className="text-xs text-muted-foreground">
-                              Drawdown {s.inputs.drawdown}% · {s.inputs.frequency}
-                            </span>
-                          </div>
-                          {s.outputs.living && (
-                            <div className="space-y-1 pl-1">
-                              <div className="flex justify-between">
-                                <span>Guarantee Period:</span>
-                                <span>{s.outputs.living.guarantee_period} years</span>
+                      {(() => {
+                        const roundish = (v: any) => {
+                          const n = Number(v)
+                          return Number.isFinite(n) ? Math.round(n * 100) / 100 : v ?? null
+                        }
+                        const sig = (sc: any) => JSON.stringify({
+                          drawdown: roundish(sc.inputs.drawdown),
+                          frequency: (sc.inputs.frequency ?? "").toString().toLowerCase(),
+                          age: roundish(sc.inputs.guaranteedStartAge),
+                          purchase: roundish(sc.inputs.purchaseAmount),
+                          lifePurchase: roundish(sc.inputs.lifePurchaseAmount ?? sc.inputs.purchaseAmount),
+                          livGuarantee: roundish(sc.outputs?.living?.guarantee_period),
+                          livAnnuity: roundish(sc.outputs?.living?.guaranteed_annuity),
+                          livFunds: roundish(sc.outputs?.living?.funds_remaining),
+                        })
+                        const map = new Map<string, typeof selectedScenarios>()
+                        for (const sc of selectedScenarios) {
+                          const key = sig(sc)
+                          const arr = map.get(key) ?? []
+                          arr.push(sc)
+                          map.set(key, arr)
+                        }
+                        const groups = Array.from(map.values())
+                        return groups.map((group, idx) => {
+                          const rep = group[0]
+                          const lifeItems = group
+                            .map((g) => g.outputs?.life)
+                            .filter((l: any) => l && typeof l.guarantee_period === "number")
+                            .sort((a: any, b: any) => a.guarantee_period - b.guarantee_period)
+                          return (
+                            <div key={idx} className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-semibold text-primary">
+                                  {groups.length > 1 ? `Option ${idx + 1}` : "Quotation Summary"}
+                                  {rep.inputs.drawdown != null ? ` — ${rep.inputs.drawdown}% Drawdown` : ""}
+                                </h4>
+                                <span className="text-xs text-muted-foreground">
+                                  {rep.inputs.frequency}
+                                </span>
                               </div>
-                              <div className="flex justify-between">
-                                <span>{s.inputs.frequency} Payment:</span>
-                                <span>{fmtMoney(s.outputs.living.guaranteed_annuity)}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span>Funds Remaining at {s.inputs.guaranteedStartAge}:</span>
-                                <span>{fmtMoney(s.outputs.living.funds_remaining)}</span>
-                              </div>
+                              {rep.outputs.living && (
+                                <div className="space-y-1 pl-1">
+                                  <div className="flex justify-between">
+                                    <span>Living Guarantee Period:</span>
+                                    <span>{rep.outputs.living.guarantee_period} years</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>{rep.inputs.frequency} Payment:</span>
+                                    <span>{fmtMoney(rep.outputs.living.guaranteed_annuity)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Funds Remaining at {rep.inputs.guaranteedStartAge}:</span>
+                                    <span>{fmtMoney(rep.outputs.living.funds_remaining)}</span>
+                                  </div>
+                                </div>
+                              )}
+                              {lifeItems.length > 0 && (
+                                <div className="pl-1 pt-1 space-y-1">
+                                  <div className="text-xs font-medium text-muted-foreground">
+                                    Life Annuity — Guarantee Period Options
+                                  </div>
+                                  {lifeItems.map((l: any) => (
+                                    <div key={l.guarantee_period} className="flex justify-between">
+                                      <span>{l.guarantee_period}-Year Guarantee:</span>
+                                      <span>{fmtMoney(l.monthly_annuity)} / month</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {idx < groups.length - 1 && <Separator className="mt-3" />}
                             </div>
-                          )}
-                          {s.outputs.life && (
-                            <div className="space-y-1 pl-1 pt-1">
-                              <div className="flex justify-between">
-                                <span>Monthly Life Annuity:</span>
-                                <span>{fmtMoney(s.outputs.life.monthly_annuity)}</span>
-                              </div>
-                            </div>
-                          )}
-                          {idx < selectedScenarios.length - 1 && <Separator className="mt-3" />}
-                        </div>
-                      ))}
+                          )
+                        })
+                      })()}
                     </>
                   ) : (
                     <>
