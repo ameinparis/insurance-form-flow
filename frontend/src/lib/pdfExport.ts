@@ -8,81 +8,66 @@ import { LifeDisplay } from "@/components/quote-displays/LifeDisplay";
 import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLifeDisplay";
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 
-const PDF_STYLES = `
-  body {
-    font-family: Avenir, Arial, sans-serif;
-    background: white;
+const PDF_EXTRA_STYLES = `
+  /* Force light-mode rendering for PDF and match on-screen paper look */
+  html, body {
+    background: #ffffff !important;
     color: #0f172a;
     margin: 0;
-    padding: 20px;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  h2, h3 { font-weight: 700; margin-bottom: 8px; }
-  p { margin: 2px 0; line-height: 1.2; }
-  .text-right p { margin: 1px 0; line-height: 1.2; }
-  table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-  th, td { border: 1px solid #e2e8f0; padding: 6px 10px; font-size: 13px; vertical-align: top; }
-  th { background: #f1f5f9; text-align: left; }
+  body {
+    font-family: 'Urbanist', 'Open Sans', system-ui, -apple-system, Arial, sans-serif;
+    font-weight: 300;
+  }
+  /* Neutralize dark-mode variants that ship in the rendered markup */
+  .dark\\:bg-slate-900, .dark\\:bg-slate-800, .dark\\:bg-slate-800\\/40,
+  .dark\\:bg-gray-900, .dark\\:bg-gray-800 { background-color: transparent !important; }
+  .dark\\:text-gray-100, .dark\\:text-gray-200, .dark\\:text-gray-300,
+  .dark\\:text-white { color: inherit !important; }
+  .dark\\:border-gray-700, .dark\\:border-gray-800, .dark\\:border-gray-600,
+  .dark\\:ring-slate-800 { border-color: inherit !important; }
+  /* PDF page rhythm */
+  .scenario-block, section, .space-y-8 > *, table { break-inside: avoid; page-break-inside: avoid; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; page-break-inside: avoid; }
   img { max-width: 100%; height: auto; }
-  .h-20 { height: 5rem; }
-  .object-contain { object-fit: contain; }
-  .flex { display: flex; }
-  .justify-between { justify-content: space-between; }
-  .items-start { align-items: flex-start; }
-  .items-baseline { align-items: baseline; }
-  .gap-2 { gap: 0.5rem; }
-  .mb-8 { margin-bottom: 2rem; }
-  .text-right { text-align: right; }
-  .text-sm { font-size: 0.875rem; }
-  .text-lg { font-size: 1.125rem; }
-  .text-gray-600 { color: #4b5563; }
-  .text-gray-400 { color: #9ca3af; }
-  .font-semibold { font-weight: 600; }
-  .leading-relaxed { line-height: 1.625; }
-  .mx-auto { margin-left: auto; margin-right: auto; }
-  .max-w-7xl { max-width: 80rem; }
-  .grid { display: grid; }
-  .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-  .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .md\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .gap-x-12 { column-gap: 3rem; }
-  .gap-y-4 { row-gap: 1rem; }
-  .gap-y-6 { row-gap: 1.5rem; }
-  .mt-1 { margin-top: 0.25rem; }
-  .mt-6 { margin-top: 1.5rem; }
-  .font-medium { font-weight: 500; }
-  .text-muted-foreground { color: #6b7280; }
-  .text-foreground { color: #0f172a; }
-  .border-border { border-color: #e5e7eb; }
-  .border-b { border-bottom: 1px solid #e5e7eb; }
-  .border-gray-300 { border-color: #d1d5db; }
-  .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-  .mt-8 { margin-top: 2rem; }
-  .space-y-8 > :not([hidden]) ~ :not([hidden]) { margin-top: 2rem; }
-  .border-b-2 { border-bottom: 2px solid #d1d5db; }
-  .pb-2 { padding-bottom: 0.5rem; }
-  .mb-4 { margin-bottom: 1rem; }
-  .pt-8 { padding-top: 2rem; }
-  .mt-12 { margin-top: 3rem; }
-  .border-t-2 { border-top: 2px solid #d1d5db; }
-  .acceptance-section { margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #d1d5db; }
-  .acceptance-section h3 { font-weight: 600; margin-bottom: 1rem; }
-  .signature-label { font-size: 0.9rem; font-weight: 500; margin-bottom: 4px; }
-  .signature-line { border-bottom: 1px solid #c4c7cc; height: 1.8rem; margin-bottom: 1rem; }
-  .signature-line.long { height: 3rem; }
-  section.space-y-4 > div + p { margin-top: 1.5rem; }
-  .scenario-block { break-inside: avoid; page-break-inside: avoid; margin-bottom: 1.25rem; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; }
-  .scenario-block table { break-inside: auto; page-break-inside: auto; }
-  .scenario-block thead { display: table-header-group; }
-  .scenario-block tr { break-inside: avoid; page-break-inside: avoid; }
-  .space-y-8 > :not([hidden]) ~ :not([hidden]) { margin-top: 2rem; }
-  .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
-  .rounded-lg { border-radius: 0.5rem; }
-  .p-5 { padding: 1.25rem; }
-  .mb-2 { margin-bottom: 0.5rem; }
-  .mb-5 { margin-bottom: 1.25rem; }
-  .gap-y-1 { row-gap: 0.25rem; }
-
 `;
+
+/**
+ * Collect every stylesheet the running app currently has loaded so the PDF
+ * inherits the same Tailwind utilities, design tokens, and component styles
+ * as what the user sees on screen.
+ */
+async function collectAppStyles(): Promise<string> {
+  const parts: string[] = [];
+  const sheets = Array.from(document.styleSheets);
+  for (const sheet of sheets) {
+    try {
+      const rules = (sheet as CSSStyleSheet).cssRules;
+      if (rules) {
+        let css = "";
+        for (let i = 0; i < rules.length; i++) css += rules[i].cssText + "\n";
+        if (css) parts.push(css);
+        continue;
+      }
+    } catch {
+      // cross-origin — fall back to fetching the href
+    }
+    const href = (sheet as CSSStyleSheet).href;
+    if (href) {
+      try {
+        const res = await fetch(href);
+        if (res.ok) parts.push(await res.text());
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  return parts.join("\n");
+}
 
 async function assetToDataUrl(path: string): Promise<string | null> {
   try {
@@ -202,16 +187,20 @@ export async function exportQuotePdf(
     contentHtml = contentHtml.replace(/src="[^"]*\/exclusive\.png"/g, `src="${logoDataUrl}"`);
   }
 
-  const styles = PDF_STYLES;
+  const appStyles = await collectAppStyles();
 
   const html = `<!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>Quote PDF</title>
-    <style>${styles}</style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&family=Wix+Madefor+Display:wght@400..800&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
+    <style>${appStyles}</style>
+    <style>${PDF_EXTRA_STYLES}</style>
   </head>
-  <body>${contentHtml}</body>
+  <body><div class="max-w-5xl mx-auto bg-white">${contentHtml}</div></body>
 </html>`;
 
   // 6. Send to html-to-pdf endpoint
