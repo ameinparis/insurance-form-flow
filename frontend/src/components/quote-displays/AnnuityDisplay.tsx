@@ -296,34 +296,38 @@ interface LifePeriodsTableProps {
 }
 
 const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriodsTableProps) => (
-  <div className="overflow-x-auto">
-    <table className="w-full text-sm text-left border-collapse">
+  <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+    <table className="w-full text-sm border-collapse">
       <thead>
-        <tr>
-          <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
-            Guarantee Period
-          </th>
-          <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
-            Monthly Life Annuity
-          </th>
+        <tr className="bg-gray-50 dark:bg-slate-800/40">
+          <th className="px-4 py-3 text-left font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800" />
+          {periods.map((row) => (
+            <th
+              key={row.guarantee_period}
+              className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-800"
+            >
+              {row.guarantee_period}-Year Guarantee
+              {selectedPeriods.includes(row.guarantee_period) && (
+                <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
+                  (selected)
+                </span>
+              )}
+            </th>
+          ))}
         </tr>
       </thead>
       <tbody className="text-gray-700 dark:text-gray-300">
-        {periods.map((row) => {
-          const isSelected = selectedPeriods.includes(row.guarantee_period);
-          return (
-            <tr key={row.guarantee_period} className="border-b border-gray-100 dark:border-gray-800">
-              <td className="px-4 py-2 font-medium text-gray-800 dark:text-gray-100">
-                {row.guarantee_period} years
-                {isSelected && (
-                  <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
-                    (selected)
-                  </span>
-                )}
-              </td>
+        <tr>
+          <td className="px-4 py-3 font-semibold text-gray-800 dark:text-gray-100">
+            Monthly Life Annuity
+          </td>
+          {periods.map((row) => {
+            const isSelected = selectedPeriods.includes(row.guarantee_period);
+            return (
               <td
+                key={row.guarantee_period}
                 className={
-                  "px-4 py-2 " +
+                  "px-4 py-3 " +
                   (isSelected
                     ? "font-semibold text-gray-900 dark:text-white"
                     : "text-gray-800 dark:text-gray-100")
@@ -335,9 +339,9 @@ const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriod
                   ? "Calculating…"
                   : "—"}
               </td>
-            </tr>
-          );
-        })}
+            );
+          })}
+        </tr>
       </tbody>
     </table>
   </div>
