@@ -142,15 +142,23 @@ const QuoteDetail = () => {
   };
 
   return (
-    <div className="min-h-screen -m-6 p-0 bg-gradient-to-b from-gray-100 via-gray-200/70 to-gray-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <div className="min-h-screen">
       {/* Sticky Action Bar */}
-      <div className="sticky top-0 z-30 backdrop-blur-md bg-white/70 dark:bg-slate-900/70 border-b border-gray-200/70 dark:border-slate-800/70">
+      <div className="sticky top-0 z-30 bg-transparent">
         <div className="max-w-5xl mx-auto flex justify-between items-center px-6 py-4">
-          <Button variant="outline" onClick={() => navigate(-1)} className="rounded-full">
+          <Button
+            variant="outline"
+            onClick={() => navigate(-1)}
+            className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-6"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <Button onClick={handleDownloadPdf} disabled={downloading} className="rounded-full">
+          <Button
+            onClick={handleDownloadPdf}
+            disabled={downloading}
+            className="rounded-full bg-slate-900 hover:bg-slate-800 text-white px-6"
+          >
             {downloading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -166,10 +174,10 @@ const QuoteDetail = () => {
         </div>
       </div>
 
-      {/* Paper Document floating on the section background */}
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      {/* Paper Document */}
+      <div className="max-w-5xl mx-auto px-6 pb-12">
         <div
-          className="bg-white dark:bg-slate-900 shadow-2xl rounded-xl overflow-hidden ring-1 ring-gray-200/80 dark:ring-slate-800"
+          className="bg-white dark:bg-slate-900 shadow-lg rounded-2xl overflow-hidden ring-1 ring-gray-200/80 dark:ring-slate-800"
           id="quote-pdf"
         >
           <QuoteHeader
@@ -196,6 +204,7 @@ const QuoteDetail = () => {
       </div>
     </div>
   );
+
 };
 
 export default QuoteDetail;
