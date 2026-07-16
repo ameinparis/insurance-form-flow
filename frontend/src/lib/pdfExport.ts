@@ -32,6 +32,11 @@ const PDF_EXTRA_STYLES = `
   /* PDF page rhythm */
   .scenario-block, section, .space-y-8 > *, table { break-inside: avoid; page-break-inside: avoid; }
   thead { display: table-header-group; }
+  /* Prevent horizontal clipping — the on-screen UI uses overflow-x-auto for wide
+     tables, but a PDF has no scroll: force everything to stay within page width. */
+  .overflow-x-auto, .overflow-auto, .overflow-hidden { overflow: visible !important; }
+  table { width: 100% !important; table-layout: fixed; border-collapse: collapse; }
+  th, td { word-break: break-word; overflow-wrap: anywhere; white-space: normal !important; }
   tr { break-inside: avoid; page-break-inside: avoid; }
   img { max-width: 100%; height: auto; }
 `;
