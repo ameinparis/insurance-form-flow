@@ -169,6 +169,29 @@ export async function exportQuotePdf(
     } catch (err) {
       console.warn("Failed to pre-fetch life annuity periods for PDF:", err);
     }
+  } else if (isAnnuity && hasScenarios) {
+    const scenarios = (quote as any).outputs.scenarios as any[];
+    try {
+      await Promise.all(
+        scenarios.map(async (sc) => {
+          const scInputs = sc?.inputs || {};
+          const scLife = sc?.outputs?.life || {};
+          if (Array.isArray(scLife.periods) && scLife.periods.length > 0) return;
+          const scAge = Number(scInputs.guaranteedStartAge);
+          const scAmount = Number(scInputs.lifePurchaseAmount ?? scInputs.purchaseAmount);
+          const periods = await fetchLifeAnnuityPeriods(scAge, scAmount, {
+            guarantee_period: scLife.guarantee_period,
+            monthly_annuity: scLife.monthly_annuity,
+          });
+          sc.outputs = {
+            ...(sc.outputs || {}),
+            life: { ...scLife, periods },
+          };
+        })
+      );
+    } catch (err) {
+      console.warn("Failed to pre-fetch scenario life annuity periods:", err);
+    }
   }
 
   // 3. Get client info for header
