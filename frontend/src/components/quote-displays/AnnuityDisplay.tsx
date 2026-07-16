@@ -193,7 +193,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
           </div>
           <LifePeriodsTable
             periods={lifePeriods}
-            selectedPeriod={knownPeriod}
+            selectedPeriods={typeof knownPeriod === "number" ? [knownPeriod] : []}
             loading={loadingPeriods}
           />
           <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
