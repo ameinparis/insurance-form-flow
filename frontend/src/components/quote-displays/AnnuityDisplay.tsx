@@ -536,13 +536,15 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
         </div>
       </div>
 
-      {/* Life annuity guarantee period comparison */}
-      <div>
-        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-          Life Annuity — Guarantee Period Options
-        </h5>
-        <LifePeriodsTable periods={periods} selectedPeriods={selectedPeriods} loading={loading} />
-      </div>
+      {/* Life annuity guarantee period comparison — only if any life option was selected */}
+      {hasLife && (
+        <div>
+          <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+            Life Annuity — Guarantee Period Options
+          </h5>
+          <LifePeriodsTable periods={periods} selectedPeriods={selectedPeriods} loading={loading} />
+        </div>
+      )}
     </div>
   );
 };
