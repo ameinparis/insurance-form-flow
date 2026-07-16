@@ -281,7 +281,7 @@ export async function exportQuotePdf(
   const a = document.createElement("a");
   a.href = objUrl;
   a.download = `quote-${quoteId}.pdf`;
-  a.target = "_blank";
+  a.rel = "noopener";
   a.style.display = "none";
   document.body.appendChild(a);
   a.click();
