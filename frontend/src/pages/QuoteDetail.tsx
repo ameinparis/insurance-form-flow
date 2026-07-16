@@ -22,7 +22,7 @@ const QuoteDetail = () => {
 
   const [quote, setQuote] = useState<QuoteData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState(false);
+  const [downloadStarted, setDownloadStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -79,11 +79,11 @@ const QuoteDetail = () => {
   };
 
   const handleDownloadPdf = async () => {
-    if (!quote || downloading) return;
-    setDownloading(true);
+    if (!quote || downloadStarted) return;
+    setDownloadStarted(true);
     try {
       const isLegacy = searchParams.get("legacy") === "true";
-      await exportQuotePdf(id!, quote.quoteId, isLegacy);
+      await exportQuotePdf(id!, quote.quoteId, isLegacy, quote);
       toast({ title: "Downloaded", description: "Your PDF has been downloaded." });
 
     } catch (err: any) {
@@ -91,7 +91,7 @@ const QuoteDetail = () => {
       const msg = err?.message || "Failed to export PDF. Please try again.";
       toast({ title: "Download failed", description: msg, variant: "destructive" });
     } finally {
-      setDownloading(false);
+      window.setTimeout(() => setDownloadStarted(false), 1200);
     }
   };
   if (loading) {
@@ -157,13 +157,13 @@ const QuoteDetail = () => {
           </Button>
           <Button
             onClick={handleDownloadPdf}
-            disabled={downloading}
-            className="rounded-full bg-slate-900 hover:bg-slate-800 text-white px-6"
+            disabled={downloadStarted}
+            className="rounded-full bg-slate-900 hover:bg-slate-800 text-white px-6 min-w-[148px]"
           >
-            {downloading ? (
+            {downloadStarted ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Preparing…
+                <Download className="h-4 w-4 mr-2" />
+                Downloading
               </>
             ) : (
               <>
