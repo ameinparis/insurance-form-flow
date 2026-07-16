@@ -288,3 +288,180 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
   );
 };
 
+// -------------------- Sub-components --------------------
+
+interface LifePeriodsTableProps {
+  periods: LifePeriodResult[];
+  selectedPeriod?: number | null;
+  loading?: boolean;
+}
+
+const LifePeriodsTable = ({ periods, selectedPeriod, loading }: LifePeriodsTableProps) => (
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm text-left border-collapse">
+      <thead>
+        <tr>
+          <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
+            Guarantee Period
+          </th>
+          <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
+            Monthly Life Annuity
+          </th>
+        </tr>
+      </thead>
+      <tbody className="text-gray-700 dark:text-gray-300">
+        {periods.map((row) => {
+          const isSelected = row.guarantee_period === selectedPeriod;
+          return (
+            <tr key={row.guarantee_period} className="border-b border-gray-100 dark:border-gray-800">
+              <td className="px-4 py-2 font-medium text-gray-800 dark:text-gray-100">
+                {row.guarantee_period} years
+                {isSelected && (
+                  <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
+                    (selected)
+                  </span>
+                )}
+              </td>
+              <td
+                className={
+                  "px-4 py-2 " +
+                  (isSelected
+                    ? "font-semibold text-gray-900 dark:text-white"
+                    : "text-gray-800 dark:text-gray-100")
+                }
+              >
+                {row.monthly_annuity != null
+                  ? formatCurrency(row.monthly_annuity)
+                  : loading
+                  ? "Calculating…"
+                  : "—"}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+);
+
+interface ScenarioBlockProps {
+  scenario: any;
+  index: number;
+}
+
+const ScenarioBlock = ({ scenario, index }: ScenarioBlockProps) => {
+  const inputs = scenario?.inputs || {};
+  const living = scenario?.outputs?.living || {};
+  const life = scenario?.outputs?.life || {};
+  const lifePeriod = life?.guarantee_period ?? null;
+  const lifeAnnuity = life?.monthly_annuity ?? null;
+
+  const preInjected: LifePeriodResult[] | undefined = life?.periods;
+  const initial: LifePeriodResult[] =
+    preInjected && Array.isArray(preInjected) && preInjected.length > 0
+      ? preInjected
+      : LIFE_ANNUITY_PERIODS.map((p) => ({
+          guarantee_period: p,
+          monthly_annuity: lifePeriod === p && typeof lifeAnnuity === "number" ? lifeAnnuity : null,
+        }));
+
+  const [periods, setPeriods] = useState<LifePeriodResult[]>(initial);
+  const [loading, setLoading] = useState<boolean>(
+    !preInjected && initial.some((p) => p.monthly_annuity == null)
+  );
+
+  const age = Number(inputs.guaranteedStartAge);
+  const amount = Number(inputs.lifePurchaseAmount ?? inputs.purchaseAmount);
+
+  useEffect(() => {
+    if (preInjected) return;
+    if (!initial.some((p) => p.monthly_annuity == null)) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const results = await fetchLifeAnnuityPeriods(age, amount, {
+        guarantee_period: lifePeriod,
+        monthly_annuity: lifeAnnuity,
+      });
+      if (!cancelled) {
+        setPeriods(results);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [age, amount, lifePeriod, lifeAnnuity]);
+
+  const frequency = inputs.frequency || "period";
+  const livingLabel = `Living Annuity / ${String(frequency).toLowerCase()}`;
+
+  return (
+    <div className="scenario-block border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+      <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
+        Option {index + 1}
+        {scenario?.label ? ` — ${scenario.label}` : ""}
+      </h4>
+
+      {/* Living Annuity summary */}
+      <div className="mb-5">
+        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+          Living Annuity
+        </h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1">
+          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Drawdown:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">
+              {inputs.drawdown ?? "—"}%
+            </span>
+          </div>
+          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Frequency:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">
+              {inputs.frequency ?? "—"}
+            </span>
+          </div>
+          {living?.guarantee_period != null && (
+            <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+                Living Guarantee Period:
+              </span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">
+                {living.guarantee_period} years
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+              {livingLabel}:
+            </span>
+            <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
+              {formatCurrency(living?.guaranteed_annuity)}
+            </span>
+          </div>
+          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+              Funds Remaining:
+            </span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">
+              {formatCurrency(living?.funds_remaining)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Life annuity guarantee period options */}
+      <div>
+        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+          Life Annuity — Guarantee Period Options
+        </h5>
+        <LifePeriodsTable periods={periods} selectedPeriod={lifePeriod} loading={loading} />
+      </div>
+    </div>
+  );
+};
+
+
