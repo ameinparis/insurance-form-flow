@@ -170,7 +170,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
           <div>
             <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                Annuity Income Options ({groups.length})
+                {groups.length > 1 ? `Annuity Income Options (${groups.length})` : "Annuity Income Option"}
               </h3>
             </div>
             <div className="space-y-8">
