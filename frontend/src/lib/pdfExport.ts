@@ -89,10 +89,17 @@ const PDF_STYLES = `
   .signature-line { border-bottom: 1px solid #c4c7cc; height: 1.8rem; margin-bottom: 1rem; }
   .signature-line.long { height: 3rem; }
   section.space-y-4 > div + p { margin-top: 1.5rem; }
-  .scenario-chunk { break-inside: auto; page-break-inside: auto; }
-  .scenario-chunk table { break-inside: auto; page-break-inside: auto; }
-  .scenario-chunk thead { display: table-header-group; }
-  .scenario-chunk tr { break-inside: avoid; page-break-inside: avoid; }
+  .scenario-block { break-inside: avoid; page-break-inside: avoid; margin-bottom: 1.25rem; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; }
+  .scenario-block table { break-inside: auto; page-break-inside: auto; }
+  .scenario-block thead { display: table-header-group; }
+  .scenario-block tr { break-inside: avoid; page-break-inside: avoid; }
+  .space-y-8 > :not([hidden]) ~ :not([hidden]) { margin-top: 2rem; }
+  .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
+  .rounded-lg { border-radius: 0.5rem; }
+  .p-5 { padding: 1.25rem; }
+  .mb-2 { margin-bottom: 0.5rem; }
+  .mb-5 { margin-bottom: 1.25rem; }
+  .gap-y-1 { row-gap: 0.25rem; }
 
 `;
 
