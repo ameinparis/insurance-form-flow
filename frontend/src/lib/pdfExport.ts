@@ -7,7 +7,6 @@ import { FuneralDisplay } from "@/components/quote-displays/FuneralDisplay";
 import { LifeDisplay } from "@/components/quote-displays/LifeDisplay";
 import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLifeDisplay";
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
-import { fetchLifeAnnuityPeriods } from "@/lib/lifeAnnuityPeriods";
 
 const PDF_STYLES = `
   @font-face {
@@ -127,72 +126,18 @@ function getDisplayComponent(productType: string, quote: QuoteData) {
 export async function exportQuotePdf(
   quoteMongoId: string,
   quoteId: string,
-  isLegacy: boolean
+  isLegacy: boolean,
+  quoteOverride?: QuoteData
 ): Promise<void> {
   const baseUrl = window.location.origin;
   const apiBase = import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw";
 
-  // 1. Fetch full quote data
-  const quote = await fetchQuoteDetails(quoteMongoId, isLegacy);
+  // 1. Use the quote already loaded on the page when available, otherwise fetch it.
+  const quote = quoteOverride ?? (await fetchQuoteDetails(quoteMongoId, isLegacy));
 
   // 2. Determine product type
   const isLegacyAnnuity = !quote.productType && !!quote.guaranteedAnnuity;
   const productType = quote.productType || quote.type || (isLegacyAnnuity ? "annuity" : "Insurance Quote");
-
-  // 2b. For annuity quotes without pre-computed guarantee-period options,
-  // fetch monthly life annuity values for 5/10/15/20 years so the PDF shows
-  // all options synchronously (renderToStaticMarkup can't await effects).
-  const isAnnuity =
-    productType === "Exclusive Annuity" || productType === "annuity";
-  const hasScenarios =
-    Array.isArray((quote as any)?.outputs?.scenarios) &&
-    (quote as any).outputs.scenarios.length > 1;
-  if (isAnnuity && !hasScenarios) {
-    const inputs = (quote as any).inputs || {};
-    const outputsLife = ((quote as any).outputs && (quote as any).outputs.life) || {};
-    const age = Number(inputs.guaranteedStartAge ?? (quote as any).guaranteedStartAge);
-    const amount = Number(
-      inputs.lifePurchaseAmount ??
-        inputs.purchaseAmount ??
-        (quote as any).lifePurchaseAmount ??
-        (quote as any).singlePurchasePremium
-    );
-    try {
-      const periods = await fetchLifeAnnuityPeriods(age, amount, {
-        guarantee_period: outputsLife.guarantee_period,
-        monthly_annuity: outputsLife.monthly_annuity,
-      });
-      (quote as any).outputs = {
-        ...((quote as any).outputs || {}),
-        life: { ...outputsLife, periods },
-      };
-    } catch (err) {
-      console.warn("Failed to pre-fetch life annuity periods for PDF:", err);
-    }
-  } else if (isAnnuity && hasScenarios) {
-    const scenarios = (quote as any).outputs.scenarios as any[];
-    try {
-      await Promise.all(
-        scenarios.map(async (sc) => {
-          const scInputs = sc?.inputs || {};
-          const scLife = sc?.outputs?.life || {};
-          if (Array.isArray(scLife.periods) && scLife.periods.length > 0) return;
-          const scAge = Number(scInputs.guaranteedStartAge);
-          const scAmount = Number(scInputs.lifePurchaseAmount ?? scInputs.purchaseAmount);
-          const periods = await fetchLifeAnnuityPeriods(scAge, scAmount, {
-            guarantee_period: scLife.guarantee_period,
-            monthly_annuity: scLife.monthly_annuity,
-          });
-          sc.outputs = {
-            ...(sc.outputs || {}),
-            life: { ...scLife, periods },
-          };
-        })
-      );
-    } catch (err) {
-      console.warn("Failed to pre-fetch scenario life annuity periods:", err);
-    }
-  }
 
   // 3. Get client info for header
   const clientInfo = getClientInfo(quote);
