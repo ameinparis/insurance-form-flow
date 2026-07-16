@@ -145,7 +145,7 @@ const QuoteDetail = () => {
   return (
     <div className="min-h-screen">
       {/* Sticky Action Bar */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border/60 shadow-sm">
+      <div className="sticky top-0 z-30 bg-gray-50 dark:bg-[hsl(225,30%,7%)]">
         <div className="max-w-5xl mx-auto flex justify-between items-center px-6 py-4">
           <Button
             variant="outline"
