@@ -158,19 +158,10 @@ const QuoteDetail = () => {
           <Button
             onClick={handleDownloadPdf}
             disabled={downloadStarted}
-            className="rounded-full bg-slate-900 hover:bg-slate-800 text-white px-6 min-w-[148px]"
+            className="rounded-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-900 disabled:opacity-100 text-white px-6 min-w-[148px] focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
           >
-            {downloadStarted ? (
-              <>
-                <Download className="h-4 w-4 mr-2" />
-                Downloading
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
-              </>
-            )}
+            <Download className="h-4 w-4 mr-2" />
+            {downloadStarted ? "Downloading" : "Download PDF"}
           </Button>
         </div>
       </div>
