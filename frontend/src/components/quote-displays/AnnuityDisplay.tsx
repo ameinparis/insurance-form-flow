@@ -474,10 +474,13 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
 
   return (
     <div className="scenario-block border border-gray-200 dark:border-gray-800 rounded-lg p-5">
-      <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
-        Option {index + 1}
-        {inputs.drawdown != null ? ` — ${inputs.drawdown}% Drawdown` : ""}
-      </h4>
+      {showOptionLabel && (
+        <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
+          Option {index + 1}
+          {inputs.drawdown != null ? ` — ${inputs.drawdown}% Drawdown` : ""}
+        </h4>
+      )}
+
 
       {/* Living Annuity summary — shared across grouped scenarios */}
       <div className="mb-5">
