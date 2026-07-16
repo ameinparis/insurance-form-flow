@@ -163,29 +163,28 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
         )}
       </div>
 
-      {/* Additional Scenarios — one block per scenario */}
-      {hasScenarios && (
-        <div>
-          <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-              Annuity Income Options ({scenarios.length})
-            </h3>
+      {/* Additional Scenarios — grouped by identical Living Annuity inputs/outputs */}
+      {hasScenarios && (() => {
+        const groups = groupScenariosByLiving(scenarios);
+        return (
+          <div>
+            <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                {groups.length > 1 ? `Annuity Income Options (${groups.length})` : "Annuity Income Option"}
+              </h3>
+            </div>
+            <div className="space-y-8">
+              {groups.map((group, idx) => (
+                <ScenarioGroupBlock key={idx} group={group} index={idx} showOptionLabel={groups.length > 1} />
+              ))}
+            </div>
           </div>
-          <div className="space-y-8">
-            {scenarios.map((sc: any, idx: number) => (
-              <ScenarioBlock
-                key={sc.id || idx}
-                scenario={sc}
-                index={idx}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
 
-      {/* Life Annuity Section */}
-      {!hasScenarios && (
+      {/* Life Annuity Section — only if a life guarantee period was selected */}
+      {!hasScenarios && typeof knownPeriod === "number" && (
         <div>
           <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
@@ -193,13 +192,10 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
             </h3>
           </div>
           <LifePeriodsTable
-            periods={lifePeriods}
-            selectedPeriod={knownPeriod}
+            periods={lifePeriods.filter((p) => p.guarantee_period === knownPeriod)}
+            selectedPeriods={[knownPeriod]}
             loading={loadingPeriods}
           />
-          <p className="text-sm italic text-gray-600 dark:text-gray-400 mt-4">
-            * Monthly life annuity values shown for the standard guarantee periods of 5, 10, 15 and 20 years.
-          </p>
         </div>
       )}
 
@@ -292,39 +288,43 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
 
 interface LifePeriodsTableProps {
   periods: LifePeriodResult[];
-  selectedPeriod?: number | null;
+  selectedPeriods?: number[];
   loading?: boolean;
 }
 
-const LifePeriodsTable = ({ periods, selectedPeriod, loading }: LifePeriodsTableProps) => (
-  <div className="overflow-x-auto">
-    <table className="w-full text-sm text-left border-collapse">
+const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriodsTableProps) => (
+  <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+    <table className="w-full text-sm border-collapse">
       <thead>
-        <tr>
-          <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
-            Guarantee Period
-          </th>
-          <th className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-slate-800/40">
-            Monthly Life Annuity
-          </th>
+        <tr className="bg-gray-50 dark:bg-slate-800/40">
+          <th className="px-4 py-3 text-left font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800" />
+          {periods.map((row) => (
+            <th
+              key={row.guarantee_period}
+              className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-800"
+            >
+              {row.guarantee_period}-Year Guarantee
+              {selectedPeriods.includes(row.guarantee_period) && (
+                <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
+                  (selected)
+                </span>
+              )}
+            </th>
+          ))}
         </tr>
       </thead>
       <tbody className="text-gray-700 dark:text-gray-300">
-        {periods.map((row) => {
-          const isSelected = row.guarantee_period === selectedPeriod;
-          return (
-            <tr key={row.guarantee_period} className="border-b border-gray-100 dark:border-gray-800">
-              <td className="px-4 py-2 font-medium text-gray-800 dark:text-gray-100">
-                {row.guarantee_period} years
-                {isSelected && (
-                  <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
-                    (selected)
-                  </span>
-                )}
-              </td>
+        <tr>
+          <td className="px-4 py-3 font-semibold text-gray-800 dark:text-gray-100">
+            Monthly Life Annuity
+          </td>
+          {periods.map((row) => {
+            const isSelected = selectedPeriods.includes(row.guarantee_period);
+            return (
               <td
+                key={row.guarantee_period}
                 className={
-                  "px-4 py-2 " +
+                  "px-4 py-3 " +
                   (isSelected
                     ? "font-semibold text-gray-900 dark:text-white"
                     : "text-gray-800 dark:text-gray-100")
@@ -336,57 +336,134 @@ const LifePeriodsTable = ({ periods, selectedPeriod, loading }: LifePeriodsTable
                   ? "Calculating…"
                   : "—"}
               </td>
-            </tr>
-          );
-        })}
+            );
+          })}
+        </tr>
       </tbody>
     </table>
   </div>
 );
 
-interface ScenarioBlockProps {
-  scenario: any;
-  index: number;
+// -------------------- Grouping helpers --------------------
+
+const roundish = (v: any) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : v ?? null;
+};
+
+const livingSignature = (sc: any) => {
+  const i = sc?.inputs || {};
+  const l = sc?.outputs?.living || {};
+  return JSON.stringify({
+    drawdown: roundish(i.drawdown),
+    frequency: (i.frequency ?? "").toString().toLowerCase(),
+    age: roundish(i.guaranteedStartAge),
+    purchase: roundish(i.purchaseAmount),
+    lifePurchase: roundish(i.lifePurchaseAmount ?? i.purchaseAmount),
+    livGuarantee: roundish(l.guarantee_period),
+    livAnnuity: roundish(l.guaranteed_annuity),
+    livFunds: roundish(l.funds_remaining),
+  });
+};
+
+interface ScenarioGroup {
+  signature: string;
+  scenarios: any[];
 }
 
-const ScenarioBlock = ({ scenario, index }: ScenarioBlockProps) => {
-  const inputs = scenario?.inputs || {};
-  const living = scenario?.outputs?.living || {};
-  const life = scenario?.outputs?.life || {};
-  const lifePeriod = life?.guarantee_period ?? null;
-  const lifeAnnuity = life?.monthly_annuity ?? null;
+const groupScenariosByLiving = (scenarios: any[]): ScenarioGroup[] => {
+  const map = new Map<string, ScenarioGroup>();
+  for (const sc of scenarios) {
+    const sig = livingSignature(sc);
+    const existing = map.get(sig);
+    if (existing) existing.scenarios.push(sc);
+    else map.set(sig, { signature: sig, scenarios: [sc] });
+  }
+  return Array.from(map.values());
+};
 
-  const preInjected: LifePeriodResult[] | undefined = life?.periods;
+// -------------------- Group block --------------------
+
+interface ScenarioGroupBlockProps {
+  group: ScenarioGroup;
+  index: number;
+  showOptionLabel?: boolean;
+}
+
+const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGroupBlockProps) => {
+  // Representative scenario for shared living details
+  const rep = group.scenarios[0];
+  const inputs = rep?.inputs || {};
+  const living = rep?.outputs?.living || {};
+
+  // Collect selected life guarantee periods across all scenarios in the group
+  const selectedPeriods = Array.from(
+    new Set(
+      group.scenarios
+        .map((s) => s?.outputs?.life?.guarantee_period)
+        .filter((p): p is number => typeof p === "number")
+    )
+  ).sort((a, b) => a - b);
+
+  // Merge pre-injected periods from any scenario that has them
+  const preInjectedRaw: LifePeriodResult[] | undefined = group.scenarios
+    .map((s) => s?.outputs?.life?.periods)
+    .find((p) => Array.isArray(p) && p.length > 0);
+
+  // Seed known (period, monthly_annuity) pairs from group members
+  const knownByPeriod = new Map<number, number>();
+  for (const s of group.scenarios) {
+    const gp = s?.outputs?.life?.guarantee_period;
+    const ma = s?.outputs?.life?.monthly_annuity;
+    if (typeof gp === "number" && typeof ma === "number") knownByPeriod.set(gp, ma);
+  }
+
+  // Only show columns for periods actually selected within this group
+  const hasLife = selectedPeriods.length > 0;
+
+  const preInjected = preInjectedRaw
+    ? preInjectedRaw.filter((p) => selectedPeriods.includes(p.guarantee_period))
+    : undefined;
+
   const initial: LifePeriodResult[] =
-    preInjected && Array.isArray(preInjected) && preInjected.length > 0
+    preInjected && preInjected.length > 0
       ? preInjected
-      : LIFE_ANNUITY_PERIODS.map((p) => ({
+      : selectedPeriods.map((p) => ({
           guarantee_period: p,
-          monthly_annuity: lifePeriod === p && typeof lifeAnnuity === "number" ? lifeAnnuity : null,
+          monthly_annuity: knownByPeriod.has(p) ? knownByPeriod.get(p)! : null,
         }));
 
   const [periods, setPeriods] = useState<LifePeriodResult[]>(initial);
   const [loading, setLoading] = useState<boolean>(
-    !preInjected && initial.some((p) => p.monthly_annuity == null)
+    hasLife && !preInjected && initial.some((p) => p.monthly_annuity == null)
   );
 
   const age = Number(inputs.guaranteedStartAge);
   const amount = Number(inputs.lifePurchaseAmount ?? inputs.purchaseAmount);
 
   useEffect(() => {
-    if (preInjected) return;
+    if (!hasLife || preInjected) return;
     if (!initial.some((p) => p.monthly_annuity == null)) {
       setLoading(false);
       return;
     }
     let cancelled = false;
     (async () => {
+      const firstKnownPeriod = selectedPeriods[0];
+      const firstKnownAnnuity = firstKnownPeriod != null ? knownByPeriod.get(firstKnownPeriod) : undefined;
       const results = await fetchLifeAnnuityPeriods(age, amount, {
-        guarantee_period: lifePeriod,
-        monthly_annuity: lifeAnnuity,
+        guarantee_period: firstKnownPeriod ?? null,
+        monthly_annuity: firstKnownAnnuity ?? null,
       });
+      const filtered = results
+        .filter((r) => selectedPeriods.includes(r.guarantee_period))
+        .map((r) =>
+          knownByPeriod.has(r.guarantee_period)
+            ? { ...r, monthly_annuity: knownByPeriod.get(r.guarantee_period)! }
+            : r
+        );
       if (!cancelled) {
-        setPeriods(results);
+        setPeriods(filtered);
         setLoading(false);
       }
     })();
@@ -394,19 +471,22 @@ const ScenarioBlock = ({ scenario, index }: ScenarioBlockProps) => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [age, amount, lifePeriod, lifeAnnuity]);
+  }, [age, amount]);
 
   const frequency = inputs.frequency || "period";
   const livingLabel = `Living Annuity / ${String(frequency).toLowerCase()}`;
 
   return (
     <div className="scenario-block border border-gray-200 dark:border-gray-800 rounded-lg p-5">
-      <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
-        Option {index + 1}
-        {scenario?.label ? ` — ${scenario.label}` : ""}
-      </h4>
+      {showOptionLabel && (
+        <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
+          Option {index + 1}
+          {inputs.drawdown != null ? ` — ${inputs.drawdown}% Drawdown` : ""}
+        </h4>
+      )}
 
-      {/* Living Annuity summary */}
+
+      {/* Living Annuity summary — shared across grouped scenarios */}
       <div className="mb-5">
         <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
           Living Annuity
@@ -453,13 +533,15 @@ const ScenarioBlock = ({ scenario, index }: ScenarioBlockProps) => {
         </div>
       </div>
 
-      {/* Life annuity guarantee period options */}
-      <div>
-        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-          Life Annuity — Guarantee Period Options
-        </h5>
-        <LifePeriodsTable periods={periods} selectedPeriod={lifePeriod} loading={loading} />
-      </div>
+      {/* Life annuity guarantee period comparison — only if any life option was selected */}
+      {hasLife && (
+        <div>
+          <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+            Life Annuity — Guarantee Period Options
+          </h5>
+          <LifePeriodsTable periods={periods} selectedPeriods={selectedPeriods} loading={loading} />
+        </div>
+      )}
     </div>
   );
 };

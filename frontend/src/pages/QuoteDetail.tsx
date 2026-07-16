@@ -22,6 +22,7 @@ const QuoteDetail = () => {
 
   const [quote, setQuote] = useState<QuoteData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,13 +79,19 @@ const QuoteDetail = () => {
   };
 
   const handleDownloadPdf = async () => {
-    if (!quote) return;
+    if (!quote || downloading) return;
+    setDownloading(true);
     try {
       const isLegacy = searchParams.get("legacy") === "true";
       await exportQuotePdf(id!, quote.quoteId, isLegacy);
-    } catch (err) {
+      toast({ title: "Downloaded", description: "Your PDF has been downloaded." });
+
+    } catch (err: any) {
       console.error("Export PDF failed:", err);
-      toast({ title: "Error", description: "Failed to export styled PDF." });
+      const msg = err?.message || "Failed to export PDF. Please try again.";
+      toast({ title: "Download failed", description: msg, variant: "destructive" });
+    } finally {
+      setDownloading(false);
     }
   };
   if (loading) {
@@ -136,23 +143,44 @@ const QuoteDetail = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Action Bar */}
-      <div className="flex justify-between items-center">
-        <Button variant="outline" onClick={() => navigate(-1)} className="rounded-full">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        <Button onClick={handleDownloadPdf}>
-          <Download className="h-4 w-4 mr-2" />
-          Download PDF
-        </Button>
+    <div className="min-h-screen">
+      {/* Sticky Action Bar */}
+      <div className="sticky top-0 z-30 bg-transparent">
+        <div className="max-w-5xl mx-auto flex justify-between items-center px-6 py-4">
+          <Button
+            variant="outline"
+            onClick={() => navigate(-1)}
+            className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-6"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <Button
+            onClick={handleDownloadPdf}
+            disabled={downloading}
+            className="rounded-full bg-slate-900 hover:bg-slate-800 text-white px-6"
+          >
+            {downloading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Preparing…
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
-      {/* Quote Document Card */}
-      <Card className="border-0 shadow-none bg-card rounded-3xl overflow-hidden">
-        <CardContent className="p-0" id="quote-pdf">
-          {/* Quote Header */}
+      {/* Paper Document */}
+      <div className="max-w-5xl mx-auto px-6 pb-12">
+        <div
+          className="bg-white dark:bg-slate-900 shadow-lg rounded-2xl overflow-hidden ring-1 ring-gray-200/80 dark:ring-slate-800"
+          id="quote-pdf"
+        >
           <QuoteHeader
             quoteId={quote.quoteId}
             clientName={clientInfo.fullName}
@@ -163,10 +191,8 @@ const QuoteDetail = () => {
             clientId={clientInfo.idNumber}
           />
 
-          {/* Product Details - Dynamic based on product type */}
           {renderProductDisplay()}
 
-          {/* Terms and Conditions / Disclaimer */}
           {(quote.termsAndConditions || quote.disclaimerText) && (
             <div className="border-t border-border p-8 bg-card">
               <h3 className="text-xl font-semibold text-center mb-4 text-foreground">Terms & Conditions</h3>
@@ -175,10 +201,11 @@ const QuoteDetail = () => {
               </p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
+
 };
 
 export default QuoteDetail;
