@@ -141,23 +141,33 @@ const QuoteDetail = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Action Bar */}
-      <div className="flex justify-between items-center">
-        <Button variant="outline" onClick={() => navigate(-1)} className="rounded-full">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-        <Button onClick={handleDownloadPdf}>
-          <Download className="h-4 w-4 mr-2" />
-          Download PDF
-        </Button>
+    <div className="min-h-screen bg-gray-100 dark:bg-slate-950 -m-6 p-0">
+      {/* Sticky Action Bar */}
+      <div className="sticky top-0 z-30 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-gray-200 dark:border-slate-800">
+        <div className="max-w-5xl mx-auto flex justify-between items-center px-6 py-4">
+          <Button variant="outline" onClick={() => navigate(-1)} className="rounded-full">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <Button onClick={handleDownloadPdf} disabled={downloading} className="rounded-full">
+            {downloading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Preparing…
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
-      {/* Quote Document Card */}
-      <Card className="border-0 shadow-none bg-card rounded-3xl overflow-hidden">
-        <CardContent className="p-0" id="quote-pdf">
-          {/* Quote Header */}
+      {/* Paper Document */}
+      <div className="max-w-5xl mx-auto px-6 py-10">
+        <div className="bg-white dark:bg-slate-900 shadow-xl rounded-lg overflow-hidden ring-1 ring-gray-200 dark:ring-slate-800" id="quote-pdf">
           <QuoteHeader
             quoteId={quote.quoteId}
             clientName={clientInfo.fullName}
@@ -168,10 +178,8 @@ const QuoteDetail = () => {
             clientId={clientInfo.idNumber}
           />
 
-          {/* Product Details - Dynamic based on product type */}
           {renderProductDisplay()}
 
-          {/* Terms and Conditions / Disclaimer */}
           {(quote.termsAndConditions || quote.disclaimerText) && (
             <div className="border-t border-border p-8 bg-card">
               <h3 className="text-xl font-semibold text-center mb-4 text-foreground">Terms & Conditions</h3>
@@ -180,8 +188,8 @@ const QuoteDetail = () => {
               </p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
