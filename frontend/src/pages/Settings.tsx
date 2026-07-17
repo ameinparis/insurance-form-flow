@@ -584,8 +584,10 @@ const Settings = () => {
         </TabsContent>
 
       </Tabs>
+      </div>
     </div>
   )
+
 }
 
 export default Settings
