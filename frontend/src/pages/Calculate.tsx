@@ -95,8 +95,10 @@ const Calculate = () => {
           ))}
         </div>
       </div>
+      </div>
     </div>
   )
 }
+
 
 export default Calculate
