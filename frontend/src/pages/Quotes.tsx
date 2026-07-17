@@ -161,8 +161,8 @@ const Quotes = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="-m-6">
+      <div className="sticky top-0 z-30 bg-card px-6 pt-6 pb-4 flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold mb-2">Quotation Management</h2>
           <p className="text-muted-foreground">Manage and view all your insurance quotes.</p>
@@ -174,6 +174,8 @@ const Quotes = () => {
           </Link>
         </Button>
       </div>
+      <div className="px-6 pb-6 space-y-6">
+
 
       <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
         <CardHeader>
@@ -418,8 +420,10 @@ const Quotes = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
+
 
 export default Quotes

@@ -54,11 +54,14 @@ const Calculate = () => {
   ]
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
+    <div className="-m-6">
+      <div className="sticky top-0 z-30 bg-card px-6 pt-6 pb-4">
         <h2 className="text-3xl font-bold mb-2">Calculate Insurance</h2>
         <p className="text-muted-foreground">Choose an insurance type to get started with your calculation.</p>
       </div>
+      <div className="px-6 pb-6 space-y-6">
+
+
 
       <div className="bg-gray-50 dark:bg-slate-800 rounded-3xl p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -92,8 +95,10 @@ const Calculate = () => {
           ))}
         </div>
       </div>
+      </div>
     </div>
   )
 }
+
 
 export default Calculate

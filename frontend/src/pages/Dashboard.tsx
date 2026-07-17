@@ -109,12 +109,12 @@ const Dashboard = () => {
   const displayQuotes = filteredQuotes.slice(0, maxDisplayQuotes)
 
   return (
-    <div className="relative min-h-full -m-6 p-6 bg-gradient-to-br from-[#f2f5f7] via-[#e8f3f1] to-[#e0ebf5] dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+    <div className="relative min-h-full -m-6 bg-gradient-to-br from-[#f2f5f7] via-[#e8f3f1] to-[#e0ebf5] dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
       {/* Ambient blur orbs */}
       <div className="pointer-events-none absolute -top-20 -right-10 w-96 h-96 bg-cyan-200/30 dark:bg-cyan-500/10 rounded-full blur-3xl" />
       <div className="pointer-events-none absolute top-1/2 -left-20 w-80 h-80 bg-emerald-100/40 dark:bg-emerald-500/10 rounded-full blur-3xl" />
 
-      <div className="relative space-y-6">
+      <div className="sticky top-0 z-30 px-6 pt-6 pb-4 bg-gradient-to-br from-[#f2f5f7] via-[#e8f3f1] to-[#e0ebf5] dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
         <div className="flex items-center justify-between px-1">
           <h2 className="font-heading text-3xl font-extrabold tracking-tight text-[#163144] dark:text-[#DFF3EB]">Dashboard</h2>
           <Button
@@ -124,6 +124,10 @@ const Dashboard = () => {
             New Quote
           </Button>
         </div>
+      </div>
+
+      <div className="relative space-y-6 px-6 pb-6">
+
 
         {/* Stats Cards */}
         <StatsCards
