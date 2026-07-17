@@ -184,10 +184,12 @@ const Settings = () => {
   const passwordStrength = getPasswordStrength(passwordData.newPassword)
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div>
+    <div className="-m-6">
+      <div className="sticky top-0 z-30 bg-card px-6 pt-6 pb-4">
         <h1 className="text-3xl font-bold">Account & Settings</h1>
       </div>
+      <div className="container mx-auto px-6 pb-6 space-y-6">
+
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
