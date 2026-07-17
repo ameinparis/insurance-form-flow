@@ -505,8 +505,10 @@ const Team = () => {
         onConfirm={handleDeleteUser}
         loading={deleteLoading}
       />
+      </div>
     </div>
   )
 }
+
 
 export default Team
