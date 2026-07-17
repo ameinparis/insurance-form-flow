@@ -28,34 +28,32 @@ export function AppSidebar() {
             <span className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider">Menu</span>
           </div>
 
-          <nav className="space-y-1">
+          <nav className="space-y-2">
             {menuItems.map((item) => (
               <NavLink
                 key={item.title}
                 to={item.url}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-2 py-2 rounded-xl transition-all duration-200 group ${
+                  `relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group ${
                     isActive
-                      ? "bg-sidebar-active text-sidebar-active-foreground"
-                      : "text-foreground/70 dark:text-white hover:bg-sidebar-accent-hover"
+                      ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                      : "text-foreground/70 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 ${
-                      isActive 
-                        ? "bg-white/20" 
-                        : "bg-muted/50 dark:bg-sidebar-accent"
-                    }`}>
-                      <item.icon className="h-4 w-4 flex-shrink-0" />
-                    </div>
-                    <span className="text-[13px] font-medium whitespace-nowrap">{item.title}</span>
+                    {isActive && (
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-blue-500" />
+                    )}
+                    <item.icon className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
+                    <span className="text-[13px] font-semibold whitespace-nowrap">{item.title}</span>
                   </>
                 )}
               </NavLink>
             ))}
           </nav>
+
         </div>
 
         {/* Divider */}
@@ -69,38 +67,34 @@ export function AppSidebar() {
             <span className="text-[10px] font-medium text-muted-foreground/60 uppercase tracking-wider">Settings</span>
           </div>
 
-          <nav className="space-y-1">
+          <nav className="space-y-2">
             {settingsItems.map((item) => (
               <NavLink
                 key={item.title}
                 to={item.url}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-2 py-2 rounded-xl transition-all duration-200 group ${
+                  `relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group ${
                     isActive
-                      ? "bg-sidebar-active text-sidebar-active-foreground"
-                      : item.title === "Logout" 
+                      ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                      : item.title === "Logout"
                         ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        : "text-foreground/70 dark:text-white hover:bg-sidebar-accent-hover"
+                        : "text-foreground/70 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 ${
-                      isActive 
-                        ? "bg-white/20" 
-                        : item.title === "Logout"
-                          ? "bg-red-50 dark:bg-red-900/20"
-                          : "bg-muted/50 dark:bg-sidebar-accent"
-                    }`}>
-                      <item.icon className={`h-4 w-4 flex-shrink-0 ${item.title === "Logout" ? "text-red-500" : ""}`} />
-                    </div>
-                    <span className={`text-sm font-medium ${item.title === "Logout" ? "text-red-500" : ""}`}>{item.title}</span>
+                    {isActive && (
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-blue-500" />
+                    )}
+                    <item.icon className={`h-4 w-4 flex-shrink-0 ${item.title === "Logout" ? "text-red-500" : ""}`} strokeWidth={2} />
+                    <span className={`text-[13px] font-semibold ${item.title === "Logout" ? "text-red-500" : ""}`}>{item.title}</span>
                   </>
                 )}
               </NavLink>
             ))}
           </nav>
+
         </div>
       </SidebarContent>
     </Sidebar>
