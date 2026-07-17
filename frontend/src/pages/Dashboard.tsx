@@ -109,26 +109,23 @@ const Dashboard = () => {
   const displayQuotes = filteredQuotes.slice(0, maxDisplayQuotes)
 
   return (
-    <div className="relative min-h-full -m-6 bg-gradient-to-br from-[#f2f5f7] via-[#e8f3f1] to-[#e0ebf5] dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
-      {/* Ambient blur orbs */}
-      <div className="pointer-events-none absolute -top-20 -right-10 w-96 h-96 bg-cyan-200/30 dark:bg-cyan-500/10 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute top-1/2 -left-20 w-80 h-80 bg-emerald-100/40 dark:bg-emerald-500/10 rounded-full blur-3xl" />
-
-      <div className="sticky top-0 z-30 px-6 pt-6 pb-4 bg-gradient-to-br from-[#f2f5f7] via-[#e8f3f1] to-[#e0ebf5] dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="font-heading text-3xl font-extrabold tracking-tight text-[#163144] dark:text-[#DFF3EB]">Dashboard</h2>
+    <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900">
+      <div className="sticky top-0 z-30 px-6 pt-6 pb-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Dashboard</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Plan, prioritize, and accomplish your work with ease.</p>
+          </div>
           <Button
             onClick={() => navigate("/calculator")}
-            className="px-6 py-2.5 bg-[#009fe3] hover:bg-[#0089c4] text-white rounded-full font-bold text-sm tracking-wide shadow-lg shadow-[#009fe3]/30 transition-all active:scale-95"
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-sm shadow-sm transition-all active:scale-95"
           >
-            New Quote
+            + New Quote
           </Button>
         </div>
       </div>
 
-      <div className="relative space-y-6 px-6 pb-6">
-
-
+      <div className="relative space-y-6 px-6 pt-6 pb-6">
         {/* Stats Cards */}
         <StatsCards
           quotes={recentQuotes}
@@ -138,83 +135,73 @@ const Dashboard = () => {
         />
 
         {/* Recent Quotes Table */}
-        <Card className="bg-white/20 dark:bg-slate-800/30 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-[2.5rem] shadow-2xl shadow-slate-200/20 dark:shadow-black/20">
-          <CardHeader className="flex flex-row items-center justify-between px-8 pt-8 pb-4">
+        <Card className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between p-6 pb-4">
             <div>
-              <CardTitle className="font-heading text-xl font-bold text-[#163144] dark:text-[#DFF3EB] tracking-tight">Recently Created</CardTitle>
-              <CardDescription className="text-sm text-[#1B405B]/70 dark:text-[#DFF3EB]/60 mt-1 tracking-wide">Latest quotes created by your team</CardDescription>
+              <CardTitle className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Recently Created</CardTitle>
+              <CardDescription className="text-sm text-slate-500 dark:text-slate-400 mt-1">Latest quotes created by your team</CardDescription>
             </div>
             {recentQuotes.length > maxDisplayQuotes && (
               <Button
                 variant="outline"
                 onClick={() => navigate("/quotes")}
-                className="px-5 py-2 text-sm font-semibold text-[#163144] dark:text-[#DFF3EB] bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/10 rounded-full hover:bg-white transition-all tracking-wide"
+                className="px-5 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 bg-transparent border border-slate-200 dark:border-slate-700 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all"
               >
                 Show All
               </Button>
             )}
           </CardHeader>
 
-          <CardContent className="px-8 pb-8">
+          <CardContent className="px-6 pb-6">
             {loading ? (
               <PageLoader />
             ) : recentQuotes.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">No quotes found.</div>
+              <div className="text-center py-16">
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No quotes found.</p>
+              </div>
             ) : (
               <>
                 <div className="overflow-x-auto">
                   <Table className="w-full">
                     <TableHeader>
-                      <TableRow className="border-b border-white/30 dark:border-white/10 hover:bg-transparent">
-                        <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 pl-4 normal-case">
-                          Quote ID
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 normal-case">
-                          Client Name
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 normal-case">
-                          Type
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 normal-case">
-                          Created By
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 normal-case">
-                          Date
-                        </TableHead>
-                        <TableHead className="text-xs font-semibold text-[#1B405B]/60 dark:text-[#DFF3EB]/50 tracking-wide pb-4 text-right pr-4 normal-case">
-                          Actions
-                        </TableHead>
+                      <TableRow className="border-b border-slate-200 dark:border-slate-700 hover:bg-transparent">
+                        <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400 pb-4 pl-4 normal-case">Quote ID</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400 pb-4 normal-case">Client Name</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400 pb-4 normal-case">Type</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400 pb-4 normal-case">Created By</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400 pb-4 normal-case">Date</TableHead>
+                        <TableHead className="text-xs font-semibold text-slate-500 dark:text-slate-400 pb-4 text-right pr-4 normal-case">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
 
-                    <TableBody className="divide-y divide-white/30 dark:divide-white/5">
+                    <TableBody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                       {displayQuotes.map((quote) => (
                         <TableRow
                           key={quote.id}
                           onClick={() => navigate(`/quotes/${quote.id}?legacy=${quote.isLegacy || false}`)}
-                          className="group border-0 hover:bg-white/40 dark:hover:bg-white/5 transition-all duration-300 cursor-pointer"
+                          className="group border-0 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer"
                         >
                           <TableCell className="py-5 pl-4">
                             <div className="flex items-center gap-3">
                               <PdfIcon size="sm" />
-                              <span className="font-semibold text-sm text-[#163144] dark:text-[#DFF3EB] tracking-wide">{quote.quoteId}</span>
+                              <span className="font-semibold text-sm text-slate-900 dark:text-white">{quote.quoteId}</span>
                             </div>
                           </TableCell>
-                          <TableCell className="py-5 text-sm font-semibold text-[#163144] dark:text-[#DFF3EB] tracking-wide">
+                          <TableCell className="py-5 text-sm font-semibold text-slate-900 dark:text-white">
                             {toTitleCase(quote.clientName || quote.fullName || quote.schemeName || "Unnamed")}
                           </TableCell>
                           <TableCell className="py-5">
                             <Badge
                               variant="outline"
-                              className={`rounded-full px-3 py-1 text-xs font-semibold border whitespace-nowrap tracking-wide ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
+                              className={`rounded-full px-3 py-1 text-xs font-semibold border whitespace-nowrap ${getQuoteTypeBadgeClass(quote.type || "Unknown")}`}
                             >
                               {quote.type || "Unknown"}
                             </Badge>
                           </TableCell>
-                          <TableCell className="py-5 text-sm text-[#1B405B]/80 dark:text-[#DFF3EB]/70 tracking-wide">
+                          <TableCell className="py-5 text-sm text-slate-600 dark:text-slate-300">
                             {quote.createdByName || "—"}
                           </TableCell>
-                          <TableCell className="py-5 text-sm text-[#1B405B]/70 dark:text-[#DFF3EB]/60 tracking-wide">
+                          <TableCell className="py-5 text-sm text-slate-500 dark:text-slate-400">
                             {new Date(quote.createdAt).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="py-5 text-right pr-4">
@@ -222,11 +209,11 @@ const Dashboard = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 rounded-full bg-white/60 dark:bg-white/5 hover:bg-white border border-white/50 dark:border-white/10"
+                                className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 border-0"
                                 onClick={(e) => handleDownloadPdf(e, quote.quoteId, quote.id, quote.isLegacy || false)}
                                 title="Download PDF"
                               >
-                                <Download className="h-4 w-4 text-[#1B405B] dark:text-[#DFF3EB]" />
+                                <Download className="h-4 w-4 text-slate-700 dark:text-slate-200" />
                               </Button>
                               {userRole === "superuser" && (
                                 <AlertDialog>
@@ -234,14 +221,14 @@ const Dashboard = () => {
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-8 w-8 rounded-full bg-white/60 dark:bg-white/5 hover:bg-rose-50 border border-white/50 dark:border-white/10"
+                                      className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-700/50 hover:bg-rose-100 dark:hover:bg-rose-900/30 border-0"
                                       onClick={(e) => {
                                         e.stopPropagation()
                                         setDeleteQuoteId(quote.id)
                                       }}
                                       title="Delete Quote"
                                     >
-                                      <Trash2 className="h-4 w-4 text-[#1B405B] dark:text-[#DFF3EB]" />
+                                      <Trash2 className="h-4 w-4 text-slate-700 dark:text-slate-200" />
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
@@ -274,8 +261,8 @@ const Dashboard = () => {
                   </Table>
                 </div>
 
-                <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/30 dark:border-white/10">
-                  <p className="text-sm font-medium text-[#1B405B]/70 dark:text-[#DFF3EB]/60 tracking-wide">
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                     Showing {displayQuotes.length} of {filteredQuotes.length} quotes{typeFilter && ` (filtered by ${typeFilter})`}
                   </p>
                 </div>
