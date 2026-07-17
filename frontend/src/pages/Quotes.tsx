@@ -420,8 +420,10 @@ const Quotes = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
+
 
 export default Quotes
