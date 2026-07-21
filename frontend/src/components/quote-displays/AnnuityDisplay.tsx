@@ -104,58 +104,58 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
           Quotation for {toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "Client Name"}
         </h2>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Date of Birth:</span>
+      <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Date of Birth:</span>
           <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.dateOfBirth || "N/A"}</span>
         </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">ID/Passport Number:</span>
+        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">ID/Passport Number:</span>
           <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.idNumber || "N/A"}</span>
         </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Contact:</span>
+        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Contact:</span>
           <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.contactNumber || "N/A"}</span>
         </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Email:</span>
+        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Email:</span>
           <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.email || "N/A"}</span>
         </div>
-        <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Purchase Premium:</span>
+        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Purchase Premium:</span>
           <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(inputData?.purchaseAmount)}</span>
         </div>
         {!hasScenarios && (
           <>
-            <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Drawdown %:</span>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Drawdown %:</span>
               <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.drawdown || "N/A"}%</span>
             </div>
-            <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">
                 Living Annuity per Month{inputData?.age && inputData?.guaranteedStartAge ? ` (Age ${inputData.age} to ${inputData.guaranteedStartAge})` : ''}:
               </span>
               <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
                 {formatCurrency(outputData?.living?.guaranteed_annuity)}
               </span>
             </div>
-            <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Funds Remaining:</span>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Funds Remaining:</span>
               <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.living?.funds_remaining)}</span>
             </div>
-            <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Frequency:</span>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Frequency:</span>
               <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.frequency || "N/A"}</span>
             </div>
             {knownPeriod != null && (
-              <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-                <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Selected Guarantee Period:</span>
+              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Selected Guarantee Period:</span>
                 <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{knownPeriod} years</span>
               </div>
             )}
             {knownAnnuity != null && (
-              <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-                <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Monthly Life Annuity (Selected):</span>
+              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Monthly Life Annuity (Selected):</span>
                 <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(knownAnnuity)}</span>
               </div>
             )}
@@ -259,7 +259,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
         <h3 className="text-base font-semibold mb-6 text-gray-800 dark:text-gray-100">
           Customer Acceptance
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-2 gap-8">
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
               Signature:
