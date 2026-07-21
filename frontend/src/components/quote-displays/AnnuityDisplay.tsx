@@ -155,7 +155,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
             )}
             {knownAnnuity != null && (
               <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Monthly Life Annuity (Selected):</span>
+                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Monthly Life Annuity:</span>
                 <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(knownAnnuity)}</span>
               </div>
             )}
@@ -306,7 +306,7 @@ const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriod
               {row.guarantee_period}-Year Guarantee
               {selectedPeriods.includes(row.guarantee_period) && (
                 <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
-                  (selected)
+                
                 </span>
               )}
             </th>
