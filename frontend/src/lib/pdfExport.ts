@@ -75,6 +75,8 @@ const PDF_EXTRA_STYLES = `
   table { width: 100% !important; table-layout: fixed; border-collapse: collapse; }
   th, td { word-break: break-word; overflow-wrap: anywhere; white-space: normal !important; }
   tr { break-inside: avoid; page-break-inside: avoid; }
+  /* Keep entire tables and scenario option cards intact — never split across pages */
+  table, .scenario-block { break-inside: avoid !important; page-break-inside: avoid !important; }
   img { max-width: 100%; height: auto; }
   /* Justify Terms & Conditions body */
   .pdf-terms p { text-align: justify; text-justify: inter-word; }
