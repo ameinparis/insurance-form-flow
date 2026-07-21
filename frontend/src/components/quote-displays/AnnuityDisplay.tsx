@@ -259,7 +259,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
         <h3 className="text-base font-semibold mb-6 text-gray-800 dark:text-gray-100">
           Customer Acceptance
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-2 gap-8">
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
               Signature:
