@@ -491,22 +491,22 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
         <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
           Living Annuity
         </h5>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1">
-          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Drawdown:</span>
+        <div className="flex flex-col">
+          <div className="flex justify-between items-baseline border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Drawdown:</span>
             <span className="text-sm text-gray-800 dark:text-gray-100">
               {inputs.drawdown ?? "—"}%
             </span>
           </div>
-          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">Frequency:</span>
+          <div className="flex justify-between items-baseline border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Frequency:</span>
             <span className="text-sm text-gray-800 dark:text-gray-100">
               {inputs.frequency ?? "—"}
             </span>
           </div>
           {living?.guarantee_period != null && (
-            <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+            <div className="flex justify-between items-baseline border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">
                 Living Guarantee Period:
               </span>
               <span className="text-sm text-gray-800 dark:text-gray-100">
@@ -514,16 +514,16 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
               </span>
             </div>
           )}
-          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+          <div className="flex justify-between items-baseline border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">
               {livingLabel}:
             </span>
             <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
               {formatCurrency(living?.guaranteed_annuity)}
             </span>
           </div>
-          <div className="flex justify-between border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-700 dark:text-gray-300">
+          <div className="flex justify-between items-baseline border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">
               Funds Remaining:
             </span>
             <span className="text-sm text-gray-800 dark:text-gray-100">
