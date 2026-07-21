@@ -9,6 +9,8 @@ import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLif
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 
 const PDF_EXTRA_STYLES = `
+  /* A4 with tight margins to help fit into ~2 pages */
+  @page { size: A4; margin: 12mm 12mm; }
   /* Force light-mode rendering for PDF and match on-screen paper look */
   html, body {
     background: #ffffff !important;
@@ -21,7 +23,43 @@ const PDF_EXTRA_STYLES = `
   body {
     font-family: 'Urbanist', 'Open Sans', system-ui, -apple-system, Arial, sans-serif;
     font-weight: 300;
+    font-size: 10.5px;
+    line-height: 1.35;
   }
+  /* Compact the rendered quote: shrink every text utility a notch */
+  .text-xs { font-size: 9px !important; }
+  .text-sm { font-size: 10px !important; }
+  .text-base { font-size: 11px !important; }
+  .text-lg { font-size: 12.5px !important; }
+  .text-xl { font-size: 14px !important; }
+  .text-2xl { font-size: 16px !important; }
+  /* Tighten vertical rhythm */
+  .space-y-8 > * + * { margin-top: 0.9rem !important; }
+  .space-y-6 > * + * { margin-top: 0.7rem !important; }
+  .space-y-4 > * + * { margin-top: 0.5rem !important; }
+  .p-8 { padding: 0.9rem !important; }
+  .p-6 { padding: 0.75rem !important; }
+  .py-2 { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
+  .py-3 { padding-top: 0.3rem !important; padding-bottom: 0.3rem !important; }
+  .mt-12 { margin-top: 0.9rem !important; }
+  .mt-8 { margin-top: 0.7rem !important; }
+  .mb-12 { margin-bottom: 0.7rem !important; }
+  .mb-8 { margin-bottom: 0.6rem !important; }
+  .pt-8 { padding-top: 0.6rem !important; }
+  .pb-3 { padding-bottom: 0.3rem !important; }
+  .gap-y-4 { row-gap: 0.25rem !important; }
+  .gap-x-12 { column-gap: 1.25rem !important; }
+  /* Darker, print-safe borders so the print-out never renders faint hairlines */
+  .border, .border-t, .border-b, .border-l, .border-r,
+  [class*="border-gray-100"], [class*="border-gray-200"],
+  [class*="border-gray-300"], [class*="border-gray-400"],
+  [class*="border-slate-"] {
+    border-color: #4b5563 !important;
+  }
+  table, th, td { border-color: #4b5563 !important; }
+  hr { border-color: #4b5563 !important; }
+  /* Header logo shouldn't dominate a compact 2-page layout */
+  header img, .h-20 { height: 3rem !important; }
   /* Neutralize dark-mode variants that ship in the rendered markup */
   .dark\\:bg-slate-900, .dark\\:bg-slate-800, .dark\\:bg-slate-800\\/40,
   .dark\\:bg-gray-900, .dark\\:bg-gray-800 { background-color: transparent !important; }
@@ -29,16 +67,17 @@ const PDF_EXTRA_STYLES = `
   .dark\\:text-white { color: inherit !important; }
   .dark\\:border-gray-700, .dark\\:border-gray-800, .dark\\:border-gray-600,
   .dark\\:ring-slate-800 { border-color: inherit !important; }
-  /* PDF page rhythm */
-  .scenario-block, section, .space-y-8 > *, table { break-inside: avoid; page-break-inside: avoid; }
+  /* Keep client/customer info block together on page 1 */
+  .grid { break-inside: avoid; page-break-inside: avoid; }
   thead { display: table-header-group; }
-  /* Prevent horizontal clipping — the on-screen UI uses overflow-x-auto for wide
-     tables, but a PDF has no scroll: force everything to stay within page width. */
+  /* Prevent horizontal clipping */
   .overflow-x-auto, .overflow-auto, .overflow-hidden { overflow: visible !important; }
   table { width: 100% !important; table-layout: fixed; border-collapse: collapse; }
   th, td { word-break: break-word; overflow-wrap: anywhere; white-space: normal !important; }
   tr { break-inside: avoid; page-break-inside: avoid; }
   img { max-width: 100%; height: auto; }
+  /* Justify Terms & Conditions body */
+  .pdf-terms p { text-align: justify; text-justify: inter-word; }
 `;
 
 /**
