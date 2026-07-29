@@ -17,6 +17,7 @@ import { PdfIcon } from "@/components/PdfIcon"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { exportQuotePdf } from "@/lib/pdfExport"
 import { PageLoader } from "@/components/PageLoader"
+import { StatsCards } from "@/components/dashboard/StatsCards"
 import {
   AlertDialog,
   AlertDialogAction,
