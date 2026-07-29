@@ -108,11 +108,22 @@ const App = () => (
                   <Settings />
                 </Layout>
               } />
-              <Route path="/team" element={
+              <Route path="/clients" element={
                 <Layout>
-                  <Team />
+                  <Clients />
                 </Layout>
               } />
+              <Route path="/claims" element={
+                <Layout>
+                  <Claims />
+                </Layout>
+              } />
+              <Route path="/administration" element={
+                <Layout>
+                  <Administration />
+                </Layout>
+              } />
+              <Route path="/team" element={<Navigate to="/administration" replace />} />
               <Route path="/logout" element={<LogoutHandler />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
