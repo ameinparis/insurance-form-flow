@@ -12,7 +12,6 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Calculate from "./pages/Calculate";
-import Team from "./pages/Team";
 import Clients from "./pages/Clients";
 import Claims from "./pages/Claims";
 import Administration from "./pages/Administration";
