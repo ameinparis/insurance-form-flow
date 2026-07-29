@@ -183,6 +183,15 @@ const Quotes = () => {
       </div>
       <div className="px-6 pb-6 space-y-6">
 
+        <StatsCards
+          quotes={quotes}
+          loading={loading}
+          onTypeFilter={setTypeFilter}
+          activeFilter={typeFilter}
+        />
+
+
+
 
       <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
         <CardHeader>
