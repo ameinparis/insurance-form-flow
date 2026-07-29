@@ -36,6 +36,7 @@ const Quotes = () => {
   const { globalSearchTerm, setGlobalSearchTerm } = useGlobalSearch()
   const [localSearchTerm, setLocalSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("date")
+  const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const { data: quotes = [], isLoading } = useQuotesList()
   const loading = isLoading && quotes.length === 0
   const [currentPage, setCurrentPage] = useState(1)
