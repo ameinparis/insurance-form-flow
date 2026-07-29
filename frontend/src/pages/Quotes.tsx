@@ -132,6 +132,11 @@ const Quotes = () => {
       )
     }
 
+    if (typeFilter) {
+      filtered = filtered.filter(quote => quote.type === typeFilter)
+    }
+
+
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "date":
