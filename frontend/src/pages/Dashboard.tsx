@@ -104,37 +104,44 @@ const Dashboard = () => {
     }
   }
 
-  // Filter and limit quotes for dashboard display
-  const filteredQuotes = typeFilter 
-    ? recentQuotes.filter(q => q.type === typeFilter)
-    : recentQuotes
+  // Limit quotes for dashboard display
+  const filteredQuotes = recentQuotes
   const displayQuotes = filteredQuotes.slice(0, maxDisplayQuotes)
 
   return (
     <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900">
       <div className="sticky top-0 z-30 px-6 pt-6 pb-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Dashboard</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Plan, prioritize, and accomplish your work with ease.</p>
           </div>
-          <Button
-            onClick={() => navigate("/calculator")}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-sm shadow-sm transition-all active:scale-95"
-          >
-            + New Quote
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setConvertOpen(true)}
+              className="px-5 py-2.5 rounded-full font-bold text-sm bg-transparent border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95"
+            >
+              <Repeat2 className="h-4 w-4 mr-2" />
+              Convert Quote to Policy
+            </Button>
+            <Button
+              onClick={() => navigate("/calculator")}
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-sm shadow-sm transition-all active:scale-95"
+            >
+              + New Quote
+            </Button>
+          </div>
         </div>
       </div>
 
       <div className="relative space-y-6 px-6 pt-6 pb-6">
-        {/* Stats Cards */}
-        <StatsCards
-          quotes={recentQuotes}
-          loading={loading}
-          onTypeFilter={setTypeFilter}
-          activeFilter={typeFilter}
-        />
+        {/* Overview Stats */}
+        <OverviewStats totalQuotations={recentQuotes.length} loading={loading} />
+
+        {/* Recent Activity */}
+        <RecentActivity quotes={recentQuotes} loading={loading} />
+
 
         {/* Recent Quotes Table */}
         <Card className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm">
