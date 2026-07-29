@@ -155,7 +155,7 @@ const Quotes = () => {
     })
 
     return filtered
-  }, [quotes, searchTerm, sortBy])
+  }, [quotes, searchTerm, sortBy, typeFilter])
 
   // Pagination logic
   const totalPages = Math.ceil(filteredAndSortedQuotes.length / itemsPerPage)
