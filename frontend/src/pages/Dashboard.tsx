@@ -32,7 +32,7 @@ const Dashboard = () => {
   const queryClient = useQueryClient()
   const { data: recentQuotes = [], isLoading, isFetching } = useQuotesList()
   const loading = isLoading && recentQuotes.length === 0
-  const [typeFilter, setTypeFilter] = useState<string | null>(null)
+  const [convertOpen, setConvertOpen] = useState(false)
   const [deleteQuoteId, setDeleteQuoteId] = useState<string | null>(null)
   const { userRole } = useAuth()
   const maxDisplayQuotes = 15
