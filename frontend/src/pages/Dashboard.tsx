@@ -272,7 +272,7 @@ const Dashboard = () => {
 
                 <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                   <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                    Showing {displayQuotes.length} of {filteredQuotes.length} quotes{typeFilter && ` (filtered by ${typeFilter})`}
+                    Showing {displayQuotes.length} of {filteredQuotes.length} quotes
                   </p>
                 </div>
               </>
@@ -280,6 +280,8 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <ConvertQuoteDialog open={convertOpen} onOpenChange={setConvertOpen} quotes={recentQuotes} />
     </div>
   )
 }
