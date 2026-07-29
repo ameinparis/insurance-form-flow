@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SearchProvider } from "@/lib/searchContext";
 import { BackgroundJobProvider } from "@/contexts/BackgroundJobContext";
 import MultiJobWidget from "@/components/BackgroundJobWidget";
@@ -12,7 +12,9 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Calculate from "./pages/Calculate";
-import Team from "./pages/Team";
+import Clients from "./pages/Clients";
+import Claims from "./pages/Claims";
+import Administration from "./pages/Administration";
 import CalculateForm from "./pages/CalculateForm";
 import FormRouter from "./components/FormRouter";
 import Results from "./pages/Results";
@@ -105,11 +107,22 @@ const App = () => (
                   <Settings />
                 </Layout>
               } />
-              <Route path="/team" element={
+              <Route path="/clients" element={
                 <Layout>
-                  <Team />
+                  <Clients />
                 </Layout>
               } />
+              <Route path="/claims" element={
+                <Layout>
+                  <Claims />
+                </Layout>
+              } />
+              <Route path="/administration" element={
+                <Layout>
+                  <Administration />
+                </Layout>
+              } />
+              <Route path="/team" element={<Navigate to="/administration" replace />} />
               <Route path="/logout" element={<LogoutHandler />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

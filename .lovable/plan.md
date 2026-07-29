@@ -1,55 +1,70 @@
 ## Goal
 
-Restructure the multi-scenario annuity quote output so each Living Annuity calculation is shown as its own block, with a Life Annuity table for the standard 5 / 10 / 15 / 20-year guarantee periods underneath it — matching the client's description and the first/last uploaded sketches.
+Adopt the layout and components from the screenshots — new menu structure, new dashboard stats, Recent Activity feed, Clients/Claims/Administration shells — while keeping the existing visual language (current dark navy/blue theme, Urbanist/Wix Madefor type, rounded cards, pill buttons, sticky page headers).
 
-## Current behaviour
+No backend changes. New sections are UI shells; numbers come from existing quote data where possible, otherwise show 0 with an honest empty state.
 
-- **Single scenario**: already shows Living Annuity details, then a "Life Annuity — Guarantee Period Options" table with 5/10/15/20-year rows. This is the shape the client wants.
-- **Multi-scenario ("Annuity Income Options")**: renders a wide side-by-side table where each column is one scenario and the Life Annuity is one row with a single guarantee period. This is the format to replace.
+## 1. Sidebar (`components/AppSidebar.tsx`)
 
-## New layout (multi-scenario mode)
-
-For each saved scenario, render a self-contained vertical block:
+Restructure the MENU section to:
 
 ```text
-─────────────────────────────────────────────
-Option 1 — 6% Drawdown · 30-Year Guarantee · Monthly
-
-  Living Annuity
-    Drawdown                6%
-    Frequency               Monthly
-    Living Guarantee        30 years
-    Living Annuity/month    BWP 4,000.00
-    Funds Remaining         BWP 5,811,118.20
-
-  Life Annuity — Guarantee Period Options
-    5 years    BWP …
-    10 years   BWP …
-    15 years   BWP …   (selected)
-    20 years   BWP …
-─────────────────────────────────────────────
-Option 2 — …
+Dashboard
+Quotations            (collapsible group, chevron)
+   New Quote          -> /calculator
+   Quote Management   -> /quotes
+Clients               -> /clients
+Claims                -> /claims
+Administration        -> /administration
+--- SETTINGS ---
+Settings
+Logout
 ```
 
-Blocks stack vertically, no horizontal scrolling, natural page flow in the PDF.
+- Quotations expands/collapses on click, auto-expanded when the route is `/calculator*` or `/quotes*`.
+- Reuse existing active-state styling (blue pill background + left accent bar); sub-items get a smaller indented variant.
+- Team moves under Administration (see below) rather than being a top-level item.
 
-## Changes
+## 2. Dashboard (`pages/Dashboard.tsx`)
 
-### `frontend/src/components/quote-displays/AnnuityDisplay.tsx`
-- Extract the existing single-scenario Life table into an internal `LifePeriodsTable` component so it can be reused per scenario.
-- Replace the chunked wide table in the `hasScenarios` branch with `scenarios.map(...)` rendering one block per scenario:
-  1. Small heading: `Option N — {scenario.label}`.
-  2. Compact 2-column "Living Annuity" summary (Drawdown, Frequency, Living Guarantee Period, Living Annuity per period, Funds Remaining) reusing the current detail-row styling.
-  3. `LifePeriodsTable` for 5/10/15/20 years — marking the scenario's own `outputs.life.guarantee_period` as `(selected)` with bold value.
-- Fetch life periods per scenario via `fetchLifeAnnuityPeriods(scenario.inputs.guaranteedStartAge, scenario.inputs.lifePurchaseAmount ?? scenario.inputs.purchaseAmount, { guarantee_period, monthly_annuity })`, seeded with the scenario's known value so only the missing 3 periods hit the API. Prefer `scenario.outputs.life.periods` when pre-injected.
-- Remove the chunking logic (`SCENARIOS_PER_CHUNK`, `scenario-chunk` wrappers).
+Header row keeps the sticky title, adds a secondary **Convert Quote to Policy** button (outline pill with a swap icon) next to **New Quote**.
 
-### `frontend/src/lib/pdfExport.ts`
-- Drop the now-unused `.scenario-chunk` CSS rules. Keep `thead { display: table-header-group }` and `tr { break-inside: avoid }` so per-scenario tables paginate cleanly without forced breaks.
-- If existing code pre-fetches `outputs.life.periods` for PDF export in the single-scenario case, extend it to populate the same field on each scenario before rendering; otherwise the runtime fetch in `AnnuityDisplay` covers the on-screen view and the PDF renderer will pick up whatever is populated at render time.
+New stat row — 5 cards, same card shell as today (rounded-2xl, border, soft-tinted circular icon badge, arrow chip top-right):
 
-## Out of scope
+| Card | Source |
+| --- | --- |
+| Total Quotations | count of all quotes |
+| Converted Quotations | 0 (no status field yet) |
+| Active Clients | 0 |
+| Active Policies | 0 |
+| Pending Verification | 0 |
 
-- No backend/calculation changes — reuses `fetchLifeAnnuityPeriods` and the existing `/api/quotes/calculate-annuity` endpoint.
-- No changes to the input form or scenario-saving flow.
-- Single-scenario view unchanged.
+Each card gets the subtitle copy from the screenshots. Cards with no data source render 0 plus their descriptive subtitle — no fake numbers.
+
+**Recent Activity** card below: derived from the existing quotes list — one entry per recent quote ("Draft Quote Created for {client}", relative time, type badge), icon in a circular tinted badge, rows separated by hairline dividers, "View All" link to `/quotes`.
+
+**Recently Created** quotes table stays below Recent Activity, unchanged.
+
+**Convert Quote to Policy** dialog: search-by-name input over the existing quotes list, result rows selectable; confirming shows a "coming soon / not yet wired" toast since there's no policy backend.
+
+## 3. Quotation Management (`pages/Quotes.tsx`)
+
+Move the current dashboard analytics here, above the quotes table:
+- The 4 stat cards (Total Quotes, Total Clients, This Month, This Week)
+- The "Quotes by Type" pie chart with click-to-filter
+
+The pie filter drives the existing table filter on this page. `StatsCards.tsx` is reused as-is.
+
+## 4. New shell pages
+
+- `pages/Clients.tsx` — title + subtitle "Annuity policyholders converted from approved quotes.", search field, centered empty state with users icon and the copy from the screenshot.
+- `pages/Claims.tsx` — same shell pattern, claims-appropriate copy.
+- `pages/Administration.tsx` — shell hosting the existing Team management as its first section, so nothing is lost.
+
+Routes registered in `App.tsx` inside `Layout`; `/team` kept as a redirect to `/administration`.
+
+## Technical notes
+
+- All work is frontend-only under `frontend/src`; no backend, no API changes.
+- New dashboard stat cards and activity rows extract into `components/dashboard/` (e.g. `OverviewStats.tsx`, `RecentActivity.tsx`) to keep `Dashboard.tsx` small.
+- Styling uses the existing slate/blue token classes already in the codebase; no new palette, no new fonts.

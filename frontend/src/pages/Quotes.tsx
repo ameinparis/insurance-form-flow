@@ -17,6 +17,7 @@ import { PdfIcon } from "@/components/PdfIcon"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { exportQuotePdf } from "@/lib/pdfExport"
 import { PageLoader } from "@/components/PageLoader"
+import { StatsCards } from "@/components/dashboard/StatsCards"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +36,7 @@ const Quotes = () => {
   const { globalSearchTerm, setGlobalSearchTerm } = useGlobalSearch()
   const [localSearchTerm, setLocalSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("date")
+  const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const { data: quotes = [], isLoading } = useQuotesList()
   const loading = isLoading && quotes.length === 0
   const [currentPage, setCurrentPage] = useState(1)
@@ -130,6 +132,11 @@ const Quotes = () => {
       )
     }
 
+    if (typeFilter) {
+      filtered = filtered.filter(quote => quote.type === typeFilter)
+    }
+
+
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "date":
@@ -148,7 +155,7 @@ const Quotes = () => {
     })
 
     return filtered
-  }, [quotes, searchTerm, sortBy])
+  }, [quotes, searchTerm, sortBy, typeFilter])
 
   // Pagination logic
   const totalPages = Math.ceil(filteredAndSortedQuotes.length / itemsPerPage)
@@ -175,6 +182,15 @@ const Quotes = () => {
         </Button>
       </div>
       <div className="px-6 pb-6 space-y-6">
+
+        <StatsCards
+          quotes={quotes}
+          loading={loading}
+          onTypeFilter={setTypeFilter}
+          activeFilter={typeFilter}
+        />
+
+
 
 
       <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
