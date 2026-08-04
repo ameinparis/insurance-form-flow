@@ -406,6 +406,7 @@ interface ScenarioGroupBlockProps {
 }
 
 const ScenarioGroupBlock = ({ group, index, showOptionLabel = true, clientData, quoteId, productType }: ScenarioGroupBlockProps) => {
+  const { addClient } = useClientDirectory();
   // Representative scenario for shared living details
   const rep = group.scenarios[0];
   const inputs = rep?.inputs || {};
