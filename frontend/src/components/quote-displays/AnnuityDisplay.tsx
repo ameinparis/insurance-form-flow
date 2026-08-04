@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
+import { Repeat2 } from "lucide-react";
+import { toast } from "sonner";
 import { formatCurrency, toTitleCase } from "@/lib/quoteUtils";
+import { useClientDirectory } from "@/hooks/useClientDirectory";
 import {
   fetchLifeAnnuityPeriods,
   LIFE_ANNUITY_PERIODS,
