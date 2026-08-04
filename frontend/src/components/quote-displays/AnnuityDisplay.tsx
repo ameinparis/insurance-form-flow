@@ -178,7 +178,16 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
             </div>
             <div className="space-y-8">
               {groups.map((group, idx) => (
-                <ScenarioGroupBlock key={idx} group={group} index={idx} showOptionLabel={groups.length > 1} />
+                <ScenarioGroupBlock
+                  key={idx}
+                  group={group}
+                  index={idx}
+                  showOptionLabel={groups.length > 1}
+                  clientData={clientData}
+                  quoteId={quote?.quoteId}
+                  productType={quote?.productType || quote?.type}
+                />
+
               ))}
             </div>
           </div>
