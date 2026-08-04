@@ -9,6 +9,8 @@ import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLif
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 
 const PDF_EXTRA_STYLES = `
+  .no-print { display: none !important; }
+
   /* A4 with tight margins to help fit into ~2 pages */
   @page { size: A4; margin: 12mm 12mm; }
   /* Force light-mode rendering for PDF and match on-screen paper look */

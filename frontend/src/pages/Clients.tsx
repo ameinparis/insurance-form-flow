@@ -1,9 +1,23 @@
-import { useState } from "react"
-import { Search, Users } from "lucide-react"
+import { useMemo, useState } from "react"
+import { Search, Users, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { useClientDirectory } from "@/hooks/useClientDirectory"
+import { formatCurrency, formatDate } from "@/lib/quoteUtils"
 
 const Clients = () => {
   const [term, setTerm] = useState("")
+  const { clients, removeClient } = useClientDirectory()
+
+  const filtered = useMemo(() => {
+    const q = term.trim().toLowerCase()
+    if (!q) return clients
+    return clients.filter((c) =>
+      `${c.fullName} ${c.email || ""} ${c.contactNumber || ""} ${c.quoteId || ""}`.toLowerCase().includes(q)
+    )
+  }, [clients, term])
 
   return (
     <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900">
@@ -28,16 +42,60 @@ const Clients = () => {
       </div>
 
       <div className="px-6 py-6">
-        <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
-          <div className="flex flex-col items-center justify-center text-center py-24 px-6">
-            <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center mb-5">
-              <Users className="h-7 w-7 text-slate-400 dark:text-slate-300" strokeWidth={2} />
+        <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center text-center py-24 px-6">
+              <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center mb-5">
+                <Users className="h-7 w-7 text-slate-400 dark:text-slate-300" strokeWidth={2} />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                {clients.length === 0 ? "No clients yet" : "No matching clients"}
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-sm">
+                Convert an approved annuity quote into a policy to add the policyholder here.
+              </p>
             </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">No clients yet</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-sm">
-              Convert an approved annuity quote into a policy to add the policyholder here.
-            </p>
-          </div>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+              {filtered.map((client) => (
+                <div key={client.id} className="flex items-center justify-between gap-4 px-6 py-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{client.fullName}</p>
+                      <Badge
+                        variant="outline"
+                        className="rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 whitespace-nowrap"
+                      >
+                        {client.productType}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
+                      {[client.optionLabel, client.email, client.contactNumber].filter(Boolean).join(" · ")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-6 shrink-0">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                        {client.premium != null ? formatCurrency(client.premium) : "—"}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{formatDate(client.createdAt)}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full text-slate-400 hover:text-red-500"
+                      onClick={() => {
+                        removeClient(client.id)
+                        toast.success("Client removed.")
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

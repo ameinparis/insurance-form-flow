@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
+import { Repeat2 } from "lucide-react";
+import { toast } from "sonner";
 import { formatCurrency, toTitleCase } from "@/lib/quoteUtils";
+import { useClientDirectory } from "@/hooks/useClientDirectory";
 import {
   fetchLifeAnnuityPeriods,
   LIFE_ANNUITY_PERIODS,
@@ -175,7 +178,16 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
             </div>
             <div className="space-y-8">
               {groups.map((group, idx) => (
-                <ScenarioGroupBlock key={idx} group={group} index={idx} showOptionLabel={groups.length > 1} />
+                <ScenarioGroupBlock
+                  key={idx}
+                  group={group}
+                  index={idx}
+                  showOptionLabel={groups.length > 1}
+                  clientData={clientData}
+                  quoteId={quote?.quoteId}
+                  productType={quote?.productType || quote?.type}
+                />
+
               ))}
             </div>
           </div>
@@ -388,9 +400,13 @@ interface ScenarioGroupBlockProps {
   group: ScenarioGroup;
   index: number;
   showOptionLabel?: boolean;
+  clientData?: any;
+  quoteId?: string;
+  productType?: string;
 }
 
-const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGroupBlockProps) => {
+const ScenarioGroupBlock = ({ group, index, showOptionLabel = true, clientData, quoteId, productType }: ScenarioGroupBlockProps) => {
+  const { addClient } = useClientDirectory();
   // Representative scenario for shared living details
   const rep = group.scenarios[0];
   const inputs = rep?.inputs || {};
@@ -476,12 +492,42 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
   const frequency = inputs.frequency || "period";
   const livingLabel = `Living Annuity / ${String(frequency).toLowerCase()}`;
 
+  const optionLabel = `Option ${index + 1}${inputs.drawdown != null ? ` — ${inputs.drawdown}% Drawdown` : ""}`;
+
+  const handleConvert = () => {
+    const fullName = toTitleCase(clientData?.fullName);
+    if (!fullName || fullName === "—") {
+      toast.error("This quote has no client name to convert.");
+      return;
+    }
+    const { created } = addClient({
+      fullName,
+      email: clientData?.email,
+      contactNumber: clientData?.contactNumber,
+      idNumber: clientData?.idNumber,
+      dateOfBirth: clientData?.dateOfBirth,
+      productType: productType || "Exclusive Annuity",
+      optionLabel,
+      quoteId,
+      premium: living?.guaranteed_annuity,
+    });
+    if (created) toast.success(`${fullName} added to the client directory.`);
+    else toast.info(`${fullName} is already in the client directory for this option.`);
+  };
+
   return (
-    <div className="scenario-block border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+    <div className="scenario-block group relative border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+      <button
+        type="button"
+        onClick={handleConvert}
+        className="no-print absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity inline-flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-xs font-bold shadow-sm active:scale-95"
+      >
+        <Repeat2 className="h-3.5 w-3.5" />
+        Convert to Policy
+      </button>
       {showOptionLabel && (
         <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
-          Option {index + 1}
-          {inputs.drawdown != null ? ` — ${inputs.drawdown}% Drawdown` : ""}
+          {optionLabel}
         </h4>
       )}
 
