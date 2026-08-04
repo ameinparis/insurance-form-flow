@@ -388,9 +388,12 @@ interface ScenarioGroupBlockProps {
   group: ScenarioGroup;
   index: number;
   showOptionLabel?: boolean;
+  clientData?: any;
+  quoteId?: string;
+  productType?: string;
 }
 
-const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGroupBlockProps) => {
+const ScenarioGroupBlock = ({ group, index, showOptionLabel = true, clientData, quoteId, productType }: ScenarioGroupBlockProps) => {
   // Representative scenario for shared living details
   const rep = group.scenarios[0];
   const inputs = rep?.inputs || {};
