@@ -162,24 +162,15 @@ const PolicyDraftPreview = () => {
                   {section.title}
                 </h3>
                 {isEditing ? (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="rounded-full"
-                      onClick={() => {
-                        setForm(draft.form || {})
-                        setEditing(null)
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                      Cancel
-                    </Button>
-                    <Button size="sm" className="rounded-full" onClick={handleSaveSection}>
-                      <Save className="h-4 w-4" />
-                      Save
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => setEditing(null)}
+                  >
+                    <X className="h-4 w-4" />
+                    Done
+                  </Button>
                 ) : (
                   <Button
                     variant="outline"
