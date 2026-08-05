@@ -1,10 +1,12 @@
 import { useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { ArrowLeft, Check } from "lucide-react"
+import { ArrowLeft, Check, Save } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toTitleCase } from "@/lib/quoteUtils"
+import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
 
 const STEPS = [
   "Policyholder Details",
@@ -15,6 +17,9 @@ const STEPS = [
 ]
 
 interface ConvertState {
+  draftId?: string
+  step?: number
+  form?: Record<string, string>
   fullName?: string
   email?: string
   contactNumber?: string
@@ -30,20 +35,41 @@ const ConvertToPolicy = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const prefill = (location.state as ConvertState) || {}
+  const { saveDraft } = usePolicyDrafts()
+  const [draftId, setDraftId] = useState<string | undefined>(prefill.draftId)
 
   const [form, setForm] = useState({
-    fullName: toTitleCase(prefill.fullName || "") || "",
-    idNumber: prefill.idNumber || "",
-    dateOfBirth: prefill.dateOfBirth || "",
-    email: prefill.email || "",
-    contactNumber: prefill.contactNumber || "",
-    address: "",
+    fullName: toTitleCase(prefill.form?.fullName || prefill.fullName || "") || "",
+    idNumber: prefill.form?.idNumber || prefill.idNumber || "",
+    dateOfBirth: prefill.form?.dateOfBirth || prefill.dateOfBirth || "",
+    email: prefill.form?.email || prefill.email || "",
+    contactNumber: prefill.form?.contactNumber || prefill.contactNumber || "",
+    address: prefill.form?.address || "",
   })
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }))
 
-  const currentStep = 0
+  const currentStep = prefill.step ?? 0
+
+  const handleSaveProgress = () => {
+    if (!form.fullName.trim()) {
+      toast.error("Add the policyholder's full name before saving.")
+      return
+    }
+    const saved = saveDraft({
+      id: draftId,
+      step: currentStep,
+      form,
+      productType: prefill.productType,
+      optionLabel: prefill.optionLabel,
+      quoteId: prefill.quoteId,
+      premium: prefill.premium,
+    })
+    setDraftId(saved.id)
+    toast.success("Progress saved — resume it from Clients.")
+  }
+
 
   return (
     <div className="space-y-6">
@@ -133,10 +159,17 @@ const ConvertToPolicy = () => {
           <Button variant="outline" onClick={() => navigate(-1)} className="rounded-full px-6">
             Cancel
           </Button>
-          <Button disabled className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white">
-            Continue
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={handleSaveProgress} className="rounded-full px-6">
+              <Save className="h-4 w-4" />
+              Save Progress
+            </Button>
+            <Button disabled className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white">
+              Continue
+            </Button>
+          </div>
         </div>
+
       </div>
     </div>
   )
