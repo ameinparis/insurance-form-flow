@@ -24,19 +24,24 @@ function Calendar({
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
-        caption_dropdowns: "flex justify-center gap-1",
-        dropdown_month: "relative inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors",
-        dropdown_year: "relative inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors",
-        dropdown_icon: "ml-1 h-4 w-4 opacity-50",
-        nav: "space-x-1 flex items-center",
+        vhidden: "sr-only",
+        caption: "flex items-center justify-between gap-2 px-1 pt-1 relative",
+        caption_label: "text-sm font-semibold",
+        caption_dropdowns: "flex items-center gap-1",
+        dropdown_month:
+          "relative inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-semibold hover:bg-accent transition-colors",
+        dropdown_year:
+          "relative inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-semibold hover:bg-accent transition-colors",
+        dropdown:
+          "absolute inset-0 h-full w-full cursor-pointer opacity-0",
+        dropdown_icon: "ml-0.5 h-3.5 w-3.5 opacity-60",
+        nav: "flex items-center gap-1",
         nav_button: cn(
-          buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+          buttonVariants({ variant: "ghost" }),
+          "h-7 w-7 rounded-full bg-transparent p-0 text-muted-foreground hover:bg-accent hover:text-foreground"
         ),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
+        nav_button_previous: "",
+        nav_button_next: "",
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
         head_cell:
