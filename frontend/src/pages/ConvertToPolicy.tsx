@@ -151,7 +151,13 @@ const ConvertToPolicy = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <Input id="dateOfBirth" value={form.dateOfBirth} onChange={set("dateOfBirth")} placeholder="YYYY-MM-DD" className="h-11 rounded-xl" />
+              <DatePicker
+                id="dateOfBirth"
+                value={form.dateOfBirth}
+                onChange={(v) => setForm((prev) => ({ ...prev, dateOfBirth: v }))}
+                fromYear={1900}
+                toYear={new Date().getFullYear()}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
