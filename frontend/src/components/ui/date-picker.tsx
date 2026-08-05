@@ -80,22 +80,23 @@ export function DatePicker({
     <Popover open={open} onOpenChange={setOpen}>
       <div
         className={cn(
-          "group relative flex items-center gap-2 rounded-xl border border-input bg-background px-3 h-11 transition-colors",
-          "focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/20",
-          disabled && "opacity-50 pointer-events-none",
+          "group relative flex h-10 w-full items-center gap-2 rounded-md border border-input bg-background px-3 text-sm transition-colors",
+          "focus-within:border-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background",
+          disabled && "cursor-not-allowed opacity-50",
           className
         )}
       >
-        <CalendarIcon className="h-4 w-4 shrink-0 text-primary/70" />
-        <div className="flex-1 min-w-0">
+        <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground group-focus-within:text-primary" />
+        <div className="flex min-w-0 flex-1 flex-col justify-center">
           {label && (
-            <span className="block text-[10px] leading-none font-medium text-muted-foreground">
+            <span className="block text-[10px] font-medium leading-none text-muted-foreground">
               {label}
             </span>
           )}
           <input
             id={id}
             inputMode="numeric"
+            disabled={disabled}
             value={text}
             placeholder={placeholder}
             onChange={(e) => setText(e.target.value)}
@@ -107,7 +108,7 @@ export function DatePicker({
               }
             }}
             className={cn(
-              "w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground",
+              "w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed",
               label && "mt-0.5"
             )}
           />
@@ -115,8 +116,9 @@ export function DatePicker({
         <PopoverTrigger asChild>
           <button
             type="button"
+            disabled={disabled}
             aria-label="Open calendar"
-            className="shrink-0 rounded-md p-1 text-muted-foreground hover:text-foreground focus:outline-none"
+            className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <ChevronDown
               className={cn("h-4 w-4 transition-transform", open && "rotate-180")}
@@ -127,8 +129,8 @@ export function DatePicker({
 
       <PopoverContent
         align="start"
-        sideOffset={8}
-        className="w-auto rounded-2xl p-0 shadow-xl border-border"
+        sideOffset={6}
+        className="w-auto rounded-xl border border-border bg-popover p-0 shadow-xl"
       >
         <Calendar
           mode="single"
@@ -156,7 +158,7 @@ export function DatePicker({
           <Button
             type="button"
             variant="secondary"
-            className="flex-1 rounded-full"
+            className="flex-1 rounded-md"
             onClick={() => {
               onChange("")
               setText("")
@@ -167,7 +169,19 @@ export function DatePicker({
           </Button>
           <Button
             type="button"
-            className="flex-1 rounded-full"
+            variant="outline"
+            className="flex-1 rounded-md"
+            onClick={() => {
+              const today = toISO(new Date())
+              onChange(today)
+              setOpen(false)
+            }}
+          >
+            Today
+          </Button>
+          <Button
+            type="button"
+            className="flex-1 rounded-md"
             onClick={() => setOpen(false)}
           >
             Done
