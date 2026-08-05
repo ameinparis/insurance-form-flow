@@ -641,14 +641,11 @@ Insurance will not accept liability for any losses incurred as a result of using
                 <div className="space-y-2">
                   <Label>Date of Birth</Label>
                   <div className="space-y-2">
-                    <Input
-                      type="date"
+                    <DatePicker
                       value={customerDetails.dateOfBirth}
-                      onChange={(e) =>
-                        handleCustomerDetailsChange("dateOfBirth", e.target.value)
-                      }
-                      min="1900-01-01"
-                      max={new Date().toISOString().split("T")[0]} // no future dates
+                      onChange={(v) => handleCustomerDetailsChange("dateOfBirth", v)}
+                      fromYear={1900}
+                      toYear={new Date().getFullYear()}
                       className="w-full"
                     />
                   </div>
