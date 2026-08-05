@@ -13,13 +13,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
+import { Checkbox } from "@/components/ui/checkbox"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
 
 const STEPS = [
   "Policyholder Details",
   "Policy Details",
-  "Premiums",
+  "Premium and Policy Fees",
   "Beneficiaries",
   "Payment",
   "Review",
@@ -131,7 +132,14 @@ const ConvertToPolicy = () => {
       const saved = saveDraft({
         id: draftId,
         step: currentStep,
-        form,
+        form: {
+          ...form,
+          purchasePremium: purchasePremium.toFixed(2),
+          upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
+          administrationFee: administrationFee.toFixed(2),
+          switchFee: SWITCH_FEE.toFixed(2),
+          funeralPremium: FUNERAL_PREMIUM.toFixed(2),
+        },
         productType: prefill.productType,
         optionLabel: prefill.optionLabel,
         quoteId: prefill.quoteId,
@@ -149,7 +157,7 @@ const ConvertToPolicy = () => {
       ? "Confirm the policyholder details"
       : currentStep === 1
       ? "Confirm the policy details"
-      : "Confirm the premiums and fees"
+      : "Confirm the premium and policy fees"
 
   return (
     <div className="space-y-6">
