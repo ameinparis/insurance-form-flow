@@ -23,6 +23,7 @@ import QuotePreview from "./pages/QuotePreview";
 import Quotes from "./pages/Quotes";
 import QuoteDetail from "./pages/QuoteDetail";
 import Settings from "./pages/Settings";
+import ConvertToPolicy from "./pages/ConvertToPolicy";
 import NotFound from "./pages/NotFound";
 import LogoutHandler from "./components/LogoutHandler";
 import SetPassword from "./pages/auth/SetPassword";
@@ -105,6 +106,11 @@ const App = () => (
               <Route path="/settings" element={
                 <Layout>
                   <Settings />
+                </Layout>
+              } />
+              <Route path="/policies/convert" element={
+                <Layout>
+                  <ConvertToPolicy />
                 </Layout>
               } />
               <Route path="/clients" element={
