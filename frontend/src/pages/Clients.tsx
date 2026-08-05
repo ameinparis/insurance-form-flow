@@ -1,15 +1,19 @@
 import { useMemo, useState } from "react"
-import { Search, Users, Trash2 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import { Search, Users, Trash2, FileClock } from "lucide-react"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useClientDirectory } from "@/hooks/useClientDirectory"
+import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
 import { formatCurrency, formatDate } from "@/lib/quoteUtils"
 
 const Clients = () => {
   const [term, setTerm] = useState("")
   const { clients, removeClient } = useClientDirectory()
+  const { drafts, removeDraft } = usePolicyDrafts()
+  const navigate = useNavigate()
 
   const filtered = useMemo(() => {
     const q = term.trim().toLowerCase()
@@ -18,6 +22,15 @@ const Clients = () => {
       `${c.fullName} ${c.email || ""} ${c.contactNumber || ""} ${c.quoteId || ""}`.toLowerCase().includes(q)
     )
   }, [clients, term])
+
+  const filteredDrafts = useMemo(() => {
+    const q = term.trim().toLowerCase()
+    if (!q) return drafts
+    return drafts.filter((d) =>
+      `${d.form?.fullName || ""} ${d.form?.email || ""} ${d.quoteId || ""}`.toLowerCase().includes(q)
+    )
+  }, [drafts, term])
+
 
   return (
     <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900">
