@@ -115,6 +115,12 @@ const App = () => (
                   <ConvertToPolicy />
                 </Layout>
               } />
+              <Route path="/policies/drafts/:id" element={
+                <Layout>
+                  <PolicyDraftPreview />
+                </Layout>
+              } />
+
               <Route path="/clients" element={
                 <Layout>
                   <Clients />
