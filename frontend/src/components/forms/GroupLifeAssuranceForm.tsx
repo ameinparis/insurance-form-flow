@@ -579,10 +579,10 @@ const GroupLifeAssuranceForm = () => {
                         />
                       </td>
                       <td className="p-2">
-                        <Input
-                          type="date"
+                        <DatePicker
                           value={row.dob}
-                          onChange={(e) => handleInputChange(index, "dob", e.target.value)}
+                          onChange={(v) => handleInputChange(index, "dob", v)}
+                          className="min-w-[170px]"
                         />
                       </td>
                       <td className="p-2">
