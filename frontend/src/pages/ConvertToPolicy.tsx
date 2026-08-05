@@ -341,9 +341,13 @@ const ConvertToPolicy = () => {
             Cancel
           </Button>
           <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={handleSaveProgress} className="rounded-full px-6">
-              <Save className="h-4 w-4" />
-              Save Progress
+            <Button
+              variant="outline"
+              onClick={() => (currentStep === 0 ? navigate(-1) : setCurrentStep((s) => s - 1))}
+              className="rounded-full px-6"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
             </Button>
             <Button
               disabled={currentStep >= LAST_STEP}
