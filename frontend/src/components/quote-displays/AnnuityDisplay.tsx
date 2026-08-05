@@ -501,20 +501,21 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true, clientData, 
       toast.error("This quote has no client name to convert.");
       return;
     }
-    const { created } = addClient({
-      fullName,
-      email: clientData?.email,
-      contactNumber: clientData?.contactNumber,
-      idNumber: clientData?.idNumber,
-      dateOfBirth: clientData?.dateOfBirth,
-      productType: productType || "Exclusive Annuity",
-      optionLabel,
-      quoteId,
-      premium: living?.guaranteed_annuity,
+    navigate("/policies/convert", {
+      state: {
+        fullName,
+        email: clientData?.email,
+        contactNumber: clientData?.contactNumber,
+        idNumber: clientData?.idNumber,
+        dateOfBirth: clientData?.dateOfBirth,
+        productType: productType || "Exclusive Annuity",
+        optionLabel,
+        quoteId,
+        premium: living?.guaranteed_annuity,
+      },
     });
-    if (created) toast.success(`${fullName} added to the client directory.`);
-    else toast.info(`${fullName} is already in the client directory for this option.`);
   };
+
 
   return (
     <div className="scenario-block group relative border border-gray-200 dark:border-gray-800 rounded-lg p-5">
