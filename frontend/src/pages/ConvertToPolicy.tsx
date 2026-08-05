@@ -1,0 +1,145 @@
+import { useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
+import { ArrowLeft, Check } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { toTitleCase } from "@/lib/quoteUtils"
+
+const STEPS = [
+  "Policyholder Details",
+  "Policy Details",
+  "Beneficiaries",
+  "Payment",
+  "Review",
+]
+
+interface ConvertState {
+  fullName?: string
+  email?: string
+  contactNumber?: string
+  idNumber?: string
+  dateOfBirth?: string
+  productType?: string
+  optionLabel?: string
+  quoteId?: string
+  premium?: number
+}
+
+const ConvertToPolicy = () => {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const prefill = (location.state as ConvertState) || {}
+
+  const [form, setForm] = useState({
+    fullName: toTitleCase(prefill.fullName || "") || "",
+    idNumber: prefill.idNumber || "",
+    dateOfBirth: prefill.dateOfBirth || "",
+    email: prefill.email || "",
+    contactNumber: prefill.contactNumber || "",
+    address: "",
+  })
+
+  const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((prev) => ({ ...prev, [key]: e.target.value }))
+
+  const currentStep = 0
+
+  return (
+    <div className="space-y-6">
+      {/* Stepper */}
+      <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-card px-6 py-4">
+        <div className="flex items-center gap-3 overflow-x-auto">
+          {STEPS.map((step, i) => {
+            const done = i < currentStep
+            const active = i === currentStep
+            return (
+              <div key={step} className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                      done
+                        ? "bg-emerald-500 text-white"
+                        : active
+                        ? "bg-[#009fe3] text-white"
+                        : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
+                    }`}
+                  >
+                    {done ? <Check className="h-3 w-3" /> : i + 1}
+                  </span>
+                  <span
+                    className={`text-xs font-semibold whitespace-nowrap ${
+                      active
+                        ? "text-foreground"
+                        : "text-gray-400 dark:text-slate-500"
+                    }`}
+                  >
+                    {step}
+                  </span>
+                </div>
+                {i < STEPS.length - 1 && (
+                  <span className="h-px w-10 bg-gray-200 dark:bg-slate-700" />
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Form card */}
+      <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-card p-6 md:p-8">
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </button>
+
+        <h1 className="text-2xl font-bold tracking-tight">Convert Quote to Policy</h1>
+        <p className="text-sm text-muted-foreground mt-1 mb-8">
+          Confirm the policyholder details{prefill.quoteId ? ` for ${prefill.quoteId}` : ""}
+          {prefill.optionLabel ? ` (${prefill.optionLabel})` : ""}.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="fullName">Full Name</Label>
+            <Input id="fullName" value={form.fullName} onChange={set("fullName")} placeholder="Jane Doe" className="h-11 rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="idNumber">ID Number</Label>
+            <Input id="idNumber" value={form.idNumber} onChange={set("idNumber")} placeholder="000000000" className="h-11 rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="dateOfBirth">Date of Birth</Label>
+            <Input id="dateOfBirth" value={form.dateOfBirth} onChange={set("dateOfBirth")} placeholder="YYYY-MM-DD" className="h-11 rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input id="email" type="email" value={form.email} onChange={set("email")} placeholder="jane@example.com" className="h-11 rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="contactNumber">Contact Number</Label>
+            <Input id="contactNumber" value={form.contactNumber} onChange={set("contactNumber")} placeholder="+267 71 000 000" className="h-11 rounded-xl" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="address">Residential Address</Label>
+            <Input id="address" value={form.address} onChange={set("address")} placeholder="Plot 123, Gaborone" className="h-11 rounded-xl" />
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center gap-4 mt-10">
+          <Button variant="outline" onClick={() => navigate(-1)} className="rounded-full px-6">
+            Cancel
+          </Button>
+          <Button disabled className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white">
+            Continue
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default ConvertToPolicy
