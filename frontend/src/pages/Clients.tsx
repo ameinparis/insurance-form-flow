@@ -134,20 +134,26 @@ const Clients = () => {
             <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
               {filtered.map((client) => (
                 <div key={client.id} className="flex items-center justify-between gap-4 px-6 py-4">
-                  <div className="min-w-0">
+                  <button
+                    className="min-w-0 text-left group"
+                    onClick={() => navigate(`/clients/${client.id}`)}
+                  >
                     <div className="flex items-center gap-3">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{client.fullName}</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:underline">{client.fullName}</p>
                       <Badge
                         variant="outline"
                         className="rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-300 whitespace-nowrap"
                       >
                         {client.productType}
                       </Badge>
+                      <Badge className="rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 border-0 whitespace-nowrap">
+                        Info Pending
+                      </Badge>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
                       {[client.optionLabel, client.email, client.contactNumber].filter(Boolean).join(" · ")}
                     </p>
-                  </div>
+                  </button>
                   <div className="flex items-center gap-6 shrink-0">
                     <div className="text-right hidden sm:block">
                       <p className="text-sm font-semibold text-slate-900 dark:text-white">
