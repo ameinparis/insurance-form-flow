@@ -60,27 +60,15 @@ const Clients = () => {
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/50">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">In Progress</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Click a name to continue the policy conversion where you left off.
+                View the captured details, edit them inline, or continue the conversion wizard.
               </p>
             </div>
             <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
               {filteredDrafts.map((draft) => (
-                <div key={draft.id} className="flex items-center justify-between gap-4 px-6 py-4">
+                <div key={draft.id} className="group/row flex items-center justify-between gap-4 px-6 py-4">
                   <button
                     className="min-w-0 text-left group"
-                    onClick={() =>
-                      navigate("/policies/convert", {
-                        state: {
-                          draftId: draft.id,
-                          step: draft.step,
-                          form: draft.form,
-                          productType: draft.productType,
-                          optionLabel: draft.optionLabel,
-                          quoteId: draft.quoteId,
-                          premium: draft.premium,
-                        },
-                      })
-                    }
+                    onClick={() => navigate(`/policies/drafts/${draft.id}`)}
                   >
                     <div className="flex items-center gap-3">
                       <FileClock className="h-4 w-4 text-amber-500 shrink-0" />
@@ -100,19 +88,50 @@ const Clients = () => {
                         .join(" · ")}
                     </p>
                   </button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full text-slate-400 hover:text-red-500 shrink-0"
-                    onClick={() => {
-                      removeDraft(draft.id)
-                      toast.success("Draft discarded.")
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full opacity-0 group-hover/row:opacity-100 focus:opacity-100 transition-opacity"
+                      onClick={() => navigate(`/policies/drafts/${draft.id}`)}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      View
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="rounded-full opacity-0 group-hover/row:opacity-100 focus:opacity-100 transition-opacity"
+                      onClick={() =>
+                        navigate("/policies/convert", {
+                          state: {
+                            draftId: draft.id,
+                            step: draft.step,
+                            form: draft.form,
+                            productType: draft.productType,
+                            optionLabel: draft.optionLabel,
+                            quoteId: draft.quoteId,
+                            premium: draft.premium,
+                          },
+                        })
+                      }
+                    >
+                      Continue Editing
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full text-slate-400 hover:text-red-500"
+                      onClick={() => {
+                        removeDraft(draft.id)
+                        toast.success("Draft discarded.")
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
+
             </div>
           </div>
         )}
