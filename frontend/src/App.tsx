@@ -25,6 +25,7 @@ import Quotes from "./pages/Quotes";
 import QuoteDetail from "./pages/QuoteDetail";
 import Settings from "./pages/Settings";
 import ConvertToPolicy from "./pages/ConvertToPolicy";
+import PolicyDraftPreview from "./pages/PolicyDraftPreview";
 import NotFound from "./pages/NotFound";
 import LogoutHandler from "./components/LogoutHandler";
 import SetPassword from "./pages/auth/SetPassword";
@@ -114,6 +115,12 @@ const App = () => (
                   <ConvertToPolicy />
                 </Layout>
               } />
+              <Route path="/policies/drafts/:id" element={
+                <Layout>
+                  <PolicyDraftPreview />
+                </Layout>
+              } />
+
               <Route path="/clients" element={
                 <Layout>
                   <Clients />
