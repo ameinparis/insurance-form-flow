@@ -31,12 +31,18 @@ interface ConvertState {
   premium?: number
 }
 
+const todayISO = () => new Date().toISOString().slice(0, 10)
+
+const generatePolicyNumber = () =>
+  `POL-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`
+
 const ConvertToPolicy = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const prefill = (location.state as ConvertState) || {}
   const { saveDraft } = usePolicyDrafts()
   const [draftId, setDraftId] = useState<string | undefined>(prefill.draftId)
+  const [currentStep, setCurrentStep] = useState<number>(prefill.step ?? 0)
 
   const [form, setForm] = useState({
     fullName: toTitleCase(prefill.form?.fullName || prefill.fullName || "") || "",
@@ -45,12 +51,14 @@ const ConvertToPolicy = () => {
     email: prefill.form?.email || prefill.email || "",
     contactNumber: prefill.form?.contactNumber || prefill.contactNumber || "",
     address: prefill.form?.address || "",
+    policyNumber: prefill.form?.policyNumber || generatePolicyNumber(),
+    productName: prefill.form?.productName || prefill.productType || "Annuity",
+    policyStartDate: prefill.form?.policyStartDate || todayISO(),
+    transitionDate: prefill.form?.transitionDate || todayISO(),
   })
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }))
-
-  const currentStep = prefill.step ?? 0
 
   const handleSaveProgress = () => {
     if (!form.fullName.trim()) {
