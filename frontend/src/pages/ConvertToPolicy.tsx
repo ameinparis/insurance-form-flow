@@ -107,6 +107,17 @@ const ConvertToPolicy = () => {
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }))
 
+  // Derived premium & fee values (all based on the Investment Amount Premium)
+  const investment = Number(String(form.investmentAmount).replace(/[^0-9.]/g, "")) || 0
+  const fmt = (n: number) =>
+    n.toLocaleString("en-BW", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const purchasePremium = investment * 0.02
+  const upfrontCommission = investment * 0.01
+  const administrationFee = investment * 0.00083
+  const SWITCH_FEE = 180
+  const FUNERAL_PREMIUM = 20
+  const commissionOn = form.upfrontCommissionEnabled === "yes"
+
   // Autosave the draft whenever the form or step changes
   useEffect(() => {
     if (!form.fullName.trim()) return
