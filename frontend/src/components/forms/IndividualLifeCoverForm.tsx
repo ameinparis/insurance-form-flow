@@ -539,12 +539,11 @@ const displayValue = (row: any) => {
                 </div>
                 <div className="space-y-2">
                   <Label>Date of Birth</Label>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={customerDetails.dateOfBirth}
-                    onChange={(e) => handleCustomerDetailsChange("dateOfBirth", e.target.value)}
-                    min="1900-01-01"
-                    max={new Date().toISOString().split("T")[0]}
+                    onChange={(v) => handleCustomerDetailsChange("dateOfBirth", v)}
+                    fromYear={1900}
+                    toYear={new Date().getFullYear()}
                     className="w-full"
                   />
                 </div>
