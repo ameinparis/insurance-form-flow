@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Repeat2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, toTitleCase } from "@/lib/quoteUtils";
-import { useClientDirectory } from "@/hooks/useClientDirectory";
+
 import {
   fetchLifeAnnuityPeriods,
   LIFE_ANNUITY_PERIODS,
@@ -407,7 +407,7 @@ interface ScenarioGroupBlockProps {
 }
 
 const ScenarioGroupBlock = ({ group, index, showOptionLabel = true, clientData, quoteId, productType }: ScenarioGroupBlockProps) => {
-  const { addClient } = useClientDirectory();
+  const navigate = useNavigate();
   // Representative scenario for shared living details
   const rep = group.scenarios[0];
   const inputs = rep?.inputs || {};
