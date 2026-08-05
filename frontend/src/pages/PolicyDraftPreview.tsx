@@ -1,0 +1,232 @@
+import { useEffect, useMemo, useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
+import { ArrowLeft, Check, Pencil, Save, X } from "lucide-react"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
+import { formatDate } from "@/lib/quoteUtils"
+
+type Field = { key: string; label: string }
+
+const SECTIONS: { title: string; step: number; fields: Field[] }[] = [
+  {
+    title: "Policyholder Details",
+    step: 0,
+    fields: [
+      { key: "fullName", label: "Full Name" },
+      { key: "idNumber", label: "ID Number" },
+      { key: "dateOfBirth", label: "Date of Birth" },
+      { key: "countryOfOrigin", label: "Country of Origin" },
+      { key: "email", label: "Email Address" },
+      { key: "contactNumber", label: "Contact Number" },
+      { key: "address", label: "Residential Address" },
+    ],
+  },
+  {
+    title: "Policy Details",
+    step: 1,
+    fields: [
+      { key: "policyNumber", label: "Policy Number" },
+      { key: "productName", label: "Product Name" },
+      { key: "policyStartDate", label: "Policy Start Date" },
+      { key: "transitionDate", label: "Transition Date" },
+    ],
+  },
+  {
+    title: "Premiums",
+    step: 2,
+    fields: [
+      { key: "investmentAmount", label: "Investment Amount Premium" },
+      { key: "purchasePremium", label: "Purchase Premium" },
+      { key: "upfrontCommission", label: "Upfront Commission %" },
+      { key: "administrationFee", label: "Administration Fee" },
+      { key: "ongoingAdvisoryFee", label: "Ongoing Advisory Fee %" },
+      { key: "switchFee", label: "Switch Fee" },
+      { key: "funeralPremium", label: "Funeral Premium" },
+    ],
+  },
+]
+
+const PolicyDraftPreview = () => {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { drafts, saveDraft } = usePolicyDrafts()
+  const draft = useMemo(() => drafts.find((d) => d.id === id), [drafts, id])
+
+  const [form, setForm] = useState<Record<string, string>>(draft?.form || {})
+  const [editing, setEditing] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (draft && editing === null) setForm(draft.form || {})
+  }, [draft, editing])
+
+  if (!draft) {
+    return (
+      <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900 p-6">
+        <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-10 text-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400">This draft no longer exists.</p>
+          <Button className="rounded-full mt-5" onClick={() => navigate("/clients")}>
+            Back to Clients
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const persist = (next: Record<string, string>) => {
+    saveDraft({
+      id: draft.id,
+      step: draft.step,
+      form: next,
+      productType: draft.productType,
+      optionLabel: draft.optionLabel,
+      quoteId: draft.quoteId,
+      premium: draft.premium,
+    })
+  }
+
+  const handleSaveSection = () => {
+    persist(form)
+    setEditing(null)
+    toast.success("Draft updated.")
+  }
+
+  const continueEditing = () =>
+    navigate("/policies/convert", {
+      state: {
+        draftId: draft.id,
+        step: draft.step,
+        form,
+        productType: draft.productType,
+        optionLabel: draft.optionLabel,
+        quoteId: draft.quoteId,
+        premium: draft.premium,
+      },
+    })
+
+  return (
+    <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900">
+      <div className="sticky top-0 z-30 px-6 pt-6 pb-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+        <button
+          onClick={() => navigate("/clients")}
+          className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-3"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Clients
+        </button>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3">
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white truncate">
+                {form.fullName || "Unnamed policyholder"}
+              </h2>
+              <Badge
+                variant="outline"
+                className="rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide border-amber-300 text-amber-600 dark:text-amber-400 whitespace-nowrap"
+              >
+                Draft
+              </Badge>
+            </div>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              {[draft.optionLabel, draft.quoteId, `Saved ${formatDate(draft.updatedAt)}`]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
+          <Button onClick={continueEditing} className="rounded-full px-6">
+            Continue Editing
+          </Button>
+        </div>
+      </div>
+
+      <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {SECTIONS.map((section, i) => {
+          const isEditing = editing === i
+          return (
+            <div
+              key={section.title}
+              className="rounded-[1.75rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-7"
+            >
+              <div className="flex items-center justify-between gap-4 mb-5">
+                <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  {section.title}
+                </h3>
+                {isEditing ? (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-full"
+                      onClick={() => {
+                        setForm(draft.form || {})
+                        setEditing(null)
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                      Cancel
+                    </Button>
+                    <Button size="sm" className="rounded-full" onClick={handleSaveSection}>
+                      <Save className="h-4 w-4" />
+                      Save
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => setEditing(i)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
+                {section.fields.map((field) => (
+                  <div
+                    key={field.key}
+                    className="py-2.5 border-b border-slate-100 dark:border-slate-700/60"
+                  >
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                      {field.label}
+                    </p>
+                    {isEditing ? (
+                      <Input
+                        value={form[field.key] || ""}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, [field.key]: e.target.value }))
+                        }
+                        className="h-9 rounded-lg mt-1.5"
+                      />
+                    ) : (
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white mt-1 truncate">
+                        {form[field.key] || (
+                          <span className="text-slate-400 dark:text-slate-500 italic font-normal">
+                            Pending
+                          </span>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {section.step <= draft.step && !isEditing && (
+                <p className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  <Check className="h-3.5 w-3.5" />
+                  Completed in wizard
+                </p>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+export default PolicyDraftPreview
