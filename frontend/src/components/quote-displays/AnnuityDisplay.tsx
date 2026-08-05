@@ -513,7 +513,7 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true, clientData, 
         quoteId,
         premium: living?.guaranteed_annuity,
         investmentAmount: inputs.purchaseAmount,
-        purchasePremium: inputs.lifePurchaseAmount ?? inputs.purchaseAmount,
+        purchasePremium: inputs.purchaseAmount,
         funeralPremium: (inputs as Record<string, unknown>).funeralPremium,
       },
     });

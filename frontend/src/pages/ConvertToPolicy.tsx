@@ -96,7 +96,7 @@ const ConvertToPolicy = () => {
     transitionDate: prefill.form?.transitionDate || todayISO(),
     investmentAmount:
       prefill.form?.investmentAmount ||
-      asString(prefill.purchasePremium ?? prefill.investmentAmount ?? prefill.premium),
+      asString(prefill.investmentAmount ?? prefill.purchasePremium),
     upfrontCommissionEnabled: prefill.form?.upfrontCommissionEnabled || "no",
     ongoingAdvisoryFee: prefill.form?.ongoingAdvisoryFee || "",
   })
