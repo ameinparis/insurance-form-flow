@@ -104,26 +104,38 @@ const ConvertToPolicy = () => {
     funeralPremium: prefill.form?.funeralPremium || asString(prefill.funeralPremium),
   })
 
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle")
+  const timer = useRef<ReturnType<typeof setTimeout>>()
+  const first = useRef(true)
+
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }))
 
-  const handleSaveProgress = () => {
-    if (!form.fullName.trim()) {
-      toast.error("Add the policyholder's full name before saving.")
+  // Autosave the draft whenever the form or step changes
+  useEffect(() => {
+    if (!form.fullName.trim()) return
+    if (first.current) {
+      first.current = false
       return
     }
-    const saved = saveDraft({
-      id: draftId,
-      step: currentStep,
-      form,
-      productType: prefill.productType,
-      optionLabel: prefill.optionLabel,
-      quoteId: prefill.quoteId,
-      premium: prefill.premium,
-    })
-    setDraftId(saved.id)
-    toast.success("Progress saved — resume it from Clients.")
-  }
+    setSaveState("saving")
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => {
+      const saved = saveDraft({
+        id: draftId,
+        step: currentStep,
+        form,
+        productType: prefill.productType,
+        optionLabel: prefill.optionLabel,
+        quoteId: prefill.quoteId,
+        premium: prefill.premium,
+      })
+      setDraftId(saved.id)
+      setSaveState("saved")
+    }, 700)
+    return () => clearTimeout(timer.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, currentStep])
 
   const stepSubtitle =
     currentStep === 0
