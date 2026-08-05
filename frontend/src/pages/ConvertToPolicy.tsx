@@ -94,14 +94,10 @@ const ConvertToPolicy = () => {
     policyStartDate: prefill.form?.policyStartDate || todayISO(),
     transitionDate: prefill.form?.transitionDate || todayISO(),
     investmentAmount:
-      prefill.form?.investmentAmount || asString(prefill.investmentAmount),
-    purchasePremium:
-      prefill.form?.purchasePremium || asString(prefill.purchasePremium ?? prefill.premium),
-    upfrontCommission: prefill.form?.upfrontCommission || "",
-    administrationFee: prefill.form?.administrationFee || "",
+      prefill.form?.investmentAmount ||
+      asString(prefill.purchasePremium ?? prefill.investmentAmount ?? prefill.premium),
+    upfrontCommissionEnabled: prefill.form?.upfrontCommissionEnabled || "no",
     ongoingAdvisoryFee: prefill.form?.ongoingAdvisoryFee || "",
-    switchFee: prefill.form?.switchFee || "",
-    funeralPremium: prefill.form?.funeralPremium || asString(prefill.funeralPremium),
   })
 
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle")
