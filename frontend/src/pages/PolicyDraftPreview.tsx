@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, Check, Pencil, Save, X } from "lucide-react"
-import { toast } from "sonner"
+import { ArrowLeft, Check, CheckCircle2, CloudUpload, Pencil, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -57,10 +56,36 @@ const PolicyDraftPreview = () => {
 
   const [form, setForm] = useState<Record<string, string>>(draft?.form || {})
   const [editing, setEditing] = useState<number | null>(null)
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle")
+  const draftRef = useRef(draft)
+  draftRef.current = draft
+  const timer = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => {
     if (draft && editing === null) setForm(draft.form || {})
   }, [draft, editing])
+
+  // Autosave edits
+  useEffect(() => {
+    const d = draftRef.current
+    if (!d || editing === null) return
+    setSaveState("saving")
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => {
+      saveDraft({
+        id: d.id,
+        step: d.step,
+        form,
+        productType: d.productType,
+        optionLabel: d.optionLabel,
+        quoteId: d.quoteId,
+        premium: d.premium,
+      })
+      setSaveState("saved")
+    }, 600)
+    return () => clearTimeout(timer.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, editing])
 
   if (!draft) {
     return (
@@ -75,23 +100,6 @@ const PolicyDraftPreview = () => {
     )
   }
 
-  const persist = (next: Record<string, string>) => {
-    saveDraft({
-      id: draft.id,
-      step: draft.step,
-      form: next,
-      productType: draft.productType,
-      optionLabel: draft.optionLabel,
-      quoteId: draft.quoteId,
-      premium: draft.premium,
-    })
-  }
-
-  const handleSaveSection = () => {
-    persist(form)
-    setEditing(null)
-    toast.success("Draft updated.")
-  }
 
   const continueEditing = () =>
     navigate("/policies/convert", {
@@ -128,6 +136,27 @@ const PolicyDraftPreview = () => {
               >
                 Draft
               </Badge>
+              {saveState !== "idle" && (
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+                    saveState === "saving"
+                      ? "bg-slate-100 text-slate-500 dark:bg-slate-700/60 dark:text-slate-300"
+                      : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400"
+                  }`}
+                >
+                  {saveState === "saving" ? (
+                    <>
+                      <CloudUpload className="h-3.5 w-3.5 animate-pulse" />
+                      Saving…
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Saved
+                    </>
+                  )}
+                </span>
+              )}
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               {[draft.optionLabel, draft.quoteId, `Saved ${formatDate(draft.updatedAt)}`]
@@ -154,24 +183,15 @@ const PolicyDraftPreview = () => {
                   {section.title}
                 </h3>
                 {isEditing ? (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="rounded-full"
-                      onClick={() => {
-                        setForm(draft.form || {})
-                        setEditing(null)
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                      Cancel
-                    </Button>
-                    <Button size="sm" className="rounded-full" onClick={handleSaveSection}>
-                      <Save className="h-4 w-4" />
-                      Save
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => setEditing(null)}
+                  >
+                    <X className="h-4 w-4" />
+                    Done
+                  </Button>
                 ) : (
                   <Button
                     variant="outline"

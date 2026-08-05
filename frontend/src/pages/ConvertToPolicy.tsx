@@ -1,6 +1,6 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { ArrowLeft, Check, Save } from "lucide-react"
+import { ArrowLeft, Check, CloudUpload, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -104,26 +104,38 @@ const ConvertToPolicy = () => {
     funeralPremium: prefill.form?.funeralPremium || asString(prefill.funeralPremium),
   })
 
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle")
+  const timer = useRef<ReturnType<typeof setTimeout>>()
+  const first = useRef(true)
+
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }))
 
-  const handleSaveProgress = () => {
-    if (!form.fullName.trim()) {
-      toast.error("Add the policyholder's full name before saving.")
+  // Autosave the draft whenever the form or step changes
+  useEffect(() => {
+    if (!form.fullName.trim()) return
+    if (first.current) {
+      first.current = false
       return
     }
-    const saved = saveDraft({
-      id: draftId,
-      step: currentStep,
-      form,
-      productType: prefill.productType,
-      optionLabel: prefill.optionLabel,
-      quoteId: prefill.quoteId,
-      premium: prefill.premium,
-    })
-    setDraftId(saved.id)
-    toast.success("Progress saved — resume it from Clients.")
-  }
+    setSaveState("saving")
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => {
+      const saved = saveDraft({
+        id: draftId,
+        step: currentStep,
+        form,
+        productType: prefill.productType,
+        optionLabel: prefill.optionLabel,
+        quoteId: prefill.quoteId,
+        premium: prefill.premium,
+      })
+      setDraftId(saved.id)
+      setSaveState("saved")
+    }, 700)
+    return () => clearTimeout(timer.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, currentStep])
 
   const stepSubtitle =
     currentStep === 0
@@ -183,7 +195,30 @@ const ConvertToPolicy = () => {
           Back
         </button>
 
-        <h1 className="text-2xl font-bold tracking-tight">Convert Quote to Policy</h1>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h1 className="text-2xl font-bold tracking-tight">Convert Quote to Policy</h1>
+          {saveState !== "idle" && (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+                saveState === "saving"
+                  ? "bg-slate-100 text-slate-500 dark:bg-slate-700/60 dark:text-slate-300"
+                  : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400"
+              }`}
+            >
+              {saveState === "saving" ? (
+                <>
+                  <CloudUpload className="h-3.5 w-3.5 animate-pulse" />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Saved
+                </>
+              )}
+            </span>
+          )}
+        </div>
         <p className="text-sm text-muted-foreground mt-1 mb-8">
           {stepSubtitle}
           {prefill.quoteId ? ` for ${prefill.quoteId}` : ""}
@@ -306,9 +341,13 @@ const ConvertToPolicy = () => {
             Cancel
           </Button>
           <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={handleSaveProgress} className="rounded-full px-6">
-              <Save className="h-4 w-4" />
-              Save Progress
+            <Button
+              variant="outline"
+              onClick={() => (currentStep === 0 ? navigate(-1) : setCurrentStep((s) => s - 1))}
+              className="rounded-full px-6"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
             </Button>
             <Button
               disabled={currentStep >= LAST_STEP}
