@@ -5,6 +5,13 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
@@ -12,9 +19,33 @@ import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
 const STEPS = [
   "Policyholder Details",
   "Policy Details",
+  "Premiums",
   "Beneficiaries",
   "Payment",
   "Review",
+]
+
+const LAST_STEP = 2
+
+const COUNTRIES = [
+  "Botswana",
+  "South Africa",
+  "Namibia",
+  "Zimbabwe",
+  "Zambia",
+  "Lesotho",
+  "Eswatini",
+  "Malawi",
+  "Mozambique",
+  "Kenya",
+  "Nigeria",
+  "Ghana",
+  "Tanzania",
+  "United Kingdom",
+  "United States",
+  "India",
+  "China",
+  "Other",
 ]
 
 interface ConvertState {
@@ -30,12 +61,17 @@ interface ConvertState {
   optionLabel?: string
   quoteId?: string
   premium?: number
+  investmentAmount?: number | string
+  purchasePremium?: number | string
+  funeralPremium?: number | string
 }
 
 const todayISO = () => new Date().toISOString().slice(0, 10)
 
 const generatePolicyNumber = () =>
   `POL-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`
+
+const asString = (v: unknown) => (v === undefined || v === null || v === "" ? "" : String(v))
 
 const ConvertToPolicy = () => {
   const navigate = useNavigate()
@@ -52,10 +88,20 @@ const ConvertToPolicy = () => {
     email: prefill.form?.email || prefill.email || "",
     contactNumber: prefill.form?.contactNumber || prefill.contactNumber || "",
     address: prefill.form?.address || "",
+    countryOfOrigin: prefill.form?.countryOfOrigin || "Botswana",
     policyNumber: prefill.form?.policyNumber || generatePolicyNumber(),
     productName: prefill.form?.productName || prefill.productType || "Annuity",
     policyStartDate: prefill.form?.policyStartDate || todayISO(),
     transitionDate: prefill.form?.transitionDate || todayISO(),
+    investmentAmount:
+      prefill.form?.investmentAmount || asString(prefill.investmentAmount),
+    purchasePremium:
+      prefill.form?.purchasePremium || asString(prefill.purchasePremium ?? prefill.premium),
+    upfrontCommission: prefill.form?.upfrontCommission || "",
+    administrationFee: prefill.form?.administrationFee || "",
+    ongoingAdvisoryFee: prefill.form?.ongoingAdvisoryFee || "",
+    switchFee: prefill.form?.switchFee || "",
+    funeralPremium: prefill.form?.funeralPremium || asString(prefill.funeralPremium),
   })
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -79,6 +125,12 @@ const ConvertToPolicy = () => {
     toast.success("Progress saved — resume it from Clients.")
   }
 
+  const stepSubtitle =
+    currentStep === 0
+      ? "Confirm the policyholder details"
+      : currentStep === 1
+      ? "Confirm the policy details"
+      : "Confirm the premiums and fees"
 
   return (
     <div className="space-y-6">
@@ -133,9 +185,7 @@ const ConvertToPolicy = () => {
 
         <h1 className="text-2xl font-bold tracking-tight">Convert Quote to Policy</h1>
         <p className="text-sm text-muted-foreground mt-1 mb-8">
-          {currentStep === 0
-            ? "Confirm the policyholder details"
-            : "Confirm the policy details"}
+          {stepSubtitle}
           {prefill.quoteId ? ` for ${prefill.quoteId}` : ""}
           {prefill.optionLabel ? ` (${prefill.optionLabel})` : ""}.
         </p>
@@ -161,6 +211,24 @@ const ConvertToPolicy = () => {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="countryOfOrigin">Country of Origin</Label>
+              <Select
+                value={form.countryOfOrigin}
+                onValueChange={(v) => setForm((prev) => ({ ...prev, countryOfOrigin: v }))}
+              >
+                <SelectTrigger id="countryOfOrigin" className="h-11 rounded-xl">
+                  <SelectValue placeholder="Select a country" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {COUNTRIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
               <Input id="email" type="email" value={form.email} onChange={set("email")} placeholder="jane@example.com" className="h-11 rounded-xl" />
             </div>
@@ -173,7 +241,7 @@ const ConvertToPolicy = () => {
               <Input id="address" value={form.address} onChange={set("address")} placeholder="Plot 123, Gaborone" className="h-11 rounded-xl" />
             </div>
           </div>
-        ) : (
+        ) : currentStep === 1 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
             <div className="space-y-2">
               <Label htmlFor="policyNumber">Policy Number</Label>
@@ -200,6 +268,37 @@ const ConvertToPolicy = () => {
               />
             </div>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="investmentAmount">Investment Amount Premium</Label>
+              <Input id="investmentAmount" inputMode="decimal" value={form.investmentAmount} onChange={set("investmentAmount")} placeholder="0.00" className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="purchasePremium">Purchase Premium</Label>
+              <Input id="purchasePremium" inputMode="decimal" value={form.purchasePremium} onChange={set("purchasePremium")} placeholder="0.00" className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="upfrontCommission">Upfront Commission %</Label>
+              <Input id="upfrontCommission" inputMode="decimal" value={form.upfrontCommission} onChange={set("upfrontCommission")} placeholder="0" className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="administrationFee">Administration Fee</Label>
+              <Input id="administrationFee" inputMode="decimal" value={form.administrationFee} onChange={set("administrationFee")} placeholder="0.00" className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ongoingAdvisoryFee">Ongoing Advisory Fee %</Label>
+              <Input id="ongoingAdvisoryFee" inputMode="decimal" value={form.ongoingAdvisoryFee} onChange={set("ongoingAdvisoryFee")} placeholder="0" className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="switchFee">Switch Fee</Label>
+              <Input id="switchFee" inputMode="decimal" value={form.switchFee} onChange={set("switchFee")} placeholder="0.00" className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="funeralPremium">Funeral Premium</Label>
+              <Input id="funeralPremium" inputMode="decimal" value={form.funeralPremium} onChange={set("funeralPremium")} placeholder="0.00" className="h-11 rounded-xl" />
+            </div>
+          </div>
         )}
 
         <div className="flex justify-between items-center gap-4 mt-10">
@@ -212,8 +311,8 @@ const ConvertToPolicy = () => {
               Save Progress
             </Button>
             <Button
-              disabled={currentStep >= 1}
-              onClick={() => setCurrentStep((s) => Math.min(s + 1, 1))}
+              disabled={currentStep >= LAST_STEP}
+              onClick={() => setCurrentStep((s) => Math.min(s + 1, LAST_STEP))}
               className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white"
             >
               Continue
