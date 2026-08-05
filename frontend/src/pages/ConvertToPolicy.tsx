@@ -13,13 +13,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
+import { Checkbox } from "@/components/ui/checkbox"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
 
 const STEPS = [
   "Policyholder Details",
   "Policy Details",
-  "Premiums",
+  "Premium and Policy Fees",
   "Beneficiaries",
   "Payment",
   "Review",
@@ -94,14 +95,10 @@ const ConvertToPolicy = () => {
     policyStartDate: prefill.form?.policyStartDate || todayISO(),
     transitionDate: prefill.form?.transitionDate || todayISO(),
     investmentAmount:
-      prefill.form?.investmentAmount || asString(prefill.investmentAmount),
-    purchasePremium:
-      prefill.form?.purchasePremium || asString(prefill.purchasePremium ?? prefill.premium),
-    upfrontCommission: prefill.form?.upfrontCommission || "",
-    administrationFee: prefill.form?.administrationFee || "",
+      prefill.form?.investmentAmount ||
+      asString(prefill.purchasePremium ?? prefill.investmentAmount ?? prefill.premium),
+    upfrontCommissionEnabled: prefill.form?.upfrontCommissionEnabled || "no",
     ongoingAdvisoryFee: prefill.form?.ongoingAdvisoryFee || "",
-    switchFee: prefill.form?.switchFee || "",
-    funeralPremium: prefill.form?.funeralPremium || asString(prefill.funeralPremium),
   })
 
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle")
@@ -110,6 +107,17 @@ const ConvertToPolicy = () => {
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }))
+
+  // Derived premium & fee values (all based on the Investment Amount Premium)
+  const investment = Number(String(form.investmentAmount).replace(/[^0-9.]/g, "")) || 0
+  const fmt = (n: number) =>
+    n.toLocaleString("en-BW", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const purchasePremium = investment * 0.02
+  const upfrontCommission = investment * 0.01
+  const administrationFee = investment * 0.00083
+  const SWITCH_FEE = 180
+  const FUNERAL_PREMIUM = 20
+  const commissionOn = form.upfrontCommissionEnabled === "yes"
 
   // Autosave the draft whenever the form or step changes
   useEffect(() => {
@@ -124,7 +132,14 @@ const ConvertToPolicy = () => {
       const saved = saveDraft({
         id: draftId,
         step: currentStep,
-        form,
+        form: {
+          ...form,
+          purchasePremium: purchasePremium.toFixed(2),
+          upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
+          administrationFee: administrationFee.toFixed(2),
+          switchFee: SWITCH_FEE.toFixed(2),
+          funeralPremium: FUNERAL_PREMIUM.toFixed(2),
+        },
         productType: prefill.productType,
         optionLabel: prefill.optionLabel,
         quoteId: prefill.quoteId,
@@ -142,7 +157,7 @@ const ConvertToPolicy = () => {
       ? "Confirm the policyholder details"
       : currentStep === 1
       ? "Confirm the policy details"
-      : "Confirm the premiums and fees"
+      : "Confirm the premium and policy fees"
 
   return (
     <div className="space-y-6">
@@ -308,18 +323,37 @@ const ConvertToPolicy = () => {
             <div className="space-y-2">
               <Label htmlFor="investmentAmount">Investment Amount Premium</Label>
               <Input id="investmentAmount" inputMode="decimal" value={form.investmentAmount} onChange={set("investmentAmount")} placeholder="0.00" className="h-11 rounded-xl" />
+              <p className="text-xs text-muted-foreground">Purchase premium from the quote.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="purchasePremium">Purchase Premium</Label>
-              <Input id="purchasePremium" inputMode="decimal" value={form.purchasePremium} onChange={set("purchasePremium")} placeholder="0.00" className="h-11 rounded-xl" />
+              <Label htmlFor="purchasePremium">Purchase Premium (2%)</Label>
+              <Input id="purchasePremium" readOnly value={fmt(purchasePremium)} className="h-11 rounded-xl bg-muted/50" />
+              <p className="text-xs text-muted-foreground">Mandatory — 2% of the investment amount.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="upfrontCommission">Upfront Commission %</Label>
-              <Input id="upfrontCommission" inputMode="decimal" value={form.upfrontCommission} onChange={set("upfrontCommission")} placeholder="0" className="h-11 rounded-xl" />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="upfrontCommission">Upfront Commission (1%)</Label>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Checkbox
+                    checked={commissionOn}
+                    onCheckedChange={(c) =>
+                      setForm((prev) => ({ ...prev, upfrontCommissionEnabled: c ? "yes" : "no" }))
+                    }
+                  />
+                  Include
+                </label>
+              </div>
+              <Input
+                id="upfrontCommission"
+                readOnly
+                value={commissionOn ? fmt(upfrontCommission) : "Not included"}
+                className="h-11 rounded-xl bg-muted/50"
+              />
+              <p className="text-xs text-muted-foreground">Optional — 1% of the investment amount.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="administrationFee">Administration Fee</Label>
-              <Input id="administrationFee" inputMode="decimal" value={form.administrationFee} onChange={set("administrationFee")} placeholder="0.00" className="h-11 rounded-xl" />
+              <Label htmlFor="administrationFee">Administration Fee (0.083%)</Label>
+              <Input id="administrationFee" readOnly value={fmt(administrationFee)} className="h-11 rounded-xl bg-muted/50" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="ongoingAdvisoryFee">Ongoing Advisory Fee %</Label>
@@ -327,11 +361,11 @@ const ConvertToPolicy = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="switchFee">Switch Fee</Label>
-              <Input id="switchFee" inputMode="decimal" value={form.switchFee} onChange={set("switchFee")} placeholder="0.00" className="h-11 rounded-xl" />
+              <Input id="switchFee" readOnly value={fmt(SWITCH_FEE)} className="h-11 rounded-xl bg-muted/50" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="funeralPremium">Funeral Premium</Label>
-              <Input id="funeralPremium" inputMode="decimal" value={form.funeralPremium} onChange={set("funeralPremium")} placeholder="0.00" className="h-11 rounded-xl" />
+              <Input id="funeralPremium" readOnly value={fmt(FUNERAL_PREMIUM)} className="h-11 rounded-xl bg-muted/50" />
             </div>
           </div>
         )}
