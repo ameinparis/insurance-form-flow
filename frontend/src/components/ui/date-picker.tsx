@@ -169,18 +169,6 @@ export function DatePicker({
           </Button>
           <Button
             type="button"
-            variant="outline"
-            className="flex-1 rounded-md"
-            onClick={() => {
-              const today = toISO(new Date())
-              onChange(today)
-              setOpen(false)
-            }}
-          >
-            Today
-          </Button>
-          <Button
-            type="button"
             className="flex-1 rounded-md"
             onClick={() => setOpen(false)}
           >
