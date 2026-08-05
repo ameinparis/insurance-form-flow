@@ -56,10 +56,36 @@ const PolicyDraftPreview = () => {
 
   const [form, setForm] = useState<Record<string, string>>(draft?.form || {})
   const [editing, setEditing] = useState<number | null>(null)
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle")
+  const draftRef = useRef(draft)
+  draftRef.current = draft
+  const timer = useRef<ReturnType<typeof setTimeout>>()
 
   useEffect(() => {
     if (draft && editing === null) setForm(draft.form || {})
   }, [draft, editing])
+
+  // Autosave edits
+  useEffect(() => {
+    const d = draftRef.current
+    if (!d || editing === null) return
+    setSaveState("saving")
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => {
+      saveDraft({
+        id: d.id,
+        step: d.step,
+        form,
+        productType: d.productType,
+        optionLabel: d.optionLabel,
+        quoteId: d.quoteId,
+        premium: d.premium,
+      })
+      setSaveState("saved")
+    }, 600)
+    return () => clearTimeout(timer.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, editing])
 
   if (!draft) {
     return (
@@ -74,23 +100,6 @@ const PolicyDraftPreview = () => {
     )
   }
 
-  const persist = (next: Record<string, string>) => {
-    saveDraft({
-      id: draft.id,
-      step: draft.step,
-      form: next,
-      productType: draft.productType,
-      optionLabel: draft.optionLabel,
-      quoteId: draft.quoteId,
-      premium: draft.premium,
-    })
-  }
-
-  const handleSaveSection = () => {
-    persist(form)
-    setEditing(null)
-    toast.success("Draft updated.")
-  }
 
   const continueEditing = () =>
     navigate("/policies/convert", {
