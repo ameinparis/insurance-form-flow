@@ -54,7 +54,69 @@ const Clients = () => {
         </div>
       </div>
 
-      <div className="px-6 py-6">
+      <div className="px-6 py-6 space-y-6">
+        {filteredDrafts.length > 0 && (
+          <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/50">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">In Progress</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Click a name to continue the policy conversion where you left off.
+              </p>
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+              {filteredDrafts.map((draft) => (
+                <div key={draft.id} className="flex items-center justify-between gap-4 px-6 py-4">
+                  <button
+                    className="min-w-0 text-left group"
+                    onClick={() =>
+                      navigate("/policies/convert", {
+                        state: {
+                          draftId: draft.id,
+                          step: draft.step,
+                          form: draft.form,
+                          productType: draft.productType,
+                          optionLabel: draft.optionLabel,
+                          quoteId: draft.quoteId,
+                          premium: draft.premium,
+                        },
+                      })
+                    }
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileClock className="h-4 w-4 text-amber-500 shrink-0" />
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:underline">
+                        {draft.form?.fullName || "Unnamed policyholder"}
+                      </p>
+                      <Badge
+                        variant="outline"
+                        className="rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide border-amber-300 text-amber-600 dark:text-amber-400 whitespace-nowrap"
+                      >
+                        Draft
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
+                      {[draft.optionLabel, draft.quoteId, `Saved ${formatDate(draft.updatedAt)}`]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full text-slate-400 hover:text-red-500 shrink-0"
+                    onClick={() => {
+                      removeDraft(draft.id)
+                      toast.success("Draft discarded.")
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center py-24 px-6">
