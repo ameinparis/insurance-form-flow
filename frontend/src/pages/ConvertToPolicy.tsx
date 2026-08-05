@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { DatePicker } from "@/components/ui/date-picker"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
 
@@ -151,7 +152,13 @@ const ConvertToPolicy = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <Input id="dateOfBirth" value={form.dateOfBirth} onChange={set("dateOfBirth")} placeholder="YYYY-MM-DD" className="h-11 rounded-xl" />
+              <DatePicker
+                id="dateOfBirth"
+                value={form.dateOfBirth}
+                onChange={(v) => setForm((prev) => ({ ...prev, dateOfBirth: v }))}
+                fromYear={1900}
+                toYear={new Date().getFullYear()}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
@@ -178,11 +185,19 @@ const ConvertToPolicy = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="policyStartDate">Policy Start Date</Label>
-              <Input id="policyStartDate" type="date" value={form.policyStartDate} onChange={set("policyStartDate")} className="h-11 rounded-xl" />
+              <DatePicker
+                id="policyStartDate"
+                value={form.policyStartDate}
+                onChange={(v) => setForm((prev) => ({ ...prev, policyStartDate: v }))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="transitionDate">Transition Date</Label>
-              <Input id="transitionDate" type="date" value={form.transitionDate} onChange={set("transitionDate")} className="h-11 rounded-xl" />
+              <DatePicker
+                id="transitionDate"
+                value={form.transitionDate}
+                onChange={(v) => setForm((prev) => ({ ...prev, transitionDate: v }))}
+              />
             </div>
           </div>
         )}

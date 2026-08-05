@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -579,10 +580,10 @@ const GroupLifeAssuranceForm = () => {
                         />
                       </td>
                       <td className="p-2">
-                        <Input
-                          type="date"
+                        <DatePicker
                           value={row.dob}
-                          onChange={(e) => handleInputChange(index, "dob", e.target.value)}
+                          onChange={(v) => handleInputChange(index, "dob", v)}
+                          className="min-w-[170px]"
                         />
                       </td>
                       <td className="p-2">

@@ -2,6 +2,7 @@ import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -539,12 +540,11 @@ const displayValue = (row: any) => {
                 </div>
                 <div className="space-y-2">
                   <Label>Date of Birth</Label>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={customerDetails.dateOfBirth}
-                    onChange={(e) => handleCustomerDetailsChange("dateOfBirth", e.target.value)}
-                    min="1900-01-01"
-                    max={new Date().toISOString().split("T")[0]}
+                    onChange={(v) => handleCustomerDetailsChange("dateOfBirth", v)}
+                    fromYear={1900}
+                    toYear={new Date().getFullYear()}
                     className="w-full"
                   />
                 </div>
