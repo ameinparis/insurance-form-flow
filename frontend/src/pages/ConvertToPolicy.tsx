@@ -123,7 +123,7 @@ const ConvertToPolicy = () => {
       {/* Form card */}
       <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-card p-6 md:p-8">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => (currentStep === 0 ? navigate(-1) : setCurrentStep((s) => s - 1))}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -132,36 +132,60 @@ const ConvertToPolicy = () => {
 
         <h1 className="text-2xl font-bold tracking-tight">Convert Quote to Policy</h1>
         <p className="text-sm text-muted-foreground mt-1 mb-8">
-          Confirm the policyholder details{prefill.quoteId ? ` for ${prefill.quoteId}` : ""}
+          {currentStep === 0
+            ? "Confirm the policyholder details"
+            : "Confirm the policy details"}
+          {prefill.quoteId ? ` for ${prefill.quoteId}` : ""}
           {prefill.optionLabel ? ` (${prefill.optionLabel})` : ""}.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name</Label>
-            <Input id="fullName" value={form.fullName} onChange={set("fullName")} placeholder="Jane Doe" className="h-11 rounded-xl" />
+        {currentStep === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input id="fullName" value={form.fullName} onChange={set("fullName")} placeholder="Jane Doe" className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="idNumber">ID Number</Label>
+              <Input id="idNumber" value={form.idNumber} onChange={set("idNumber")} placeholder="000000000" className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dateOfBirth">Date of Birth</Label>
+              <Input id="dateOfBirth" value={form.dateOfBirth} onChange={set("dateOfBirth")} placeholder="YYYY-MM-DD" className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input id="email" type="email" value={form.email} onChange={set("email")} placeholder="jane@example.com" className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactNumber">Contact Number</Label>
+              <Input id="contactNumber" value={form.contactNumber} onChange={set("contactNumber")} placeholder="+267 71 000 000" className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="address">Residential Address</Label>
+              <Input id="address" value={form.address} onChange={set("address")} placeholder="Plot 123, Gaborone" className="h-11 rounded-xl" />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="idNumber">ID Number</Label>
-            <Input id="idNumber" value={form.idNumber} onChange={set("idNumber")} placeholder="000000000" className="h-11 rounded-xl" />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="policyNumber">Policy Number</Label>
+              <Input id="policyNumber" value={form.policyNumber} onChange={set("policyNumber")} className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="productName">Product Name</Label>
+              <Input id="productName" value={form.productName} onChange={set("productName")} className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="policyStartDate">Policy Start Date</Label>
+              <Input id="policyStartDate" type="date" value={form.policyStartDate} onChange={set("policyStartDate")} className="h-11 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="transitionDate">Transition Date</Label>
+              <Input id="transitionDate" type="date" value={form.transitionDate} onChange={set("transitionDate")} className="h-11 rounded-xl" />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="dateOfBirth">Date of Birth</Label>
-            <Input id="dateOfBirth" value={form.dateOfBirth} onChange={set("dateOfBirth")} placeholder="YYYY-MM-DD" className="h-11 rounded-xl" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input id="email" type="email" value={form.email} onChange={set("email")} placeholder="jane@example.com" className="h-11 rounded-xl" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="contactNumber">Contact Number</Label>
-            <Input id="contactNumber" value={form.contactNumber} onChange={set("contactNumber")} placeholder="+267 71 000 000" className="h-11 rounded-xl" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="address">Residential Address</Label>
-            <Input id="address" value={form.address} onChange={set("address")} placeholder="Plot 123, Gaborone" className="h-11 rounded-xl" />
-          </div>
-        </div>
+        )}
 
         <div className="flex justify-between items-center gap-4 mt-10">
           <Button variant="outline" onClick={() => navigate(-1)} className="rounded-full px-6">
@@ -172,11 +196,16 @@ const ConvertToPolicy = () => {
               <Save className="h-4 w-4" />
               Save Progress
             </Button>
-            <Button disabled className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white">
+            <Button
+              disabled={currentStep >= 1}
+              onClick={() => setCurrentStep((s) => Math.min(s + 1, 1))}
+              className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white"
+            >
               Continue
             </Button>
           </div>
         </div>
+
 
       </div>
     </div>
