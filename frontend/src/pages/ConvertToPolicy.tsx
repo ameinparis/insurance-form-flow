@@ -159,10 +159,17 @@ const ConvertToPolicy = () => {
           <Button variant="outline" onClick={() => navigate(-1)} className="rounded-full px-6">
             Cancel
           </Button>
-          <Button disabled className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white">
-            Continue
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={handleSaveProgress} className="rounded-full px-6">
+              <Save className="h-4 w-4" />
+              Save Progress
+            </Button>
+            <Button disabled className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white">
+              Continue
+            </Button>
+          </div>
         </div>
+
       </div>
     </div>
   )
