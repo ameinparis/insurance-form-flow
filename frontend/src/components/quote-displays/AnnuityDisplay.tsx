@@ -187,6 +187,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
                   clientData={clientData}
                   quoteId={quote?.quoteId}
                   productType={quote?.productType || quote?.type}
+                  quoteInputs={inputData}
                 />
 
               ))}
@@ -404,13 +405,14 @@ interface ScenarioGroupBlockProps {
   clientData?: any;
   quoteId?: string;
   productType?: string;
+  quoteInputs?: any;
 }
 
-const ScenarioGroupBlock = ({ group, index, showOptionLabel = true, clientData, quoteId, productType }: ScenarioGroupBlockProps) => {
+const ScenarioGroupBlock = ({ group, index, showOptionLabel = true, clientData, quoteId, productType, quoteInputs }: ScenarioGroupBlockProps) => {
   const navigate = useNavigate();
   // Representative scenario for shared living details
   const rep = group.scenarios[0];
-  const inputs = rep?.inputs || {};
+  const inputs = { ...(quoteInputs || {}), ...(rep?.inputs || {}) };
   const living = rep?.outputs?.living || {};
 
   // Collect selected life guarantee periods across all scenarios in the group
@@ -512,8 +514,16 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true, clientData, 
         optionLabel,
         quoteId,
         premium: living?.guaranteed_annuity,
-        investmentAmount: inputs.purchaseAmount,
-        purchasePremium: inputs.purchaseAmount,
+        investmentAmount:
+          inputs.purchaseAmount ??
+          inputs.singlePurchasePremium ??
+          inputs.lifePurchaseAmount ??
+          quoteInputs?.purchaseAmount,
+        purchasePremium:
+          inputs.purchaseAmount ??
+          inputs.singlePurchasePremium ??
+          inputs.lifePurchaseAmount ??
+          quoteInputs?.purchaseAmount,
         funeralPremium: (inputs as Record<string, unknown>).funeralPremium,
       },
     });
