@@ -11,6 +11,7 @@ import { roleLabel } from "@/lib/permissions";
 import { useGlobalSearch } from "@/lib/searchContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface LayoutProps {
   children: React.ReactNode;
