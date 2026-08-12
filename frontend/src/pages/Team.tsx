@@ -307,7 +307,7 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No team members yet</h3>
             <p className="text-muted-foreground mb-4">Add your first team member to get started.</p>
-            {currentUserRole?.toLowerCase() === "superuser" && (
+            {canManageUsers && (
               <Button onClick={() => setShowAddUserModal(true)}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add First Member
@@ -361,13 +361,13 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
                     <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                       <Badge
                         variant="outline"
-                        className={`rounded-full px-2 py-1.5 text-xs font-medium border capitalize ${getRoleBadgeClass(member.role)}`}
+                        className={`rounded-full px-2 py-1.5 text-xs font-medium border ${getRoleBadgeClass(member.role)}`}
                       >
-                        {member.role}
+                        {roleLabel(member.role)}
                       </Badge>
                     </TableCell>
                     <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
-                      {currentUserRole?.toLowerCase() === "superuser" ? (
+                      {canEditMember(member) ? (
                         <Badge
                           variant="outline"
                           className={`rounded-full px-2 py-1.5 text-xs font-medium border cursor-pointer transition-colors ${getStatusBadgeClass(member.isActive !== false)}`}
@@ -448,8 +448,11 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
                   <SelectValue placeholder="Select Role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="superuser">Superuser</SelectItem>
+                  {roleOptions.map((r) => (
+                    <SelectItem key={r} value={toStoredRole(r)}>
+                      {ROLE_LABELS[r]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -491,8 +494,11 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
                   <SelectValue placeholder="Select Role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="superuser">Superuser</SelectItem>
+                  {roleOptions.map((r) => (
+                    <SelectItem key={r} value={toStoredRole(r)}>
+                      {ROLE_LABELS[r]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
