@@ -108,7 +108,7 @@ const ConvertToPolicy = () => {
       prefill.form?.investmentAmount ||
       asString(prefill.investmentAmount ?? prefill.purchasePremium),
     upfrontCommissionEnabled: prefill.form?.upfrontCommissionEnabled || "no",
-    ongoingAdvisoryFee: prefill.form?.ongoingAdvisoryFee || "",
+    ongoingAdvisoryFee: prefill.form?.ongoingAdvisoryFee || "1",
     portfolioSkipped: prefill.form?.portfolioSkipped || "no",
     riskProfile: prefill.form?.riskProfile || "",
     portfolioAllocations: prefill.form?.portfolioAllocations || "",
