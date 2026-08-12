@@ -108,7 +108,7 @@ const ConvertToPolicy = () => {
       prefill.form?.investmentAmount ||
       asString(prefill.investmentAmount ?? prefill.purchasePremium),
     upfrontCommissionEnabled: prefill.form?.upfrontCommissionEnabled || "no",
-    ongoingAdvisoryFee: prefill.form?.ongoingAdvisoryFee || "",
+    ongoingAdvisoryFee: prefill.form?.ongoingAdvisoryFee || "1",
     portfolioSkipped: prefill.form?.portfolioSkipped || "no",
     riskProfile: prefill.form?.riskProfile || "",
     portfolioAllocations: prefill.form?.portfolioAllocations || "",
@@ -132,6 +132,10 @@ const ConvertToPolicy = () => {
   const SWITCH_FEE = 180
   const FUNERAL_PREMIUM = 20
   const commissionOn = form.upfrontCommissionEnabled === "yes"
+  // Ongoing Advisory Fee — percentage clamped to 0–1% of the Investment Amount Premium
+  const advisoryPctRaw = Number(String(form.ongoingAdvisoryFee).replace(/[^0-9.]/g, "")) || 0
+  const advisoryPct = Math.min(Math.max(advisoryPctRaw, 0), 1)
+  const ongoingAdvisoryFeeAmount = investment * (advisoryPct / 100)
 
   // Autosave the draft whenever the form or step changes
   useEffect(() => {
@@ -153,6 +157,7 @@ const ConvertToPolicy = () => {
           administrationFee: administrationFee.toFixed(2),
           switchFee: SWITCH_FEE.toFixed(2),
           funeralPremium: FUNERAL_PREMIUM.toFixed(2),
+          ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
         },
         productType: prefill.productType,
         optionLabel: prefill.optionLabel,
@@ -397,7 +402,22 @@ const ConvertToPolicy = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="ongoingAdvisoryFee">Ongoing Advisory Fee %</Label>
-              <Input id="ongoingAdvisoryFee" inputMode="decimal" value={form.ongoingAdvisoryFee} onChange={set("ongoingAdvisoryFee")} placeholder="0" className="h-11 rounded-xl" />
+              <Input
+                id="ongoingAdvisoryFee"
+                inputMode="decimal"
+                value={form.ongoingAdvisoryFee}
+                onChange={(e) => {
+                  const raw = e.target.value
+                  const num = Number(raw.replace(/[^0-9.]/g, "")) || 0
+                  const clamped = Math.min(Math.max(num, 0), 1).toString()
+                  setForm((prev) => ({ ...prev, ongoingAdvisoryFee: raw === "" ? "" : clamped }))
+                }}
+                placeholder="0"
+                className="h-11 rounded-xl"
+              />
+              <p className="text-xs text-muted-foreground">
+                0–1% of the investment amount. Calculated: <span className="font-medium text-foreground">{fmt(ongoingAdvisoryFeeAmount)}</span>
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="switchFee">Switch Fee</Label>
