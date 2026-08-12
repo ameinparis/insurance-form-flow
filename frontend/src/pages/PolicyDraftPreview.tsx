@@ -106,7 +106,14 @@ const PolicyDraftPreview = () => {
 
 
   const isApproved = draft?.status === "approved"
-  const canApprove = canApproveConversion(userRole, userId, draft?.initiatedBy)
+  const isRejected = draft?.status === "rejected"
+  const isPending = draft?.status === "pending_approval"
+  const isSuper = permissionsFor(userRole).role === "super_admin"
+  const isAssignee = String(draft?.assignedTo || "") === String(userId || "")
+  const canApprove =
+    canApproveConversion(userRole, userId, draft?.initiatedBy) && isPending && (isSuper || isAssignee)
+  const canReassign =
+    isPending && (isSuper || String(draft?.initiatedBy || "") === String(userId || ""))
 
   const continueEditing = () =>
     navigate("/policies/convert", {
