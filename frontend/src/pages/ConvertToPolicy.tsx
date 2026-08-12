@@ -468,79 +468,141 @@ const ConvertToPolicy = () => {
           </div>
         ) : currentStep === 3 ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-              <div className="space-y-2">
-                <Label>Full Name</Label>
-                <Input
-                  value={beneficiaries[0]?.name ?? ""}
-                  onChange={(e) => setBeneficiary(0, "name", e.target.value)}
-                  placeholder="Jane Doe"
-                  className="h-11 rounded-xl"
-                />
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold">Beneficiaries</p>
+                <p className="text-xs text-muted-foreground">Add beneficiaries and set their allocation</p>
               </div>
-              <div className="space-y-2">
-                <Label>Relationship</Label>
-                <Select
-                  value={beneficiaries[0]?.relationship ?? ""}
-                  onValueChange={(v) => setBeneficiary(0, "relationship", v)}
-                >
-                  <SelectTrigger className="h-11 rounded-xl">
-                    <SelectValue placeholder="Select relationship" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {RELATIONSHIPS.map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {r}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  beneficiaryTotalValid
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                    : "bg-red-500/15 text-red-600 dark:text-red-400"
+                }`}
+              >
+                Total: {Math.round(beneficiaryTotal * 100) / 100}%
+              </span>
             </div>
-            <div className="flex justify-end">
-              <Button type="button" variant="outline" onClick={addBeneficiary} className="rounded-full px-6">
-                Add Beneficiary
-              </Button>
-            </div>
-            {beneficiaries.length > 1 && (
-              <div className="space-y-3">
-                {beneficiaries.slice(1).map((b: Record<string, string>, idx: number) => (
-                  <div key={idx + 1} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-x-8 gap-y-2 items-end">
-                    <div className="space-y-2">
-                      <Label>Full Name</Label>
-                      <Input
-                        value={b?.name ?? ""}
-                        onChange={(e) => setBeneficiary(idx + 1, "name", e.target.value)}
-                        placeholder="Jane Doe"
-                        className="h-11 rounded-xl"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Relationship</Label>
-                      <Select
-                        value={b?.relationship ?? ""}
-                        onValueChange={(v) => setBeneficiary(idx + 1, "relationship", v)}
+
+            <div className="space-y-3">
+              {beneficiaryRows.map((b: Record<string, string>, idx: number) => {
+                const allocation = Math.min(100, Math.max(0, Number(String(b?.allocation ?? "").replace(/[^0-9.]/g, "")) || 0))
+                return (
+                  <div
+                    key={idx}
+                    className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-card p-4 space-y-4"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-[1.6fr_1fr_1fr_auto] gap-x-4 gap-y-4 items-end">
+                      <div className="space-y-2">
+                        <Label>Full name</Label>
+                        <Input
+                          value={b?.name ?? ""}
+                          onChange={(e) => setBeneficiary(idx, "name", e.target.value)}
+                          placeholder="Jane Doe"
+                          className="h-11 rounded-xl"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Relationship</Label>
+                        <Select
+                          value={b?.relationship ?? ""}
+                          onValueChange={(v) => setBeneficiary(idx, "relationship", v)}
+                        >
+                          <SelectTrigger className="h-11 rounded-xl">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {RELATIONSHIPS.map((r) => (
+                              <SelectItem key={r} value={r}>
+                                {r}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Benefit option</Label>
+                        <Select
+                          value={b?.benefitOption ?? ""}
+                          onValueChange={(v) => setBeneficiary(idx, "benefitOption", v)}
+                        >
+                          <SelectTrigger className="h-11 rounded-xl">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {BENEFIT_OPTIONS.map((o) => (
+                              <SelectItem key={o} value={o}>
+                                {o}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Remove beneficiary"
+                        disabled={beneficiaryRows.length <= 1}
+                        onClick={() => removeBeneficiary(idx)}
+                        className="h-11 w-11 rounded-xl border border-gray-200 dark:border-slate-700 text-muted-foreground hover:text-red-500"
                       >
-                        <SelectTrigger className="h-11 rounded-xl">
-                          <SelectValue placeholder="Select relationship" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {RELATIONSHIPS.map((r) => (
-                            <SelectItem key={r} value={r}>
-                              {r}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button type="button" variant="ghost" onClick={() => removeBeneficiary(idx + 1)} className="rounded-full px-4">
-                      Remove
-                    </Button>
+
+                    <div className="flex items-center gap-4">
+                      <Label className="text-xs text-muted-foreground shrink-0">Allocation</Label>
+                      <Slider
+                        value={[allocation]}
+                        min={0}
+                        max={100}
+                        step={1}
+                        onValueChange={(v) => setBeneficiary(idx, "allocation", String(v[0]))}
+                        className="flex-1"
+                      />
+                      <div className="relative w-24 shrink-0">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={b?.allocation ?? ""}
+                          onChange={(e) => {
+                            const raw = e.target.value
+                            if (raw === "") return setBeneficiary(idx, "allocation", "")
+                            const num = Math.min(100, Math.max(0, Number(raw) || 0))
+                            setBeneficiary(idx, "allocation", String(num))
+                          }}
+                          placeholder="0"
+                          className="h-10 rounded-xl pr-7 text-right"
+                        />
+                        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                          %
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
+                )
+              })}
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addBeneficiary}
+              className="w-full rounded-2xl border-dashed h-12"
+            >
+              <Plus className="h-4 w-4" />
+              Add beneficiary
+            </Button>
+
+            {!beneficiaryTotalValid && (
+              <p className="text-xs text-red-500">
+                Total allocation must equal exactly 100% before you can continue (currently {Math.round(beneficiaryTotal * 100) / 100}%).
+              </p>
             )}
           </div>
+
         ) : currentStep === 4 ? (
           <div className="space-y-6">
             <div className="rounded-xl border border-dashed border-gray-300 dark:border-slate-600 px-4 py-3 text-sm text-red-500">
