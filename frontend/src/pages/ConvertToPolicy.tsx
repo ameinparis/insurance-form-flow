@@ -21,12 +21,22 @@ const STEPS = [
   "Policyholder Details",
   "Policy Details",
   "Premium and Policy Fees",
+  "Investment Portfolio Setup",
   "Beneficiaries",
-  "Payment",
   "Review",
 ]
 
-const LAST_STEP = 2
+const LAST_STEP = 3
+
+const RISK_PROFILES = ["Conservative", "Moderate", "Balanced", "Growth", "Aggressive"]
+
+const FUNDS = [
+  "Money Market Fund",
+  "Botswana Bond Fund",
+  "Balanced Fund",
+  "Local Equity Fund",
+  "Global Equity Fund",
+]
 
 const COUNTRIES = [
   "Botswana",
