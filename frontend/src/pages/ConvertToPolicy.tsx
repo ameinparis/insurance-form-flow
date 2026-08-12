@@ -17,17 +17,19 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
+import { DocumentChecklist, REQUIRED_DOCUMENTS } from "@/components/policy/DocumentChecklist"
 
 const STEPS = [
   "Policyholder Details",
   "Policy Details",
   "Premium and Policy Fees",
   "Beneficiaries",
+  "Documents",
   "Investment Portfolio Setup",
   "Review",
 ]
 
-const LAST_STEP = 5
+const LAST_STEP = 6
 
 const RELATIONSHIPS = ["Spouse", "Child", "Parent", "Sibling", "Other"]
 
@@ -119,6 +121,7 @@ const ConvertToPolicy = () => {
     portfolioAllocations: prefill.form?.portfolioAllocations || "",
     portfolioNotes: prefill.form?.portfolioNotes || "",
     beneficiaries: prefill.form?.beneficiaries || "[]",
+    documents: prefill.form?.documents || "{}",
   })
 
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle")
@@ -233,6 +236,29 @@ const ConvertToPolicy = () => {
   )
   const beneficiaryTotalValid = Math.round(beneficiaryTotal * 100) / 100 === 100
 
+  const documents: Record<string, string> = (() => {
+    try {
+      return form.documents ? JSON.parse(form.documents) : {}
+    } catch {
+      return {}
+    }
+  })()
+  const setDocument = (key: string, fileName: string | null) => {
+    setForm((prev) => {
+      let current: Record<string, string> = {}
+      try {
+        current = prev.documents ? JSON.parse(prev.documents) : {}
+      } catch {
+        current = {}
+      }
+      const next = { ...current }
+      if (fileName) next[key] = fileName
+      else delete next[key]
+      return { ...prev, documents: JSON.stringify(next) }
+    })
+  }
+  const documentsValid = REQUIRED_DOCUMENTS.every((d) => Boolean(documents[d.key]))
+
 
   const stepSubtitle =
     currentStep === 0
@@ -243,6 +269,8 @@ const ConvertToPolicy = () => {
       ? "Confirm the premium and policy fees"
       : currentStep === 3
       ? "Add beneficiaries"
+      : currentStep === 4
+      ? "Upload the supporting documents"
       : "Set up the investment portfolio (optional)"
 
   return (
@@ -607,6 +635,15 @@ const ConvertToPolicy = () => {
           </div>
 
         ) : currentStep === 4 ? (
+          <div className="space-y-4">
+            <DocumentChecklist documents={documents} onChange={setDocument} />
+            {!documentsValid && (
+              <p className="text-xs text-red-500">
+                Upload all required documents (marked *) before you can continue.
+              </p>
+            )}
+          </div>
+        ) : currentStep === 5 ? (
           <div className="space-y-6">
             <div className="rounded-xl border border-dashed border-gray-300 dark:border-slate-600 px-4 py-3 text-sm text-red-500">
               This step is optional. You can skip it and set up the investment portfolio later.
@@ -675,7 +712,7 @@ const ConvertToPolicy = () => {
               )}
             </div>
           </div>
-        ) : currentStep === 5 ? (
+        ) : currentStep === 6 ? (
           <div className="space-y-6">
             <div className="rounded-xl border border-border bg-muted/40 p-6">
               <h3 className="text-lg font-semibold mb-4">Review Your Policy</h3>
@@ -701,6 +738,10 @@ const ConvertToPolicy = () => {
                   <p className="text-sm font-medium">{beneficiaries.length > 0 ? beneficiaries.map((b: Record<string, string>) => b.name).join(", ") : "None added"}</p>
                 </div>
                 <div>
+                  <p className="text-xs text-muted-foreground">Documents</p>
+                  <p className="text-sm font-medium">{Object.keys(documents).length} uploaded</p>
+                </div>
+                <div>
                   <p className="text-xs text-muted-foreground">Portfolio</p>
                   <p className="text-sm font-medium">{form.portfolioSkipped === "yes" ? "Skipped" : "Setup"}</p>
                 </div>
@@ -722,7 +763,7 @@ const ConvertToPolicy = () => {
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
-            {currentStep === 4 && (
+            {currentStep === 5 && (
               <Button
                 variant="ghost"
                 onClick={() =>
@@ -740,7 +781,7 @@ const ConvertToPolicy = () => {
               </Button>
             )}
             <Button
-              disabled={currentStep >= LAST_STEP || (currentStep === 3 && !beneficiaryTotalValid)}
+              disabled={currentStep >= LAST_STEP || (currentStep === 3 && !beneficiaryTotalValid) || (currentStep === 4 && !documentsValid)}
               onClick={() => setCurrentStep((s) => Math.min(s + 1, LAST_STEP))}
               className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white"
             >
