@@ -24,6 +24,8 @@ import {
 import { PageLoader } from "@/components/PageLoader"
 import { toast } from "sonner"
 import { DeleteMemberDialog } from "@/components/team/DeleteMemberDialog"
+import { useAuth } from "@/lib/authlibrary"
+import { assignableRoles, normalizeRole, roleLabel, toStoredRole, ROLE_LABELS } from "@/lib/permissions"
 
 interface TeamMember {
   id: string
@@ -38,7 +40,14 @@ interface TeamMember {
   isActive?: boolean
 }
 
-const Team = () => {
+const Team = ({ embedded = false }: { embedded?: boolean }) => {
+  const { userRole, permissions } = useAuth()
+  const canManageUsers = permissions.canManageUsers
+  const canManageSuperAdmins = permissions.canManageSuperAdmins
+  const roleOptions = assignableRoles(userRole)
+  const canEditMember = (member: TeamMember) =>
+    canManageUsers && (canManageSuperAdmins || normalizeRole(member.role) !== "super_admin")
+
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddUserModal, setShowAddUserModal] = useState(false)
