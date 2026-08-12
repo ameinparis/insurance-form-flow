@@ -134,7 +134,11 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex-shrink-0 h-[calc(100vh-140px)]">
             <AppSidebar />
           </div>
-          <main className="flex-1 overflow-auto bg-card rounded-3xl p-6 shadow-sm">{children}</main>
+          {/* Scroll container has NO padding so `sticky top-0` sticks flush to its top edge.
+              Padding lives on the inner wrapper, which pages still cancel with `-m-6`. */}
+          <main className="flex-1 overflow-auto bg-card rounded-3xl shadow-sm">
+            <div className="p-6 min-h-full">{children}</div>
+          </main>
         </div>
       </div>
     </SidebarProvider>
