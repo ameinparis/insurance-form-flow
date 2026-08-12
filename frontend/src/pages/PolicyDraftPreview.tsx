@@ -64,7 +64,11 @@ const SECTIONS: { title: string; step: number; fields: Field[] }[] = [
 const PolicyDraftPreview = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { drafts, saveDraft, approveDraft } = usePolicyDrafts()
+  const { drafts, saveDraft, approveDraft, rejectDraft, reassignDraft } = usePolicyDrafts()
+  const { addNotification, resolveForDraft, supersedeForDraft } = useNotifications()
+  const [reassignOpen, setReassignOpen] = useState(false)
+  const [rejectOpen, setRejectOpen] = useState(false)
+  const [rejectReason, setRejectReason] = useState("")
   const { userRole, userId, userName } = useAuth()
   const draft = useMemo(() => drafts.find((d) => d.id === id), [drafts, id])
 
