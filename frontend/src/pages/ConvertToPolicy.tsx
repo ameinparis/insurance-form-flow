@@ -157,6 +157,7 @@ const ConvertToPolicy = () => {
           administrationFee: administrationFee.toFixed(2),
           switchFee: SWITCH_FEE.toFixed(2),
           funeralPremium: FUNERAL_PREMIUM.toFixed(2),
+          ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
         },
         productType: prefill.productType,
         optionLabel: prefill.optionLabel,
