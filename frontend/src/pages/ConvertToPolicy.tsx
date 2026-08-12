@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { ArrowLeft, Check, CloudUpload, CheckCircle2 } from "lucide-react"
+import { ArrowLeft, Check, CloudUpload, CheckCircle2, Trash2, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Slider } from "@/components/ui/slider"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
 
@@ -29,6 +30,8 @@ const STEPS = [
 const LAST_STEP = 5
 
 const RELATIONSHIPS = ["Spouse", "Child", "Parent", "Sibling", "Other"]
+
+const BENEFIT_OPTIONS = ["Annuity", "Lump Sum", "Annuity + Lump Sum"]
 
 const RISK_PROFILES = ["Conservative", "Moderate", "Balanced", "Growth", "Aggressive"]
 
@@ -737,7 +740,7 @@ const ConvertToPolicy = () => {
               </Button>
             )}
             <Button
-              disabled={currentStep >= LAST_STEP}
+              disabled={currentStep >= LAST_STEP || (currentStep === 3 && !beneficiaryTotalValid)}
               onClick={() => setCurrentStep((s) => Math.min(s + 1, LAST_STEP))}
               className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white"
             >
