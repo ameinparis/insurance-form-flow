@@ -19,6 +19,9 @@ import { toTitleCase } from "@/lib/quoteUtils"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
 import { DocumentChecklist, POLICY_DOCUMENTS, REQUIRED_DOCUMENTS } from "@/components/policy/DocumentChecklist"
 
+import { useFeeConfig } from "@/hooks/useFeeConfig"
+import { useFundOptions } from "@/hooks/useInvestmentManagers"
+
 const STEPS = [
   "Policyholder Details",
   "Policy Details",
@@ -178,6 +181,10 @@ const ConvertToPolicy = () => {
   const timer = useRef<ReturnType<typeof setTimeout>>()
   const first = useRef(true)
 
+  const { config: feeConfig } = useFeeConfig()
+  const configuredFunds = useFundOptions()
+  const fundOptions = configuredFunds.length ? configuredFunds : FUNDS
+
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }))
 
@@ -185,15 +192,15 @@ const ConvertToPolicy = () => {
   const investment = Number(String(form.investmentAmount).replace(/[^0-9.]/g, "")) || 0
   const fmt = (n: number) =>
     n.toLocaleString("en-BW", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  const purchasePremium = investment * 0.02
-  const upfrontCommission = investment * 0.01
-  const administrationFee = investment * 0.00083
-  const SWITCH_FEE = 180
-  const FUNERAL_PREMIUM = 20
+  const purchasePremium = investment * (feeConfig.purchasePremiumPct / 100)
+  const upfrontCommission = investment * (feeConfig.upfrontCommissionPct / 100)
+  const administrationFee = investment * (feeConfig.administrationFeePct / 100)
+  const SWITCH_FEE = feeConfig.switchFee
+  const FUNERAL_PREMIUM = feeConfig.funeralPremium
   const commissionOn = form.upfrontCommissionEnabled === "yes"
   // Ongoing Advisory Fee — percentage clamped to 0–1% of the Investment Amount Premium
   const advisoryPctRaw = Number(String(form.ongoingAdvisoryFee).replace(/[^0-9.]/g, "")) || 0
-  const advisoryPct = Math.min(Math.max(advisoryPctRaw, 0), 1)
+  const advisoryPct = Math.min(Math.max(advisoryPctRaw, 0), feeConfig.ongoingAdvisoryMaxPct)
   const ongoingAdvisoryFeeAmount = investment * (advisoryPct / 100)
 
   // Autosave the draft whenever the form or step changes
@@ -516,7 +523,7 @@ const ConvertToPolicy = () => {
               <p className="text-xs text-muted-foreground">Optional — 1% of the investment amount.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="administrationFee">Administration Fee (0.083%)</Label>
+              <Label htmlFor="administrationFee">Administration Fee ({feeConfig.administrationFeePct}%)</Label>
               <Input id="administrationFee" readOnly value={fmt(administrationFee)} className="h-11 rounded-xl bg-muted/50" />
             </div>
             <div className="space-y-2">
@@ -535,7 +542,7 @@ const ConvertToPolicy = () => {
                 className="h-11 rounded-xl"
               />
               <p className="text-xs text-muted-foreground">
-                0–1% of the investment amount. Calculated: <span className="font-medium text-foreground">{fmt(ongoingAdvisoryFeeAmount)}</span>
+                0–{feeConfig.ongoingAdvisoryMaxPct}% of the investment amount. Calculated: <span className="font-medium text-foreground">{fmt(ongoingAdvisoryFeeAmount)}</span>
               </p>
             </div>
             <div className="space-y-2">
@@ -744,7 +751,7 @@ const ConvertToPolicy = () => {
                 </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                {FUNDS.map((fund) => (
+                {fundOptions.map((fund) => (
                   <div key={fund} className="flex items-center gap-3">
                     <span className="flex-1 text-sm">{fund}</span>
                     <Input
@@ -788,7 +795,7 @@ const ConvertToPolicy = () => {
                 label="Upfront Commission (1%)"
                 value={commissionOn ? `BWP ${fmt(upfrontCommission)}` : "Not applied"}
               />
-              <ReviewItem label="Administration Fee (0.083%)" value={`BWP ${fmt(administrationFee)}`} />
+              <ReviewItem label={`Administration Fee (${feeConfig.administrationFeePct}%)`} value={`BWP ${fmt(administrationFee)}`} />
               <ReviewItem
                 label={`Ongoing Advisory Fee (${advisoryPct}%)`}
                 value={`BWP ${fmt(ongoingAdvisoryFeeAmount)}`}
