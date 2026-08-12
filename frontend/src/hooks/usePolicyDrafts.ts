@@ -8,6 +8,13 @@ export interface PolicyDraft {
   optionLabel?: string
   quoteId?: string
   premium?: number
+  status?: "draft" | "pending_approval" | "approved"
+  initiatedBy?: string | null
+  initiatedByName?: string | null
+  initiatedAt?: string | null
+  approvedBy?: string | null
+  approvedByName?: string | null
+  approvedAt?: string | null
   updatedAt: string
 }
 
@@ -49,8 +56,19 @@ export const usePolicyDrafts = () => {
   const saveDraft = useCallback((draft: Omit<PolicyDraft, "updatedAt"> & { id?: string }) => {
     const current = read()
     const id = draft.id || `pd_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-    const next: PolicyDraft = { ...draft, id, updatedAt: new Date().toISOString() }
     const existing = current.findIndex((d) => d.id === id)
+    const prev = existing >= 0 ? current[existing] : undefined
+    const now = new Date().toISOString()
+    const next: PolicyDraft = {
+      status: "draft",
+      ...prev,
+      ...draft,
+      id,
+      initiatedBy: prev?.initiatedBy ?? draft.initiatedBy ?? localStorage.getItem("userId"),
+      initiatedByName: prev?.initiatedByName ?? draft.initiatedByName ?? localStorage.getItem("userName"),
+      initiatedAt: prev?.initiatedAt ?? now,
+      updatedAt: now,
+    }
     if (existing >= 0) {
       current[existing] = next
       write([...current])
@@ -64,5 +82,34 @@ export const usePolicyDrafts = () => {
     write(read().filter((d) => d.id !== id))
   }, [])
 
-  return { drafts, saveDraft, removeDraft }
+  const submitForApproval = useCallback((id: string) => {
+    write(
+      read().map((d) =>
+        d.id === id ? { ...d, status: "pending_approval", updatedAt: new Date().toISOString() } : d,
+      ),
+    )
+  }, [])
+
+  const approveDraft = useCallback(
+    (id: string, approver: { id?: string | null; name?: string | null }) => {
+      const now = new Date().toISOString()
+      write(
+        read().map((d) =>
+          d.id === id
+            ? {
+                ...d,
+                status: "approved",
+                approvedBy: approver.id ?? null,
+                approvedByName: approver.name ?? null,
+                approvedAt: now,
+                updatedAt: now,
+              }
+            : d,
+        ),
+      )
+    },
+    [],
+  )
+
+  return { drafts, saveDraft, removeDraft, submitForApproval, approveDraft }
 }
