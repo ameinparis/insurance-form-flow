@@ -932,17 +932,69 @@ const ConvertToPolicy = () => {
                 Skip this step
               </Button>
             )}
-            <Button
-              disabled={currentStep >= LAST_STEP || (currentStep === 3 && !beneficiaryTotalValid) || (currentStep === 4 && !documentsValid)}
-              onClick={() => setCurrentStep((s) => Math.min(s + 1, LAST_STEP))}
-              className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white"
-            >
-              Continue
-            </Button>
+            {currentStep === LAST_STEP ? (
+              <Button
+                onClick={() => {
+                  if (!form.fullName.trim()) {
+                    toast.error("Add the policyholder's name before submitting")
+                    return
+                  }
+                  setAssignOpen(true)
+                }}
+                className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white"
+              >
+                Submit for Approval
+              </Button>
+            ) : (
+              <Button
+                disabled={(currentStep === 3 && !beneficiaryTotalValid) || (currentStep === 4 && !documentsValid)}
+                onClick={() => setCurrentStep((s) => Math.min(s + 1, LAST_STEP))}
+                className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white"
+              >
+                Continue
+              </Button>
+            )}
           </div>
         </div>
 
-
+        <AssignApproverDialog
+          open={assignOpen}
+          onOpenChange={setAssignOpen}
+          excludeId={userId}
+          onConfirm={(approver) => {
+            const saved = saveDraft({
+              id: draftId,
+              step: currentStep,
+              form: {
+                ...form,
+                purchasePremium: purchasePremium.toFixed(2),
+                upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
+                administrationFee: administrationFee.toFixed(2),
+                switchFee: SWITCH_FEE.toFixed(2),
+                funeralPremium: FUNERAL_PREMIUM.toFixed(2),
+                ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
+              },
+              productType: prefill.productType,
+              optionLabel: prefill.optionLabel,
+              quoteId: prefill.quoteId,
+              premium: prefill.premium,
+            })
+            setDraftId(saved.id)
+            submitForApproval(saved.id, approver)
+            addNotification({
+              draftId: saved.id,
+              kind: "assignment",
+              status: "pending",
+              recipientId: approver.id,
+              recipientName: approver.name,
+              advisorName: userName || saved.initiatedByName || "An advisor",
+              clientName: form.fullName,
+              policyType: form.productName,
+            })
+            toast.success(`Submitted to ${approver.name} for approval`)
+            navigate("/clients")
+          }}
+        />
 
       </div>
     </div>
