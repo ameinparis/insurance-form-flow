@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
-import { DocumentChecklist, REQUIRED_DOCUMENTS } from "@/components/policy/DocumentChecklist"
+import { DocumentChecklist, POLICY_DOCUMENTS, REQUIRED_DOCUMENTS } from "@/components/policy/DocumentChecklist"
 
 const STEPS = [
   "Policyholder Details",
@@ -90,6 +90,56 @@ const generatePolicyNumber = () =>
   `POL-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`
 
 const asString = (v: unknown) => (v === undefined || v === null || v === "" ? "" : String(v))
+
+const ReviewItem = ({ label, value, full }: { label: string; value?: string; full?: boolean }) => (
+  <div className={full ? "md:col-span-2" : undefined}>
+    <p className="text-xs text-muted-foreground">{label}</p>
+    <p className="text-sm font-medium break-words">{value || "\u2014"}</p>
+  </div>
+)
+
+const ReviewSection = ({
+  title,
+  onEdit,
+  badge,
+  badgeTone = "muted",
+  children,
+}: {
+  title: string
+  onEdit: () => void
+  badge?: string
+  badgeTone?: "muted" | "success" | "warning"
+  children: React.ReactNode
+}) => (
+  <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-muted/30 p-5 md:p-6">
+    <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <div className="flex items-center gap-3">
+        <h3 className="text-sm font-semibold">{title}</h3>
+        {badge && (
+          <span
+            className={`rounded-full px-3 py-1 text-[11px] font-semibold ${
+              badgeTone === "success"
+                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                : badgeTone === "warning"
+                ? "bg-red-500/15 text-red-600 dark:text-red-400"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {badge}
+          </span>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="text-xs font-semibold text-[#009fe3] hover:underline"
+      >
+        Edit
+      </button>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">{children}</div>
+  </div>
+)
 
 const ConvertToPolicy = () => {
   const navigate = useNavigate()
@@ -713,40 +763,129 @@ const ConvertToPolicy = () => {
             </div>
           </div>
         ) : currentStep === 6 ? (
-          <div className="space-y-6">
-            <div className="rounded-xl border border-border bg-muted/40 p-6">
-              <h3 className="text-lg font-semibold mb-4">Review Your Policy</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">Policyholder</p>
-                  <p className="text-sm font-medium">{form.fullName || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Policy Number</p>
-                  <p className="text-sm font-medium">{form.policyNumber || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Product</p>
-                  <p className="text-sm font-medium">{form.productName || "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Investment Amount</p>
-                  <p className="text-sm font-medium">{form.investmentAmount ? `BWP ${Number(String(form.investmentAmount).replace(/[^0-9.]/g, "")).toLocaleString()}` : "—"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Beneficiaries</p>
-                  <p className="text-sm font-medium">{beneficiaries.length > 0 ? beneficiaries.map((b: Record<string, string>) => b.name).join(", ") : "None added"}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Documents</p>
-                  <p className="text-sm font-medium">{Object.keys(documents).length} uploaded</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Portfolio</p>
-                  <p className="text-sm font-medium">{form.portfolioSkipped === "yes" ? "Skipped" : "Setup"}</p>
-                </div>
+          <div className="space-y-5">
+            <ReviewSection title="Policyholder Details" onEdit={() => setCurrentStep(0)}>
+              <ReviewItem label="Full Name" value={form.fullName} />
+              <ReviewItem label="ID / Passport Number" value={form.idNumber} />
+              <ReviewItem label="Date of Birth" value={form.dateOfBirth} />
+              <ReviewItem label="Email" value={form.email} />
+              <ReviewItem label="Contact Number" value={form.contactNumber} />
+              <ReviewItem label="Country of Origin" value={form.countryOfOrigin} />
+              <ReviewItem label="Address" value={form.address} full />
+            </ReviewSection>
+
+            <ReviewSection title="Policy Details" onEdit={() => setCurrentStep(1)}>
+              <ReviewItem label="Policy Number" value={form.policyNumber} />
+              <ReviewItem label="Product" value={form.productName} />
+              <ReviewItem label="Policy Start Date" value={form.policyStartDate} />
+              <ReviewItem label="Transition Date" value={form.transitionDate} />
+            </ReviewSection>
+
+            <ReviewSection title="Premium and Policy Fees" onEdit={() => setCurrentStep(2)}>
+              <ReviewItem label="Investment Amount Premium" value={investment ? `BWP ${fmt(investment)}` : ""} />
+              <ReviewItem label="Purchase Premium (2%)" value={`BWP ${fmt(purchasePremium)}`} />
+              <ReviewItem
+                label="Upfront Commission (1%)"
+                value={commissionOn ? `BWP ${fmt(upfrontCommission)}` : "Not applied"}
+              />
+              <ReviewItem label="Administration Fee (0.083%)" value={`BWP ${fmt(administrationFee)}`} />
+              <ReviewItem
+                label={`Ongoing Advisory Fee (${advisoryPct}%)`}
+                value={`BWP ${fmt(ongoingAdvisoryFeeAmount)}`}
+              />
+              <ReviewItem label="Switch Fee" value={`BWP ${fmt(SWITCH_FEE)}`} />
+              <ReviewItem label="Funeral Premium" value={`BWP ${fmt(FUNERAL_PREMIUM)}`} />
+            </ReviewSection>
+
+            <ReviewSection
+              title="Beneficiaries"
+              onEdit={() => setCurrentStep(3)}
+              badge={`Total: ${Math.round(beneficiaryTotal * 100) / 100}%`}
+              badgeTone={beneficiaryTotalValid ? "success" : "warning"}
+            >
+              <div className="md:col-span-2 space-y-2">
+                {beneficiaries.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">None added</p>
+                ) : (
+                  beneficiaries.map((b: Record<string, string>, i: number) => (
+                    <div
+                      key={i}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-card px-4 py-3"
+                    >
+                      <div>
+                        <p className="text-sm font-medium">{b.name || "—"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {[b.relationship, b.benefitOption].filter(Boolean).join(" • ") || "—"}
+                        </p>
+                      </div>
+                      <span className="text-sm font-semibold">
+                        {Number(String(b.allocation ?? "0").replace(/[^0-9.]/g, "")) || 0}%
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
-            </div>
+            </ReviewSection>
+
+            <ReviewSection
+              title="Documents"
+              onEdit={() => setCurrentStep(4)}
+              badge={`${POLICY_DOCUMENTS.filter((d) => documents[d.key]).length} of ${POLICY_DOCUMENTS.length} uploaded`}
+              badgeTone={documentsValid ? "success" : "warning"}
+            >
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+                {POLICY_DOCUMENTS.map((d) => (
+                  <div
+                    key={d.key}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-card px-4 py-2.5"
+                  >
+                    <span className="text-sm">{d.label}</span>
+                    <span
+                      className={`truncate max-w-[50%] text-xs font-medium ${
+                        documents[d.key]
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {documents[d.key] || (d.conditional ? "Not required" : "Missing")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </ReviewSection>
+
+            <ReviewSection
+              title="Investment Portfolio Setup"
+              onEdit={() => setCurrentStep(5)}
+              badge={form.portfolioSkipped === "yes" ? "Skipped" : `Total: ${allocationTotal}%`}
+              badgeTone={form.portfolioSkipped === "yes" ? "muted" : allocationTotal === 100 ? "success" : "warning"}
+            >
+              {form.portfolioSkipped === "yes" ? (
+                <p className="md:col-span-2 text-sm text-muted-foreground">
+                  This step was skipped and can be completed later.
+                </p>
+              ) : (
+                <>
+                  <ReviewItem label="Risk Profile" value={form.riskProfile} />
+                  <ReviewItem label="Notes" value={form.portfolioNotes} />
+                  <div className="md:col-span-2 space-y-2">
+                    {Object.keys(allocations).length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No fund allocations captured</p>
+                    ) : (
+                      Object.entries(allocations).map(([fund, pct]) => (
+                        <div
+                          key={fund}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-card px-4 py-2.5"
+                        >
+                          <span className="text-sm">{fund}</span>
+                          <span className="text-sm font-semibold">{pct}%</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+            </ReviewSection>
           </div>
         ) : null}
 
