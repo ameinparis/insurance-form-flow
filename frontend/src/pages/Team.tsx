@@ -433,8 +433,13 @@ export default Team
           </div>
         </div>
       )}
+    </>
+  )
 
+  const dialogs = (
+    <>
       {/* Add User Dialog */}
+
       <Dialog open={showAddUserModal} onOpenChange={setShowAddUserModal}>
         <DialogContent className="bg-white dark:bg-slate-900 rounded-3xl max-w-md">
           <DialogHeader>
