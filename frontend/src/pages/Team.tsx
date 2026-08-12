@@ -275,11 +275,16 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
   }, [])
 
   const getRoleBadgeClass = (role: string) => {
-    if (role === "superuser") {
+    const normalized = normalizeRole(role)
+    if (normalized === "super_admin") {
       return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-300 dark:border-purple-700"
+    }
+    if (normalized === "admin") {
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-300 dark:border-blue-700"
     }
     return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-300 dark:border-gray-700"
   }
+
 
   const getStatusBadgeClass = (isActive: boolean) => {
     if (isActive) {
