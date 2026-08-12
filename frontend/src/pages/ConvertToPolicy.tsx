@@ -148,7 +148,10 @@ const ConvertToPolicy = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const prefill = (location.state as ConvertState) || {}
-  const { saveDraft } = usePolicyDrafts()
+  const { saveDraft, submitForApproval } = usePolicyDrafts()
+  const { addNotification } = useNotifications()
+  const { userId, userName } = useAuth()
+  const [assignOpen, setAssignOpen] = useState(false)
   const [draftId, setDraftId] = useState<string | undefined>(prefill.draftId)
   const [currentStep, setCurrentStep] = useState<number>(prefill.step ?? 0)
 
