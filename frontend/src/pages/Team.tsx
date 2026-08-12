@@ -387,25 +387,34 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
                     </TableCell>
                     <TableCell className="py-5 px-6 text-right rounded-r-xl group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                         <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => openEditModal(member)}
-                            title="Edit User"
-                          >
-                            <Pencil className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => setDeletingMember(member)}
-                            title="Delete User"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          {canEditMember(member) ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-transparent"
+                                onClick={() => openEditModal(member)}
+                                title="Edit User"
+                              >
+                                <Pencil className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-transparent"
+                                onClick={() => setDeletingMember(member)}
+                                title="Delete User"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              {normalizeRole(member.role) === "super_admin" ? "Super Admin only" : "—"}
+                            </span>
+                          )}
                         </div>
+
                       </TableCell>
                   </TableRow>
                 ))}
