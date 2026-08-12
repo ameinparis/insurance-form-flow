@@ -21,12 +21,14 @@ const STEPS = [
   "Policyholder Details",
   "Policy Details",
   "Premium and Policy Fees",
-  "Investment Portfolio Setup",
   "Beneficiaries",
+  "Investment Portfolio Setup",
   "Review",
 ]
 
-const LAST_STEP = 3
+const LAST_STEP = 5
+
+const RELATIONSHIPS = ["Spouse", "Child", "Parent", "Sibling", "Other"]
 
 const RISK_PROFILES = ["Conservative", "Moderate", "Balanced", "Growth", "Aggressive"]
 
@@ -113,6 +115,7 @@ const ConvertToPolicy = () => {
     riskProfile: prefill.form?.riskProfile || "",
     portfolioAllocations: prefill.form?.portfolioAllocations || "",
     portfolioNotes: prefill.form?.portfolioNotes || "",
+    beneficiaries: prefill.form?.beneficiaries || "[]",
   })
 
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle")
@@ -195,6 +198,31 @@ const ConvertToPolicy = () => {
     0
   )
 
+  const beneficiaries = (() => {
+    try {
+      return form.beneficiaries ? JSON.parse(form.beneficiaries) : []
+    } catch {
+      return []
+    }
+  })()
+  const setBeneficiary = (index: number, field: string, value: string) =>
+    setForm((prev) => {
+      const list = (() => { try { return prev.beneficiaries ? JSON.parse(prev.beneficiaries) : [] } catch { return [] } })()
+      const next = list.slice()
+      next[index] = { ...(next[index] || {}), [field]: value }
+      return { ...prev, beneficiaries: JSON.stringify(next) }
+    })
+  const addBeneficiary = () =>
+    setForm((prev) => ({
+      ...prev,
+      beneficiaries: JSON.stringify([...beneficiaries, { name: "", relationship: "" }]),
+    }))
+  const removeBeneficiary = (index: number) =>
+    setForm((prev) => {
+      const next = beneficiaries.filter((_, i) => i !== index)
+      return { ...prev, beneficiaries: JSON.stringify(next) }
+    })
+
   const stepSubtitle =
     currentStep === 0
       ? "Confirm the policyholder details"
@@ -202,6 +230,8 @@ const ConvertToPolicy = () => {
       ? "Confirm the policy details"
       : currentStep === 2
       ? "Confirm the premium and policy fees"
+      : currentStep === 3
+      ? "Add beneficiaries"
       : "Set up the investment portfolio (optional)"
 
   return (
@@ -428,9 +458,84 @@ const ConvertToPolicy = () => {
               <Input id="funeralPremium" readOnly value={fmt(FUNERAL_PREMIUM)} className="h-11 rounded-xl bg-muted/50" />
             </div>
           </div>
-        ) : (
+        ) : currentStep === 3 ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+              <div className="space-y-2">
+                <Label>Full Name</Label>
+                <Input
+                  value={beneficiaries[0]?.name ?? ""}
+                  onChange={(e) => setBeneficiary(0, "name", e.target.value)}
+                  placeholder="Jane Doe"
+                  className="h-11 rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Relationship</Label>
+                <Select
+                  value={beneficiaries[0]?.relationship ?? ""}
+                  onValueChange={(v) => setBeneficiary(0, "relationship", v)}
+                >
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <SelectValue placeholder="Select relationship" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RELATIONSHIPS.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {r}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button type="button" variant="outline" onClick={addBeneficiary} className="rounded-full px-6">
+                Add Beneficiary
+              </Button>
+            </div>
+            {beneficiaries.length > 1 && (
+              <div className="space-y-3">
+                {beneficiaries.slice(1).map((b: Record<string, string>, idx: number) => (
+                  <div key={idx + 1} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-x-8 gap-y-2 items-end">
+                    <div className="space-y-2">
+                      <Label>Full Name</Label>
+                      <Input
+                        value={b?.name ?? ""}
+                        onChange={(e) => setBeneficiary(idx + 1, "name", e.target.value)}
+                        placeholder="Jane Doe"
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Relationship</Label>
+                      <Select
+                        value={b?.relationship ?? ""}
+                        onValueChange={(v) => setBeneficiary(idx + 1, "relationship", v)}
+                      >
+                        <SelectTrigger className="h-11 rounded-xl">
+                          <SelectValue placeholder="Select relationship" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {RELATIONSHIPS.map((r) => (
+                            <SelectItem key={r} value={r}>
+                              {r}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button type="button" variant="ghost" onClick={() => removeBeneficiary(idx + 1)} className="rounded-full px-4">
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : currentStep === 4 ? (
           <div className="space-y-6">
-            <div className="rounded-xl border border-dashed border-gray-300 dark:border-slate-600 px-4 py-3 text-sm text-muted-foreground">
+            <div className="rounded-xl border border-dashed border-gray-300 dark:border-slate-600 px-4 py-3 text-sm text-red-500">
               This step is optional. You can skip it and set up the investment portfolio later.
             </div>
 
@@ -497,7 +602,39 @@ const ConvertToPolicy = () => {
               )}
             </div>
           </div>
-        )}
+        ) : currentStep === 5 ? (
+          <div className="space-y-6">
+            <div className="rounded-xl border border-border bg-muted/40 p-6">
+              <h3 className="text-lg font-semibold mb-4">Review Your Policy</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Policyholder</p>
+                  <p className="text-sm font-medium">{form.fullName || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Policy Number</p>
+                  <p className="text-sm font-medium">{form.policyNumber || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Product</p>
+                  <p className="text-sm font-medium">{form.productName || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Investment Amount</p>
+                  <p className="text-sm font-medium">{form.investmentAmount ? `BWP ${Number(String(form.investmentAmount).replace(/[^0-9.]/g, "")).toLocaleString()}` : "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Beneficiaries</p>
+                  <p className="text-sm font-medium">{beneficiaries.length > 0 ? beneficiaries.map((b: Record<string, string>) => b.name).join(", ") : "None added"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Portfolio</p>
+                  <p className="text-sm font-medium">{form.portfolioSkipped === "yes" ? "Skipped" : "Setup"}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="flex justify-between items-center gap-4 mt-10">
           <Button variant="outline" onClick={() => navigate(-1)} className="rounded-full px-6">
@@ -512,7 +649,7 @@ const ConvertToPolicy = () => {
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
-            {currentStep === 3 && (
+            {currentStep === 4 && (
               <Button
                 variant="ghost"
                 onClick={() =>
