@@ -166,12 +166,38 @@ const ConvertToPolicy = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, currentStep])
 
+  const allocations: Record<string, string> = (() => {
+    try {
+      return form.portfolioAllocations ? JSON.parse(form.portfolioAllocations) : {}
+    } catch {
+      return {}
+    }
+  })()
+  const setAllocation = (fund: string, value: string) =>
+    setForm((prev) => {
+      let current: Record<string, string> = {}
+      try {
+        current = prev.portfolioAllocations ? JSON.parse(prev.portfolioAllocations) : {}
+      } catch {
+        current = {}
+      }
+      const next = { ...current, [fund]: value }
+      if (!value) delete next[fund]
+      return { ...prev, portfolioAllocations: JSON.stringify(next), portfolioSkipped: "no" }
+    })
+  const allocationTotal = Object.values(allocations).reduce(
+    (sum, v) => sum + (Number(String(v).replace(/[^0-9.]/g, "")) || 0),
+    0
+  )
+
   const stepSubtitle =
     currentStep === 0
       ? "Confirm the policyholder details"
       : currentStep === 1
       ? "Confirm the policy details"
-      : "Confirm the premium and policy fees"
+      : currentStep === 2
+      ? "Confirm the premium and policy fees"
+      : "Set up the investment portfolio (optional)"
 
   return (
     <div className="space-y-6">
