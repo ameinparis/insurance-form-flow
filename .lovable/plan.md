@@ -1,70 +1,60 @@
-## Goal
+# Role & Access Control: Super Admin, Admin, Advisor
 
-Adopt the layout and components from the screenshots — new menu structure, new dashboard stats, Recent Activity feed, Clients/Claims/Administration shells — while keeping the existing visual language (current dark navy/blue theme, Urbanist/Wix Madefor type, rounded cards, pill buttons, sticky page headers).
+Introduce three named roles across the app, gate menus/routes/actions by role, add a proper user management screen, and add an approval step to policy conversions with initiator/approver tracking.
 
-No backend changes. New sections are UI shells; numbers come from existing quote data where possible, otherwise show 0 with an honest empty state.
+## Role model
 
-## 1. Sidebar (`components/AppSidebar.tsx`)
+Existing accounts use `superuser`, `admin`, `user`. These map to the new names without any data migration:
 
-Restructure the MENU section to:
+| Stored value | Display name |
+|---|---|
+| `superuser` | Super Admin |
+| `admin` | Admin |
+| `user` | Advisor |
 
-```text
-Dashboard
-Quotations            (collapsible group, chevron)
-   New Quote          -> /calculator
-   Quote Management   -> /quotes
-Clients               -> /clients
-Claims                -> /claims
-Administration        -> /administration
---- SETTINGS ---
-Settings
-Logout
-```
+Permission matrix:
 
-- Quotations expands/collapses on click, auto-expanded when the route is `/calculator*` or `/quotes*`.
-- Reuse existing active-state styling (blue pill background + left accent bar); sub-items get a smaller indented variant.
-- Team moves under Administration (see below) rather than being a top-level item.
+| Capability | Super Admin | Admin | Advisor |
+|---|---|---|---|
+| Manage users (add/edit/deactivate) | Yes | Yes (cannot create or edit Super Admins) | No |
+| Manage investment / asset managers | Yes | Yes | No |
+| Modify fee calculation percentages | Yes | Yes | No |
+| Create quotes, initiate conversions | Yes | Yes | Yes |
+| Approve conversions | Yes (incl. own) | Yes, except own | No |
 
-## 2. Dashboard (`pages/Dashboard.tsx`)
+## What gets built
 
-Header row keeps the sticky title, adds a secondary **Convert Quote to Policy** button (outline pill with a swap icon) next to **New Quote**.
+**1. Permissions layer**
+- Extend the auth context so it exposes the normalized role plus flags: `canManageUsers`, `canManageSuperAdmins`, `canConfigureFees`, `canManageInvestments`, `canApprove`, and a helper `canApproveConversion(draft)` that returns false for Admins when `initiatedBy === currentUserId`.
+- A `RoleGuard` route wrapper that redirects unauthorized users to the dashboard with a toast, so direct URLs are not reachable.
 
-New stat row — 5 cards, same card shell as today (rounded-2xl, border, soft-tinted circular icon badge, arrow chip top-right):
+**2. Sidebar & routes**
+- Administration, Fee Configuration and Investment Management entries render only when the role permits; their routes are wrapped in `RoleGuard`.
+- Advisors see Dashboard, Quotations, Clients, Claims, Settings only.
 
-| Card | Source |
-| --- | --- |
-| Total Quotations | count of all quotes |
-| Converted Quotations | 0 (no status field yet) |
-| Active Clients | 0 |
-| Active Policies | 0 |
-| Pending Verification | 0 |
+**3. User management (Administration page)**
+- Table of all users: name, email, role (as the new display names), status active/inactive.
+- Invite/add user with role dropdown; Admins only see Admin and Advisor options, Super Admins also see Super Admin.
+- Edit role, and deactivate/reactivate or remove a user. Rows for Super Admin users are read-only for Admins.
+- Keeps the existing API calls, table styling, badges and dialogs.
 
-Each card gets the subtitle copy from the screenshots. Cards with no data source render 0 plus their descriptive subtitle — no fake numbers.
+**4. Fee Configuration & Investment Managers (new settings, browser-stored)**
+- New Administration tabs: "Fee Configuration" (Purchase Premium %, Upfront Commission %, Administration Fee %, Ongoing Advisory Fee max %, Switch Fee, Funeral Premium) and "Investment Managers" (add/edit/remove asset manager + fund options).
+- Persisted in localStorage via hooks (`useFeeConfig`, `useInvestmentManagers`) following the `usePolicyDrafts` pattern.
+- The Convert to Policy wizard reads its currently hardcoded percentages and fund list from these hooks instead of literals.
 
-**Recent Activity** card below: derived from the existing quotes list — one entry per recent quote ("Draft Quote Created for {client}", relative time, type badge), icon in a circular tinted badge, rows separated by hairline dividers, "View All" link to `/quotes`.
+**5. Conversion approval**
+- Policy drafts gain `initiatedBy`, `initiatedByName`, `initiatedAt`, `approvedBy`, `approvedByName`, `approvedAt`, and `status` (`draft` | `pending_approval` | `approved`).
+- Submitting the wizard's Review step sets status to `pending_approval` and records the initiator.
+- Approve action appears both on the wizard Review step and on the draft preview page (`/policies/drafts/:id`), only when the role permits and the user is not the initiator (Super Admins exempt). Otherwise a muted note: "Needs approval from another Admin or Super Admin".
+- Clients table shows a status badge for each draft.
 
-**Recently Created** quotes table stays below Recent Activity, unchanged.
+**6. Backend (`backend/server.js`) — you deploy**
+- Role enum stays `user | admin | superuser`.
+- `POST /api/users/register`: allow `admin` as well as `superuser`; block Admins from creating `superuser` accounts.
+- Add/confirm `PATCH /api/users/:id` (role/status edit) and delete with the same rules: only a Super Admin may edit or create Super Admin accounts.
+- Audit log entries for role changes and deactivations.
 
-**Convert Quote to Policy** dialog: search-by-name input over the existing quotes list, result rows selectable; confirming shows a "coming soon / not yet wired" toast since there's no policy backend.
-
-## 3. Quotation Management (`pages/Quotes.tsx`)
-
-Move the current dashboard analytics here, above the quotes table:
-- The 4 stat cards (Total Quotes, Total Clients, This Month, This Week)
-- The "Quotes by Type" pie chart with click-to-filter
-
-The pie filter drives the existing table filter on this page. `StatsCards.tsx` is reused as-is.
-
-## 4. New shell pages
-
-- `pages/Clients.tsx` — title + subtitle "Annuity policyholders converted from approved quotes.", search field, centered empty state with users icon and the copy from the screenshot.
-- `pages/Claims.tsx` — same shell pattern, claims-appropriate copy.
-- `pages/Administration.tsx` — shell hosting the existing Team management as its first section, so nothing is lost.
-
-Routes registered in `App.tsx` inside `Layout`; `/team` kept as a redirect to `/administration`.
-
-## Technical notes
-
-- All work is frontend-only under `frontend/src`; no backend, no API changes.
-- New dashboard stat cards and activity rows extract into `components/dashboard/` (e.g. `OverviewStats.tsx`, `RecentActivity.tsx`) to keep `Dashboard.tsx` small.
-- Styling uses the existing slate/blue token classes already in the codebase; no new palette, no new fonts.
+## Notes
+- Fee config and investment manager options are stored per-browser for now; moving them to the API later is a drop-in swap behind the hooks.
+- Backend edits in this repo do not affect njs.exclusivelife.co.bw until you deploy them; until then Admin user-management calls may still be rejected by the live server.
