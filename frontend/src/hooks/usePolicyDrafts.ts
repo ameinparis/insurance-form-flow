@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useState } from "react"
 
+export interface ReassignmentEntry {
+  at: string
+  byId?: string | null
+  byName?: string | null
+  fromId?: string | null
+  fromName?: string | null
+  toId?: string | null
+  toName?: string | null
+}
+
 export interface PolicyDraft {
   id: string
   step: number
@@ -8,13 +18,21 @@ export interface PolicyDraft {
   optionLabel?: string
   quoteId?: string
   premium?: number
-  status?: "draft" | "pending_approval" | "approved"
+  status?: "draft" | "pending_approval" | "approved" | "rejected"
   initiatedBy?: string | null
   initiatedByName?: string | null
   initiatedAt?: string | null
+  assignedTo?: string | null
+  assignedToName?: string | null
+  assignedAt?: string | null
   approvedBy?: string | null
   approvedByName?: string | null
   approvedAt?: string | null
+  rejectedBy?: string | null
+  rejectedByName?: string | null
+  rejectedAt?: string | null
+  rejectionReason?: string | null
+  reassignments?: ReassignmentEntry[]
   updatedAt: string
 }
 
@@ -82,13 +100,71 @@ export const usePolicyDrafts = () => {
     write(read().filter((d) => d.id !== id))
   }, [])
 
-  const submitForApproval = useCallback((id: string) => {
-    write(
-      read().map((d) =>
-        d.id === id ? { ...d, status: "pending_approval", updatedAt: new Date().toISOString() } : d,
-      ),
-    )
-  }, [])
+  /** Submit for approval, assigning a specific Admin / Super Admin as reviewer. */
+  const submitForApproval = useCallback(
+    (id: string, assignee?: { id?: string | null; name?: string | null }) => {
+      const now = new Date().toISOString()
+      let updated: PolicyDraft | undefined
+      write(
+        read().map((d) => {
+          if (d.id !== id) return d
+          updated = {
+            ...d,
+            status: "pending_approval",
+            assignedTo: assignee?.id ?? d.assignedTo ?? null,
+            assignedToName: assignee?.name ?? d.assignedToName ?? null,
+            assignedAt: now,
+            rejectedBy: null,
+            rejectedByName: null,
+            rejectedAt: null,
+            rejectionReason: null,
+            updatedAt: now,
+          }
+          return updated
+        }),
+      )
+      return updated
+    },
+    [],
+  )
+
+  /** Move a pending conversion to a different reviewer. */
+  const reassignDraft = useCallback(
+    (
+      id: string,
+      assignee: { id?: string | null; name?: string | null },
+      actor: { id?: string | null; name?: string | null },
+    ) => {
+      const now = new Date().toISOString()
+      let updated: PolicyDraft | undefined
+      write(
+        read().map((d) => {
+          if (d.id !== id) return d
+          const entry: ReassignmentEntry = {
+            at: now,
+            byId: actor.id ?? null,
+            byName: actor.name ?? null,
+            fromId: d.assignedTo ?? null,
+            fromName: d.assignedToName ?? null,
+            toId: assignee.id ?? null,
+            toName: assignee.name ?? null,
+          }
+          updated = {
+            ...d,
+            status: "pending_approval",
+            assignedTo: assignee.id ?? null,
+            assignedToName: assignee.name ?? null,
+            assignedAt: now,
+            reassignments: [...(d.reassignments || []), entry],
+            updatedAt: now,
+          }
+          return updated
+        }),
+      )
+      return updated
+    },
+    [],
+  )
 
   const approveDraft = useCallback(
     (id: string, approver: { id?: string | null; name?: string | null }) => {
@@ -111,5 +187,35 @@ export const usePolicyDrafts = () => {
     [],
   )
 
-  return { drafts, saveDraft, removeDraft, submitForApproval, approveDraft }
+  const rejectDraft = useCallback(
+    (id: string, reviewer: { id?: string | null; name?: string | null }, reason: string) => {
+      const now = new Date().toISOString()
+      write(
+        read().map((d) =>
+          d.id === id
+            ? {
+                ...d,
+                status: "rejected",
+                rejectedBy: reviewer.id ?? null,
+                rejectedByName: reviewer.name ?? null,
+                rejectedAt: now,
+                rejectionReason: reason,
+                updatedAt: now,
+              }
+            : d,
+        ),
+      )
+    },
+    [],
+  )
+
+  return {
+    drafts,
+    saveDraft,
+    removeDraft,
+    submitForApproval,
+    reassignDraft,
+    approveDraft,
+    rejectDraft,
+  }
 }
