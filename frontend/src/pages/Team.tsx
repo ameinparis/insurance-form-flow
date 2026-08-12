@@ -24,6 +24,8 @@ import {
 import { PageLoader } from "@/components/PageLoader"
 import { toast } from "sonner"
 import { DeleteMemberDialog } from "@/components/team/DeleteMemberDialog"
+import { useAuth } from "@/lib/authlibrary"
+import { assignableRoles, normalizeRole, roleLabel, toStoredRole, ROLE_LABELS } from "@/lib/permissions"
 
 interface TeamMember {
   id: string
@@ -38,7 +40,14 @@ interface TeamMember {
   isActive?: boolean
 }
 
-const Team = () => {
+const Team = ({ embedded = false }: { embedded?: boolean }) => {
+  const { userRole, permissions } = useAuth()
+  const canManageUsers = permissions.canManageUsers
+  const canManageSuperAdmins = permissions.canManageSuperAdmins
+  const roleOptions = assignableRoles(userRole)
+  const canEditMember = (member: TeamMember) =>
+    canManageUsers && (canManageSuperAdmins || normalizeRole(member.role) !== "super_admin")
+
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddUserModal, setShowAddUserModal] = useState(false)
@@ -266,11 +275,16 @@ const Team = () => {
   }, [])
 
   const getRoleBadgeClass = (role: string) => {
-    if (role === "superuser") {
+    const normalized = normalizeRole(role)
+    if (normalized === "super_admin") {
       return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-300 dark:border-purple-700"
+    }
+    if (normalized === "admin") {
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-300 dark:border-blue-700"
     }
     return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-300 dark:border-gray-700"
   }
+
 
   const getStatusBadgeClass = (isActive: boolean) => {
     if (isActive) {
@@ -279,19 +293,10 @@ const Team = () => {
     return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-300 dark:border-red-700"
   }
 
-  return (
-    <div className="-m-6">
-      <div className="sticky top-0 z-30 bg-card px-6 pt-6 pb-4 flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold mb-2">Team</h2>
-          <p className="text-muted-foreground">Manage your team members and their roles.</p>
-        </div>
-        <Button onClick={() => setShowAddUserModal(true)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add Member
-        </Button>
-      </div>
-      <div className="px-6 pb-6 space-y-6">
+  const body = (
+    <>
+
+
 
 
       {loading ? (
@@ -302,7 +307,7 @@ const Team = () => {
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No team members yet</h3>
             <p className="text-muted-foreground mb-4">Add your first team member to get started.</p>
-            {currentUserRole?.toLowerCase() === "superuser" && (
+            {canManageUsers && (
               <Button onClick={() => setShowAddUserModal(true)}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add First Member
@@ -356,13 +361,13 @@ const Team = () => {
                     <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                       <Badge
                         variant="outline"
-                        className={`rounded-full px-2 py-1.5 text-xs font-medium border capitalize ${getRoleBadgeClass(member.role)}`}
+                        className={`rounded-full px-2 py-1.5 text-xs font-medium border ${getRoleBadgeClass(member.role)}`}
                       >
-                        {member.role}
+                        {roleLabel(member.role)}
                       </Badge>
                     </TableCell>
                     <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
-                      {currentUserRole?.toLowerCase() === "superuser" ? (
+                      {canEditMember(member) ? (
                         <Badge
                           variant="outline"
                           className={`rounded-full px-2 py-1.5 text-xs font-medium border cursor-pointer transition-colors ${getStatusBadgeClass(member.isActive !== false)}`}
@@ -382,25 +387,34 @@ const Team = () => {
                     </TableCell>
                     <TableCell className="py-5 px-6 text-right rounded-r-xl group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                         <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => openEditModal(member)}
-                            title="Edit User"
-                          >
-                            <Pencil className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => setDeletingMember(member)}
-                            title="Delete User"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          {canEditMember(member) ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-transparent"
+                                onClick={() => openEditModal(member)}
+                                title="Edit User"
+                              >
+                                <Pencil className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-transparent"
+                                onClick={() => setDeletingMember(member)}
+                                title="Delete User"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              {normalizeRole(member.role) === "super_admin" ? "Super Admin only" : "—"}
+                            </span>
+                          )}
                         </div>
+
                       </TableCell>
                   </TableRow>
                 ))}
@@ -409,8 +423,13 @@ const Team = () => {
           </div>
         </div>
       )}
+    </>
+  )
 
+  const dialogs = (
+    <>
       {/* Add User Dialog */}
+
       <Dialog open={showAddUserModal} onOpenChange={setShowAddUserModal}>
         <DialogContent className="bg-white dark:bg-slate-900 rounded-3xl max-w-md">
           <DialogHeader>
@@ -438,8 +457,11 @@ const Team = () => {
                   <SelectValue placeholder="Select Role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="superuser">Superuser</SelectItem>
+                  {roleOptions.map((r) => (
+                    <SelectItem key={r} value={toStoredRole(r)}>
+                      {ROLE_LABELS[r]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -481,8 +503,11 @@ const Team = () => {
                   <SelectValue placeholder="Select Role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="superuser">Superuser</SelectItem>
+                  {roleOptions.map((r) => (
+                    <SelectItem key={r} value={toStoredRole(r)}>
+                      {ROLE_LABELS[r]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -505,10 +530,47 @@ const Team = () => {
         onConfirm={handleDeleteUser}
         loading={deleteLoading}
       />
+    </>
+  )
+
+  if (embedded) {
+    return (
+      <div className="space-y-6">
+        {canManageUsers && (
+          <div className="flex items-center justify-end">
+            <Button onClick={() => setShowAddUserModal(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add Member
+            </Button>
+          </div>
+        )}
+        {body}
+        {dialogs}
+      </div>
+    )
+  }
+
+  return (
+    <div className="-m-6">
+      <div className="sticky top-0 z-30 bg-card px-6 pt-6 pb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold mb-2">Team</h2>
+          <p className="text-muted-foreground">Manage your team members and their roles.</p>
+        </div>
+        {canManageUsers && (
+          <Button onClick={() => setShowAddUserModal(true)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add Member
+          </Button>
+        )}
+      </div>
+      <div className="px-6 pb-6 space-y-6">
+        {body}
+        {dialogs}
       </div>
     </div>
   )
 }
 
-
 export default Team
+

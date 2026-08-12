@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft, Check, CheckCircle2, CloudUpload, Pencil, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/lib/authlibrary"
+import { canApproveConversion, permissionsFor } from "@/lib/permissions"
+import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
@@ -51,7 +54,8 @@ const SECTIONS: { title: string; step: number; fields: Field[] }[] = [
 const PolicyDraftPreview = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { drafts, saveDraft } = usePolicyDrafts()
+  const { drafts, saveDraft, approveDraft } = usePolicyDrafts()
+  const { userRole, userId, userName } = useAuth()
   const draft = useMemo(() => drafts.find((d) => d.id === id), [drafts, id])
 
   const [form, setForm] = useState<Record<string, string>>(draft?.form || {})
@@ -101,6 +105,9 @@ const PolicyDraftPreview = () => {
   }
 
 
+  const isApproved = draft?.status === "approved"
+  const canApprove = canApproveConversion(userRole, userId, draft?.initiatedBy)
+
   const continueEditing = () =>
     navigate("/policies/convert", {
       state: {
@@ -132,9 +139,13 @@ const PolicyDraftPreview = () => {
               </h2>
               <Badge
                 variant="outline"
-                className="rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide border-amber-300 text-amber-600 dark:text-amber-400 whitespace-nowrap"
+                className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${
+                  isApproved
+                    ? "border-emerald-300 text-emerald-600 dark:text-emerald-400"
+                    : "border-amber-300 text-amber-600 dark:text-amber-400"
+                }`}
               >
-                Draft
+                {isApproved ? "Approved" : "Draft"}
               </Badge>
               {saveState !== "idle" && (
                 <span
@@ -164,9 +175,34 @@ const PolicyDraftPreview = () => {
                 .join(" · ")}
             </p>
           </div>
-          <Button onClick={continueEditing} className="rounded-full px-6">
-            Continue Editing
-          </Button>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={continueEditing} className="rounded-full px-6">
+                Continue Editing
+              </Button>
+              {!isApproved && canApprove && (
+                <Button
+                  className="rounded-full px-6"
+                  onClick={() => {
+                    approveDraft(draft.id, { id: userId, name: userName })
+                    toast.success("Policy conversion approved")
+                  }}
+                >
+                  Approve Conversion
+                </Button>
+              )}
+            </div>
+            {!isApproved && !canApprove && permissionsFor(userRole).canApprove && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 max-w-xs text-right">
+                You initiated this conversion — it needs approval from another Admin or a Super Admin.
+              </p>
+            )}
+            {isApproved && draft.approvedByName && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Approved by {draft.approvedByName}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

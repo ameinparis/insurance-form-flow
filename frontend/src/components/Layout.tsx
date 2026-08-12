@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/lib/authlibrary";
+import { roleLabel } from "@/lib/permissions";
 import { useGlobalSearch } from "@/lib/searchContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
@@ -123,7 +124,7 @@ export function Layout({ children }: LayoutProps) {
                   .join(" ")}
               </span>
               <span className="text-xs text-muted-foreground leading-tight">
-                {userRole ? userRole.charAt(0).toUpperCase() + userRole.slice(1) : ""}
+                {userRole ? roleLabel(userRole) : ""}
               </span>
             </div>
           </div>

@@ -17,6 +17,7 @@ import {
   Sidebar,
   SidebarContent,
 } from "@/components/ui/sidebar"
+import { usePermissions } from "@/lib/authlibrary"
 
 const quotationItems = [
   { title: "New Quote", url: "/calculator", icon: FilePlus2 },
@@ -24,9 +25,14 @@ const quotationItems = [
 ]
 
 const menuItems = [
-  { title: "Clients", url: "/clients", icon: Users },
-  { title: "Claims", url: "/claims", icon: ClipboardList },
-  { title: "Administration", url: "/administration", icon: ShieldCheck },
+  { title: "Clients", url: "/clients", icon: Users, permission: null },
+  { title: "Claims", url: "/claims", icon: ClipboardList, permission: null },
+  {
+    title: "Administration",
+    url: "/administration",
+    icon: ShieldCheck,
+    permission: "canManageUsers" as const,
+  },
 ]
 
 const settingsItems = [
@@ -42,6 +48,10 @@ const idleLink =
 
 export function AppSidebar() {
   const { pathname } = useLocation()
+  const permissions = usePermissions()
+  const visibleMenuItems = menuItems.filter(
+    (item) => !item.permission || permissions[item.permission],
+  )
   const quotationsActive = quotationItems.some((i) => pathname.startsWith(i.url))
   const [quotationsOpen, setQuotationsOpen] = useState(quotationsActive)
 
@@ -113,7 +123,7 @@ export function AppSidebar() {
               )}
             </div>
 
-            {menuItems.map((item) => (
+            {visibleMenuItems.map((item) => (
               <NavLink
                 key={item.title}
                 to={item.url}
