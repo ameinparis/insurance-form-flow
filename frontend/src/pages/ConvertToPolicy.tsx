@@ -402,7 +402,22 @@ const ConvertToPolicy = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="ongoingAdvisoryFee">Ongoing Advisory Fee %</Label>
-              <Input id="ongoingAdvisoryFee" inputMode="decimal" value={form.ongoingAdvisoryFee} onChange={set("ongoingAdvisoryFee")} placeholder="0" className="h-11 rounded-xl" />
+              <Input
+                id="ongoingAdvisoryFee"
+                inputMode="decimal"
+                value={form.ongoingAdvisoryFee}
+                onChange={(e) => {
+                  const raw = e.target.value
+                  const num = Number(raw.replace(/[^0-9.]/g, "")) || 0
+                  const clamped = Math.min(Math.max(num, 0), 1).toString()
+                  setForm((prev) => ({ ...prev, ongoingAdvisoryFee: raw === "" ? "" : clamped }))
+                }}
+                placeholder="0"
+                className="h-11 rounded-xl"
+              />
+              <p className="text-xs text-muted-foreground">
+                0–1% of the investment amount. Calculated: <span className="font-medium text-foreground">{fmt(ongoingAdvisoryFeeAmount)}</span>
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="switchFee">Switch Fee</Label>
