@@ -1,8 +1,13 @@
-import React, { createContext, useContext, useEffect, useState } from "react"
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react"
+import { AppRole, Permissions, permissionsFor, normalizeRole } from "./permissions"
 
 interface AuthContextType {
   userId: string | null
   userRole: string | null
+  userName: string | null
+  userEmail: string | null
+  role: AppRole
+  permissions: Permissions
   token: string | null
   isLoggedIn: boolean
   logout: () => void
@@ -14,6 +19,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userId, setUserId] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
   const [token, setToken] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token")
@@ -25,6 +32,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUserId(storedUserId)
       setUserRole(storedUserRole)
     }
+    setUserName(localStorage.getItem("userName"))
+    setUserEmail(localStorage.getItem("email"))
   }, [])
 
   const logout = () => {
@@ -36,11 +45,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUserRole(null)
   }
 
+  const permissions = useMemo(() => permissionsFor(userRole), [userRole])
+
   return (
     <AuthContext.Provider
       value={{
         userId,
         userRole,
+        userName,
+        userEmail,
+        role: normalizeRole(userRole),
+        permissions,
         token,
         isLoggedIn: !!token,
         logout,
@@ -56,3 +71,5 @@ export const useAuth = () => {
   if (!context) throw new Error("useAuth must be used within AuthProvider")
   return context
 }
+
+export const usePermissions = () => useAuth().permissions
