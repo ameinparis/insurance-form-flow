@@ -215,13 +215,21 @@ const ConvertToPolicy = () => {
   const addBeneficiary = () =>
     setForm((prev) => ({
       ...prev,
-      beneficiaries: JSON.stringify([...beneficiaries, { name: "", relationship: "" }]),
+      beneficiaries: JSON.stringify([...beneficiaries, { name: "", relationship: "", benefitOption: "", allocation: "0" }]),
     }))
   const removeBeneficiary = (index: number) =>
     setForm((prev) => {
       const next = beneficiaries.filter((_, i) => i !== index)
       return { ...prev, beneficiaries: JSON.stringify(next) }
     })
+
+  const beneficiaryRows: Record<string, string>[] = beneficiaries.length ? beneficiaries : [{}]
+  const beneficiaryTotal = beneficiaryRows.reduce(
+    (sum: number, b: Record<string, string>) => sum + (Number(String(b?.allocation ?? "").replace(/[^0-9.]/g, "")) || 0),
+    0
+  )
+  const beneficiaryTotalValid = Math.round(beneficiaryTotal * 100) / 100 === 100
+
 
   const stepSubtitle =
     currentStep === 0
