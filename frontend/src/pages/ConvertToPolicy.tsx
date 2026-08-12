@@ -358,7 +358,7 @@ const ConvertToPolicy = () => {
               />
             </div>
           </div>
-        ) : (
+        ) : currentStep === 2 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
             <div className="space-y-2">
               <Label htmlFor="investmentAmount">Investment Amount Premium</Label>
