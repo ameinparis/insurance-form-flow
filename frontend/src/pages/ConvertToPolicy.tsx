@@ -109,6 +109,10 @@ const ConvertToPolicy = () => {
       asString(prefill.investmentAmount ?? prefill.purchasePremium),
     upfrontCommissionEnabled: prefill.form?.upfrontCommissionEnabled || "no",
     ongoingAdvisoryFee: prefill.form?.ongoingAdvisoryFee || "",
+    portfolioSkipped: prefill.form?.portfolioSkipped || "no",
+    riskProfile: prefill.form?.riskProfile || "",
+    portfolioAllocations: prefill.form?.portfolioAllocations || "",
+    portfolioNotes: prefill.form?.portfolioNotes || "",
   })
 
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle")
