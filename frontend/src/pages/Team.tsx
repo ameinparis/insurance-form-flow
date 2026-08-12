@@ -529,10 +529,47 @@ export default Team
         onConfirm={handleDeleteUser}
         loading={deleteLoading}
       />
+    </>
+  )
+
+  if (embedded) {
+    return (
+      <div className="space-y-6">
+        {canManageUsers && (
+          <div className="flex items-center justify-end">
+            <Button onClick={() => setShowAddUserModal(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add Member
+            </Button>
+          </div>
+        )}
+        {body}
+        {dialogs}
+      </div>
+    )
+  }
+
+  return (
+    <div className="-m-6">
+      <div className="sticky top-0 z-30 bg-card px-6 pt-6 pb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold mb-2">Team</h2>
+          <p className="text-muted-foreground">Manage your team members and their roles.</p>
+        </div>
+        {canManageUsers && (
+          <Button onClick={() => setShowAddUserModal(true)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add Member
+          </Button>
+        )}
+      </div>
+      <div className="px-6 pb-6 space-y-6">
+        {body}
+        {dialogs}
       </div>
     </div>
   )
 }
 
-
 export default Team
+
