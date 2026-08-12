@@ -28,6 +28,7 @@ import ConvertToPolicy from "./pages/ConvertToPolicy";
 import PolicyDraftPreview from "./pages/PolicyDraftPreview";
 import NotFound from "./pages/NotFound";
 import LogoutHandler from "./components/LogoutHandler";
+import RoleGuard from "./components/RoleGuard";
 import SetPassword from "./pages/auth/SetPassword";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
@@ -138,7 +139,9 @@ const App = () => (
               } />
               <Route path="/administration" element={
                 <Layout>
-                  <Administration />
+                  <RoleGuard require="canManageUsers">
+                    <Administration />
+                  </RoleGuard>
                 </Layout>
               } />
               <Route path="/team" element={<Navigate to="/administration" replace />} />
