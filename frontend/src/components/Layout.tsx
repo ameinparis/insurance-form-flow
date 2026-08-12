@@ -104,6 +104,9 @@ export function Layout({ children }: LayoutProps) {
               <Moon className="h-4 w-4 text-muted-foreground" />
             </div>
 
+            {/* Notifications */}
+            <NotificationBell />
+
             {/* Separator Line */}
             <div className="h-8 w-px bg-border/60" />
 
