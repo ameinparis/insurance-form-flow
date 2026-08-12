@@ -21,6 +21,9 @@ import { DocumentChecklist, POLICY_DOCUMENTS, REQUIRED_DOCUMENTS } from "@/compo
 
 import { useFeeConfig } from "@/hooks/useFeeConfig"
 import { useFundOptions } from "@/hooks/useInvestmentManagers"
+import { useNotifications } from "@/hooks/useNotifications"
+import { useAuth } from "@/lib/authlibrary"
+import { AssignApproverDialog } from "@/components/policy/AssignApproverDialog"
 
 const STEPS = [
   "Policyholder Details",
