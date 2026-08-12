@@ -11,6 +11,7 @@ import { roleLabel } from "@/lib/permissions";
 import { useGlobalSearch } from "@/lib/searchContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -103,6 +104,9 @@ export function Layout({ children }: LayoutProps) {
               />
               <Moon className="h-4 w-4 text-muted-foreground" />
             </div>
+
+            {/* Notifications */}
+            <NotificationBell />
 
             {/* Separator Line */}
             <div className="h-8 w-px bg-border/60" />

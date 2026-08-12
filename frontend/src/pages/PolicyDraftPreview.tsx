@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, Check, CheckCircle2, CloudUpload, Pencil, X } from "lucide-react"
+import { ArrowLeft, ArrowRightLeft, Check, CheckCircle2, CloudUpload, Pencil, X } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { AssignApproverDialog } from "@/components/policy/AssignApproverDialog"
+import { useNotifications } from "@/hooks/useNotifications"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/authlibrary"
 import { canApproveConversion, permissionsFor } from "@/lib/permissions"
@@ -54,7 +64,11 @@ const SECTIONS: { title: string; step: number; fields: Field[] }[] = [
 const PolicyDraftPreview = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { drafts, saveDraft, approveDraft } = usePolicyDrafts()
+  const { drafts, saveDraft, approveDraft, rejectDraft, reassignDraft } = usePolicyDrafts()
+  const { addNotification, resolveForDraft, supersedeForDraft } = useNotifications()
+  const [reassignOpen, setReassignOpen] = useState(false)
+  const [rejectOpen, setRejectOpen] = useState(false)
+  const [rejectReason, setRejectReason] = useState("")
   const { userRole, userId, userName } = useAuth()
   const draft = useMemo(() => drafts.find((d) => d.id === id), [drafts, id])
 
@@ -106,7 +120,14 @@ const PolicyDraftPreview = () => {
 
 
   const isApproved = draft?.status === "approved"
-  const canApprove = canApproveConversion(userRole, userId, draft?.initiatedBy)
+  const isRejected = draft?.status === "rejected"
+  const isPending = draft?.status === "pending_approval"
+  const isSuper = permissionsFor(userRole).role === "super_admin"
+  const isAssignee = String(draft?.assignedTo || "") === String(userId || "")
+  const canApprove =
+    canApproveConversion(userRole, userId, draft?.initiatedBy) && isPending && (isSuper || isAssignee)
+  const canReassign =
+    isPending && (isSuper || String(draft?.initiatedBy || "") === String(userId || ""))
 
   const continueEditing = () =>
     navigate("/policies/convert", {
@@ -142,10 +163,12 @@ const PolicyDraftPreview = () => {
                 className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${
                   isApproved
                     ? "border-emerald-300 text-emerald-600 dark:text-emerald-400"
-                    : "border-amber-300 text-amber-600 dark:text-amber-400"
+                    : isRejected
+                      ? "border-red-300 text-red-600 dark:text-red-400"
+                      : "border-amber-300 text-amber-600 dark:text-amber-400"
                 }`}
               >
-                {isApproved ? "Approved" : "Draft"}
+                {isApproved ? "Approved" : isRejected ? "Rejected" : isPending ? "Pending Approval" : "Draft"}
               </Badge>
               {saveState !== "idle" && (
                 <span
@@ -170,7 +193,12 @@ const PolicyDraftPreview = () => {
               )}
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {[draft.optionLabel, draft.quoteId, `Saved ${formatDate(draft.updatedAt)}`]
+              {[
+                draft.optionLabel,
+                draft.quoteId,
+                draft.assignedToName ? `Assigned to ${draft.assignedToName}` : null,
+                `Saved ${formatDate(draft.updatedAt)}`,
+              ]
                 .filter(Boolean)
                 .join(" · ")}
             </p>
@@ -180,26 +208,53 @@ const PolicyDraftPreview = () => {
               <Button variant="outline" onClick={continueEditing} className="rounded-full px-6">
                 Continue Editing
               </Button>
-              {!isApproved && canApprove && (
+              {canReassign && (
                 <Button
+                  variant="outline"
                   className="rounded-full px-6"
-                  onClick={() => {
-                    approveDraft(draft.id, { id: userId, name: userName })
-                    toast.success("Policy conversion approved")
-                  }}
+                  onClick={() => setReassignOpen(true)}
                 >
-                  Approve Conversion
+                  Reassign
                 </Button>
               )}
+              {canApprove && (
+                <>
+                  <Button
+                    variant="outline"
+                    className="rounded-full px-6 text-red-500 hover:text-red-600"
+                    onClick={() => setRejectOpen(true)}
+                  >
+                    Reject
+                  </Button>
+                  <Button
+                    className="rounded-full px-6"
+                    onClick={() => {
+                      approveDraft(draft.id, { id: userId, name: userName })
+                      resolveForDraft(draft.id, "approved")
+                      toast.success("Policy conversion approved")
+                    }}
+                  >
+                    Approve Conversion
+                  </Button>
+                </>
+              )}
             </div>
-            {!isApproved && !canApprove && permissionsFor(userRole).canApprove && (
+            {isPending && !canApprove && permissionsFor(userRole).canApprove && (
               <p className="text-xs text-amber-600 dark:text-amber-400 max-w-xs text-right">
-                You initiated this conversion — it needs approval from another Admin or a Super Admin.
+                {String(draft.initiatedBy || "") === String(userId || "")
+                  ? "You initiated this conversion — it needs approval from another Admin or a Super Admin."
+                  : `This conversion is assigned to ${draft.assignedToName || "another reviewer"}.`}
               </p>
             )}
             {isApproved && draft.approvedByName && (
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Approved by {draft.approvedByName}
+              </p>
+            )}
+            {isRejected && (
+              <p className="text-xs text-red-500 max-w-xs text-right">
+                Rejected by {draft.rejectedByName || "reviewer"}
+                {draft.rejectionReason ? ` — ${draft.rejectionReason}` : ""}
               </p>
             )}
           </div>
@@ -280,7 +335,91 @@ const PolicyDraftPreview = () => {
             </div>
           )
         })}
+
+        {(draft.reassignments?.length || 0) > 0 && (
+          <div className="lg:col-span-2 rounded-[1.75rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-7">
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
+              Reassignment History
+            </h3>
+            <ul className="space-y-3">
+              {draft.reassignments!.map((r, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm">
+                  <ArrowRightLeft className="h-4 w-4 mt-0.5 text-slate-400 flex-shrink-0" />
+                  <span className="text-slate-600 dark:text-slate-300">
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {r.byName || "Someone"}
+                    </span>{" "}
+                    reassigned from {r.fromName || "unassigned"} to{" "}
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {r.toName || "unassigned"}
+                    </span>{" "}
+                    · {formatDate(r.at)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
+
+      <AssignApproverDialog
+        open={reassignOpen}
+        onOpenChange={setReassignOpen}
+        title="Reassign for approval"
+        description="Move this pending conversion to a different Admin or Super Admin."
+        confirmLabel="Reassign"
+        currentAssigneeId={draft.assignedTo}
+        onConfirm={(approver) => {
+          reassignDraft(draft.id, approver, { id: userId, name: userName })
+          supersedeForDraft(draft.id)
+          addNotification({
+            draftId: draft.id,
+            kind: "reassigned",
+            status: "pending",
+            recipientId: approver.id,
+            recipientName: approver.name,
+            advisorName: userName || draft.initiatedByName || "A user",
+            clientName: form.fullName,
+            policyType: form.productName,
+          })
+          toast.success(`Reassigned to ${approver.name}`)
+        }}
+      />
+
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reject conversion</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Give a reason for rejecting this conversion…"
+            className="rounded-xl min-h-[110px]"
+          />
+          <DialogFooter>
+            <Button variant="outline" className="rounded-full" onClick={() => setRejectOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="rounded-full bg-red-500 hover:bg-red-600 text-white"
+              onClick={() => {
+                if (!rejectReason.trim()) {
+                  toast.error("A reason is required to reject")
+                  return
+                }
+                rejectDraft(draft.id, { id: userId, name: userName }, rejectReason.trim())
+                resolveForDraft(draft.id, "rejected", rejectReason.trim())
+                setRejectOpen(false)
+                setRejectReason("")
+                toast.success("Policy conversion rejected")
+              }}
+            >
+              Reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
