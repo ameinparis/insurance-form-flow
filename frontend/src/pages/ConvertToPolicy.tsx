@@ -408,6 +408,75 @@ const ConvertToPolicy = () => {
               <Input id="funeralPremium" readOnly value={fmt(FUNERAL_PREMIUM)} className="h-11 rounded-xl bg-muted/50" />
             </div>
           </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="rounded-xl border border-dashed border-gray-300 dark:border-slate-600 px-4 py-3 text-sm text-muted-foreground">
+              This step is optional. You can skip it and set up the investment portfolio later.
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="riskProfile">Risk Profile</Label>
+                <Select
+                  value={form.riskProfile}
+                  onValueChange={(v) =>
+                    setForm((prev) => ({ ...prev, riskProfile: v, portfolioSkipped: "no" }))
+                  }
+                >
+                  <SelectTrigger id="riskProfile" className="h-11 rounded-xl">
+                    <SelectValue placeholder="Select a risk profile" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RISK_PROFILES.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {r}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="portfolioNotes">Notes</Label>
+                <Input
+                  id="portfolioNotes"
+                  value={form.portfolioNotes}
+                  onChange={set("portfolioNotes")}
+                  placeholder="Any portfolio instructions"
+                  className="h-11 rounded-xl"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Fund Allocation (%)</Label>
+                <span
+                  className={`text-xs font-semibold ${
+                    allocationTotal > 100 ? "text-red-500" : "text-muted-foreground"
+                  }`}
+                >
+                  Total: {allocationTotal}%
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                {FUNDS.map((fund) => (
+                  <div key={fund} className="flex items-center gap-3">
+                    <span className="flex-1 text-sm">{fund}</span>
+                    <Input
+                      inputMode="decimal"
+                      value={allocations[fund] ?? ""}
+                      onChange={(e) => setAllocation(fund, e.target.value)}
+                      placeholder="0"
+                      className="h-11 w-24 rounded-xl text-right"
+                    />
+                  </div>
+                ))}
+              </div>
+              {allocationTotal > 100 && (
+                <p className="text-xs text-red-500">Allocation cannot exceed 100%.</p>
+              )}
+            </div>
+          </div>
         )}
 
         <div className="flex justify-between items-center gap-4 mt-10">
@@ -423,6 +492,23 @@ const ConvertToPolicy = () => {
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
+            {currentStep === 3 && (
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  setForm((prev) => ({
+                    ...prev,
+                    portfolioSkipped: "yes",
+                    riskProfile: "",
+                    portfolioAllocations: "",
+                    portfolioNotes: "",
+                  }))
+                }
+                className="rounded-full px-6"
+              >
+                Skip this step
+              </Button>
+            )}
             <Button
               disabled={currentStep >= LAST_STEP}
               onClick={() => setCurrentStep((s) => Math.min(s + 1, LAST_STEP))}
@@ -432,6 +518,7 @@ const ConvertToPolicy = () => {
             </Button>
           </div>
         </div>
+
 
 
       </div>
