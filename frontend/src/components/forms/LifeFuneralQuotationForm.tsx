@@ -250,7 +250,7 @@ const LifeFuneralQuotationForm = () => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(
-          `https://njs.exclusivelife.co.bw/api/quotes/funeral/status/${backendJobId}`
+          `http://localhost:5002/api/quotes/funeral/status/${backendJobId}`
         )
         const data = await res.json()
         console.log("Polling job:", data)
@@ -390,7 +390,7 @@ const LifeFuneralQuotationForm = () => {
     Object.entries(cleanedFormData).forEach(([key, value]) => payload.append(key, value))
 
     try {
-      const res = await fetch("https://njs.exclusivelife.co.bw/api/quotes/funeral/start", {
+      const res = await fetch("http://localhost:5002/api/quotes/funeral/start", {
         method: "POST",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         body: payload
@@ -431,7 +431,7 @@ const LifeFuneralQuotationForm = () => {
 
     setIsSavingQuote(true)
     try {
-      const res = await fetch("https://njs.exclusivelife.co.bw/api/new-quotes", {
+      const res = await fetch("http://localhost:5002/api/new-quotes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

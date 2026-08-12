@@ -84,8 +84,8 @@ const Quotes = () => {
     try {
       const token = localStorage.getItem("token")
       const endpoint = isLegacy
-        ? `${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/quotes/${quoteId}`
-        : `${import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw"}/api/new-quotes/${quoteId}`
+        ? `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes/${quoteId}`
+        : `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes/${quoteId}`
 
       const res = await fetch(endpoint, {
         method: "DELETE",

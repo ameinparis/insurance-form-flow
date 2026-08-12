@@ -161,7 +161,7 @@ export async function exportQuotePdf(
   quoteOverride?: QuoteData
 ): Promise<void> {
   const baseUrl = window.location.origin;
-  const apiBase = import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw";
+  const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
 
   // 1. Use the quote already loaded on the page when available, otherwise fetch it.
   const quote = quoteOverride ?? (await fetchQuoteDetails(quoteMongoId, isLegacy));

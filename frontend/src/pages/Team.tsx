@@ -136,7 +136,7 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
     setAddLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.post("https://njs.exclusivelife.co.bw/api/users/register", newUser, {
+      await axios.post("http://localhost:5002/api/users/register", newUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member added successfully")
@@ -158,7 +158,7 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
     setEditLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.put(`https://njs.exclusivelife.co.bw/api/users/${editingUser.id}`, editUser, {
+      await axios.put(`http://localhost:5002/api/users/${editingUser.id}`, editUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member updated successfully")
@@ -191,7 +191,7 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
     setDeleteLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.delete(`https://njs.exclusivelife.co.bw/api/users/${deletingMember.id}`, {
+      await axios.delete(`http://localhost:5002/api/users/${deletingMember.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member deleted successfully")
@@ -209,7 +209,7 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
   const handleToggleStatus = async (member: TeamMember) => {
     try {
       const token = localStorage.getItem("token")
-      await axios.put(`https://njs.exclusivelife.co.bw/api/users/${member.id}`, {
+      await axios.put(`http://localhost:5002/api/users/${member.id}`, {
         firstName: member.firstName,
         lastName: member.lastName,
         email: member.email,
@@ -230,7 +230,7 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
     try {
       setLoading(true)
       const token = localStorage.getItem("token")
-      const res = await axios.get("https://njs.exclusivelife.co.bw/api/users", {
+      const res = await axios.get("http://localhost:5002/api/users", {
         headers: { Authorization: `Bearer ${token}` }
       })
       const pastelColors = [

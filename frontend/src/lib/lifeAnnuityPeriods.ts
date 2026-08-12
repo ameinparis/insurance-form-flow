@@ -32,7 +32,7 @@ export async function fetchLifeAnnuityPeriods(
       }
       try {
         const { data } = await axios.post(
-          "https://njs.exclusivelife.co.bw/api/quotes/calculate-annuity",
+          "http://localhost:5002/api/quotes/calculate-annuity",
           {
             annuityType: "life",
             age,
