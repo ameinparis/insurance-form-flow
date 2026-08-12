@@ -179,7 +179,12 @@ const PolicyDraftPreview = () => {
               )}
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {[draft.optionLabel, draft.quoteId, `Saved ${formatDate(draft.updatedAt)}`]
+              {[
+                draft.optionLabel,
+                draft.quoteId,
+                draft.assignedToName ? `Assigned to ${draft.assignedToName}` : null,
+                `Saved ${formatDate(draft.updatedAt)}`,
+              ]
                 .filter(Boolean)
                 .join(" · ")}
             </p>
@@ -189,26 +194,53 @@ const PolicyDraftPreview = () => {
               <Button variant="outline" onClick={continueEditing} className="rounded-full px-6">
                 Continue Editing
               </Button>
-              {!isApproved && canApprove && (
+              {canReassign && (
                 <Button
+                  variant="outline"
                   className="rounded-full px-6"
-                  onClick={() => {
-                    approveDraft(draft.id, { id: userId, name: userName })
-                    toast.success("Policy conversion approved")
-                  }}
+                  onClick={() => setReassignOpen(true)}
                 >
-                  Approve Conversion
+                  Reassign
                 </Button>
               )}
+              {canApprove && (
+                <>
+                  <Button
+                    variant="outline"
+                    className="rounded-full px-6 text-red-500 hover:text-red-600"
+                    onClick={() => setRejectOpen(true)}
+                  >
+                    Reject
+                  </Button>
+                  <Button
+                    className="rounded-full px-6"
+                    onClick={() => {
+                      approveDraft(draft.id, { id: userId, name: userName })
+                      resolveForDraft(draft.id, "approved")
+                      toast.success("Policy conversion approved")
+                    }}
+                  >
+                    Approve Conversion
+                  </Button>
+                </>
+              )}
             </div>
-            {!isApproved && !canApprove && permissionsFor(userRole).canApprove && (
+            {isPending && !canApprove && permissionsFor(userRole).canApprove && (
               <p className="text-xs text-amber-600 dark:text-amber-400 max-w-xs text-right">
-                You initiated this conversion — it needs approval from another Admin or a Super Admin.
+                {String(draft.initiatedBy || "") === String(userId || "")
+                  ? "You initiated this conversion — it needs approval from another Admin or a Super Admin."
+                  : `This conversion is assigned to ${draft.assignedToName || "another reviewer"}.`}
               </p>
             )}
             {isApproved && draft.approvedByName && (
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Approved by {draft.approvedByName}
+              </p>
+            )}
+            {isRejected && (
+              <p className="text-xs text-red-500 max-w-xs text-right">
+                Rejected by {draft.rejectedByName || "reviewer"}
+                {draft.rejectionReason ? ` — ${draft.rejectionReason}` : ""}
               </p>
             )}
           </div>
