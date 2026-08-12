@@ -321,7 +321,91 @@ const PolicyDraftPreview = () => {
             </div>
           )
         })}
+
+        {(draft.reassignments?.length || 0) > 0 && (
+          <div className="lg:col-span-2 rounded-[1.75rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-7">
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
+              Reassignment History
+            </h3>
+            <ul className="space-y-3">
+              {draft.reassignments!.map((r, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm">
+                  <ArrowRightLeft className="h-4 w-4 mt-0.5 text-slate-400 flex-shrink-0" />
+                  <span className="text-slate-600 dark:text-slate-300">
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {r.byName || "Someone"}
+                    </span>{" "}
+                    reassigned from {r.fromName || "unassigned"} to{" "}
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {r.toName || "unassigned"}
+                    </span>{" "}
+                    · {formatDate(r.at)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
+
+      <AssignApproverDialog
+        open={reassignOpen}
+        onOpenChange={setReassignOpen}
+        title="Reassign for approval"
+        description="Move this pending conversion to a different Admin or Super Admin."
+        confirmLabel="Reassign"
+        currentAssigneeId={draft.assignedTo}
+        onConfirm={(approver) => {
+          reassignDraft(draft.id, approver, { id: userId, name: userName })
+          supersedeForDraft(draft.id)
+          addNotification({
+            draftId: draft.id,
+            kind: "reassigned",
+            status: "pending",
+            recipientId: approver.id,
+            recipientName: approver.name,
+            advisorName: userName || draft.initiatedByName || "A user",
+            clientName: form.fullName,
+            policyType: form.productName,
+          })
+          toast.success(`Reassigned to ${approver.name}`)
+        }}
+      />
+
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reject conversion</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Give a reason for rejecting this conversion…"
+            className="rounded-xl min-h-[110px]"
+          />
+          <DialogFooter>
+            <Button variant="outline" className="rounded-full" onClick={() => setRejectOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="rounded-full bg-red-500 hover:bg-red-600 text-white"
+              onClick={() => {
+                if (!rejectReason.trim()) {
+                  toast.error("A reason is required to reject")
+                  return
+                }
+                rejectDraft(draft.id, { id: userId, name: userName }, rejectReason.trim())
+                resolveForDraft(draft.id, "rejected", rejectReason.trim())
+                setRejectOpen(false)
+                setRejectReason("")
+                toast.success("Policy conversion rejected")
+              }}
+            >
+              Reject
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
