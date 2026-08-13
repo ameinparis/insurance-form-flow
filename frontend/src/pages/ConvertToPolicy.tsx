@@ -204,10 +204,10 @@ const ConvertToPolicy = () => {
   const SWITCH_FEE = feeConfig.switchFee
   const FUNERAL_PREMIUM = feeConfig.funeralPremium
   const commissionOn = form.upfrontCommissionEnabled === "yes"
-  // Ongoing Advisory Fee — percentage clamped to 0–1% of the Investment Amount Premium
-  const advisoryPctRaw = Number(String(form.ongoingAdvisoryFee).replace(/[^0-9.]/g, "")) || 0
-  const advisoryPct = Math.min(Math.max(advisoryPctRaw, 0), feeConfig.ongoingAdvisoryMaxPct)
-  const ongoingAdvisoryFeeAmount = investment * (advisoryPct / 100)
+  // Ongoing Advisory Fee — optional, configured percentage of the Investment Amount Premium
+  const advisoryOn = form.ongoingAdvisoryEnabled === "yes"
+  const advisoryPct = feeConfig.ongoingAdvisoryMaxPct
+  const ongoingAdvisoryFeeAmount = advisoryOn ? investment * (advisoryPct / 100) : 0
 
   // Autosave the draft whenever the form or step changes
   useEffect(() => {
