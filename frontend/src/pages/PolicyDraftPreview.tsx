@@ -162,6 +162,27 @@ const PolicyDraftPreview = () => {
   const canReassign =
     (isPending || isRejected) && (isSuper || isOwner)
 
+  const beneficiaries: Record<string, string>[] = (() => {
+    try {
+      const parsed = form.beneficiaries ? JSON.parse(form.beneficiaries) : []
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  })()
+  const allocationTotal = beneficiaries.reduce(
+    (sum, b) => sum + (Number(String(b.allocation ?? "0").replace(/[^0-9.]/g, "")) || 0),
+    0,
+  )
+  const documents: Record<string, string> = (() => {
+    try {
+      const parsed = form.documents ? JSON.parse(form.documents) : {}
+      return parsed && typeof parsed === "object" ? parsed : {}
+    } catch {
+      return {}
+    }
+  })()
+
   const continueEditing = () =>
     navigate("/policies/convert", {
       state: {
@@ -374,6 +395,145 @@ const PolicyDraftPreview = () => {
           )
         })}
 
+        <div className="lg:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="rounded-[1.75rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-7">
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white mb-5">
+              Client Summary
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
+              {[
+                { label: "Full Name", value: form.fullName },
+                { label: "Relationship", value: form.relationship || "Policyholder" },
+                { label: "Product", value: draft.optionLabel || draft.productType },
+                { label: "Quote ID", value: draft.quoteId },
+              ].map((item) => (
+                <div key={item.label} className="py-2.5 border-b border-slate-100 dark:border-slate-700/60">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                    {item.label}
+                  </p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white mt-1 truncate">
+                    {item.value || "—"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[1.75rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-7">
+            <div className="flex items-center justify-between gap-4 mb-5">
+              <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Beneficiary Allocation
+              </h3>
+              <Badge
+                variant="outline"
+                className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${
+                  Math.round(allocationTotal) === 100
+                    ? "border-emerald-300 text-emerald-600 dark:text-emerald-400"
+                    : "border-amber-300 text-amber-600 dark:text-amber-400"
+                }`}
+              >
+                {Math.round(allocationTotal * 100) / 100}% allocated
+              </Badge>
+            </div>
+            <div className="space-y-2">
+              {beneficiaries.length === 0 ? (
+                <p className="text-sm text-slate-500 dark:text-slate-400">No beneficiaries captured.</p>
+              ) : (
+                beneficiaries.map((b, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                        {b.name || "—"}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {[b.relationship, b.benefitOption].filter(Boolean).join(" · ") || "—"}
+                      </p>
+                    </div>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">
+                      {Number(String(b.allocation ?? "0").replace(/[^0-9.]/g, "")) || 0}%
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 rounded-[1.75rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-7">
+          <div className="flex items-center justify-between gap-4 mb-5">
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Documents</h3>
+            <Badge
+              variant="outline"
+              className="rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap border-slate-300 text-slate-500 dark:text-slate-400"
+            >
+              {POLICY_DOCUMENTS.filter((d) => documents[d.key]).length} of {POLICY_DOCUMENTS.length} uploaded
+            </Badge>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {POLICY_DOCUMENTS.map((d) => {
+              const stored = parseDoc(documents[d.key])
+              return (
+                <button
+                  key={d.key}
+                  type="button"
+                  disabled={!stored}
+                  onClick={() => stored && setPreviewDoc({ label: d.label, ...stored })}
+                  className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
+                    stored
+                      ? "border-emerald-500/50 hover:bg-emerald-500/5"
+                      : "border-slate-200 dark:border-slate-700 opacity-70 cursor-default"
+                  }`}
+                >
+                  <span className="flex items-center gap-3 min-w-0">
+                    <FileText className="h-4 w-4 shrink-0 text-slate-400" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-slate-900 dark:text-white">
+                        {d.label}
+                      </span>
+                      <span className="block text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {stored?.name || (d.conditional ? "Not required" : "Missing")}
+                      </span>
+                    </span>
+                  </span>
+                  {stored && <span className="text-xs font-semibold text-[#009fe3]">Preview</span>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {(draft.reviewHistory?.length || 0) > 0 && (
+          <div className="lg:col-span-2 rounded-[1.75rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-7">
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
+              Review History
+            </h3>
+            <ul className="space-y-3">
+              {draft.reviewHistory!.map((r, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm">
+                  {r.decision === "approved" ? (
+                    <CheckCircle2 className="h-4 w-4 mt-0.5 text-emerald-500 shrink-0" />
+                  ) : (
+                    <XCircle className="h-4 w-4 mt-0.5 text-red-500 shrink-0" />
+                  )}
+                  <span className="text-slate-600 dark:text-slate-300">
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {r.byName || "Reviewer"}
+                    </span>{" "}
+                    {r.decision === "approved" ? "approved" : "rejected"} attempt {r.attempt} ·{" "}
+                    {formatDate(r.at)}
+                    {r.note ? (
+                      <span className="block text-slate-500 dark:text-slate-400">“{r.note}”</span>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {(draft.reassignments?.length || 0) > 0 && (
           <div className="lg:col-span-2 rounded-[1.75rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-7">
             <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
@@ -474,6 +634,79 @@ const PolicyDraftPreview = () => {
               >
                 Reject
               </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={approveOpen} onOpenChange={setApproveOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Approve conversion</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={approveNote}
+            onChange={(e) => setApproveNote(e.target.value)}
+            placeholder="Add a comment (optional)…"
+            className="rounded-xl min-h-[110px]"
+          />
+          <DialogFooter>
+            <Button variant="outline" className="rounded-full" onClick={() => setApproveOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="rounded-full"
+              onClick={() => {
+                approveDraft(draft.id, { id: userId, name: userName }, approveNote.trim() || null)
+                resolveForDraft(draft.id, "approved", approveNote.trim() || null)
+                emitApprovalResolve({
+                  draftId: draft.id,
+                  kind: "approved",
+                  status: "approved",
+                  recipientId: draft.initiatedBy,
+                  recipientName: draft.initiatedByName,
+                  advisorName: userName,
+                  clientName: form.fullName,
+                  policyType: form.productName,
+                  reason: approveNote.trim() || null,
+                })
+                setApproveOpen(false)
+                setApproveNote("")
+                toast.success("Policy conversion approved")
+              }}
+            >
+              Approve
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!previewDoc} onOpenChange={(o) => !o && setPreviewDoc(null)}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{previewDoc?.label}</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-slate-500 dark:text-slate-400 -mt-2">{previewDoc?.name}</p>
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-50 dark:bg-slate-900">
+            {previewDoc?.data && previewDoc.type?.startsWith("image/") ? (
+              <img src={previewDoc.data} alt={previewDoc.name} className="w-full max-h-[65vh] object-contain" />
+            ) : previewDoc?.data && previewDoc.type === "application/pdf" ? (
+              <iframe title={previewDoc.name} src={previewDoc.data} className="w-full h-[65vh]" />
+            ) : (
+              <div className="p-10 text-center text-sm text-slate-500 dark:text-slate-400">
+                Inline preview isn’t available for this file.
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            {previewDoc?.data ? (
+              <a href={previewDoc.data} download={previewDoc.name} target="_blank" rel="noreferrer">
+                <Button variant="outline" className="rounded-full">
+                  <Download className="h-4 w-4" />
+                  Download / open in new tab
+                </Button>
+              </a>
+            ) : (
+              <span className="text-xs text-slate-500">The original file was not stored for preview.</span>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
