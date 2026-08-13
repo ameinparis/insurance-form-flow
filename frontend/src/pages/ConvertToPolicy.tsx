@@ -798,15 +798,15 @@ const ConvertToPolicy = () => {
 
             <ReviewSection title="Premium and Policy Fees" onEdit={() => setCurrentStep(2)}>
               <ReviewItem label="Investment Amount Premium" value={investment ? `BWP ${fmt(investment)}` : ""} />
-              <ReviewItem label="Purchase Premium (2%)" value={`BWP ${fmt(purchasePremium)}`} />
+              <ReviewItem label="Purchase Premium" value={`BWP ${fmt(purchasePremium)}`} />
               <ReviewItem
-                label="Upfront Commission (1%)"
+                label="Upfront Commission"
                 value={commissionOn ? `BWP ${fmt(upfrontCommission)}` : "Not applied"}
               />
-              <ReviewItem label={`Administration Fee (${feeConfig.administrationFeePct}%)`} value={`BWP ${fmt(administrationFee)}`} />
+              <ReviewItem label="Administration Fee" value={`BWP ${fmt(administrationFee)}`} />
               <ReviewItem
-                label={`Ongoing Advisory Fee (${advisoryPct}%)`}
-                value={`BWP ${fmt(ongoingAdvisoryFeeAmount)}`}
+                label="Ongoing Advisory Fee"
+                value={advisoryOn ? `BWP ${fmt(ongoingAdvisoryFeeAmount)}` : "Not applied"}
               />
               <ReviewItem label="Switch Fee" value={`BWP ${fmt(SWITCH_FEE)}`} />
               <ReviewItem label="Funeral Premium" value={`BWP ${fmt(FUNERAL_PREMIUM)}`} />
