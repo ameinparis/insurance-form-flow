@@ -214,13 +214,7 @@ const PolicyDraftPreview = () => {
               </h2>
               <Badge
                 variant="outline"
-                className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${
-                  isApproved
-                    ? "border-emerald-300 text-emerald-600 dark:text-emerald-400"
-                    : isRejected
-                      ? "border-red-300 text-red-600 dark:text-red-400"
-                      : "border-amber-300 text-amber-600 dark:text-amber-400"
-                }`}
+                className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${STATUS_BADGE[draftStatus(draft)]}`}
               >
                 {STATUS_LABEL[draftStatus(draft)]}
               </Badge>
