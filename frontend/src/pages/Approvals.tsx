@@ -1,34 +1,18 @@
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Clock, CheckCircle2, XCircle } from "lucide-react"
+import { Clock, CheckCircle2, XCircle, RotateCcw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { usePolicyDrafts, type PolicyDraft } from "@/hooks/usePolicyDrafts"
+import { Button } from "@/components/ui/button"
+import {
+  usePolicyDrafts,
+  draftStatus,
+  STATUS_LABEL,
+  STATUS_BADGE,
+  type PolicyDraft,
+} from "@/hooks/usePolicyDrafts"
 import { useAuth } from "@/lib/authlibrary"
 import { permissionsFor } from "@/lib/permissions"
 import { formatDate } from "@/lib/quoteUtils"
-
-type StatusKey = "pending" | "approved" | "rejected"
-
-const statusOf = (d: PolicyDraft): StatusKey | "draft" => {
-  if (d.status === "approved") return "approved"
-  if (d.status === "rejected") return "rejected"
-  if (d.status === "pending_approval") return "pending"
-  return "draft"
-}
-
-const STATUS_STYLES: Record<string, string> = {
-  pending: "border-amber-300 text-amber-600 dark:text-amber-400",
-  approved: "border-emerald-300 text-emerald-600 dark:text-emerald-400",
-  rejected: "border-red-300 text-red-600 dark:text-red-400",
-  draft: "border-slate-300 text-slate-500 dark:text-slate-400",
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Pending",
-  approved: "Approved",
-  rejected: "Rejected",
-  draft: "Draft",
-}
 
 const Approvals = () => {
   const navigate = useNavigate()
@@ -37,17 +21,21 @@ const Approvals = () => {
   const role = permissionsFor(userRole).role
   const isAdvisor = role === "advisor"
 
+  // Everything that has left "draft" is an approval record. Reviewers see all of
+  // them (visibility is not scoped by who created it); advisors see their own.
   const scoped = useMemo(() => {
-    const submitted = drafts.filter((d) => statusOf(d) !== "draft")
+    const submitted = drafts.filter((d) => draftStatus(d) !== "draft")
     if (!isAdvisor) return submitted
-    return submitted.filter((d) => String(d.initiatedBy || "") === String(userId || ""))
+    return submitted.filter(
+      (d) => !d.initiatedBy || String(d.initiatedBy) === String(userId || ""),
+    )
   }, [drafts, isAdvisor, userId])
 
   const tallies = useMemo(
     () => ({
-      pending: scoped.filter((d) => statusOf(d) === "pending").length,
-      approved: scoped.filter((d) => statusOf(d) === "approved").length,
-      rejected: scoped.filter((d) => statusOf(d) === "rejected").length,
+      pending: scoped.filter((d) => draftStatus(d) === "pending_approval").length,
+      approved: scoped.filter((d) => draftStatus(d) === "approved").length,
+      rejected: scoped.filter((d) => draftStatus(d) === "rejected").length,
     }),
     [scoped],
   )
@@ -55,7 +43,9 @@ const Approvals = () => {
   const assignedToMePending = useMemo(
     () =>
       scoped.filter(
-        (d) => statusOf(d) === "pending" && String(d.assignedTo || "") === String(userId || ""),
+        (d) =>
+          draftStatus(d) === "pending_approval" &&
+          String(d.assignedTo || "") === String(userId || ""),
       ).length,
     [scoped, userId],
   )
@@ -69,7 +59,8 @@ const Approvals = () => {
     const list = scoped.filter((d) => {
       if (tab === "all") return true
       if (tab === "assigned") return String(d.assignedTo || "") === String(userId || "")
-      return statusOf(d) === tab
+      if (tab === "pending") return draftStatus(d) === "pending_approval"
+      return draftStatus(d) === tab
     })
     return [...list].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
   }, [scoped, tab, userId])
@@ -81,7 +72,28 @@ const Approvals = () => {
   ]
 
   const tabLabel = (t: string) =>
-    t === "all" ? "All" : t === "assigned" ? "Assigned to me" : STATUS_LABELS[t]
+    t === "all"
+      ? "All"
+      : t === "assigned"
+        ? "Assigned to me"
+        : t === "pending"
+          ? "Pending"
+          : t === "approved"
+            ? "Approved"
+            : "Rejected"
+
+  const resubmit = (d: PolicyDraft) =>
+    navigate("/policies/convert", {
+      state: {
+        draftId: d.id,
+        step: d.step,
+        form: d.form,
+        productType: d.productType,
+        optionLabel: d.optionLabel,
+        quoteId: d.quoteId,
+        premium: d.premium,
+      },
+    })
 
   return (
     <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900">
@@ -154,11 +166,12 @@ const Approvals = () => {
                   <th className="px-6 py-3 font-bold">Assigned to</th>
                   <th className="px-6 py-3 font-bold">Date</th>
                   <th className="px-6 py-3 font-bold">Status</th>
+                  {isAdvisor && <th className="px-6 py-3 font-bold text-right">Action</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                 {rows.map((d) => {
-                  const s = statusOf(d)
+                  const s = draftStatus(d)
                   return (
                     <tr
                       key={d.id}
@@ -167,6 +180,16 @@ const Approvals = () => {
                     >
                       <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">
                         {d.form?.fullName || "Unnamed policyholder"}
+                        {(d.attempt || 1) > 1 && (
+                          <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                            Attempt {d.attempt}
+                          </span>
+                        )}
+                        {s === "rejected" && d.rejectionReason && (
+                          <p className="mt-1 text-xs font-normal text-red-500 max-w-sm">
+                            Reason: {d.rejectionReason}
+                          </p>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
                         {d.optionLabel || d.productType || "—"}
@@ -185,18 +208,36 @@ const Approvals = () => {
                       <td className="px-6 py-4">
                         <Badge
                           variant="outline"
-                          className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${STATUS_STYLES[s]}`}
+                          className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${STATUS_BADGE[s]}`}
                         >
-                          {STATUS_LABELS[s]}
+                          {STATUS_LABEL[s]}
                         </Badge>
                       </td>
+                      {isAdvisor && (
+                        <td className="px-6 py-4 text-right">
+                          {s === "rejected" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                resubmit(d)
+                              }}
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              Resubmit
+                            </Button>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   )
                 })}
                 {rows.length === 0 && (
                   <tr>
                     <td
-                      colSpan={isAdvisor ? 5 : 6}
+                      colSpan={isAdvisor ? 6 : 6}
                       className="px-6 py-12 text-center text-sm text-slate-500 dark:text-slate-400"
                     >
                       Nothing to show here yet.

@@ -10,6 +10,17 @@ export interface ReassignmentEntry {
   toName?: string | null
 }
 
+export interface ReviewEntry {
+  at: string
+  attempt: number
+  decision: "approved" | "rejected"
+  byId?: string | null
+  byName?: string | null
+  note?: string | null
+}
+
+export type DraftStatus = "draft" | "pending_approval" | "approved" | "rejected"
+
 export interface PolicyDraft {
   id: string
   step: number
@@ -18,13 +29,15 @@ export interface PolicyDraft {
   optionLabel?: string
   quoteId?: string
   premium?: number
-  status?: "draft" | "pending_approval" | "approved" | "rejected"
+  status?: DraftStatus
+  attempt?: number
   initiatedBy?: string | null
   initiatedByName?: string | null
   initiatedAt?: string | null
   assignedTo?: string | null
   assignedToName?: string | null
   assignedAt?: string | null
+  submittedAt?: string | null
   approvedBy?: string | null
   approvedByName?: string | null
   approvedAt?: string | null
@@ -32,12 +45,28 @@ export interface PolicyDraft {
   rejectedByName?: string | null
   rejectedAt?: string | null
   rejectionReason?: string | null
+  reviewNote?: string | null
+  reviewedBy?: string | null
+  reviewedByName?: string | null
+  reviewedAt?: string | null
+  reviewHistory?: ReviewEntry[]
   reassignments?: ReassignmentEntry[]
   updatedAt: string
 }
 
 const STORAGE_KEY = "policy_drafts_v1"
 const EVENT = "policy-drafts-updated"
+
+const API_BASE =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) || "http://localhost:5002/api"
+
+const authHeaders = (): HeadersInit => {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
 
 const read = (): PolicyDraft[] => {
   try {
@@ -58,27 +87,83 @@ const write = (drafts: PolicyDraft[]) => {
   window.dispatchEvent(new Event(EVENT))
 }
 
+/** Write-through to the shared backend so every role reads the same records. */
+const persist = (draft: PolicyDraft) => {
+  fetch(`${API_BASE}/conversions/${encodeURIComponent(draft.id)}`, {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(draft),
+  }).catch(() => {
+    /* offline — localStorage keeps the record */
+  })
+}
+
+const persistDelete = (id: string) => {
+  fetch(`${API_BASE}/conversions/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  }).catch(() => {
+    /* ignore */
+  })
+}
+
+const writeOne = (next: PolicyDraft, list?: PolicyDraft[]) => {
+  const current = list ?? read()
+  const idx = current.findIndex((d) => d.id === next.id)
+  if (idx >= 0) current[idx] = next
+  else current.unshift(next)
+  write([...current])
+  persist(next)
+  return next
+}
+
+/** Merge server records with anything only known locally (offline edits). */
+const mergeRemote = (remote: PolicyDraft[]) => {
+  const local = read()
+  const byId = new Map<string, PolicyDraft>()
+  local.forEach((d) => byId.set(d.id, d))
+  remote.forEach((d) => {
+    const existing = byId.get(d.id)
+    if (!existing || (d.updatedAt || "") >= (existing.updatedAt || "")) byId.set(d.id, d)
+  })
+  write([...byId.values()].sort((a, b) => ((a.updatedAt || "") < (b.updatedAt || "") ? 1 : -1)))
+}
+
 export const usePolicyDrafts = () => {
   const [drafts, setDrafts] = useState<PolicyDraft[]>(read)
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/conversions`, { headers: authHeaders() })
+      if (!res.ok) return
+      const data = await res.json()
+      if (Array.isArray(data)) mergeRemote(data as PolicyDraft[])
+    } catch {
+      /* offline — keep local cache */
+    }
+  }, [])
 
   useEffect(() => {
     const sync = () => setDrafts(read())
     window.addEventListener(EVENT, sync)
     window.addEventListener("storage", sync)
+    refresh()
+    const poll = setInterval(refresh, 20000)
     return () => {
       window.removeEventListener(EVENT, sync)
       window.removeEventListener("storage", sync)
+      clearInterval(poll)
     }
-  }, [])
+  }, [refresh])
 
   const saveDraft = useCallback((draft: Omit<PolicyDraft, "updatedAt"> & { id?: string }) => {
     const current = read()
     const id = draft.id || `pd_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-    const existing = current.findIndex((d) => d.id === id)
-    const prev = existing >= 0 ? current[existing] : undefined
+    const prev = current.find((d) => d.id === id)
     const now = new Date().toISOString()
     const next: PolicyDraft = {
       status: "draft",
+      attempt: 1,
       ...prev,
       ...draft,
       id,
@@ -87,43 +172,42 @@ export const usePolicyDrafts = () => {
       initiatedAt: prev?.initiatedAt ?? now,
       updatedAt: now,
     }
-    if (existing >= 0) {
-      current[existing] = next
-      write([...current])
-    } else {
-      write([next, ...current])
-    }
-    return next
+    return writeOne(next, current)
   }, [])
 
   const removeDraft = useCallback((id: string) => {
     write(read().filter((d) => d.id !== id))
+    persistDelete(id)
   }, [])
 
-  /** Submit for approval, assigning a specific Admin / Super Admin as reviewer. */
+  /** Submit (or resubmit) for approval, assigning a specific reviewer. */
   const submitForApproval = useCallback(
     (id: string, assignee?: { id?: string | null; name?: string | null }) => {
+      const current = read()
+      const d = current.find((x) => x.id === id)
+      if (!d) return undefined
       const now = new Date().toISOString()
-      let updated: PolicyDraft | undefined
-      write(
-        read().map((d) => {
-          if (d.id !== id) return d
-          updated = {
-            ...d,
-            status: "pending_approval",
-            assignedTo: assignee?.id ?? d.assignedTo ?? null,
-            assignedToName: assignee?.name ?? d.assignedToName ?? null,
-            assignedAt: now,
-            rejectedBy: null,
-            rejectedByName: null,
-            rejectedAt: null,
-            rejectionReason: null,
-            updatedAt: now,
-          }
-          return updated
-        }),
-      )
-      return updated
+      const isResubmission = d.status === "rejected"
+      const next: PolicyDraft = {
+        ...d,
+        status: "pending_approval",
+        attempt: (d.attempt || 1) + (isResubmission ? 1 : 0),
+        assignedTo: assignee?.id ?? d.assignedTo ?? null,
+        assignedToName: assignee?.name ?? d.assignedToName ?? null,
+        assignedAt: now,
+        submittedAt: now,
+        // Clear the current round's decision, history keeps the record.
+        rejectedBy: null,
+        rejectedByName: null,
+        rejectedAt: null,
+        rejectionReason: null,
+        reviewNote: null,
+        reviewedBy: null,
+        reviewedByName: null,
+        reviewedAt: null,
+        updatedAt: now,
+      }
+      return writeOne(next, current)
     },
     [],
   )
@@ -135,82 +219,105 @@ export const usePolicyDrafts = () => {
       assignee: { id?: string | null; name?: string | null },
       actor: { id?: string | null; name?: string | null },
     ) => {
+      const current = read()
+      const d = current.find((x) => x.id === id)
+      if (!d) return undefined
       const now = new Date().toISOString()
-      let updated: PolicyDraft | undefined
-      write(
-        read().map((d) => {
-          if (d.id !== id) return d
-          const entry: ReassignmentEntry = {
-            at: now,
-            byId: actor.id ?? null,
-            byName: actor.name ?? null,
-            fromId: d.assignedTo ?? null,
-            fromName: d.assignedToName ?? null,
-            toId: assignee.id ?? null,
-            toName: assignee.name ?? null,
-          }
-          updated = {
-            ...d,
-            status: "pending_approval",
-            assignedTo: assignee.id ?? null,
-            assignedToName: assignee.name ?? null,
-            assignedAt: now,
-            reassignments: [...(d.reassignments || []), entry],
-            updatedAt: now,
-          }
-          return updated
-        }),
-      )
-      return updated
+      const entry: ReassignmentEntry = {
+        at: now,
+        byId: actor.id ?? null,
+        byName: actor.name ?? null,
+        fromId: d.assignedTo ?? null,
+        fromName: d.assignedToName ?? null,
+        toId: assignee.id ?? null,
+        toName: assignee.name ?? null,
+      }
+      const next: PolicyDraft = {
+        ...d,
+        status: "pending_approval",
+        assignedTo: assignee.id ?? null,
+        assignedToName: assignee.name ?? null,
+        assignedAt: now,
+        reassignments: [...(d.reassignments || []), entry],
+        updatedAt: now,
+      }
+      return writeOne(next, current)
     },
     [],
   )
 
   const approveDraft = useCallback(
-    (id: string, approver: { id?: string | null; name?: string | null }) => {
+    (id: string, approver: { id?: string | null; name?: string | null }, note?: string | null) => {
+      const current = read()
+      const d = current.find((x) => x.id === id)
+      if (!d) return undefined
       const now = new Date().toISOString()
-      write(
-        read().map((d) =>
-          d.id === id
-            ? {
-                ...d,
-                status: "approved",
-                approvedBy: approver.id ?? null,
-                approvedByName: approver.name ?? null,
-                approvedAt: now,
-                updatedAt: now,
-              }
-            : d,
-        ),
-      )
+      const next: PolicyDraft = {
+        ...d,
+        status: "approved",
+        approvedBy: approver.id ?? null,
+        approvedByName: approver.name ?? null,
+        approvedAt: now,
+        reviewNote: note?.trim() || null,
+        reviewedBy: approver.id ?? null,
+        reviewedByName: approver.name ?? null,
+        reviewedAt: now,
+        reviewHistory: [
+          ...(d.reviewHistory || []),
+          {
+            at: now,
+            attempt: d.attempt || 1,
+            decision: "approved",
+            byId: approver.id ?? null,
+            byName: approver.name ?? null,
+            note: note?.trim() || null,
+          },
+        ],
+        updatedAt: now,
+      }
+      return writeOne(next, current)
     },
     [],
   )
 
   const rejectDraft = useCallback(
     (id: string, reviewer: { id?: string | null; name?: string | null }, reason: string) => {
+      const current = read()
+      const d = current.find((x) => x.id === id)
+      if (!d) return undefined
       const now = new Date().toISOString()
-      write(
-        read().map((d) =>
-          d.id === id
-            ? {
-                ...d,
-                status: "rejected",
-                rejectedBy: reviewer.id ?? null,
-                rejectedByName: reviewer.name ?? null,
-                rejectedAt: now,
-                rejectionReason: reason,
-                updatedAt: now,
-              }
-            : d,
-        ),
-      )
+      const next: PolicyDraft = {
+        ...d,
+        status: "rejected",
+        rejectedBy: reviewer.id ?? null,
+        rejectedByName: reviewer.name ?? null,
+        rejectedAt: now,
+        rejectionReason: reason,
+        reviewNote: reason,
+        reviewedBy: reviewer.id ?? null,
+        reviewedByName: reviewer.name ?? null,
+        reviewedAt: now,
+        reviewHistory: [
+          ...(d.reviewHistory || []),
+          {
+            at: now,
+            attempt: d.attempt || 1,
+            decision: "rejected",
+            byId: reviewer.id ?? null,
+            byName: reviewer.name ?? null,
+            note: reason,
+          },
+        ],
+        updatedAt: now,
+      }
+      return writeOne(next, current)
     },
     [],
   )
 
   return {
     drafts,
+    refresh,
     saveDraft,
     removeDraft,
     submitForApproval,
@@ -219,3 +326,21 @@ export const usePolicyDrafts = () => {
     rejectDraft,
   }
 }
+
+/** Single source of truth for how a conversion status is labelled app-wide. */
+export const STATUS_LABEL: Record<DraftStatus, string> = {
+  draft: "Draft",
+  pending_approval: "Pending Review",
+  approved: "Approved",
+  rejected: "Rejected",
+}
+
+export const STATUS_BADGE: Record<DraftStatus, string> = {
+  draft: "border-slate-300 text-slate-500 dark:text-slate-400",
+  pending_approval: "border-amber-300 text-amber-600 dark:text-amber-400",
+  approved: "border-emerald-300 text-emerald-600 dark:text-emerald-400",
+  rejected: "border-red-300 text-red-600 dark:text-red-400",
+}
+
+export const draftStatus = (d?: PolicyDraft | null): DraftStatus =>
+  (d?.status as DraftStatus) || "draft"

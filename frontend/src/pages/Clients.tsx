@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useClientDirectory } from "@/hooks/useClientDirectory"
-import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
+import { usePolicyDrafts, draftStatus, STATUS_LABEL, STATUS_BADGE } from "@/hooks/usePolicyDrafts"
 import { formatCurrency, formatDate } from "@/lib/quoteUtils"
 
 const Clients = () => {
@@ -77,9 +77,9 @@ const Clients = () => {
                       </p>
                       <Badge
                         variant="outline"
-                        className="rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide border-amber-300 text-amber-600 dark:text-amber-400 whitespace-nowrap"
+                        className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${STATUS_BADGE[draftStatus(draft)]}`}
                       >
-                        Draft
+                        {STATUS_LABEL[draftStatus(draft)]}
                       </Badge>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
@@ -115,7 +115,7 @@ const Clients = () => {
                         })
                       }
                     >
-                      Continue Editing
+                      {draftStatus(draft) === "rejected" ? "Resubmit" : "Continue Editing"}
                     </Button>
                     <Button
                       variant="ghost"

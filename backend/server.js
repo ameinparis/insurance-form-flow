@@ -1685,3 +1685,70 @@ app.get("/api/audit-logs/summary", authenticateToken, async (req, res) => {
 
 /* ----------------------------- Start server -------------------------- */
 // Server is started via httpServer.listen above for Socket.io support
+
+/* --------------------------- Policy conversions ---------------------- */
+/**
+ * Conversions (policy drafts) are shared across users so that Admins /
+ * Super Admins can review what Advisors submit. Documents are stored as
+ * loose sub-documents; the schema is intentionally permissive.
+ */
+const conversionSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true, index: true },
+    status: { type: String, default: "draft", index: true },
+    initiatedBy: { type: String, default: null, index: true },
+    assignedTo: { type: String, default: null, index: true },
+  },
+  { strict: false, timestamps: true }
+);
+const Conversion =
+  mongoose.models.Conversion || mongoose.model("Conversion", conversionSchema, "conversions");
+
+const isReviewer = (role) => {
+  const r = String(role || "").toLowerCase();
+  return r === "admin" || r === "superuser" || r === "super_admin" || r === "superadmin";
+};
+
+// List conversions visible to the caller.
+// Reviewers see every conversion that left "draft"; advisors see their own.
+app.get("/api/conversions", authenticateToken, async (req, res) => {
+  try {
+    const uid = String(req.user.userId);
+    const query = isReviewer(req.user.role)
+      ? { $or: [{ status: { $ne: "draft" } }, { initiatedBy: uid }, { assignedTo: uid }] }
+      : { initiatedBy: uid };
+    const items = await Conversion.find(query).sort({ updatedAt: -1 }).lean();
+    res.json(items.map(({ _id, __v, ...rest }) => rest));
+  } catch (e) {
+    console.error("List conversions error:", e);
+    res.status(500).json({ message: "Failed to fetch conversions" });
+  }
+});
+
+// Upsert a conversion (create draft, autosave, submit, approve, reject...)
+app.put("/api/conversions/:id", authenticateToken, async (req, res) => {
+  try {
+    const payload = { ...req.body, id: req.params.id };
+    delete payload._id;
+    const saved = await Conversion.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: payload },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    ).lean();
+    const { _id, __v, ...rest } = saved;
+    res.json(rest);
+  } catch (e) {
+    console.error("Save conversion error:", e);
+    res.status(500).json({ message: "Failed to save conversion" });
+  }
+});
+
+app.delete("/api/conversions/:id", authenticateToken, async (req, res) => {
+  try {
+    await Conversion.deleteOne({ id: req.params.id });
+    res.json({ message: "Conversion deleted", id: req.params.id });
+  } catch (e) {
+    console.error("Delete conversion error:", e);
+    res.status(500).json({ message: "Failed to delete conversion" });
+  }
+});

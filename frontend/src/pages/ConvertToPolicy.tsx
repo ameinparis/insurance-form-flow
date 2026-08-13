@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
-import { DocumentChecklist, POLICY_DOCUMENTS, REQUIRED_DOCUMENTS } from "@/components/policy/DocumentChecklist"
+import { DocumentChecklist, POLICY_DOCUMENTS, REQUIRED_DOCUMENTS, parseDoc } from "@/components/policy/DocumentChecklist"
 
 import { useFeeConfig } from "@/hooks/useFeeConfig"
 import { useFundOptions } from "@/hooks/useInvestmentManagers"
@@ -873,7 +873,7 @@ const ConvertToPolicy = () => {
                           : "text-muted-foreground"
                       }`}
                     >
-                      {documents[d.key] || (d.conditional ? "Not required" : "Missing")}
+                      {parseDoc(documents[d.key])?.name || (d.conditional ? "Not required" : "Missing")}
                     </span>
                   </div>
                 ))}
