@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
+import { useClientDirectory } from "./useClientDirectory"
 
 export interface ReassignmentEntry {
   at: string
@@ -131,6 +132,7 @@ const mergeRemote = (remote: PolicyDraft[]) => {
 
 export const usePolicyDrafts = () => {
   const [drafts, setDrafts] = useState<PolicyDraft[]>(read)
+  const { addClient } = useClientDirectory()
 
   const refresh = useCallback(async () => {
     try {
@@ -275,9 +277,26 @@ export const usePolicyDrafts = () => {
         ],
         updatedAt: now,
       }
-      return writeOne(next, current)
+      const saved = writeOne(next, current)
+
+      if (saved && saved.status === "approved") {
+        const fullName = saved.form?.fullName || saved.form?.clientName || "Unnamed Client"
+        addClient({
+          fullName,
+          email: saved.form?.email,
+          contactNumber: saved.form?.contactNumber,
+          idNumber: saved.form?.idNumber,
+          dateOfBirth: saved.form?.dateOfBirth,
+          productType: saved.productType || saved.form?.productName || "Policy",
+          optionLabel: saved.optionLabel,
+          quoteId: saved.quoteId,
+          premium: saved.premium,
+        })
+      }
+
+      return saved
     },
-    [],
+    [addClient],
   )
 
   const rejectDraft = useCallback(

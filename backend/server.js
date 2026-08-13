@@ -1361,12 +1361,7 @@ app.delete("/api/new-quotes/:id", authenticateToken, async (req, res) => {
 
 app.get("/api/users", authenticateToken, async (req, res) => {
   try {
-    const requesterRole = String(req.user?.role || "").toLowerCase()
-    let query = {}
-    if (requesterRole !== "superuser") {
-      query = { email: { $regex: /@exclusivelife\.co\.bw$/i } }
-    }
-    const users = await User.find(query).select("-password");
+    const users = await User.find().select("-password");
     res.json(users);
   } catch (e) {
     console.error("Fetch users error:", e);
