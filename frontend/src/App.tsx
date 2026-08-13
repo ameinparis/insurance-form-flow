@@ -15,6 +15,7 @@ import Calculate from "./pages/Calculate";
 import Clients from "./pages/Clients";
 import ClientDetail from "./pages/ClientDetail";
 import Claims from "./pages/Claims";
+import Approvals from "./pages/Approvals";
 import Administration from "./pages/Administration";
 import CalculateForm from "./pages/CalculateForm";
 import FormRouter from "./components/FormRouter";
@@ -130,6 +131,11 @@ const App = () => (
               <Route path="/clients/:id" element={
                 <Layout>
                   <ClientDetail />
+                </Layout>
+              } />
+              <Route path="/approvals" element={
+                <Layout>
+                  <Approvals />
                 </Layout>
               } />
               <Route path="/claims" element={

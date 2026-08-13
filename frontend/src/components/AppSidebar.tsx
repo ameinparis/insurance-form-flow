@@ -9,6 +9,7 @@ import {
   LogOut,
   Users,
   ClipboardList,
+  BadgeCheck,
   ShieldCheck,
   ChevronDown,
 } from "lucide-react"
@@ -25,6 +26,7 @@ const quotationItems = [
 ]
 
 const menuItems = [
+  { title: "Approvals", url: "/approvals", icon: BadgeCheck, permission: null },
   { title: "Clients", url: "/clients", icon: Users, permission: null },
   { title: "Claims", url: "/claims", icon: ClipboardList, permission: null },
   {
@@ -49,9 +51,13 @@ const idleLink =
 export function AppSidebar() {
   const { pathname } = useLocation()
   const permissions = usePermissions()
-  const visibleMenuItems = menuItems.filter(
-    (item) => !item.permission || permissions[item.permission],
-  )
+  const visibleMenuItems = menuItems
+    .filter((item) => !item.permission || permissions[item.permission])
+    .map((item) =>
+      item.url === "/approvals" && permissions.role === "advisor"
+        ? { ...item, title: "My submissions" }
+        : item,
+    )
   const quotationsActive = quotationItems.some((i) => pathname.startsWith(i.url))
   const [quotationsOpen, setQuotationsOpen] = useState(quotationsActive)
 
