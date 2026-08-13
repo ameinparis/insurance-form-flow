@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, ArrowRightLeft, Check, CheckCircle2, CloudUpload, Pencil, X } from "lucide-react"
+import {
+  ArrowLeft,
+  ArrowRightLeft,
+  Check,
+  CheckCircle2,
+  CloudUpload,
+  Download,
+  FileText,
+  Pencil,
+  RotateCcw,
+  X,
+  XCircle,
+} from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
@@ -10,14 +22,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { AssignApproverDialog } from "@/components/policy/AssignApproverDialog"
-import { useNotifications } from "@/hooks/useNotifications"
+import { useNotifications, relativeTime } from "@/hooks/useNotifications"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/authlibrary"
 import { canApproveConversion, permissionsFor } from "@/lib/permissions"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
+import {
+  usePolicyDrafts,
+  draftStatus,
+  STATUS_LABEL,
+  STATUS_BADGE,
+} from "@/hooks/usePolicyDrafts"
+import { POLICY_DOCUMENTS, parseDoc } from "@/components/policy/DocumentChecklist"
 import { useSocket } from "@/hooks/useSocket"
 import { formatDate } from "@/lib/quoteUtils"
 
@@ -70,6 +88,10 @@ const PolicyDraftPreview = () => {
   const [reassignOpen, setReassignOpen] = useState(false)
   const [rejectOpen, setRejectOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState("")
+  const [rejectError, setRejectError] = useState(false)
+  const [approveOpen, setApproveOpen] = useState(false)
+  const [approveNote, setApproveNote] = useState("")
+  const [previewDoc, setPreviewDoc] = useState<{ label: string; name: string; type?: string; data?: string } | null>(null)
   const { userRole, userId, userName } = useAuth()
   const { emitApprovalResolve, onNotification } = useSocket()
 
@@ -136,8 +158,9 @@ const PolicyDraftPreview = () => {
   const isAssignee = String(draft?.assignedTo || "") === String(userId || "")
   const canApprove =
     canApproveConversion(userRole, userId, draft?.initiatedBy) && isPending && (isSuper || isAssignee)
+  const isOwner = String(draft?.initiatedBy || "") === String(userId || "")
   const canReassign =
-    isPending && (isSuper || String(draft?.initiatedBy || "") === String(userId || ""))
+    (isPending || isRejected) && (isSuper || isOwner)
 
   const continueEditing = () =>
     navigate("/policies/convert", {
@@ -178,7 +201,7 @@ const PolicyDraftPreview = () => {
                       : "border-amber-300 text-amber-600 dark:text-amber-400"
                 }`}
               >
-                {isApproved ? "Approved" : isRejected ? "Rejected" : isPending ? "Pending Approval" : "Draft"}
+                {STATUS_LABEL[draftStatus(draft)]}
               </Badge>
               {saveState !== "idle" && (
                 <span
@@ -204,8 +227,11 @@ const PolicyDraftPreview = () => {
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               {[
-                draft.optionLabel,
+                draft.optionLabel || draft.productType,
                 draft.quoteId,
+                draft.initiatedByName ? `Submitted by ${draft.initiatedByName}` : null,
+                draft.submittedAt ? relativeTime(draft.submittedAt) : null,
+                (draft.attempt || 1) > 1 ? `Attempt ${draft.attempt}` : null,
                 draft.assignedToName ? `Assigned to ${draft.assignedToName}` : null,
                 `Saved ${formatDate(draft.updatedAt)}`,
               ]
@@ -218,6 +244,12 @@ const PolicyDraftPreview = () => {
               <Button variant="outline" onClick={continueEditing} className="rounded-full px-6">
                 Continue Editing
               </Button>
+              {isRejected && isOwner && (
+                <Button onClick={continueEditing} className="rounded-full px-6">
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Resubmit
+                </Button>
+              )}
               {canReassign && (
                 <Button
                   variant="outline"
@@ -238,21 +270,7 @@ const PolicyDraftPreview = () => {
                   </Button>
                   <Button
                     className="rounded-full px-6"
-                    onClick={() => {
-                      approveDraft(draft.id, { id: userId, name: userName })
-                      resolveForDraft(draft.id, "approved")
-                      emitApprovalResolve({
-                        draftId: draft.id,
-                        kind: "approved",
-                        status: "approved",
-                        recipientId: draft.initiatedBy,
-                        recipientName: draft.initiatedByName,
-                        advisorName: userName,
-                        clientName: form.fullName,
-                        policyType: form.productName,
-                      })
-                      toast.success("Policy conversion approved")
-                    }}
+                    onClick={() => setApproveOpen(true)}
                   >
                     Approve Conversion
                   </Button>
@@ -416,9 +434,15 @@ const PolicyDraftPreview = () => {
           <Textarea
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
+            onFocus={() => setRejectError(false)}
             placeholder="Give a reason for rejecting this conversion…"
             className="rounded-xl min-h-[110px]"
           />
+          {rejectError && (
+            <p className="text-xs font-semibold text-red-500 -mt-2">
+              A rejection comment is required so the advisor knows what to fix.
+            </p>
+          )}
           <DialogFooter>
             <Button variant="outline" className="rounded-full" onClick={() => setRejectOpen(false)}>
               Cancel
@@ -427,7 +451,7 @@ const PolicyDraftPreview = () => {
                 className="rounded-full bg-red-500 hover:bg-red-600 text-white"
                 onClick={() => {
                   if (!rejectReason.trim()) {
-                    toast.error("A reason is required to reject")
+                    setRejectError(true)
                     return
                   }
                   rejectDraft(draft.id, { id: userId, name: userName }, rejectReason.trim())
