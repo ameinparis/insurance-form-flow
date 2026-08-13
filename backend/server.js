@@ -45,6 +45,69 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("MongoDB connected"))
   .catch(err => { console.error("MongoDB error", err); process.exit(1); });
 
+const httpServer = require("http").createServer(app)
+const { Server } = require("socket.io")
+const io = new Server(httpServer, {
+  cors: {
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:8080",
+      process.env.FRONTEND_ORIGIN,
+    ].filter(Boolean),
+    credentials: true,
+  },
+})
+
+const connectedUsers = new Map()
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.split(" ")[1]
+  if (!token) return next(new Error("Authentication error"))
+  jwt.verify(token, process.env.JWT_SECRET, (err, payload) => {
+    if (err) return next(new Error("Authentication error"))
+    socket.user = payload
+    next()
+  })
+})
+
+io.on("connection", (socket) => {
+  const userId = socket.user?.userId
+  if (!userId) return
+
+  const set = connectedUsers.get(userId) || new Set()
+  set.add(socket.id)
+  connectedUsers.set(userId, set)
+
+  socket.on("approval:assign", (payload) => {
+    const recipientId = payload?.recipientId
+    if (!recipientId) return
+    const targets = connectedUsers.get(recipientId)
+    if (!targets?.size) return
+    targets.forEach((id) => io.to(id).emit("notification:new", payload))
+  })
+
+  socket.on("approval:resolve", (payload) => {
+    const recipientId = payload?.recipientId
+    if (!recipientId) return
+    const targets = connectedUsers.get(recipientId)
+    if (!targets?.size) return
+    targets.forEach((id) => io.to(id).emit("notification:new", payload))
+  })
+
+  socket.on("disconnect", () => {
+    const set = connectedUsers.get(userId)
+    if (set) {
+      set.delete(socket.id)
+      if (!set.size) connectedUsers.delete(userId)
+    }
+  })
+})
+
+httpServer.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`)
+})
+
 
 
 
@@ -60,8 +123,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ["pending", "active", "suspended"],
     default: "pending"
-  }
+  },
+  pendingExpiresAt: { type: Date, index: true }
 }, { timestamps: true });
+
+userSchema.index({ pendingExpiresAt: 1 }, { expireAfterSeconds: 0 });
+
 const User = mongoose.model("User", userSchema);
 
 //
@@ -290,9 +357,9 @@ const sendPasswordChangedEmail = async (email, firstName) => {
 /** Create user (admin creates from Team screen) */
 app.post("/api/users/register", authenticateToken, async (req, res) => {
   try {
-    // Only superuser can create users
-    if ((req.user?.role || "").toLowerCase() !== "superuser") {
-      return res.status(403).json({ message: "Forbidden: superuser only" });
+    const requesterRole = String(req.user?.role || "").toLowerCase()
+    if (requesterRole !== "superuser" && requesterRole !== "admin") {
+      return res.status(403).json({ message: "Forbidden: admin or superuser only" });
     }
 
     let { email, firstName, lastName, role } = req.body;
@@ -329,7 +396,8 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
       lastName,
       password: hash,
       role,
-      status: "pending"
+      status: "pending",
+      pendingExpiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
     });
 
     // Generate token for password setup
@@ -644,6 +712,12 @@ app.post("/api/users/login", async (req, res) => {
 
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ message: "Invalid password" });
+
+    if (user.status === "pending") {
+      user.status = "active"
+      user.pendingExpiresAt = undefined
+      await user.save()
+    }
 
     const token = jwt.sign({ userId: user._id.toString(), role: user.role }, JWT_SECRET);
 
@@ -1287,13 +1361,110 @@ app.delete("/api/new-quotes/:id", authenticateToken, async (req, res) => {
 
 app.get("/api/users", authenticateToken, async (req, res) => {
   try {
-    const users = await User.find().select("-password");
+    const requesterRole = String(req.user?.role || "").toLowerCase()
+    let query = {}
+    if (requesterRole !== "superuser") {
+      query = { email: { $regex: /@exclusivelife\.co\.bw$/i } }
+    }
+    const users = await User.find(query).select("-password");
     res.json(users);
   } catch (e) {
     console.error("Fetch users error:", e);
     res.status(500).json({ message: "Failed to fetch users" });
   }
 });
+
+/** Update user by id */
+app.put("/api/users/:id", authenticateToken, async (req, res) => {
+  try {
+    const target = await User.findById(req.params.id)
+    if (!target) return res.status(404).json({ message: "User not found" })
+
+    const actor = await User.findById(req.user.userId)
+    if (!actor) return res.status(401).json({ message: "Unauthorized" })
+
+    const actorRole = String(actor.role || "").toLowerCase()
+    const targetRole = String(target.role || "").toLowerCase()
+
+    if (actorRole !== "superuser" && actorRole !== "admin") {
+      return res.status(403).json({ message: "Forbidden: admin or superuser only" })
+    }
+
+    if (actorRole !== "superuser") {
+      if (targetRole === "superuser") {
+        return res.status(403).json({ message: "Forbidden: cannot update super admins" })
+      }
+      if (targetRole === "admin") {
+        return res.status(403).json({ message: "Forbidden: cannot update other admins" })
+      }
+      const nextRole = String(req.body?.role || target.role || "").toLowerCase()
+      if (nextRole === "superuser") {
+        return res.status(403).json({ message: "Forbidden: cannot assign super admin role" })
+      }
+    }
+
+    const allowedFields = ["firstName", "lastName", "email", "role", "isActive"]
+    const updates = {}
+    for (const key of allowedFields) {
+      if (req.body?.[key] !== undefined) {
+        updates[key] = req.body[key]
+      }
+    }
+
+    if (updates.email !== undefined) updates.email = String(updates.email).toLowerCase().trim()
+    if (updates.role !== undefined) {
+      const normalized = String(updates.role).toLowerCase()
+      if (!["user", "admin", "superuser"].includes(normalized)) {
+        return res.status(400).json({ message: "Invalid role" })
+      }
+      updates.role = normalized
+    }
+
+    const updated = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select("-password")
+
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: actor.email,
+      userName: `${actor.firstName} ${actor.lastName}`,
+      action: "USER_UPDATED",
+      details: `User ${updated?.email} updated by ${actor.email}`,
+      metadata: { targetUserId: target._id, targetUserEmail: target.email, updates },
+      req
+    })
+
+    res.json({ message: "Member updated successfully", user: updated })
+  } catch (e) {
+    console.error("Update user error:", e)
+    res.status(500).json({ message: "Failed to update member" })
+  }
+})
+
+/** Delete user by id */
+app.delete("/api/users/:id", authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password")
+    if (!user) return res.status(404).json({ message: "User not found" })
+
+    const actor = await User.findById(req.user.userId).select("-password")
+
+    await user.deleteOne()
+
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: actor?.email,
+      userName: actor ? `${actor.firstName} ${actor.lastName}` : undefined,
+      action: "USER_DELETED",
+      details: `User ${user.email} deleted`,
+      metadata: { deletedUserId: user._id, deletedUserEmail: user.email },
+      req
+    })
+
+    res.json({ message: "Member deleted successfully", id: req.params.id })
+  } catch (e) {
+    console.error("Delete user error:", e)
+    res.status(500).json({ message: "Failed to delete member" })
+  }
+})
 
 
 // Utility function to fetch quote by ID
@@ -1513,4 +1684,4 @@ app.get("/api/audit-logs/summary", authenticateToken, async (req, res) => {
 });
 
 /* ----------------------------- Start server -------------------------- */
-app.listen(PORT, () => console.log(`Server running on Port ${PORT}`));
+// Server is started via httpServer.listen above for Socket.io support

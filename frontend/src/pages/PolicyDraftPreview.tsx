@@ -18,6 +18,7 @@ import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
+import { useSocket } from "@/hooks/useSocket"
 import { formatDate } from "@/lib/quoteUtils"
 
 type Field = { key: string; label: string }
@@ -70,6 +71,15 @@ const PolicyDraftPreview = () => {
   const [rejectOpen, setRejectOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState("")
   const { userRole, userId, userName } = useAuth()
+  const { emitApprovalResolve, onNotification } = useSocket()
+
+  useEffect(() => {
+    const unsubscribe = onNotification((n) => {
+      addNotification(n)
+    })
+    return unsubscribe
+  }, [addNotification, onNotification])
+
   const draft = useMemo(() => drafts.find((d) => d.id === id), [drafts, id])
 
   const [form, setForm] = useState<Record<string, string>>(draft?.form || {})
@@ -231,6 +241,16 @@ const PolicyDraftPreview = () => {
                     onClick={() => {
                       approveDraft(draft.id, { id: userId, name: userName })
                       resolveForDraft(draft.id, "approved")
+                      emitApprovalResolve({
+                        draftId: draft.id,
+                        kind: "approved",
+                        status: "approved",
+                        recipientId: draft.initiatedBy,
+                        recipientName: draft.initiatedByName,
+                        advisorName: userName,
+                        clientName: form.fullName,
+                        policyType: form.productName,
+                      })
                       toast.success("Policy conversion approved")
                     }}
                   >
@@ -372,16 +392,18 @@ const PolicyDraftPreview = () => {
         onConfirm={(approver) => {
           reassignDraft(draft.id, approver, { id: userId, name: userName })
           supersedeForDraft(draft.id)
-          addNotification({
+          const notification = {
             draftId: draft.id,
-            kind: "reassigned",
-            status: "pending",
+            kind: "reassigned" as const,
+            status: "pending" as const,
             recipientId: approver.id,
             recipientName: approver.name,
             advisorName: userName || draft.initiatedByName || "A user",
             clientName: form.fullName,
             policyType: form.productName,
-          })
+          }
+          addNotification(notification)
+          emitApprovalResolve(notification)
           toast.success(`Reassigned to ${approver.name}`)
         }}
       />
@@ -401,22 +423,33 @@ const PolicyDraftPreview = () => {
             <Button variant="outline" className="rounded-full" onClick={() => setRejectOpen(false)}>
               Cancel
             </Button>
-            <Button
-              className="rounded-full bg-red-500 hover:bg-red-600 text-white"
-              onClick={() => {
-                if (!rejectReason.trim()) {
-                  toast.error("A reason is required to reject")
-                  return
-                }
-                rejectDraft(draft.id, { id: userId, name: userName }, rejectReason.trim())
-                resolveForDraft(draft.id, "rejected", rejectReason.trim())
-                setRejectOpen(false)
-                setRejectReason("")
-                toast.success("Policy conversion rejected")
-              }}
-            >
-              Reject
-            </Button>
+              <Button
+                className="rounded-full bg-red-500 hover:bg-red-600 text-white"
+                onClick={() => {
+                  if (!rejectReason.trim()) {
+                    toast.error("A reason is required to reject")
+                    return
+                  }
+                  rejectDraft(draft.id, { id: userId, name: userName }, rejectReason.trim())
+                  resolveForDraft(draft.id, "rejected", rejectReason.trim())
+                  emitApprovalResolve({
+                    draftId: draft.id,
+                    kind: "rejected",
+                    status: "rejected",
+                    recipientId: draft.initiatedBy,
+                    recipientName: draft.initiatedByName,
+                    advisorName: userName,
+                    clientName: form.fullName,
+                    policyType: form.productName,
+                    reason: rejectReason.trim(),
+                  })
+                  setRejectOpen(false)
+                  setRejectReason("")
+                  toast.success("Policy conversion rejected")
+                }}
+              >
+                Reject
+              </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

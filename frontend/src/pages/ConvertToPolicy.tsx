@@ -23,6 +23,7 @@ import { useFeeConfig } from "@/hooks/useFeeConfig"
 import { useFundOptions } from "@/hooks/useInvestmentManagers"
 import { useNotifications } from "@/hooks/useNotifications"
 import { useAuth } from "@/lib/authlibrary"
+import { useSocket } from "@/hooks/useSocket"
 import { AssignApproverDialog } from "@/components/policy/AssignApproverDialog"
 
 const STEPS = [
@@ -154,6 +155,15 @@ const ConvertToPolicy = () => {
   const { saveDraft, submitForApproval } = usePolicyDrafts()
   const { addNotification } = useNotifications()
   const { userId, userName } = useAuth()
+  const { emitApprovalAssign, onNotification } = useSocket()
+
+  useEffect(() => {
+    const unsubscribe = onNotification((n) => {
+      addNotification(n)
+    })
+    return unsubscribe
+  }, [addNotification, onNotification])
+
   const [assignOpen, setAssignOpen] = useState(false)
   const [draftId, setDraftId] = useState<string | undefined>(prefill.draftId)
   const [currentStep, setCurrentStep] = useState<number>(prefill.step ?? 0)
@@ -985,16 +995,18 @@ const ConvertToPolicy = () => {
             })
             setDraftId(saved.id)
             submitForApproval(saved.id, approver)
-            addNotification({
+            const notification = {
               draftId: saved.id,
-              kind: "assignment",
-              status: "pending",
+              kind: "assignment" as const,
+              status: "pending" as const,
               recipientId: approver.id,
               recipientName: approver.name,
               advisorName: userName || saved.initiatedByName || "An advisor",
               clientName: form.fullName,
               policyType: form.productName,
-            })
+            }
+            addNotification(notification)
+            emitApprovalAssign(notification)
             toast.success(`Submitted to ${approver.name} for approval`)
             navigate("/clients")
           }}

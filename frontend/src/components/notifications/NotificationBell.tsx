@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Bell, CheckCircle2, Clock, XCircle, ArrowRightLeft } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
 import { useNotifications, relativeTime, type AppNotification } from "@/hooks/useNotifications"
+import { useSocket } from "@/hooks/useSocket"
 
 const statusIcon = (n: AppNotification) => {
   if (n.status === "approved") return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -27,11 +28,20 @@ const statusIcon = (n: AppNotification) => {
 export function NotificationBell() {
   const navigate = useNavigate()
   const { userId, userName, permissions } = useAuth()
-  const { notifications, markRead, markAllRead, resolveForDraft } = useNotifications()
+  const { notifications, addNotification, markRead, markAllRead, resolveForDraft } = useNotifications()
   const { drafts, approveDraft, rejectDraft } = usePolicyDrafts()
   const [open, setOpen] = useState(false)
   const [rejecting, setRejecting] = useState<AppNotification | null>(null)
   const [reason, setReason] = useState("")
+
+  const { onNotification, emitApprovalResolve } = useSocket()
+
+  useEffect(() => {
+    const unsubscribe = onNotification((n) => {
+      addNotification(n)
+    })
+    return unsubscribe
+  }, [addNotification, onNotification])
 
   const isSuper = permissions.role === "super_admin"
 
@@ -57,6 +67,17 @@ export function NotificationBell() {
     approveDraft(n.draftId, { id: userId, name: userName })
     resolveForDraft(n.draftId, "approved")
     markRead(n.id)
+    const draft = drafts.find((d) => d.id === n.draftId)
+    emitApprovalResolve({
+      draftId: n.draftId,
+      kind: "approved",
+      status: "approved",
+      recipientId: draft?.initiatedBy ?? null,
+      recipientName: draft?.initiatedByName ?? null,
+      advisorName: userName,
+      clientName: n.clientName,
+      policyType: n.policyType,
+    })
     toast.success("Policy conversion approved")
   }
 
@@ -69,6 +90,18 @@ export function NotificationBell() {
     rejectDraft(rejecting.draftId, { id: userId, name: userName }, reason.trim())
     resolveForDraft(rejecting.draftId, "rejected", reason.trim())
     markRead(rejecting.id)
+    const draft = drafts.find((d) => d.id === rejecting.draftId)
+    emitApprovalResolve({
+      draftId: rejecting.draftId,
+      kind: "rejected",
+      status: "rejected",
+      recipientId: draft?.initiatedBy ?? null,
+      recipientName: draft?.initiatedByName ?? null,
+      advisorName: userName,
+      clientName: rejecting.clientName,
+      policyType: rejecting.policyType,
+      reason: reason.trim(),
+    })
     setRejecting(null)
     setReason("")
     toast.success("Policy conversion rejected")

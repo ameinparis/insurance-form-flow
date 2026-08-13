@@ -25,7 +25,7 @@ import { PageLoader } from "@/components/PageLoader"
 import { toast } from "sonner"
 import { DeleteMemberDialog } from "@/components/team/DeleteMemberDialog"
 import { useAuth } from "@/lib/authlibrary"
-import { assignableRoles, normalizeRole, roleLabel, toStoredRole, ROLE_LABELS } from "@/lib/permissions"
+import { assignableRoles, canAssignRole, normalizeRole, roleLabel, toStoredRole, ROLE_LABELS, type AppRole } from "@/lib/permissions"
 
 interface TeamMember {
   id: string
@@ -44,9 +44,26 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
   const { userRole, permissions } = useAuth()
   const canManageUsers = permissions.canManageUsers
   const canManageSuperAdmins = permissions.canManageSuperAdmins
-  const roleOptions = assignableRoles(userRole)
-  const canEditMember = (member: TeamMember) =>
-    canManageUsers && (canManageSuperAdmins || normalizeRole(member.role) !== "super_admin")
+  const canEditMember = (member: TeamMember) => {
+    const canEdit = canManageUsers && (canManageSuperAdmins || normalizeRole(member.role) !== "super_admin")
+    if (!canEdit) return false
+    if (normalizeRole(userRole || "") !== "super_admin" && normalizeRole(member.role) === "admin") return false
+    return true
+  }
+  const allowedRolesFor = (member: TeamMember): AppRole[] => {
+    const actor = normalizeRole(userRole || "")
+    const target = normalizeRole(member.role)
+    if (actor === "super_admin") {
+      return assignableRoles(userRole)
+    }
+    if (!canAssignRole(userRole, member.role)) {
+      return [target]
+    }
+    if (target === "advisor") {
+      return ["advisor", "admin"]
+    }
+    return [target]
+  }
 
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
@@ -457,7 +474,7 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
                   <SelectValue placeholder="Select Role" />
                 </SelectTrigger>
                 <SelectContent>
-                  {roleOptions.map((r) => (
+                  {(userRole ? assignableRoles(userRole) : []).map((r) => (
                     <SelectItem key={r} value={toStoredRole(r)}>
                       {ROLE_LABELS[r]}
                     </SelectItem>
@@ -503,7 +520,7 @@ const Team = ({ embedded = false }: { embedded?: boolean }) => {
                   <SelectValue placeholder="Select Role" />
                 </SelectTrigger>
                 <SelectContent>
-                  {roleOptions.map((r) => (
+                  {(editingUser ? allowedRolesFor(editingUser) : []).map((r) => (
                     <SelectItem key={r} value={toStoredRole(r)}>
                       {ROLE_LABELS[r]}
                     </SelectItem>

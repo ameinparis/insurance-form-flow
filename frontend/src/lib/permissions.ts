@@ -45,11 +45,29 @@ export const permissionsFor = (raw?: string | null): Permissions => {
   }
 }
 
+/**
+ * Returns true if the actor role is allowed to assign `targetRole` to another user.
+ *
+ * Actor	Can change Advisor's role	Can change another Admin's role	Can change Super Admin's role
+ * Super Admin	Yes	Yes	Yes
+ * Admin	Yes	No	No
+ * Advisor	No	No	No
+ */
+export const canAssignRole = (actorRaw?: string | null, targetRoleRaw?: string | null): boolean => {
+  const actor = normalizeRole(actorRaw)
+  const target = normalizeRole(targetRoleRaw)
+
+  if (actor === "super_admin") return true
+  if (actor === "admin") return target === "advisor"
+  return false
+}
+
 /** Roles a given user is allowed to assign to others */
 export const assignableRoles = (raw?: string | null): AppRole[] => {
   const { canManageUsers, canManageSuperAdmins } = permissionsFor(raw)
   if (!canManageUsers) return []
-  return canManageSuperAdmins ? ["super_admin", "admin", "advisor"] : ["admin", "advisor"]
+  if (canManageSuperAdmins) return ["super_admin", "admin", "advisor"]
+  return ["advisor"]
 }
 
 export const canApproveConversion = (
