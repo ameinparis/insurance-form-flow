@@ -52,9 +52,9 @@ const SECTIONS: { title: string; step: number; fields: Field[] }[] = [
     fields: [
       { key: "investmentAmount", label: "Investment Amount Premium" },
       { key: "purchasePremium", label: "Purchase Premium" },
-      { key: "upfrontCommission", label: "Upfront Commission %" },
+      { key: "upfrontCommission", label: "Upfront Commission" },
       { key: "administrationFee", label: "Administration Fee" },
-      { key: "ongoingAdvisoryFee", label: "Ongoing Advisory Fee %" },
+      { key: "ongoingAdvisoryFee", label: "Ongoing Advisory Fee" },
       { key: "switchFee", label: "Switch Fee" },
       { key: "funeralPremium", label: "Funeral Premium" },
     ],

@@ -174,7 +174,7 @@ const ConvertToPolicy = () => {
       prefill.form?.investmentAmount ||
       asString(prefill.investmentAmount ?? prefill.purchasePremium),
     upfrontCommissionEnabled: prefill.form?.upfrontCommissionEnabled || "no",
-    ongoingAdvisoryFee: prefill.form?.ongoingAdvisoryFee || "1",
+    ongoingAdvisoryEnabled: prefill.form?.ongoingAdvisoryEnabled || "no",
     portfolioSkipped: prefill.form?.portfolioSkipped || "no",
     riskProfile: prefill.form?.riskProfile || "",
     portfolioAllocations: prefill.form?.portfolioAllocations || "",
@@ -204,10 +204,10 @@ const ConvertToPolicy = () => {
   const SWITCH_FEE = feeConfig.switchFee
   const FUNERAL_PREMIUM = feeConfig.funeralPremium
   const commissionOn = form.upfrontCommissionEnabled === "yes"
-  // Ongoing Advisory Fee — percentage clamped to 0–1% of the Investment Amount Premium
-  const advisoryPctRaw = Number(String(form.ongoingAdvisoryFee).replace(/[^0-9.]/g, "")) || 0
-  const advisoryPct = Math.min(Math.max(advisoryPctRaw, 0), feeConfig.ongoingAdvisoryMaxPct)
-  const ongoingAdvisoryFeeAmount = investment * (advisoryPct / 100)
+  // Ongoing Advisory Fee — optional, configured percentage of the Investment Amount Premium
+  const advisoryOn = form.ongoingAdvisoryEnabled === "yes"
+  const advisoryPct = feeConfig.ongoingAdvisoryMaxPct
+  const ongoingAdvisoryFeeAmount = advisoryOn ? investment * (advisoryPct / 100) : 0
 
   // Autosave the draft whenever the form or step changes
   useEffect(() => {
@@ -229,6 +229,7 @@ const ConvertToPolicy = () => {
           administrationFee: administrationFee.toFixed(2),
           switchFee: SWITCH_FEE.toFixed(2),
           funeralPremium: FUNERAL_PREMIUM.toFixed(2),
+          ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
           ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
         },
         productType: prefill.productType,
@@ -503,13 +504,13 @@ const ConvertToPolicy = () => {
               <p className="text-xs text-muted-foreground">Purchase premium from the quote.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="purchasePremium">Purchase Premium (2%)</Label>
+              <Label htmlFor="purchasePremium">Purchase Premium</Label>
               <Input id="purchasePremium" readOnly value={fmt(purchasePremium)} className="h-11 rounded-xl bg-muted/50" />
-              <p className="text-xs text-muted-foreground">Mandatory — 2% of the investment amount.</p>
+              <p className="text-xs text-muted-foreground">Mandatory — percentage of the investment amount.</p>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="upfrontCommission">Upfront Commission (1%)</Label>
+                <Label htmlFor="upfrontCommission">Upfront Commission</Label>
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Checkbox
                     checked={commissionOn}
@@ -526,30 +527,32 @@ const ConvertToPolicy = () => {
                 value={commissionOn ? fmt(upfrontCommission) : "Not included"}
                 className="h-11 rounded-xl bg-muted/50"
               />
-              <p className="text-xs text-muted-foreground">Optional — 1% of the investment amount.</p>
+              <p className="text-xs text-muted-foreground">Optional — percentage of the investment amount.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="administrationFee">Administration Fee ({feeConfig.administrationFeePct}%)</Label>
+              <Label htmlFor="administrationFee">Administration Fee</Label>
               <Input id="administrationFee" readOnly value={fmt(administrationFee)} className="h-11 rounded-xl bg-muted/50" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ongoingAdvisoryFee">Ongoing Advisory Fee %</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="ongoingAdvisoryFee">Ongoing Advisory Fee</Label>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Checkbox
+                    checked={advisoryOn}
+                    onCheckedChange={(c) =>
+                      setForm((prev) => ({ ...prev, ongoingAdvisoryEnabled: c ? "yes" : "no" }))
+                    }
+                  />
+                  Include
+                </label>
+              </div>
               <Input
                 id="ongoingAdvisoryFee"
-                inputMode="decimal"
-                value={form.ongoingAdvisoryFee}
-                onChange={(e) => {
-                  const raw = e.target.value
-                  const num = Number(raw.replace(/[^0-9.]/g, "")) || 0
-                  const clamped = Math.min(Math.max(num, 0), 1).toString()
-                  setForm((prev) => ({ ...prev, ongoingAdvisoryFee: raw === "" ? "" : clamped }))
-                }}
-                placeholder="0"
-                className="h-11 rounded-xl"
+                readOnly
+                value={advisoryOn ? fmt(ongoingAdvisoryFeeAmount) : "Not included"}
+                className="h-11 rounded-xl bg-muted/50"
               />
-              <p className="text-xs text-muted-foreground">
-                0–{feeConfig.ongoingAdvisoryMaxPct}% of the investment amount. Calculated: <span className="font-medium text-foreground">{fmt(ongoingAdvisoryFeeAmount)}</span>
-              </p>
+              <p className="text-xs text-muted-foreground">Optional — percentage of the investment amount.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="switchFee">Switch Fee</Label>
@@ -796,15 +799,15 @@ const ConvertToPolicy = () => {
 
             <ReviewSection title="Premium and Policy Fees" onEdit={() => setCurrentStep(2)}>
               <ReviewItem label="Investment Amount Premium" value={investment ? `BWP ${fmt(investment)}` : ""} />
-              <ReviewItem label="Purchase Premium (2%)" value={`BWP ${fmt(purchasePremium)}`} />
+              <ReviewItem label="Purchase Premium" value={`BWP ${fmt(purchasePremium)}`} />
               <ReviewItem
-                label="Upfront Commission (1%)"
+                label="Upfront Commission"
                 value={commissionOn ? `BWP ${fmt(upfrontCommission)}` : "Not applied"}
               />
-              <ReviewItem label={`Administration Fee (${feeConfig.administrationFeePct}%)`} value={`BWP ${fmt(administrationFee)}`} />
+              <ReviewItem label="Administration Fee" value={`BWP ${fmt(administrationFee)}`} />
               <ReviewItem
-                label={`Ongoing Advisory Fee (${advisoryPct}%)`}
-                value={`BWP ${fmt(ongoingAdvisoryFeeAmount)}`}
+                label="Ongoing Advisory Fee"
+                value={advisoryOn ? `BWP ${fmt(ongoingAdvisoryFeeAmount)}` : "Not applied"}
               />
               <ReviewItem label="Switch Fee" value={`BWP ${fmt(SWITCH_FEE)}`} />
               <ReviewItem label="Funeral Premium" value={`BWP ${fmt(FUNERAL_PREMIUM)}`} />
@@ -972,7 +975,8 @@ const ConvertToPolicy = () => {
                 administrationFee: administrationFee.toFixed(2),
                 switchFee: SWITCH_FEE.toFixed(2),
                 funeralPremium: FUNERAL_PREMIUM.toFixed(2),
-                ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
+                ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
+          ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
               },
               productType: prefill.productType,
               optionLabel: prefill.optionLabel,
