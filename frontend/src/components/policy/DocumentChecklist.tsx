@@ -35,6 +35,21 @@ export const POLICY_DOCUMENTS: DocumentDef[] = [
   { key: "bankLetter", label: "Bank confirmation letter", description: "For payout account", icon: Banknote },
 ]
 
+export type StoredDoc = { name: string; type?: string; data?: string }
+
+/** Documents are stored as a JSON string (name + type + data URL) with a
+ *  fallback for legacy records that only kept the file name. */
+export const parseDoc = (value?: string | null): StoredDoc | null => {
+  if (!value) return null
+  try {
+    const parsed = JSON.parse(value)
+    if (parsed && typeof parsed === "object" && parsed.name) return parsed as StoredDoc
+  } catch {
+    /* legacy plain file name */
+  }
+  return { name: String(value) }
+}
+
 export const REQUIRED_DOCUMENTS = POLICY_DOCUMENTS.filter((d) => !d.conditional)
 
 interface Props {
@@ -46,6 +61,19 @@ const ACCEPT = ".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
 
 export function DocumentChecklist({ documents, onChange }: Props) {
   const inputs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  const readFile = (key: string, file: File) => {
+    const MAX_INLINE = 3 * 1024 * 1024 // keep records small enough to sync
+    if (file.size > MAX_INLINE) {
+      onChange(key, JSON.stringify({ name: file.name, type: file.type }))
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () =>
+      onChange(key, JSON.stringify({ name: file.name, type: file.type, data: String(reader.result) }))
+    reader.onerror = () => onChange(key, JSON.stringify({ name: file.name, type: file.type }))
+    reader.readAsDataURL(file)
+  }
 
   const uploadedCount = POLICY_DOCUMENTS.filter((d) => documents[d.key]).length
   const total = POLICY_DOCUMENTS.length
@@ -70,7 +98,7 @@ export function DocumentChecklist({ documents, onChange }: Props) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {POLICY_DOCUMENTS.map((doc) => {
-          const fileName = documents[doc.key]
+          const fileName = parseDoc(documents[doc.key])?.name
           const Icon = doc.icon
           return (
             <div
@@ -112,7 +140,7 @@ export function DocumentChecklist({ documents, onChange }: Props) {
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0]
-                  if (file) onChange(doc.key, file.name)
+                  if (file) readFile(doc.key, file)
                   e.target.value = ""
                 }}
               />

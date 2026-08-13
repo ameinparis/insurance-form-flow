@@ -873,7 +873,7 @@ const ConvertToPolicy = () => {
                           : "text-muted-foreground"
                       }`}
                     >
-                      {documents[d.key] || (d.conditional ? "Not required" : "Missing")}
+                      {parseDoc(documents[d.key])?.name || (d.conditional ? "Not required" : "Missing")}
                     </span>
                   </div>
                 ))}
