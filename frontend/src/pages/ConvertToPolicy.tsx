@@ -168,6 +168,17 @@ const ConvertToPolicy = () => {
   const [draftId, setDraftId] = useState<string | undefined>(prefill.draftId)
   const [currentStep, setCurrentStep] = useState<number>(prefill.step ?? 0)
 
+  // An approved conversion is already a client policy — it can no longer be edited.
+  useEffect(() => {
+    if (!draftId) return
+    const d = drafts.find((x) => x.id === draftId)
+    if (d?.status === "approved") {
+      toast.info("This conversion is approved and can no longer be edited.")
+      navigate(`/policies/drafts/${draftId}`, { replace: true })
+    }
+  }, [draftId, drafts, navigate])
+
+
   const [form, setForm] = useState({
     fullName: toTitleCase(prefill.form?.fullName || prefill.fullName || "") || "",
     idNumber: prefill.form?.idNumber || prefill.idNumber || "",
