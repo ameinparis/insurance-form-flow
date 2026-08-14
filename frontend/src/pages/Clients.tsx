@@ -30,10 +30,26 @@ const Clients = () => {
           productType: d.productType || d.form?.productName || "Policy",
           optionLabel: d.optionLabel,
           quoteId: d.quoteId,
+          draftId: d.id,
           premium: d.premium,
         }),
       )
   }, [drafts, addClient])
+
+  // Clients open the same conversion review view used from Approvals.
+  const openClient = (client: { draftId?: string; quoteId?: string; optionLabel?: string; fullName: string }) => {
+    const match =
+      (client.draftId && drafts.find((d) => d.id === client.draftId)) ||
+      drafts.find(
+        (d) =>
+          draftStatus(d) === "approved" &&
+          (d.form?.fullName || "").toLowerCase() === client.fullName.toLowerCase() &&
+          d.quoteId === client.quoteId &&
+          d.optionLabel === client.optionLabel,
+      )
+    if (match) navigate(`/policies/drafts/${match.id}`)
+    else toast.error("No conversion record found for this client.")
+  }
 
   const filtered = useMemo(() => {
     const q = term.trim().toLowerCase()
