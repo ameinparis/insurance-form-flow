@@ -194,7 +194,7 @@ const Clients = () => {
                 <div key={client.id} className="flex items-center justify-between gap-4 px-6 py-4">
                   <button
                     className="min-w-0 text-left group"
-                    onClick={() => navigate(`/clients/${client.id}`)}
+                    onClick={() => openClient(client)}
                   >
                     <div className="flex items-center gap-3">
                       <p className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:underline">{client.fullName}</p>
