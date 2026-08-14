@@ -128,11 +128,6 @@ const App = () => (
                   <Clients />
                 </Layout>
               } />
-              <Route path="/clients/:id" element={
-                <Layout>
-                  <ClientDetail />
-                </Layout>
-              } />
               <Route path="/approvals" element={
                 <Layout>
                   <Approvals />

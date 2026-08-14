@@ -10,6 +10,7 @@ export interface DirectoryClient {
   productType: string
   optionLabel?: string
   quoteId?: string
+  draftId?: string
   premium?: number
   createdAt: string
 }
@@ -53,11 +54,21 @@ export const useClientDirectory = () => {
     const current = read()
     const duplicate = current.find(
       (c) =>
-        c.fullName.toLowerCase() === client.fullName.toLowerCase() &&
-        c.optionLabel === client.optionLabel &&
-        c.quoteId === client.quoteId
+        (client.draftId && c.draftId === client.draftId) ||
+        (c.fullName.toLowerCase() === client.fullName.toLowerCase() &&
+          c.optionLabel === client.optionLabel &&
+          c.quoteId === client.quoteId)
     )
-    if (duplicate) return { created: false, client: duplicate }
+    if (duplicate) {
+      // Backfill the draft link for clients created before it was tracked.
+      if (client.draftId && !duplicate.draftId) {
+        const updated = { ...duplicate, draftId: client.draftId }
+        write(current.map((c) => (c.id === duplicate.id ? updated : c)))
+        return { created: false, client: updated }
+      }
+      return { created: false, client: duplicate }
+    }
+
 
     const next: DirectoryClient = {
       ...client,
