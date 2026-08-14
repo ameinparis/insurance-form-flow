@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Search, Users, Trash2, FileClock, Eye } from "lucide-react"
 import { toast } from "sonner"
@@ -11,9 +11,29 @@ import { formatCurrency, formatDate } from "@/lib/quoteUtils"
 
 const Clients = () => {
   const [term, setTerm] = useState("")
-  const { clients, removeClient } = useClientDirectory()
+  const { clients, removeClient, addClient } = useClientDirectory()
   const { drafts, removeDraft } = usePolicyDrafts()
   const navigate = useNavigate()
+
+  // Approved conversions are policies, not work in progress: make sure a client
+  // record exists for each one (addClient de-dupes).
+  useEffect(() => {
+    drafts
+      .filter((d) => draftStatus(d) === "approved")
+      .forEach((d) =>
+        addClient({
+          fullName: d.form?.fullName || d.form?.clientName || "Unnamed Client",
+          email: d.form?.email,
+          contactNumber: d.form?.contactNumber,
+          idNumber: d.form?.idNumber,
+          dateOfBirth: d.form?.dateOfBirth,
+          productType: d.productType || d.form?.productName || "Policy",
+          optionLabel: d.optionLabel,
+          quoteId: d.quoteId,
+          premium: d.premium,
+        }),
+      )
+  }, [drafts, addClient])
 
   const filtered = useMemo(() => {
     const q = term.trim().toLowerCase()
@@ -25,11 +45,14 @@ const Clients = () => {
 
   const filteredDrafts = useMemo(() => {
     const q = term.trim().toLowerCase()
-    if (!q) return drafts
-    return drafts.filter((d) =>
+    // Approved conversions become clients — they are no longer "in progress".
+    const open = drafts.filter((d) => draftStatus(d) !== "approved")
+    if (!q) return open
+    return open.filter((d) =>
       `${d.form?.fullName || ""} ${d.form?.email || ""} ${d.quoteId || ""}`.toLowerCase().includes(q)
     )
   }, [drafts, term])
+
 
 
   return (
