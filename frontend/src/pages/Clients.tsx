@@ -204,9 +204,6 @@ const Clients = () => {
                       >
                         {client.productType}
                       </Badge>
-                      <Badge className="rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400 border-0 whitespace-nowrap">
-                        Info Pending
-                      </Badge>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
                       {[client.optionLabel, client.email, client.contactNumber].filter(Boolean).join(" · ")}
