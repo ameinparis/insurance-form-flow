@@ -143,7 +143,7 @@ const QuoteDetail = () => {
   };
 
   return (
-    <div className="-m-6 min-h-screen bg-card">
+    <div className="-mx-6 -mb-6 min-h-screen bg-card">
       {/* Sticky Action Bar */}
       <div className="sticky  z-30 bg-card">
         <div className="max-w-5xl mx-auto flex justify-between items-center px-6 py-12">

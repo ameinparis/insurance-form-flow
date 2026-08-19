@@ -280,7 +280,7 @@ const Team = () => {
   }
 
   return (
-    <div className="-m-6">
+    <div className="-mx-6 -mb-6">
       <div className="sticky top-0 z-30 bg-card px-6 pt-6 pb-4 flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold mb-2">Team</h2>

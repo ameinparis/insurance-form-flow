@@ -184,7 +184,7 @@ const Settings = () => {
   const passwordStrength = getPasswordStrength(passwordData.newPassword)
 
   return (
-    <div className="-m-6">
+    <div className="-mx-6 -mb-6">
       <div className="sticky top-0 z-30 bg-card px-6 pt-6 pb-4">
         <h1 className="text-3xl font-bold">Account & Settings</h1>
       </div>

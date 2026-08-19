@@ -54,7 +54,7 @@ const Calculate = () => {
   ]
 
   return (
-    <div className="-m-6">
+    <div className="-mx-6 -mb-6">
       <div className="sticky top-0 z-30 bg-card px-6 pt-6 pb-4">
         <h2 className="text-3xl font-bold mb-2">Calculate Insurance</h2>
         <p className="text-muted-foreground">Choose an insurance type to get started with your calculation.</p>
