@@ -109,7 +109,7 @@ const Dashboard = () => {
   const displayQuotes = filteredQuotes.slice(0, maxDisplayQuotes)
 
   return (
-    <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900">
+    <div className="relative min-h-full -mx-6 -mb-6 bg-slate-50 dark:bg-slate-900">
       <div className="sticky top-0 z-30 px-6 pt-6 pb-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center justify-between">
           <div>

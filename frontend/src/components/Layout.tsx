@@ -134,7 +134,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex-shrink-0 h-[calc(100vh-140px)]">
             <AppSidebar />
           </div>
-          <main className="flex-1 overflow-auto bg-card rounded-3xl p-6 shadow-sm">{children}</main>
+          <main className="flex-1 overflow-auto bg-card rounded-3xl px-6 pb-6 pt-0 shadow-sm">{children}</main>
         </div>
       </div>
     </SidebarProvider>
