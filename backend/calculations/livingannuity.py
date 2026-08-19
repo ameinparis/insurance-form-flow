@@ -111,11 +111,19 @@ def handle_combined_annuity(wb, data):
 
     print(f"Running Macro: GoalSeek_RAAfterLA")
     print(f"Inputs → Age: {age}, Amount: {amount}, Drawdown: {drawdown}%, Upfront: {upfront_commission}%, Ongoing: {ongoing_commission}%")
+    print("\n--- BEFORE MACRO ---")
+    for cell in ['C3', 'C4', 'C5', 'C6', 'C7', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19', 'C20']:
+            print(f"{cell}: {sheet.range(cell).value}")
 
+    
     wb.macro("GoalSeek_RAAfterLA")()
     wb.app.calculate()
     time.sleep(1)
-
+    
+    print("\n--- AFTER MACRO ---")
+    for cell in ['C9', 'C10', 'C11', 'C12', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19', 'C20']:
+        print(f"{cell}: {sheet.range(cell).value}") 
+     
     result = {
         "guarantee_period": int(sheet.range('C9').value),
         "guaranteed_annuity": round(float(sheet.range('C10').value), 2),
