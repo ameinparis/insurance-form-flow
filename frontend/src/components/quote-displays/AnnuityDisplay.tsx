@@ -343,6 +343,10 @@ const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriod
       </tbody>
     </table>
   </div>
+  <p className="mt-2 text-xs italic text-gray-500 dark:text-gray-400">
+    Life Annuity Guaranteed Period Options are based on zero escalation.
+  </p>
+  </>
 );
 
 // -------------------- Grouping helpers --------------------
