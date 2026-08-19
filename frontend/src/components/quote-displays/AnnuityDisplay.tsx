@@ -122,6 +122,10 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
           <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.email || "N/A"}</span>
         </div>
         <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Funeral Cover:</span>
+          <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(15000)}</span>
+        </div>
+        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
           <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Purchase Premium:</span>
           <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(inputData?.purchaseAmount)}</span>
         </div>
@@ -140,7 +144,7 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
               </span>
             </div>
             <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Funds Remaining:</span>
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Estimated Funds Remaining:</span>
               <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.living?.funds_remaining)}</span>
             </div>
             <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
@@ -245,9 +249,13 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
                 <td className="px-4 py-2">Administration Fee</td>
                 <td className="px-4 py-2">1% p.a</td>
               </tr>
-              <tr>
+              <tr className="border-b border-gray-100 dark:border-gray-800">
                 <td className="px-4 py-2">Assets Management Fee</td>
                 <td className="px-4 py-2">0.75% p.a</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2">Funeral Cover Fee</td>
+                <td className="px-4 py-2">{formatCurrency(20)} p.m</td>
               </tr>
             </tbody>
           </table>
@@ -516,7 +524,7 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
             <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(living?.guaranteed_annuity)}</span>
           </div>
           <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Funds Remaining:</span>
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Estimated Funds Remaining:</span>
             <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(living?.funds_remaining)}</span>
           </div>
         </div>
