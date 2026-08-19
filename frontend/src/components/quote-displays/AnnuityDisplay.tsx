@@ -293,6 +293,7 @@ interface LifePeriodsTableProps {
 }
 
 const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriodsTableProps) => (
+  <>
   <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
     <table className="w-full text-sm border-collapse">
       <thead>
