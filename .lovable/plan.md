@@ -1,55 +1,43 @@
 ## Goal
 
-Restructure the multi-scenario annuity quote output so each Living Annuity calculation is shown as its own block, with a Life Annuity table for the standard 5 / 10 / 15 / 20-year guarantee periods underneath it — matching the client's description and the first/last uploaded sketches.
+Make the exported quote PDF reliably fill exactly two pages — no half-empty first page, no third page.
 
-## Current behaviour
+## Why the gap appears today
 
-- **Single scenario**: already shows Living Annuity details, then a "Life Annuity — Guarantee Period Options" table with 5/10/15/20-year rows. This is the shape the client wants.
-- **Multi-scenario ("Annuity Income Options")**: renders a wide side-by-side table where each column is one scenario and the Life Annuity is one row with a single guarantee period. This is the format to replace.
+`frontend/src/lib/pdfExport.ts` currently forces:
 
-## New layout (multi-scenario mode)
-
-For each saved scenario, render a self-contained vertical block:
-
-```text
-─────────────────────────────────────────────
-Option 1 — 6% Drawdown · 30-Year Guarantee · Monthly
-
-  Living Annuity
-    Drawdown                6%
-    Frequency               Monthly
-    Living Guarantee        30 years
-    Living Annuity/month    BWP 4,000.00
-    Funds Remaining         BWP 5,811,118.20
-
-  Life Annuity — Guarantee Period Options
-    5 years    BWP …
-    10 years   BWP …
-    15 years   BWP …   (selected)
-    20 years   BWP …
-─────────────────────────────────────────────
-Option 2 — …
+```css
+table, .scenario-block { break-inside: avoid !important; page-break-inside: avoid !important; }
 ```
 
-Blocks stack vertically, no horizontal scrolling, natural page flow in the PDF.
+So if a scenario block or a table can't fit in the space left on page 1, the whole element is pushed to page 2 — leaving the rest of page 1 blank. Combined with fixed font sizes, the content either under-fills or overflows unpredictably.
 
-## Changes
+## Approach
 
-### `frontend/src/components/quote-displays/AnnuityDisplay.tsx`
-- Extract the existing single-scenario Life table into an internal `LifePeriodsTable` component so it can be reused per scenario.
-- Replace the chunked wide table in the `hasScenarios` branch with `scenarios.map(...)` rendering one block per scenario:
-  1. Small heading: `Option N — {scenario.label}`.
-  2. Compact 2-column "Living Annuity" summary (Drawdown, Frequency, Living Guarantee Period, Living Annuity per period, Funds Remaining) reusing the current detail-row styling.
-  3. `LifePeriodsTable` for 5/10/15/20 years — marking the scenario's own `outputs.life.guarantee_period` as `(selected)` with bold value.
-- Fetch life periods per scenario via `fetchLifeAnnuityPeriods(scenario.inputs.guaranteedStartAge, scenario.inputs.lifePurchaseAmount ?? scenario.inputs.purchaseAmount, { guarantee_period, monthly_annuity })`, seeded with the scenario's known value so only the missing 3 periods hit the API. Prefer `scenario.outputs.life.periods` when pre-injected.
-- Remove the chunking logic (`SCENARIOS_PER_CHUNK`, `scenario-chunk` wrappers).
+Two levers, both in the PDF export layer only (on-screen view untouched).
 
-### `frontend/src/lib/pdfExport.ts`
-- Drop the now-unused `.scenario-chunk` CSS rules. Keep `thead { display: table-header-group }` and `tr { break-inside: avoid }` so per-scenario tables paginate cleanly without forced breaks.
-- If existing code pre-fetches `outputs.life.periods` for PDF export in the single-scenario case, extend it to populate the same field on each scenario before rendering; otherwise the runtime fetch in `AnnuityDisplay` covers the on-screen view and the PDF renderer will pick up whatever is populated at render time.
+### 1. Smarter pagination rules (`frontend/src/lib/pdfExport.ts`)
+
+- Drop the blanket `break-inside: avoid` on `table` and `.scenario-block`. Keep it only on rows (`tr`) and on the small customer-detail grid, so tables may split across the page boundary instead of jumping wholesale.
+- Add `orphans: 3; widows: 3` so a split never leaves a lone row stranded.
+- Keep `thead { display: table-header-group }` so a split table repeats its header on page 2.
+- Add `.pdf-page-break { break-before: page }` before the Customer Acceptance / Terms block so signature + terms deliberately anchor page 2 rather than floating.
+
+### 2. Auto-fit scaling pass
+
+Wrap the rendered content in a `#pdf-root` div and drive density through CSS variables (base font size + vertical rhythm multiplier). Ask the PDF service for the render, measure the returned page count, and if it is not 2, re-render once or twice with an adjusted scale:
+
+- 3+ pages → step density down (10.5px → 9.75px → 9px, tighter spacing).
+- 1 page → step density up (11.5px → 12.5px) so the content spreads into a full two pages instead of stopping mid-page-one.
+
+Page count is read from the returned PDF blob (count `/Type /Page` occurrences in the byte stream — no extra dependency). Cap at 3 attempts and keep the closest result, so a download never hangs.
+
+## Behaviour at the edges
+
+- Very long quotes (many scenario options) that still exceed two pages at the smallest density: export at the smallest density and let it flow to 3 pages rather than making text unreadable.
+- Very short quotes stretch to fill two pages, but content is never artificially padded — the signature/terms block simply anchors page 2.
 
 ## Out of scope
 
-- No backend/calculation changes — reuses `fetchLifeAnnuityPeriods` and the existing `/api/quotes/calculate-annuity` endpoint.
-- No changes to the input form or scenario-saving flow.
-- Single-scenario view unchanged.
+- No changes to `AnnuityDisplay.tsx` or any on-screen layout.
+- No backend/calculation changes; the existing `/api/quotes/html-to-pdf` endpoint is reused as-is.
