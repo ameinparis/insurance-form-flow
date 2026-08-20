@@ -73,15 +73,56 @@ const PDF_EXTRA_STYLES = `
   table { width: 100% !important; table-layout: fixed; border-collapse: collapse; }
   th, td { word-break: break-word; overflow-wrap: anywhere; white-space: normal !important; }
   tr { break-inside: avoid; page-break-inside: avoid; }
-  /* Keep entire tables and scenario option cards intact — never split across pages */
-  table, .scenario-block { break-inside: avoid !important; page-break-inside: avoid !important; }
-  /* Page 2 always starts with the acceptance/terms block so page 1 never ends in a gap */
-  .pdf-terms { break-before: page; page-break-before: always; }
+  /* Keep tables intact — never split a table across pages */
+  table { break-inside: avoid !important; page-break-inside: avoid !important; }
+  /* Scenario cards may flow across the page boundary; only their tables stay whole */
+  .scenario-block { break-inside: auto !important; page-break-inside: auto !important; }
+  .pdf-terms { break-before: auto; page-break-before: auto; }
   img { max-width: 100%; height: auto; }
   /* Justify Terms & Conditions body */
   .pdf-terms p { text-align: justify; text-justify: inter-word; }
 
 `;
+
+/** A4 printable area at 96dpi with the 12mm/10mm margins used by the PDF service. */
+const PRINT_WIDTH_PX = Math.round(((210 - 20) / 25.4) * 96);
+const PRINT_HEIGHT_PX = Math.round(((297 - 24) / 25.4) * 96);
+
+/**
+ * Render the export HTML off-screen at exact A4 print width, measure how tall it
+ * is, and work out the zoom factor needed to squeeze it into `targetPages`.
+ */
+async function measureFitScale(html: string, targetPages: number): Promise<number> {
+  const iframe = document.createElement("iframe");
+  iframe.style.cssText = `position:fixed;left:-10000px;top:0;width:${PRINT_WIDTH_PX}px;height:${PRINT_HEIGHT_PX}px;border:0;visibility:hidden;`;
+  document.body.appendChild(iframe);
+  try {
+    const doc = iframe.contentDocument;
+    if (!doc) return 1;
+    doc.open();
+    doc.write(html);
+    doc.close();
+    // let layout + webfonts settle
+    await new Promise((r) => setTimeout(r, 350));
+    try {
+      await (doc as any).fonts?.ready;
+    } catch {
+      /* ignore */
+    }
+    const height = Math.max(
+      doc.documentElement?.scrollHeight || 0,
+      doc.body?.scrollHeight || 0
+    );
+    if (!height) return 1;
+    // 0.94 leaves room for the un-splittable tables that get pushed down.
+    const available = PRINT_HEIGHT_PX * targetPages * 0.94;
+    if (height <= available) return 1;
+    return Math.max(0.5, Math.min(1, available / height));
+  } finally {
+    iframe.remove();
+  }
+}
+
 
 /**
  * Collect every stylesheet the running app currently has loaded so the PDF
@@ -236,7 +277,7 @@ export async function exportQuotePdf(
 
   const appStyles = await collectAppStyles();
 
-  const html = `<!DOCTYPE html>
+  const buildHtml = (scaleCss: string) => `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -246,9 +287,18 @@ export async function exportQuotePdf(
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&family=Wix+Madefor+Display:wght@400..800&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
     <style>${appStyles}</style>
     <style>${PDF_EXTRA_STYLES}</style>
+    <style>${scaleCss}</style>
   </head>
-  <body><div class="max-w-5xl mx-auto bg-white">${contentHtml}</div></body>
+  <body><div class="pdf-root max-w-5xl mx-auto bg-white">${contentHtml}</div></body>
 </html>`;
+
+  // 5b. Measure off-screen and shrink the document so it lands on two pages.
+  const fitScale = await measureFitScale(buildHtml(""), 2);
+  const scaleCss =
+    fitScale < 0.999
+      ? `.pdf-root { zoom: ${fitScale.toFixed(3)}; }`
+      : "";
+  const html = buildHtml(scaleCss);
 
   // 6. Send to html-to-pdf endpoint
   const response = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
@@ -256,6 +306,7 @@ export async function exportQuotePdf(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ html, targetPages: 2 }),
   });
+
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
