@@ -1404,27 +1404,75 @@ app.get("/api/quotes/:id/generate-pdf", async (req, res) => {
   }
 });
 
+// Rough page count from a PDF buffer (works for Chrome's uncompressed page tree).
+function countPdfPages(buffer) {
+  const text = buffer.toString("latin1");
+  const matches = text.match(/\/Type\s*\/Page[^s]/g);
+  return matches ? matches.length : 0;
+}
+
 app.post("/api/quotes/html-to-pdf", async (req, res) => {
+  let browser;
   try {
-    const { html } = req.body;
+    const { html, targetPages } = req.body;
     if (!html) return res.status(400).json({ error: "Missing HTML content" });
 
-    const browser = await puppeteer.launch({
+    const target = Number(targetPages) > 0 ? Number(targetPages) : 0;
+
+    browser = await puppeteer.launch({
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     const page = await browser.newPage();
+    // A4 printable area at 96dpi with the margins used below (12mm vertical, 10mm horizontal)
+    const PRINT_WIDTH_PX = Math.round(((210 - 20) / 25.4) * 96);
+    const PRINT_HEIGHT_PX = Math.round(((297 - 24) / 25.4) * 96);
+
+    await page.setViewport({ width: PRINT_WIDTH_PX, height: PRINT_HEIGHT_PX });
+    await page.emulateMediaType("print");
     await page.setContent(html, { waitUntil: "networkidle0" });
     await new Promise(r => setTimeout(r, 800)); // small delay for fonts/images
 
-    const pdfBuffer = await page.pdf({
+    const pdfOptions = {
       format: "A4",
       printBackground: true,
-      margin: { top: "20mm", bottom: "20mm", left: "10mm", right: "10mm" },
-    });
+      margin: { top: "12mm", bottom: "12mm", left: "10mm", right: "10mm" },
+    };
+
+    let pdfBuffer;
+
+    if (target > 0) {
+      // 1) Analytic first guess: shrink so the measured content height fits the target pages.
+      const contentHeight = await page.evaluate(
+        () => document.documentElement.scrollHeight
+      );
+      const available = PRINT_HEIGHT_PX * target * 0.97; // safety margin for un-splittable blocks
+      let scale = contentHeight > available ? available / contentHeight : 1;
+      scale = Math.min(1, Math.max(0.6, scale));
+
+      pdfBuffer = await page.pdf({ ...pdfOptions, scale });
+
+      // 2) Verify and step down if the un-splittable tables still push a third page.
+      for (let i = 0; i < 5; i++) {
+        const pages = countPdfPages(pdfBuffer);
+        if (!pages || pages <= target || scale <= 0.6) break;
+        scale = Math.max(0.6, scale - 0.05);
+        pdfBuffer = await page.pdf({ ...pdfOptions, scale });
+      }
+
+      const finalPages = countPdfPages(pdfBuffer);
+      if (finalPages > target) {
+        console.warn(
+          `⚠️ html-to-pdf: could not fit into ${target} pages (got ${finalPages} at scale ${scale.toFixed(2)})`
+        );
+      }
+    } else {
+      pdfBuffer = await page.pdf(pdfOptions);
+    }
 
     await browser.close();
+    browser = null;
 
     res.set({
       "Content-Type": "application/pdf",
@@ -1434,9 +1482,11 @@ app.post("/api/quotes/html-to-pdf", async (req, res) => {
     res.end(pdfBuffer);
   } catch (err) {
     console.error("❌ html-to-pdf failed:", err);
+    if (browser) await browser.close().catch(() => {});
     res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
+
 
 
 

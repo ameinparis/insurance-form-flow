@@ -67,8 +67,6 @@ const PDF_EXTRA_STYLES = `
   .dark\\:text-white { color: inherit !important; }
   .dark\\:border-gray-700, .dark\\:border-gray-800, .dark\\:border-gray-600,
   .dark\\:ring-slate-800 { border-color: inherit !important; }
-  /* Keep client/customer info block together on page 1 */
-  .grid { break-inside: avoid; page-break-inside: avoid; }
   thead { display: table-header-group; }
   /* Prevent horizontal clipping */
   .overflow-x-auto, .overflow-auto, .overflow-hidden { overflow: visible !important; }
@@ -77,9 +75,12 @@ const PDF_EXTRA_STYLES = `
   tr { break-inside: avoid; page-break-inside: avoid; }
   /* Keep entire tables and scenario option cards intact — never split across pages */
   table, .scenario-block { break-inside: avoid !important; page-break-inside: avoid !important; }
+  /* Page 2 always starts with the acceptance/terms block so page 1 never ends in a gap */
+  .pdf-terms { break-before: page; page-break-before: always; }
   img { max-width: 100%; height: auto; }
   /* Justify Terms & Conditions body */
   .pdf-terms p { text-align: justify; text-justify: inter-word; }
+
 `;
 
 /**
@@ -253,7 +254,7 @@ export async function exportQuotePdf(
   const response = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ html }),
+    body: JSON.stringify({ html, targetPages: 2 }),
   });
 
   if (!response.ok) {
