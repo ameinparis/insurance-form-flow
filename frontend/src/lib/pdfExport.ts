@@ -277,7 +277,7 @@ export async function exportQuotePdf(
 
   const appStyles = await collectAppStyles();
 
-  const html = `<!DOCTYPE html>
+  const buildHtml = (scaleCss: string) => `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -287,9 +287,18 @@ export async function exportQuotePdf(
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&family=Wix+Madefor+Display:wght@400..800&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
     <style>${appStyles}</style>
     <style>${PDF_EXTRA_STYLES}</style>
+    <style>${scaleCss}</style>
   </head>
-  <body><div class="max-w-5xl mx-auto bg-white">${contentHtml}</div></body>
+  <body><div class="pdf-root max-w-5xl mx-auto bg-white">${contentHtml}</div></body>
 </html>`;
+
+  // 5b. Measure off-screen and shrink the document so it lands on two pages.
+  const fitScale = await measureFitScale(buildHtml(""), 2);
+  const scaleCss =
+    fitScale < 0.999
+      ? `.pdf-root { zoom: ${fitScale.toFixed(3)}; }`
+      : "";
+  const html = buildHtml(scaleCss);
 
   // 6. Send to html-to-pdf endpoint
   const response = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
@@ -297,6 +306,7 @@ export async function exportQuotePdf(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ html, targetPages: 2 }),
   });
+
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
