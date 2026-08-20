@@ -254,7 +254,7 @@ export async function exportQuotePdf(
   const response = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ html }),
+    body: JSON.stringify({ html, targetPages: 2 }),
   });
 
   if (!response.ok) {
