@@ -9,7 +9,7 @@ import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLif
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 
 const PDF_EXTRA_STYLES = `
-  /* A4 with tight margins to help fit into ~2 pages */
+  /* A4 with tight margins */
   @page { size: A4; margin: 12mm 12mm; }
   /* Force light-mode rendering for PDF and match on-screen paper look */
   html, body {
@@ -24,7 +24,7 @@ const PDF_EXTRA_STYLES = `
     font-family: 'Urbanist', 'Open Sans', system-ui, -apple-system, Arial, sans-serif;
     font-weight: 300;
     font-size: 10.5px;
-    line-height: 1.35;
+    line-height: 1.4;
   }
   /* Compact the rendered quote: shrink every text utility a notch */
   .text-xs { font-size: 9px !important; }
@@ -34,18 +34,19 @@ const PDF_EXTRA_STYLES = `
   .text-xl { font-size: 14px !important; }
   .text-2xl { font-size: 16px !important; }
   /* Tighten vertical rhythm */
-  .space-y-8 > * + * { margin-top: 0.9rem !important; }
-  .space-y-6 > * + * { margin-top: 0.7rem !important; }
-  .space-y-4 > * + * { margin-top: 0.5rem !important; }
-  .p-8 { padding: 0.9rem !important; }
-  .p-6 { padding: 0.75rem !important; }
-  .py-2 { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
-  .py-3 { padding-top: 0.3rem !important; padding-bottom: 0.3rem !important; }
-  .mt-12 { margin-top: 0.9rem !important; }
-  .mt-8 { margin-top: 0.7rem !important; }
-  .mb-12 { margin-bottom: 0.7rem !important; }
-  .mb-8 { margin-bottom: 0.6rem !important; }
-  .pt-8 { padding-top: 0.6rem !important; }
+  .space-y-8 > * + * { margin-top: 1rem !important; }
+  .space-y-6 > * + * { margin-top: 0.8rem !important; }
+  .space-y-4 > * + * { margin-top: 0.55rem !important; }
+  .p-8 { padding: 1rem !important; }
+  .p-6 { padding: 0.8rem !important; }
+  .p-5 { padding: 0.75rem !important; }
+  .py-2 { padding-top: 0.22rem !important; padding-bottom: 0.22rem !important; }
+  .py-3 { padding-top: 0.32rem !important; padding-bottom: 0.32rem !important; }
+  .mt-12 { margin-top: 1rem !important; }
+  .mt-8 { margin-top: 0.8rem !important; }
+  .mb-12 { margin-bottom: 0.8rem !important; }
+  .mb-8 { margin-bottom: 0.65rem !important; }
+  .pt-8 { padding-top: 0.7rem !important; }
   .pb-3 { padding-bottom: 0.3rem !important; }
   .gap-y-4 { row-gap: 0.25rem !important; }
   .gap-x-12 { column-gap: 1.25rem !important; }
@@ -58,7 +59,7 @@ const PDF_EXTRA_STYLES = `
   }
   table, th, td { border-color: #4b5563 !important; }
   hr { border-color: #4b5563 !important; }
-  /* Header logo shouldn't dominate a compact 2-page layout */
+  /* Header logo shouldn't dominate a compact layout */
   header img, .h-20 { height: 3rem !important; }
   /* Neutralize dark-mode variants that ship in the rendered markup */
   .dark\\:bg-slate-900, .dark\\:bg-slate-800, .dark\\:bg-slate-800\\/40,
@@ -75,54 +76,103 @@ const PDF_EXTRA_STYLES = `
   tr { break-inside: avoid; page-break-inside: avoid; }
   /* Keep tables intact — never split a table across pages */
   table { break-inside: avoid !important; page-break-inside: avoid !important; }
-  /* Scenario cards may flow across the page boundary; only their tables stay whole */
-  .scenario-block { break-inside: auto !important; page-break-inside: auto !important; }
-  .pdf-terms { break-before: auto; page-break-before: auto; }
+
+  /* ---- Unbreakable units ----
+     Chromium ignores break-inside on flex containers, so force block display
+     on every wrapper we need to keep whole. */
+  .scenario-block,
+  .pdf-fees-signature {
+    display: block !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  .scenario-block > *,
+  .pdf-fees-signature > * {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Inner rows may still use flex/grid — that's fine, they're small. */
+
+  /* Terms & Conditions: lowest priority, flows wherever there is room */
+  .pdf-terms {
+    break-before: auto; page-break-before: auto;
+    break-inside: auto; page-break-inside: auto;
+  }
   img { max-width: 100%; height: auto; }
-  /* Justify Terms & Conditions body */
   .pdf-terms p { text-align: justify; text-justify: inter-word; }
+
+  /* ---- Compact mode (4+ annuity options) ---- */
+  .pdf-compact { font-size: 9.6px; line-height: 1.28; }
+  .pdf-compact .text-xs { font-size: 8.2px !important; }
+  .pdf-compact .text-sm { font-size: 9.2px !important; }
+  .pdf-compact .text-base { font-size: 10px !important; }
+  .pdf-compact .text-lg { font-size: 11.2px !important; }
+  .pdf-compact .p-8 { padding: 0.7rem !important; }
+  .pdf-compact .p-5 { padding: 0.5rem !important; }
+  .pdf-compact .space-y-8 > * + * { margin-top: 0.55rem !important; }
+  .pdf-compact .space-y-6 > * + * { margin-top: 0.45rem !important; }
+  .pdf-compact .space-y-4 > * + * { margin-top: 0.35rem !important; }
+  .pdf-compact .py-2 { padding-top: 0.12rem !important; padding-bottom: 0.12rem !important; }
+  .pdf-compact .mb-5 { margin-bottom: 0.4rem !important; }
+  .pdf-compact .mb-4 { margin-bottom: 0.3rem !important; }
+  .pdf-compact .mt-12 { margin-top: 0.6rem !important; }
+  .pdf-compact .pt-8 { padding-top: 0.45rem !important; }
+  .pdf-compact th, .pdf-compact td { padding-top: 0.15rem !important; padding-bottom: 0.15rem !important; }
+
+  /* ---- Slim running header repeated on every page ----
+     Uses a table-header-group so Chromium repeats it AND reserves its space
+     on every printed page (a position:fixed header would overlap content). */
+  .pdf-page-table { width: 100%; border-collapse: collapse; break-inside: auto !important; }
+  .pdf-page-table > thead { display: table-header-group; }
+  .pdf-page-table > thead th { padding: 0; font-weight: 400; }
+  .pdf-page-table > tbody > tr > td { padding: 0; vertical-align: top; }
+  .pdf-running-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+    height: 20px;
+    font-size: 8.5px;
+    color: #4b5563;
+    border-bottom: 1px solid #9ca3af;
+    margin-bottom: 6px;
+    background: #ffffff;
+  }
+  .pdf-page-label {
+    position: absolute;
+    right: 0;
+    font-size: 8.5px;
+    color: #4b5563;
+    line-height: 20px;
+    height: 20px;
+    background: #ffffff;
+    z-index: 60;
+  }
 
 `;
 
-/** A4 printable area at 96dpi with the 12mm/10mm margins used by the PDF service. */
-const PRINT_WIDTH_PX = Math.round(((210 - 20) / 25.4) * 96);
+
+/** A4 printable area height at 96dpi with the 12mm print margins. */
 const PRINT_HEIGHT_PX = Math.round(((297 - 24) / 25.4) * 96);
 
-/**
- * Render the export HTML off-screen at exact A4 print width, measure how tall it
- * is, and work out the zoom factor needed to squeeze it into `targetPages`.
- */
-async function measureFitScale(html: string, targetPages: number): Promise<number> {
-  const iframe = document.createElement("iframe");
-  iframe.style.cssText = `position:fixed;left:-10000px;top:0;width:${PRINT_WIDTH_PX}px;height:${PRINT_HEIGHT_PX}px;border:0;visibility:hidden;`;
-  document.body.appendChild(iframe);
+/** Count pages in a generated PDF by scanning its object dictionary. */
+async function countPdfPages(blob: Blob): Promise<number> {
   try {
-    const doc = iframe.contentDocument;
-    if (!doc) return 1;
-    doc.open();
-    doc.write(html);
-    doc.close();
-    // let layout + webfonts settle
-    await new Promise((r) => setTimeout(r, 350));
-    try {
-      await (doc as any).fonts?.ready;
-    } catch {
-      /* ignore */
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let text = "";
+    for (let i = 0; i < bytes.length; i++) text += String.fromCharCode(bytes[i]);
+    const counts = text.match(/\/Count\s+(\d+)/g);
+    if (counts && counts.length) {
+      const nums = counts.map((c) => parseInt(c.replace(/\D/g, ""), 10));
+      const max = Math.max(...nums);
+      if (max > 0) return max;
     }
-    const height = Math.max(
-      doc.documentElement?.scrollHeight || 0,
-      doc.body?.scrollHeight || 0
-    );
-    if (!height) return 1;
-    // 0.94 leaves room for the un-splittable tables that get pushed down.
-    const available = PRINT_HEIGHT_PX * targetPages * 0.94;
-    if (height <= available) return 1;
-    return Math.max(0.5, Math.min(1, available / height));
-  } finally {
-    iframe.remove();
+    const pages = text.match(/\/Type\s*\/Page[^s]/g);
+    return pages ? pages.length : 1;
+  } catch {
+    return 1;
   }
 }
-
 
 /**
  * Collect every stylesheet the running app currently has loaded so the PDF
@@ -277,7 +327,13 @@ export async function exportQuotePdf(
 
   const appStyles = await collectAppStyles();
 
-  const buildHtml = (scaleCss: string) => `<!DOCTYPE html>
+  const appStylesTag = `<style>${appStyles}</style>`;
+
+  // 5b. 4+ annuity option cards → compact typography/spacing.
+  const optionCount = (contentHtml.match(/class="[^"]*scenario-block/g) || []).length;
+  const compactClass = optionCount >= 4 ? " pdf-compact" : "";
+
+  const buildHtml = (bodyInner: string) => `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -285,37 +341,62 @@ export async function exportQuotePdf(
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&family=Wix+Madefor+Display:wght@400..800&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
-    <style>${appStyles}</style>
+    ${appStylesTag}
     <style>${PDF_EXTRA_STYLES}</style>
-    <style>${scaleCss}</style>
   </head>
-  <body><div class="pdf-root max-w-5xl mx-auto bg-white">${contentHtml}</div></body>
+  <body style="position: relative;">${bodyInner}</body>
 </html>`;
 
-  // 5b. Measure off-screen and shrink the document so it lands on two pages.
-  const fitScale = await measureFitScale(buildHtml(""), 2);
-  const scaleCss =
-    fitScale < 0.999
-      ? `.pdf-root { zoom: ${fitScale.toFixed(3)}; }`
-      : "";
-  const html = buildHtml(scaleCss);
+  const rootHtml = `<div class="pdf-root${compactClass} max-w-5xl mx-auto bg-white">${contentHtml}</div>`;
 
-  // 6. Send to html-to-pdf endpoint
-  const response = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ html, targetPages: 2 }),
-  });
+  // 5c. Simulate pagination (without the running header) for a first guess.
+  const HEADER_H = 26; // running header band + its bottom margin
+  const SAFETY = 16; // Chromium rounds the printable box down a little
+  const usable = PRINT_HEIGHT_PX - HEADER_H - SAFETY;
+  const company = "Exclusive Life Insurance";
+  const header = `<div class="pdf-running-header"><span>${company}</span><span>Quote #${quote.quoteId ?? ""}</span></div>`;
 
+  const withHeader = (pages: number) => {
+    const labels = Array.from({ length: pages }, (_, i) => {
+      const top = HEADER_H + i * usable + 2;
+      return `<div class="pdf-page-label" style="top:${top}px;">Page ${i + 1} of ${pages}</div>`;
+    }).join("");
+    return buildHtml(
+      `<table class="pdf-page-table"><thead><tr><th>${header}</th></tr></thead><tbody><tr><td>${labels}${rootHtml}</td></tr></tbody></table>`
+    );
+  };
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(`PDF generation failed: ${response.status} ${text}`);
+  const requestPdf = async (docHtml: string): Promise<Blob> => {
+    const res = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html: docHtml }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`PDF generation failed: ${res.status} ${text}`);
+    }
+    return res.blob();
+  };
+
+  // 6. Generate. Single-page quotes stay plain; multi-page ones get the slim
+  // running header with an accurate "Page X of Y", verified against the
+  // produced PDF (at most 3 round-trips, normally 1–2).
+  let blob = await requestPdf(buildHtml(rootHtml));
+  let actualPages = await countPdfPages(blob);
+  if (actualPages > 1) {
+    let guess = actualPages;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      blob = await requestPdf(withHeader(guess));
+      const produced = await countPdfPages(blob);
+      if (produced === guess || produced < 1) break;
+      guess = produced;
+    }
   }
 
   // 7. Download the blob
-  const blob = await response.blob();
   const url = URL.createObjectURL(blob);
+
   const a = document.createElement("a");
   a.href = url;
   a.download = `quote-${quoteId}.pdf`;
