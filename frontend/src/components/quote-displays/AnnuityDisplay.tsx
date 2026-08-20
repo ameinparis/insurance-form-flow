@@ -203,6 +203,8 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
         </div>
       )}
 
+      {/* Fees + Signature — kept together as one unbreakable block in the PDF */}
+      <div className="pdf-fees-signature space-y-8">
       {/* Fees Section */}
       <div>
         <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
@@ -288,6 +290,8 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
           <div className="border-b-2 border-gray-400 dark:border-gray-600 h-16" />
         </div> */}
       </div>
+      </div>
+
     </div>
   );
 };
