@@ -311,7 +311,15 @@ const ConvertToPolicy = () => {
         const max = Math.max(0, Math.round((100 - othersTotal) * 100) / 100)
         v = String(Math.min(parseAlloc(value), max))
       }
+      const isNewRow = !next[index]
       next[index] = { ...(next[index] || {}), [field]: v }
+      if (isNewRow && field !== "allocation") {
+        const others = next.reduce(
+          (sum: number, b: Record<string, string>, i: number) => (i === index ? sum : sum + parseAlloc(b?.allocation)),
+          0,
+        )
+        next[index].allocation = String(Math.max(0, Math.round((100 - others) * 100) / 100))
+      }
       return { ...prev, beneficiaries: JSON.stringify(next) }
     })
   const addBeneficiary = () =>
