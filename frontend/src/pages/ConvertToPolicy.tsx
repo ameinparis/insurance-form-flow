@@ -297,18 +297,37 @@ const ConvertToPolicy = () => {
       return []
     }
   })()
+  const parseAlloc = (v: unknown) => Number(String(v ?? "").replace(/[^0-9.]/g, "")) || 0
   const setBeneficiary = (index: number, field: string, value: string) =>
     setForm((prev) => {
       const list = (() => { try { return prev.beneficiaries ? JSON.parse(prev.beneficiaries) : [] } catch { return [] } })()
       const next = list.slice()
-      next[index] = { ...(next[index] || {}), [field]: value }
+      let v = value
+      if (field === "allocation" && value !== "") {
+        const othersTotal = next.reduce(
+          (sum: number, b: Record<string, string>, i: number) => (i === index ? sum : sum + parseAlloc(b?.allocation)),
+          0,
+        )
+        const max = Math.max(0, Math.round((100 - othersTotal) * 100) / 100)
+        v = String(Math.min(parseAlloc(value), max))
+      }
+      next[index] = { ...(next[index] || {}), [field]: v }
       return { ...prev, beneficiaries: JSON.stringify(next) }
     })
   const addBeneficiary = () =>
-    setForm((prev) => ({
-      ...prev,
-      beneficiaries: JSON.stringify([...beneficiaries, { name: "", relationship: "", benefitOption: "", allocation: "0" }]),
-    }))
+    setForm((prev) => {
+      const list = (() => { try { return prev.beneficiaries ? JSON.parse(prev.beneficiaries) : [] } catch { return [] } })()
+      const used = list.reduce((sum: number, b: Record<string, string>) => sum + parseAlloc(b?.allocation), 0)
+      const remaining = Math.max(0, Math.round((100 - used) * 100) / 100)
+      return {
+        ...prev,
+        beneficiaries: JSON.stringify([
+          ...list,
+          { name: "", relationship: "", benefitOption: "", allocation: String(remaining) },
+        ]),
+      }
+    })
+
   const removeBeneficiary = (index: number) =>
     setForm((prev) => {
       const next = beneficiaries.filter((_, i) => i !== index)
