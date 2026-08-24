@@ -15,9 +15,10 @@ import {
 import { DatePicker } from "@/components/ui/date-picker"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
+import { Progress } from "@/components/ui/progress"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
-import { DocumentChecklist, POLICY_DOCUMENTS, REQUIRED_DOCUMENTS, parseDoc } from "@/components/policy/DocumentChecklist"
+import { DocumentChecklist, POLICY_DOCUMENTS, parseDoc } from "@/components/policy/DocumentChecklist"
 
 import { useFeeConfig } from "@/hooks/useFeeConfig"
 import { useFundOptions } from "@/hooks/useInvestmentManagers"
@@ -320,6 +321,8 @@ const ConvertToPolicy = () => {
     0
   )
   const beneficiaryTotalValid = Math.round(beneficiaryTotal * 100) / 100 === 100
+  const remainingAllocation = Math.max(0, Math.round((100 - beneficiaryTotal) * 100) / 100)
+  const beneficiaryTotalExceeds100 = beneficiaryTotal > 100
 
   const documents: Record<string, string> = (() => {
     try {
@@ -342,7 +345,7 @@ const ConvertToPolicy = () => {
       return { ...prev, documents: JSON.stringify(next) }
     })
   }
-  const documentsValid = REQUIRED_DOCUMENTS.every((d) => Boolean(documents[d.key]))
+  const documentsValid = true
 
 
   const stepSubtitle =
@@ -586,21 +589,38 @@ const ConvertToPolicy = () => {
           </div>
         ) : currentStep === 3 ? (
           <div className="space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold">Beneficiaries</p>
-                <p className="text-xs text-muted-foreground">Add beneficiaries and set their allocation</p>
+            <div className="space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold">Beneficiaries</p>
+                  <p className="text-xs text-muted-foreground">Add beneficiaries and set their allocation</p>
+                </div>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    beneficiaryTotalValid
+                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                      : beneficiaryTotalExceeds100
+                        ? "bg-red-500/15 text-red-600 dark:text-red-400"
+                        : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                  }`}
+                >
+                  {beneficiaryTotalValid
+                    ? "Allocation complete"
+                    : `Total: ${Math.round(beneficiaryTotal * 100) / 100}%`}
+                </span>
               </div>
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  beneficiaryTotalValid
-                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                    : "bg-red-500/15 text-red-600 dark:text-red-400"
-                }`}
-              >
-                Total: {Math.round(beneficiaryTotal * 100) / 100}%
-              </span>
-            </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Allocation progress</span>
+                  <span className="font-medium">
+                    {beneficiaryTotalValid
+                      ? "100% allocated"
+                      : `Remaining: ${remainingAllocation}%`}
+                  </span>
+                </div>
+                <Progress value={Math.min(100, beneficiaryTotal)} className="h-2" />
+              </div>
 
             <div className="space-y-3">
               {beneficiaryRows.map((b: Record<string, string>, idx: number) => {
@@ -714,21 +734,22 @@ const ConvertToPolicy = () => {
               Add beneficiary
             </Button>
 
-            {!beneficiaryTotalValid && (
+            {beneficiaryTotalExceeds100 && (
+              <p className="text-xs text-red-500">
+                Total allocation cannot exceed 100% (currently {Math.round(beneficiaryTotal * 100) / 100}%).
+              </p>
+            )}
+            {!beneficiaryTotalExceeds100 && !beneficiaryTotalValid && (
               <p className="text-xs text-red-500">
                 Total allocation must equal exactly 100% before you can continue (currently {Math.round(beneficiaryTotal * 100) / 100}%).
               </p>
             )}
           </div>
+          </div>
 
         ) : currentStep === 4 ? (
           <div className="space-y-4">
             <DocumentChecklist documents={documents} onChange={setDocument} />
-            {!documentsValid && (
-              <p className="text-xs text-red-500">
-                Upload all required documents (marked *) before you can continue.
-              </p>
-            )}
           </div>
         ) : currentStep === 5 ? (
           <div className="space-y-6">
@@ -868,7 +889,7 @@ const ConvertToPolicy = () => {
               title="Documents"
               onEdit={() => setCurrentStep(4)}
               badge={`${POLICY_DOCUMENTS.filter((d) => documents[d.key]).length} of ${POLICY_DOCUMENTS.length} uploaded`}
-              badgeTone={documentsValid ? "success" : "warning"}
+              badgeTone="success"
             >
               <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-2">
                 {POLICY_DOCUMENTS.map((d) => (
@@ -884,7 +905,7 @@ const ConvertToPolicy = () => {
                           : "text-muted-foreground"
                       }`}
                     >
-                      {parseDoc(documents[d.key])?.name || (d.conditional ? "Not required" : "Missing")}
+                      {parseDoc(documents[d.key])?.name || "Optional"}
                     </span>
                   </div>
                 ))}
@@ -971,7 +992,7 @@ const ConvertToPolicy = () => {
               </Button>
             ) : (
               <Button
-                disabled={(currentStep === 3 && !beneficiaryTotalValid) || (currentStep === 4 && !documentsValid)}
+                disabled={currentStep === 3 && !beneficiaryTotalValid}
                 onClick={() => setCurrentStep((s) => Math.min(s + 1, LAST_STEP))}
                 className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white"
               >

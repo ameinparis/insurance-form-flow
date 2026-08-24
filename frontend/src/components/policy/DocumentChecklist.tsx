@@ -23,10 +23,10 @@ export type DocumentDef = {
 export const POLICY_DOCUMENTS: DocumentDef[] = [
   { key: "identity", label: "Identity document", description: "Omang or passport", icon: BadgeCheck },
   { key: "address", label: "Proof of address", description: "Not older than 3 months", icon: MapPin },
-  { key: "tax", label: "Tax documentation", description: "Clearance or TIN", icon: FileText },
+  { key: "tax", label: "Application Form", description: "Clearance or TIN", icon: FileText },
   {
     key: "employment",
-    label: "Employment verification",
+    label: "Certificate of Existence",
     description: "Salaried applicants only",
     conditional: true,
     icon: Briefcase,
@@ -119,12 +119,10 @@ export function DocumentChecklist({ documents, onChange }: Props) {
                 >
                   {fileName ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-4 w-4" />}
                 </div>
-                {doc.conditional ? (
+                {doc.conditional && (
                   <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                     Conditional
                   </span>
-                ) : (
-                  <span className="text-sm leading-none text-red-500">*</span>
                 )}
               </div>
 
