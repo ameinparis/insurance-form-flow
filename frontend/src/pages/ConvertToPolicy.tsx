@@ -15,7 +15,6 @@ import {
 import { DatePicker } from "@/components/ui/date-picker"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { Progress } from "@/components/ui/progress"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
 import { DocumentChecklist, POLICY_DOCUMENTS, parseDoc } from "@/components/policy/DocumentChecklist"
@@ -635,18 +634,6 @@ const ConvertToPolicy = () => {
                     ? "Allocation complete"
                     : `Total: ${Math.round(beneficiaryTotal * 100) / 100}%`}
                 </span>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Allocation progress</span>
-                  <span className="font-medium">
-                    {beneficiaryTotalValid
-                      ? "100% allocated"
-                      : `Remaining: ${remainingAllocation}%`}
-                  </span>
-                </div>
-                <Progress value={Math.min(100, beneficiaryTotal)} className="h-2" />
               </div>
 
             <div className="space-y-3">
