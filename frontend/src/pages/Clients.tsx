@@ -1,18 +1,19 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Search, Users, Trash2, FileClock, Eye } from "lucide-react"
+import { Search, Users, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useClientDirectory } from "@/hooks/useClientDirectory"
-import { usePolicyDrafts, draftStatus, STATUS_LABEL, STATUS_BADGE } from "@/hooks/usePolicyDrafts"
+import { usePolicyDrafts, draftStatus } from "@/hooks/usePolicyDrafts"
 import { formatCurrency, formatDate } from "@/lib/quoteUtils"
 
 const Clients = () => {
   const [term, setTerm] = useState("")
   const { clients, removeClient, addClient } = useClientDirectory()
-  const { drafts, removeDraft } = usePolicyDrafts()
+  const { drafts } = usePolicyDrafts()
+
   const navigate = useNavigate()
 
   // Approved conversions are policies, not work in progress: make sure a client
