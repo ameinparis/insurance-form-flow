@@ -325,6 +325,21 @@ const Conversions = () => {
                                 Continue Editing
                               </Button>
                             )}
+                            {(s === "rejected" || s === "REJECTED") &&
+                              String(d.initiatedBy || "") === String(userId || "") && (
+                                <Button
+                                  size="sm"
+                                  className="rounded-full"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    continueEditing(d)
+                                  }}
+                                >
+                                  <RotateCcw className="h-3.5 w-3.5" />
+                                  Resubmit
+                                </Button>
+                              )}
+
                           </td>
                         )}
                       </tr>
