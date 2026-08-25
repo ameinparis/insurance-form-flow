@@ -14,7 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import Calculate from "./pages/Calculate";
 import Clients from "./pages/Clients";
 import Claims from "./pages/Claims";
-import Approvals from "./pages/Approvals";
+import Conversions from "./pages/Conversions";
 import Administration from "./pages/Administration";
 import CalculateForm from "./pages/CalculateForm";
 import FormRouter from "./components/FormRouter";
