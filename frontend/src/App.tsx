@@ -127,11 +127,13 @@ const App = () => (
                   <Clients />
                 </Layout>
               } />
-              <Route path="/approvals" element={
+              <Route path="/conversions" element={
                 <Layout>
-                  <Approvals />
+                  <Conversions />
                 </Layout>
               } />
+              <Route path="/approvals" element={<Navigate to="/conversions" replace />} />
+
               <Route path="/claims" element={
                 <Layout>
                   <Claims />
