@@ -83,8 +83,6 @@ const Clients = () => {
       </div>
 
       <div className="px-6 py-6 space-y-6">
-
-
         <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center py-24 px-6">
@@ -95,9 +93,15 @@ const Clients = () => {
                 {clients.length === 0 ? "No clients yet" : "No matching clients"}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-sm">
-                Convert an approved annuity quote into a policy to add the policyholder here.
+                Clients appear here once a policy conversion has been approved.
               </p>
+              {clients.length === 0 && (
+                <Button className="rounded-full mt-5" onClick={() => navigate("/conversions")}>
+                  Go to Conversions
+                </Button>
+              )}
             </div>
+
           ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
               {filtered.map((client) => (
