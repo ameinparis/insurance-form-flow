@@ -1054,7 +1054,7 @@ const ConvertToPolicy = () => {
             addNotification(notification)
             emitApprovalAssign(notification)
             toast.success(`Submitted to ${approver.name} for approval`)
-            navigate("/clients")
+            navigate("/conversions")
           }}
         />
 

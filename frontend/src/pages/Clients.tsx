@@ -1,18 +1,19 @@
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Search, Users, Trash2, FileClock, Eye } from "lucide-react"
+import { Search, Users, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useClientDirectory } from "@/hooks/useClientDirectory"
-import { usePolicyDrafts, draftStatus, STATUS_LABEL, STATUS_BADGE } from "@/hooks/usePolicyDrafts"
+import { usePolicyDrafts, draftStatus } from "@/hooks/usePolicyDrafts"
 import { formatCurrency, formatDate } from "@/lib/quoteUtils"
 
 const Clients = () => {
   const [term, setTerm] = useState("")
   const { clients, removeClient, addClient } = useClientDirectory()
-  const { drafts, removeDraft } = usePolicyDrafts()
+  const { drafts } = usePolicyDrafts()
+
   const navigate = useNavigate()
 
   // Approved conversions are policies, not work in progress: make sure a client
@@ -59,18 +60,6 @@ const Clients = () => {
     )
   }, [clients, term])
 
-  const filteredDrafts = useMemo(() => {
-    const q = term.trim().toLowerCase()
-    // Approved conversions become clients — they are no longer "in progress".
-    const open = drafts.filter((d) => draftStatus(d) !== "approved")
-    if (!q) return open
-    return open.filter((d) =>
-      `${d.form?.fullName || ""} ${d.form?.email || ""} ${d.quoteId || ""}`.toLowerCase().includes(q)
-    )
-  }, [drafts, term])
-
-
-
   return (
     <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900">
       <div className="sticky top-0 z-30 px-6 pt-6 pb-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
@@ -78,7 +67,7 @@ const Clients = () => {
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Clients</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Annuity policyholders converted from approved quotes.
+              Annuity policyholders from approved conversions.
             </p>
           </div>
           <div className="relative w-full sm:w-80">
@@ -94,87 +83,6 @@ const Clients = () => {
       </div>
 
       <div className="px-6 py-6 space-y-6">
-        {filteredDrafts.length > 0 && (
-          <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/50">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">In Progress</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                View the captured details, edit them inline, or continue the conversion wizard.
-              </p>
-            </div>
-            <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-              {filteredDrafts.map((draft) => (
-                <div key={draft.id} className="group/row flex items-center justify-between gap-4 px-6 py-4">
-                  <button
-                    className="min-w-0 text-left group"
-                    onClick={() => navigate(`/policies/drafts/${draft.id}`)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileClock className="h-4 w-4 text-amber-500 shrink-0" />
-                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:underline">
-                        {draft.form?.fullName || "Unnamed policyholder"}
-                      </p>
-                      <Badge
-                        variant="outline"
-                        className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${STATUS_BADGE[draftStatus(draft)]}`}
-                      >
-                        {STATUS_LABEL[draftStatus(draft)]}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
-                      {[draft.optionLabel, draft.quoteId, `Saved ${formatDate(draft.updatedAt)}`]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  </button>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full opacity-0 group-hover/row:opacity-100 focus:opacity-100 transition-opacity"
-                      onClick={() => navigate(`/policies/drafts/${draft.id}`)}
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      View
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="rounded-full opacity-0 group-hover/row:opacity-100 focus:opacity-100 transition-opacity"
-                      onClick={() =>
-                        navigate("/policies/convert", {
-                          state: {
-                            draftId: draft.id,
-                            step: draft.step,
-                            form: draft.form,
-                            productType: draft.productType,
-                            optionLabel: draft.optionLabel,
-                            quoteId: draft.quoteId,
-                            premium: draft.premium,
-                          },
-                        })
-                      }
-                    >
-                      {draftStatus(draft) === "rejected" ? "Resubmit" : "Continue Editing"}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-full text-slate-400 hover:text-red-500"
-                      onClick={() => {
-                        removeDraft(draft.id)
-                        toast.success("Draft discarded.")
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-
-            </div>
-          </div>
-        )}
-
         <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center py-24 px-6">
@@ -185,9 +93,15 @@ const Clients = () => {
                 {clients.length === 0 ? "No clients yet" : "No matching clients"}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-sm">
-                Convert an approved annuity quote into a policy to add the policyholder here.
+                Clients appear here once a policy conversion has been approved.
               </p>
+              {clients.length === 0 && (
+                <Button className="rounded-full mt-5" onClick={() => navigate("/conversions")}>
+                  Go to Conversions
+                </Button>
+              )}
             </div>
+
           ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
               {filtered.map((client) => (
