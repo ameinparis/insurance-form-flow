@@ -83,7 +83,7 @@ const SECTIONS: { title: string; step: number; fields: Field[] }[] = [
 const PolicyDraftPreview = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { drafts, saveDraft, approveDraft, rejectDraft, reassignDraft } = usePolicyDrafts()
+  const { drafts, saveDraft, approveDraft, rejectDraft, reassignDraft, approvePolicy, returnPolicy } = usePolicyDrafts()
   const { addNotification, resolveForDraft, supersedeForDraft } = useNotifications()
   const [reassignOpen, setReassignOpen] = useState(false)
   const [rejectOpen, setRejectOpen] = useState(false)
@@ -151,16 +151,16 @@ const PolicyDraftPreview = () => {
   }
 
 
-  const isApproved = draft?.status === "approved"
-  const isRejected = draft?.status === "rejected"
-  const isPending = draft?.status === "pending_approval"
+  const isApproved = draft?.status === "approved" || draft?.status === "APPROVED"
+  const isReturned = !!(draft?.returnReason || draft?.rejectionReason)
+  const isPending = draft?.status === "pending_approval" || draft?.status === "PENDING_APPROVAL"
   const isSuper = permissionsFor(userRole).role === "super_admin"
   const isAssignee = String(draft?.assignedTo || "") === String(userId || "")
   const canApprove =
     canApproveConversion(userRole, userId, draft?.initiatedBy) && isPending && (isSuper || isAssignee)
   const isOwner = String(draft?.initiatedBy || "") === String(userId || "")
   const canReassign =
-    (isPending || isRejected) && (isSuper || isOwner)
+    (isPending || isReturned) && (isSuper || isOwner)
 
   const beneficiaries: Record<string, string>[] = (() => {
     try {
@@ -259,7 +259,7 @@ const PolicyDraftPreview = () => {
               <Button variant="outline" onClick={continueEditing} className="rounded-full px-6">
                 Continue Editing
               </Button>
-              {isRejected && isOwner && (
+              {isReturned && isOwner && (
                 <Button onClick={continueEditing} className="rounded-full px-6">
                   <RotateCcw className="h-3.5 w-3.5" />
                   Resubmit
@@ -281,7 +281,7 @@ const PolicyDraftPreview = () => {
                     className="rounded-full px-6 text-red-500 hover:text-red-600"
                     onClick={() => setRejectOpen(true)}
                   >
-                    Reject
+                Return to Draft
                   </Button>
                   <Button
                     className="rounded-full px-6"
@@ -304,10 +304,10 @@ const PolicyDraftPreview = () => {
                 Approved by {draft.approvedByName}
               </p>
             )}
-            {isRejected && (
-              <p className="text-xs text-red-500 max-w-xs text-right">
-                Rejected by {draft.rejectedByName || "reviewer"}
-                {draft.rejectionReason ? ` — ${draft.rejectionReason}` : ""}
+            {isReturned && (
+              <p className="text-xs text-amber-600 max-w-xs text-right">
+                Returned by {draft.reviewedByName || draft.rejectedByName || "reviewer"}
+                {draft.returnReason || draft.rejectionReason ? ` — ${draft.returnReason || draft.rejectionReason}` : ""}
               </p>
             )}
           </div>
@@ -580,23 +580,23 @@ const PolicyDraftPreview = () => {
         }}
       />
 
-      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Reject conversion</DialogTitle>
-          </DialogHeader>
-          <Textarea
-            value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
-            onFocus={() => setRejectError(false)}
-            placeholder="Give a reason for rejecting this conversion…"
-            className="rounded-xl min-h-[110px]"
-          />
-          {rejectError && (
-            <p className="text-xs font-semibold text-red-500 -mt-2">
-              A rejection comment is required so the advisor knows what to fix.
-            </p>
-          )}
+       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+         <DialogContent className="sm:max-w-md">
+           <DialogHeader>
+             <DialogTitle>Return to draft</DialogTitle>
+           </DialogHeader>
+           <Textarea
+             value={rejectReason}
+             onChange={(e) => setRejectReason(e.target.value)}
+             onFocus={() => setRejectError(false)}
+             placeholder="Give a reason for returning this conversion…"
+             className="rounded-xl min-h-[110px]"
+           />
+           {rejectError && (
+             <p className="text-xs font-semibold text-red-500 -mt-2">
+               A return comment is required so the advisor knows what to fix.
+             </p>
+           )}
           <DialogFooter>
             <Button variant="outline" className="rounded-full" onClick={() => setRejectOpen(false)}>
               Cancel
@@ -608,12 +608,12 @@ const PolicyDraftPreview = () => {
                     setRejectError(true)
                     return
                   }
-                  rejectDraft(draft.id, { id: userId, name: userName }, rejectReason.trim())
-                  resolveForDraft(draft.id, "rejected", rejectReason.trim())
+                  returnPolicy(draft.id, rejectReason.trim())
+                  resolveForDraft(draft.id, "draft", rejectReason.trim())
                   emitApprovalResolve({
                     draftId: draft.id,
-                    kind: "rejected",
-                    status: "rejected",
+                    kind: "returned",
+                    status: "draft",
                     recipientId: draft.initiatedBy,
                     recipientName: draft.initiatedByName,
                     advisorName: userName,
@@ -623,7 +623,7 @@ const PolicyDraftPreview = () => {
                   })
                   setRejectOpen(false)
                   setRejectReason("")
-                  toast.success("Policy conversion rejected")
+                  toast.success("Policy conversion returned to draft")
                 }}
               >
                 Reject
@@ -649,7 +649,7 @@ const PolicyDraftPreview = () => {
             <Button
               className="rounded-full"
               onClick={() => {
-                approveDraft(draft.id, { id: userId, name: userName }, approveNote.trim() || null)
+                approvePolicy(draft.id, approveNote.trim() || null)
                 resolveForDraft(draft.id, "approved", approveNote.trim() || null)
                 emitApprovalResolve({
                   draftId: draft.id,

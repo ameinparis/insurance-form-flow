@@ -23,68 +23,66 @@ const Conversions = () => {
   const isAdvisor = role === "advisor"
 
   // Unsubmitted drafts stay private to whoever started them.
+  const pipeline = useMemo(() => {
+    const inPipeline = (d: PolicyDraft) => {
+      const s = draftStatus(d)
+      return s === "draft" || s === "DRAFT" || s === "pending_approval" || s === "PENDING_APPROVAL"
+    }
+    const advisorOwn = (d: PolicyDraft) =>
+      !d.initiatedBy || String(d.initiatedBy) === String(userId || "")
+    return drafts
+      .filter((d) => inPipeline(d) && (isAdvisor ? advisorOwn(d) : true))
+      .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
+  }, [drafts, isAdvisor, userId])
+
   const myDrafts = useMemo(
-    () =>
-      drafts
-        .filter(
-          (d) =>
-            draftStatus(d) === "draft" &&
-            (!d.initiatedBy || String(d.initiatedBy) === String(userId || "")),
-        )
-        .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)),
-    [drafts, userId],
+    () => pipeline.filter((d) => draftStatus(d) === "draft" || draftStatus(d) === "DRAFT"),
+    [pipeline],
   )
 
-  // Everything that has left "draft" is an approval record. Reviewers see all of
-  // them (visibility is not scoped by who created it); advisors see their own.
-  const scoped = useMemo(() => {
-    const submitted = drafts.filter((d) => draftStatus(d) !== "draft")
-    if (!isAdvisor) return submitted
-    return submitted.filter(
-      (d) => !d.initiatedBy || String(d.initiatedBy) === String(userId || ""),
-    )
-  }, [drafts, isAdvisor, userId])
+  const pending = useMemo(
+    () => pipeline.filter((d) => draftStatus(d) === "pending_approval" || draftStatus(d) === "PENDING_APPROVAL"),
+    [pipeline],
+  )
 
   const tallies = useMemo(
     () => ({
       drafts: myDrafts.length,
-      pending: scoped.filter((d) => draftStatus(d) === "pending_approval").length,
-      approved: scoped.filter((d) => draftStatus(d) === "approved").length,
-      rejected: scoped.filter((d) => draftStatus(d) === "rejected").length,
+      pending: pending.length,
     }),
-    [scoped, myDrafts],
+    [myDrafts, pending],
   )
 
   const assignedToMePending = useMemo(
     () =>
-      scoped.filter(
-        (d) =>
-          draftStatus(d) === "pending_approval" &&
-          String(d.assignedTo || "") === String(userId || ""),
+      pending.filter(
+        (d) => String(d.assignedTo || "") === String(userId || ""),
       ).length,
-    [scoped, userId],
+    [pending, userId],
   )
 
   const tabs = isAdvisor
-    ? (["drafts", "pending", "approved", "rejected"] as const)
-    : (["drafts", "all", "assigned", "pending", "approved", "rejected"] as const)
+    ? (["drafts", "pending"] as const)
+    : (["drafts", "all", "assigned", "pending"] as const)
   const [tab, setTab] = useState<string>("drafts")
 
   const rows = useMemo(() => {
-    const list = scoped.filter((d) => {
+    const list = pipeline.filter((d) => {
       if (tab === "all") return true
       if (tab === "assigned") return String(d.assignedTo || "") === String(userId || "")
-      if (tab === "pending") return draftStatus(d) === "pending_approval"
-      return draftStatus(d) === tab
+      if (tab === "pending") {
+        const s = draftStatus(d)
+        return s === "pending_approval" || s === "PENDING_APPROVAL"
+      }
+      const s = draftStatus(d)
+      return s === tab || (tab === "drafts" && (s === "draft" || s === "DRAFT"))
     })
     return [...list].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
-  }, [scoped, tab, userId])
+  }, [pipeline, tab, userId])
 
   const cards = [
     { key: "drafts", label: "Drafts", value: tallies.drafts, icon: FileClock, tone: "text-slate-500 bg-slate-100 dark:bg-slate-700/50" },
     { key: "pending", label: "Pending", value: tallies.pending, icon: Clock, tone: "text-amber-500 bg-amber-50 dark:bg-amber-500/10" },
-    { key: "approved", label: "Approved", value: tallies.approved, icon: CheckCircle2, tone: "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" },
-    { key: "rejected", label: "Rejected", value: tallies.rejected, icon: XCircle, tone: "text-red-500 bg-red-50 dark:bg-red-500/10" },
   ]
 
   const tabLabel = (t: string) =>
@@ -94,11 +92,7 @@ const Conversions = () => {
         ? "All"
         : t === "assigned"
           ? "Assigned to me"
-          : t === "pending"
-            ? "Pending"
-            : t === "approved"
-              ? "Approved"
-              : "Rejected"
+          : "Pending"
 
   const continueEditing = (d: PolicyDraft) =>
     navigate("/policies/convert", {
@@ -277,11 +271,16 @@ const Conversions = () => {
                               Attempt {d.attempt}
                             </span>
                           )}
-                          {s === "rejected" && d.rejectionReason && (
-                            <p className="mt-1 text-xs font-normal text-red-500 max-w-sm">
-                              Reason: {d.rejectionReason}
-                            </p>
-                          )}
+                           {s === "rejected" && d.rejectionReason && (
+                             <p className="mt-1 text-xs font-normal text-red-500 max-w-sm">
+                               Reason: {d.rejectionReason}
+                             </p>
+                           )}
+                           {(d.returnReason || d.reviewNote) && (s === "draft" || s === "DRAFT") && (
+                             <p className="mt-1 text-xs font-normal text-amber-600 max-w-sm">
+                               Returned: {d.returnReason || d.reviewNote}
+                             </p>
+                           )}
                         </td>
                         <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
                           {d.optionLabel || d.productType || "—"}
@@ -307,7 +306,7 @@ const Conversions = () => {
                         </td>
                         {isAdvisor && (
                           <td className="px-6 py-4 text-right">
-                            {s === "rejected" && (
+                            {(s === "draft" || s === "DRAFT") && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -317,8 +316,7 @@ const Conversions = () => {
                                   continueEditing(d)
                                 }}
                               >
-                                <RotateCcw className="h-3.5 w-3.5" />
-                                Resubmit
+                                Continue Editing
                               </Button>
                             )}
                           </td>

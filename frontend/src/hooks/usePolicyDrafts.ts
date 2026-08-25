@@ -20,7 +20,7 @@ export interface ReviewEntry {
   note?: string | null
 }
 
-export type DraftStatus = "draft" | "pending_approval" | "approved" | "rejected"
+export type DraftStatus = "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "ACTIVE" | "draft" | "pending_approval" | "approved" | "rejected"
 
 export interface PolicyDraft {
   id: string
@@ -53,6 +53,9 @@ export interface PolicyDraft {
   reviewHistory?: ReviewEntry[]
   reassignments?: ReassignmentEntry[]
   updatedAt: string
+  clientId?: string | null
+  createdBy?: string | null
+  returnReason?: string | null
 }
 
 const STORAGE_KEY = "policy_drafts_v1"
@@ -334,6 +337,75 @@ export const usePolicyDrafts = () => {
     [],
   )
 
+  const createPolicy = useCallback(async (payload: {
+    quoteId?: string | null
+    productType?: string | null
+    form?: Record<string, string>
+    step?: number
+    optionLabel?: string | null
+    premium?: number | null
+    clientId?: string | null
+  }) => {
+    const res = await fetch(`${API_BASE}/policies`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) throw new Error("Failed to create policy")
+    return res.json()
+  }, [])
+
+  const updatePolicy = useCallback(async (id: string, patch: Record<string, unknown>) => {
+    const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify(patch),
+    })
+    if (!res.ok) throw new Error("Failed to update policy")
+    return res.json()
+  }, [])
+
+  const submitPolicy = useCallback(async (id: string) => {
+    const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}/submit`, {
+      method: "PATCH",
+      headers: authHeaders(),
+    })
+    if (!res.ok) throw new Error("Failed to submit policy")
+    return res.json()
+  }, [])
+
+  const approvePolicy = useCallback(async (id: string, note?: string | null) => {
+    const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}/approve`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ note: note || null }),
+    })
+    if (!res.ok) throw new Error("Failed to approve policy")
+    return res.json()
+  }, [])
+
+  const returnPolicy = useCallback(async (id: string, reason: string) => {
+    const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}/return`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ reason }),
+    })
+    if (!res.ok) throw new Error("Failed to return policy")
+    return res.json()
+  }, [])
+
+  const fetchPipeline = useCallback(async () => {
+    const res = await fetch(`${API_BASE}/policies/pipeline`, { headers: authHeaders() })
+    if (!res.ok) return []
+    return res.json()
+  }, [])
+
+  const fetchClientPolicies = useCallback(async (clientId: string) => {
+    const res = await fetch(`${API_BASE}/clients/${encodeURIComponent(clientId)}/policies`, { headers: authHeaders() })
+    if (!res.ok) return []
+    return res.json()
+  }, [])
+
   return {
     drafts,
     refresh,
@@ -343,11 +415,22 @@ export const usePolicyDrafts = () => {
     reassignDraft,
     approveDraft,
     rejectDraft,
+    createPolicy,
+    updatePolicy,
+    submitPolicy,
+    approvePolicy,
+    returnPolicy,
+    fetchPipeline,
+    fetchClientPolicies,
   }
 }
 
 /** Single source of truth for how a conversion status is labelled app-wide. */
 export const STATUS_LABEL: Record<DraftStatus, string> = {
+  DRAFT: "Draft",
+  PENDING_APPROVAL: "Pending Review",
+  APPROVED: "Approved",
+  ACTIVE: "Active",
   draft: "Draft",
   pending_approval: "Pending Review",
   approved: "Approved",
@@ -355,6 +438,10 @@ export const STATUS_LABEL: Record<DraftStatus, string> = {
 }
 
 export const STATUS_BADGE: Record<DraftStatus, string> = {
+  DRAFT: "border-slate-300 text-slate-500 dark:text-slate-400",
+  PENDING_APPROVAL: "border-amber-300 text-amber-600 dark:text-amber-400",
+  APPROVED: "border-emerald-300 text-emerald-600 dark:text-emerald-400",
+  ACTIVE: "border-emerald-300 text-emerald-600 dark:text-emerald-400",
   draft: "border-slate-300 text-slate-500 dark:text-slate-400",
   pending_approval: "border-amber-300 text-amber-600 dark:text-amber-400",
   approved: "border-emerald-300 text-emerald-600 dark:text-emerald-400",

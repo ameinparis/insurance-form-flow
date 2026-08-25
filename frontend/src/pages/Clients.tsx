@@ -16,11 +16,14 @@ const Clients = () => {
 
   const navigate = useNavigate()
 
-  // Approved conversions are policies, not work in progress: make sure a client
+  // Approved/active conversions are policies, not work in progress: make sure a client
   // record exists for each one (addClient de-dupes).
   useEffect(() => {
     drafts
-      .filter((d) => draftStatus(d) === "approved")
+      .filter((d) => {
+        const s = draftStatus(d)
+        return s === "approved" || s === "APPROVED" || s === "ACTIVE" || s === "active"
+      })
       .forEach((d) =>
         addClient({
           fullName: d.form?.fullName || d.form?.clientName || "Unnamed Client",
@@ -39,17 +42,18 @@ const Clients = () => {
 
   // Clients open the same conversion review view used from Approvals.
   const openClient = (client: { draftId?: string; quoteId?: string; optionLabel?: string; fullName: string }) => {
+    const approvedStatuses = new Set(["approved", "APPROVED", "ACTIVE", "active"])
     const match =
-      (client.draftId && drafts.find((d) => d.id === client.draftId)) ||
+      (client.draftId && drafts.find((d) => d.id === client.draftId && approvedStatuses.has(draftStatus(d)))) ||
       drafts.find(
         (d) =>
-          draftStatus(d) === "approved" &&
+          approvedStatuses.has(draftStatus(d)) &&
           (d.form?.fullName || "").toLowerCase() === client.fullName.toLowerCase() &&
           d.quoteId === client.quoteId &&
           d.optionLabel === client.optionLabel,
       )
     if (match) navigate(`/policies/drafts/${match.id}`)
-    else toast.error("No conversion record found for this client.")
+    else toast.error("No policy record found for this client.")
   }
 
   const filtered = useMemo(() => {

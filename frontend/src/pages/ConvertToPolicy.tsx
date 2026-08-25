@@ -152,7 +152,7 @@ const ConvertToPolicy = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const prefill = (location.state as ConvertState) || {}
-  const { drafts, saveDraft, submitForApproval } = usePolicyDrafts()
+  const { drafts, saveDraft, submitForApproval, createPolicy, updatePolicy, submitPolicy } = usePolicyDrafts()
   const { addNotification } = useNotifications()
   const { userId, userName } = useAuth()
   const { emitApprovalAssign, onNotification } = useSocket()
@@ -239,27 +239,52 @@ const ConvertToPolicy = () => {
     }
     setSaveState("saving")
     clearTimeout(timer.current)
-    timer.current = setTimeout(() => {
-      const saved = saveDraft({
-        id: draftId,
-        step: currentStep,
-        form: {
-          ...form,
-          purchasePremium: purchasePremium.toFixed(2),
-          upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
-          administrationFee: administrationFee.toFixed(2),
-          switchFee: SWITCH_FEE.toFixed(2),
-          funeralPremium: FUNERAL_PREMIUM.toFixed(2),
-          ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
-          ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
-        },
-        productType: prefill.productType,
-        optionLabel: prefill.optionLabel,
-        quoteId: prefill.quoteId,
-        premium: prefill.premium,
-      })
-      setDraftId(saved.id)
-      setSaveState("saved")
+    timer.current = setTimeout(async () => {
+      try {
+        let saved
+        if (draftId) {
+          saved = await updatePolicy(draftId, {
+            step: currentStep,
+            form: {
+              ...form,
+              purchasePremium: purchasePremium.toFixed(2),
+              upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
+              administrationFee: administrationFee.toFixed(2),
+              switchFee: SWITCH_FEE.toFixed(2),
+              funeralPremium: FUNERAL_PREMIUM.toFixed(2),
+              ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
+              ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
+            },
+            productType: prefill.productType,
+            optionLabel: prefill.optionLabel,
+            quoteId: prefill.quoteId,
+            premium: prefill.premium,
+          })
+        } else {
+          saved = await createPolicy({
+            quoteId: prefill.quoteId,
+            productType: prefill.productType,
+            form: {
+              ...form,
+              purchasePremium: purchasePremium.toFixed(2),
+              upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
+              administrationFee: administrationFee.toFixed(2),
+              switchFee: SWITCH_FEE.toFixed(2),
+              funeralPremium: FUNERAL_PREMIUM.toFixed(2),
+              ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
+              ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
+            },
+            step: currentStep,
+            optionLabel: prefill.optionLabel,
+            premium: prefill.premium,
+          })
+        }
+        setDraftId(saved.id)
+        setSaveState("saved")
+      } catch (e) {
+        console.error("Autosave failed:", e)
+        setSaveState("idle")
+      }
     }, 700)
     return () => clearTimeout(timer.current)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1032,7 +1057,7 @@ const ConvertToPolicy = () => {
                 switchFee: SWITCH_FEE.toFixed(2),
                 funeralPremium: FUNERAL_PREMIUM.toFixed(2),
                 ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
-          ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
+                ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
               },
               productType: prefill.productType,
               optionLabel: prefill.optionLabel,
@@ -1040,7 +1065,7 @@ const ConvertToPolicy = () => {
               premium: prefill.premium,
             })
             setDraftId(saved.id)
-            submitForApproval(saved.id, approver)
+            submitPolicy(saved.id)
             const notification = {
               draftId: saved.id,
               kind: "assignment" as const,

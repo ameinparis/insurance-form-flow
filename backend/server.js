@@ -1747,3 +1747,181 @@ app.delete("/api/conversions/:id", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Failed to delete conversion" });
   }
 });
+
+/* --------------------------- Policy workflow ---------------------- */
+const policyStatusEnum = ["DRAFT", "PENDING_APPROVAL", "APPROVED", "ACTIVE"];
+
+const policySchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true, index: true },
+    status: { type: String, enum: policyStatusEnum, default: "DRAFT", index: true },
+    clientId: { type: String, index: true },
+    createdBy: { type: String, index: true },
+    approvedBy: { type: String, default: null },
+    submittedAt: { type: Date, default: null },
+    approvedAt: { type: Date, default: null },
+    productType: { type: String },
+    quoteId: { type: String, index: true },
+    premium: { type: Number },
+    form: { type: mongoose.Schema.Types.Mixed, default: {} },
+    step: { type: Number, default: 0 },
+    optionLabel: { type: String },
+    returnReason: { type: String, default: null },
+    reviewNote: { type: String, default: null },
+  },
+  { strict: false, timestamps: true }
+);
+const Policy =
+  mongoose.models.Policy || mongoose.model("Policy", policySchema, "policies");
+
+const policyActor = (req) => ({
+  id: String(req.user?.userId || ""),
+  name: req.user?.userName || req.user?.email || null,
+});
+
+const policyError = (res, e, fallback = "Policy operation failed") =>
+  res.status(500).json({ message: fallback, detail: e?.message });
+
+// POST /api/policies — Create policy in DRAFT status from quote
+app.post("/api/policies", authenticateToken, async (req, res) => {
+  try {
+    const { quoteId, productType, form, step, optionLabel, premium, clientId } = req.body || {};
+    const actor = policyActor(req);
+    const id = `POL-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+    const policy = await Policy.create({
+      id,
+      status: "DRAFT",
+      createdBy: actor.id,
+      quoteId: quoteId || null,
+      productType: productType || null,
+      form: form || {},
+      step: step || 0,
+      optionLabel: optionLabel || null,
+      premium: premium || null,
+      clientId: clientId || null,
+    });
+    const { _id, __v, ...rest } = policy.toObject();
+    res.status(201).json(rest);
+  } catch (e) {
+    console.error("Create policy error:", e);
+    policyError(res, e, "Failed to create policy");
+  }
+});
+
+// PATCH /api/policies/:id — Edit policy (only if DRAFT and user is creator)
+app.patch("/api/policies/:id", authenticateToken, async (req, res) => {
+  try {
+    const policy = await Policy.findOne({ id: req.params.id }).lean();
+    if (!policy) return res.status(404).json({ message: "Policy not found" });
+    if (policy.status !== "DRAFT") return res.status(400).json({ message: "Only DRAFT policies can be edited" });
+    const actor = policyActor(req);
+    if (policy.createdBy && String(policy.createdBy) !== String(actor.id)) {
+      return res.status(403).json({ message: "Only the creator can edit this policy" });
+    }
+    const allowed = ["form", "step", "optionLabel", "premium", "productType", "clientId"];
+    const update = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) update[key] = req.body[key];
+    }
+    const updated = await Policy.findOneAndUpdate({ id: req.params.id }, { $set: update }, { new: true }).lean();
+    const { _id, __v, ...rest } = updated;
+    res.json(rest);
+  } catch (e) {
+    console.error("Update policy error:", e);
+    policyError(res, e, "Failed to update policy");
+  }
+});
+
+// PATCH /api/policies/:id/submit — Change status DRAFT → PENDING_APPROVAL
+app.patch("/api/policies/:id/submit", authenticateToken, async (req, res) => {
+  try {
+    const policy = await Policy.findOne({ id: req.params.id }).lean();
+    if (!policy) return res.status(404).json({ message: "Policy not found" });
+    if (policy.status !== "DRAFT") return res.status(400).json({ message: "Only DRAFT policies can be submitted" });
+    const actor = policyActor(req);
+    if (policy.createdBy && String(policy.createdBy) !== String(actor.id)) {
+      return res.status(403).json({ message: "Only the creator can submit this policy" });
+    }
+    const updated = await Policy.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: { status: "PENDING_APPROVAL", submittedAt: new Date(), returnReason: null, reviewNote: null } },
+      { new: true }
+    ).lean();
+    const { _id, __v, ...rest } = updated;
+    res.json(rest);
+  } catch (e) {
+    console.error("Submit policy error:", e);
+    policyError(res, e, "Failed to submit policy");
+  }
+});
+
+// PATCH /api/policies/:id/approve — Change status PENDING_APPROVAL → APPROVED (admin/super admin only)
+app.patch("/api/policies/:id/approve", authenticateToken, async (req, res) => {
+  try {
+    if (!isReviewer(req.user.role)) return res.status(403).json({ message: "Only admins can approve policies" });
+    const policy = await Policy.findOne({ id: req.params.id }).lean();
+    if (!policy) return res.status(404).json({ message: "Policy not found" });
+    if (policy.status !== "PENDING_APPROVAL") return res.status(400).json({ message: "Only PENDING_APPROVAL policies can be approved" });
+    const actor = policyActor(req);
+    const updated = await Policy.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: { status: "APPROVED", approvedBy: actor.id, approvedAt: new Date(), reviewNote: req.body?.note || null } },
+      { new: true }
+    ).lean();
+    const { _id, __v, ...rest } = updated;
+    res.json(rest);
+  } catch (e) {
+    console.error("Approve policy error:", e);
+    policyError(res, e, "Failed to approve policy");
+  }
+});
+
+// PATCH /api/policies/:id/return — Change status PENDING_APPROVAL → DRAFT with reason
+app.patch("/api/policies/:id/return", authenticateToken, async (req, res) => {
+  try {
+    if (!isReviewer(req.user.role)) return res.status(403).json({ message: "Only admins can return policies" });
+    const policy = await Policy.findOne({ id: req.params.id }).lean();
+    if (!policy) return res.status(404).json({ message: "Policy not found" });
+    if (policy.status !== "PENDING_APPROVAL") return res.status(400).json({ message: "Only PENDING_APPROVAL policies can be returned" });
+    const reason = String(req.body?.reason || "").trim();
+    if (!reason) return res.status(400).json({ message: "Return reason is required" });
+    const updated = await Policy.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: { status: "DRAFT", returnReason: reason, submittedAt: null, reviewNote: reason } },
+      { new: true }
+    ).lean();
+    const { _id, __v, ...rest } = updated;
+    res.json(rest);
+  } catch (e) {
+    console.error("Return policy error:", e);
+    policyError(res, e, "Failed to return policy");
+  }
+});
+
+// GET /api/policies/pipeline — Fetch policies where status is DRAFT or PENDING_APPROVAL
+app.get("/api/policies/pipeline", authenticateToken, async (req, res) => {
+  try {
+    const uid = String(req.user.userId);
+    const role = String(req.user?.role || "").toLowerCase();
+    const isReviewerRole = role === "admin" || role === "superuser" || role === "super_admin" || role === "superadmin";
+    const query = { status: { $in: ["DRAFT", "PENDING_APPROVAL"] } };
+    if (!isReviewerRole) query.createdBy = uid;
+    const items = await Policy.find(query).sort({ updatedAt: -1 }).lean();
+    res.json(items.map(({ _id, __v, ...rest }) => rest));
+  } catch (e) {
+    console.error("Pipeline policies error:", e);
+    res.status(500).json({ message: "Failed to fetch pipeline policies" });
+  }
+});
+
+// GET /api/clients/:id/policies — Fetch approved/active policies for a client
+app.get("/api/clients/:id/policies", authenticateToken, async (req, res) => {
+  try {
+    const clientId = req.params.id;
+    const items = await Policy.find({ clientId, status: { $in: ["APPROVED", "ACTIVE"] } }).sort({ approvedAt: -1 }).lean();
+    res.json(items.map(({ _id, __v, ...rest }) => rest));
+  } catch (e) {
+    console.error("Client policies error:", e);
+    res.status(500).json({ message: "Failed to fetch client policies" });
+  }
+});
