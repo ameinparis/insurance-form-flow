@@ -256,9 +256,12 @@ const PolicyDraftPreview = () => {
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={continueEditing} className="rounded-full px-6">
-                Continue Editing
-              </Button>
+              {isOwner && !isApproved && !canApprove && (
+                <Button variant="outline" onClick={continueEditing} className="rounded-full px-6">
+                  Continue Editing
+                </Button>
+              )}
+
               {isReturned && isOwner && (
                 <Button onClick={continueEditing} className="rounded-full px-6">
                   <RotateCcw className="h-3.5 w-3.5" />
