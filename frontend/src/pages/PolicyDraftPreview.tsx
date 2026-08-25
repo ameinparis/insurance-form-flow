@@ -142,8 +142,8 @@ const PolicyDraftPreview = () => {
       <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900 p-6">
         <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-10 text-center">
           <p className="text-sm text-slate-500 dark:text-slate-400">This draft no longer exists.</p>
-          <Button className="rounded-full mt-5" onClick={() => navigate("/clients")}>
-            Back to Clients
+          <Button className="rounded-full mt-5" onClick={() => navigate("/conversions")}>
+            Back to Conversions
           </Button>
         </div>
       </div>
@@ -200,11 +200,11 @@ const PolicyDraftPreview = () => {
     <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900">
       <div className="sticky top-0 z-30 px-6 pt-6 pb-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <button
-          onClick={() => navigate("/clients")}
+          onClick={() => navigate("/conversions")}
           className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-3"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Clients
+          Back to Conversions
         </button>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
