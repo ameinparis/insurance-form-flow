@@ -158,18 +158,19 @@ const Clients = () => {
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{formatDate(client.createdAt)}</p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-full text-slate-400 hover:text-red-500"
-                      onClick={() => {
-                        removeClient(client.id)
-                        toast.success("Client removed.")
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                    {!client.draftId && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-full text-slate-400 hover:text-red-500"
+                        onClick={() => {
+                          removeClient(client.id)
+                          toast.success("Client removed.")
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                 </div>
               ))}
             </div>
