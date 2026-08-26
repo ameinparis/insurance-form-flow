@@ -56,13 +56,37 @@ const Clients = () => {
     else toast.error("No policy record found for this client.")
   }
 
+  // Approved conversions come from the shared store, so every user sees the same
+  // client list; locally-stored clients without a conversion are appended.
+  const directory = useMemo(() => {
+    const fromDrafts = drafts
+      .filter((d) => ["approved", "APPROVED", "ACTIVE", "active"].includes(String(draftStatus(d))))
+      .map((d) => ({
+        id: d.id,
+        draftId: d.id,
+        fullName: d.form?.fullName || d.form?.clientName || "Unnamed Client",
+        email: d.form?.email,
+        contactNumber: d.form?.contactNumber,
+        productType: d.productType || d.form?.productName || "Policy",
+        optionLabel: d.optionLabel,
+        quoteId: d.quoteId,
+        premium: d.premium,
+        createdAt: d.approvedAt || d.updatedAt,
+      }))
+    const seen = new Set(fromDrafts.map((c) => c.draftId))
+    const extras = clients.filter((c) => !c.draftId || !seen.has(c.draftId))
+    return [...fromDrafts, ...extras].sort((a, b) =>
+      (a.createdAt || "") < (b.createdAt || "") ? 1 : -1,
+    )
+  }, [drafts, clients])
+
   const filtered = useMemo(() => {
     const q = term.trim().toLowerCase()
-    if (!q) return clients
-    return clients.filter((c) =>
+    if (!q) return directory
+    return directory.filter((c) =>
       `${c.fullName} ${c.email || ""} ${c.contactNumber || ""} ${c.quoteId || ""}`.toLowerCase().includes(q)
     )
-  }, [clients, term])
+  }, [directory, term])
 
   return (
     <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900">
@@ -94,12 +118,12 @@ const Clients = () => {
                 <Users className="h-7 w-7 text-slate-400 dark:text-slate-300" strokeWidth={2} />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                {clients.length === 0 ? "No clients yet" : "No matching clients"}
+                {directory.length === 0 ? "No clients yet" : "No matching clients"}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-sm">
                 Clients appear here once a policy conversion has been approved.
               </p>
-              {clients.length === 0 && (
+              {directory.length === 0 && (
                 <Button className="rounded-full mt-5" onClick={() => navigate("/conversions")}>
                   Go to Conversions
                 </Button>
@@ -134,17 +158,19 @@ const Clients = () => {
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{formatDate(client.createdAt)}</p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-full text-slate-400 hover:text-red-500"
-                      onClick={() => {
-                        removeClient(client.id)
-                        toast.success("Client removed.")
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {!client.draftId && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-full text-slate-400 hover:text-red-500"
+                        onClick={() => {
+                          removeClient(client.id)
+                          toast.success("Client removed.")
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

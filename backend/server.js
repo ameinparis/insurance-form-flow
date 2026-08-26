@@ -1709,9 +1709,12 @@ const isReviewer = (role) => {
 app.get("/api/conversions", authenticateToken, async (req, res) => {
   try {
     const uid = String(req.user.userId);
+    // Approved conversions are client records: everyone can see those so the
+    // Clients directory is the same for all users.
+    const approvedStatuses = ["approved", "APPROVED", "active", "ACTIVE"];
     const query = isReviewer(req.user.role)
       ? { $or: [{ status: { $ne: "draft" } }, { initiatedBy: uid }, { assignedTo: uid }] }
-      : { initiatedBy: uid };
+      : { $or: [{ initiatedBy: uid }, { assignedTo: uid }, { status: { $in: approvedStatuses } }] };
     const items = await Conversion.find(query).sort({ updatedAt: -1 }).lean();
     res.json(items.map(({ _id, __v, ...rest }) => rest));
   } catch (e) {

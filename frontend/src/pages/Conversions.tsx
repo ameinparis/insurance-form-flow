@@ -62,9 +62,9 @@ const Conversions = () => {
   )
 
   const tabs = isAdvisor
-    ? (["drafts", "pending", "approved", "rejected"] as const)
-    : (["drafts", "all", "assigned", "pending", "approved", "rejected"] as const)
-  const [tab, setTab] = useState<string>("drafts")
+    ? (["all", "drafts", "pending", "approved", "rejected"] as const)
+    : (["all", "assigned", "drafts", "pending", "approved", "rejected"] as const)
+  const [tab, setTab] = useState<string>("all")
 
   const rows = useMemo(() => {
     const list = pipeline.filter((d) => {

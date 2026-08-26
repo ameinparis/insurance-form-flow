@@ -1065,7 +1065,8 @@ const ConvertToPolicy = () => {
               premium: prefill.premium,
             })
             setDraftId(saved.id)
-            submitPolicy(saved.id)
+            // Moves the conversion into "Pending Review" and assigns the reviewer.
+            submitForApproval(saved.id, { id: approver.id, name: approver.name })
             const notification = {
               draftId: saved.id,
               kind: "assignment" as const,
