@@ -118,12 +118,12 @@ const Clients = () => {
                 <Users className="h-7 w-7 text-slate-400 dark:text-slate-300" strokeWidth={2} />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                {clients.length === 0 ? "No clients yet" : "No matching clients"}
+                {directory.length === 0 ? "No clients yet" : "No matching clients"}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-sm">
                 Clients appear here once a policy conversion has been approved.
               </p>
-              {clients.length === 0 && (
+              {directory.length === 0 && (
                 <Button className="rounded-full mt-5" onClick={() => navigate("/conversions")}>
                   Go to Conversions
                 </Button>
