@@ -56,13 +56,37 @@ const Clients = () => {
     else toast.error("No policy record found for this client.")
   }
 
+  // Approved conversions come from the shared store, so every user sees the same
+  // client list; locally-stored clients without a conversion are appended.
+  const directory = useMemo(() => {
+    const fromDrafts = drafts
+      .filter((d) => ["approved", "APPROVED", "ACTIVE", "active"].includes(String(draftStatus(d))))
+      .map((d) => ({
+        id: d.id,
+        draftId: d.id,
+        fullName: d.form?.fullName || d.form?.clientName || "Unnamed Client",
+        email: d.form?.email,
+        contactNumber: d.form?.contactNumber,
+        productType: d.productType || d.form?.productName || "Policy",
+        optionLabel: d.optionLabel,
+        quoteId: d.quoteId,
+        premium: d.premium,
+        createdAt: d.approvedAt || d.updatedAt,
+      }))
+    const seen = new Set(fromDrafts.map((c) => c.draftId))
+    const extras = clients.filter((c) => !c.draftId || !seen.has(c.draftId))
+    return [...fromDrafts, ...extras].sort((a, b) =>
+      (a.createdAt || "") < (b.createdAt || "") ? 1 : -1,
+    )
+  }, [drafts, clients])
+
   const filtered = useMemo(() => {
     const q = term.trim().toLowerCase()
-    if (!q) return clients
-    return clients.filter((c) =>
+    if (!q) return directory
+    return directory.filter((c) =>
       `${c.fullName} ${c.email || ""} ${c.contactNumber || ""} ${c.quoteId || ""}`.toLowerCase().includes(q)
     )
-  }, [clients, term])
+  }, [directory, term])
 
   return (
     <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900">
