@@ -91,25 +91,43 @@ const write = (drafts: PolicyDraft[]) => {
   window.dispatchEvent(new Event(EVENT))
 }
 
-/** Write-through to the shared backend so every role reads the same records. */
-const persist = (draft: PolicyDraft) => {
-  fetch(`${API_BASE}/conversions/${encodeURIComponent(draft.id)}`, {
-    method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(draft),
-  }).catch(() => {
-    /* offline — localStorage keeps the record */
-  })
+/**
+ * Write-through to the shared backend so every role reads the same records.
+ * Writes for the same conversion are queued: saving a draft and immediately
+ * submitting it used to race, and the slower "draft" PUT could land last and
+ * reset the server copy to draft — so reviewers never saw the submission.
+ */
+const queues = new Map<string, Promise<unknown>>()
+
+const enqueue = (id: string, task: () => Promise<unknown>) => {
+  const next = (queues.get(id) || Promise.resolve()).then(task, task)
+  queues.set(
+    id,
+    next.catch(() => undefined),
+  )
+  return next
 }
 
-const persistDelete = (id: string) => {
-  fetch(`${API_BASE}/conversions/${encodeURIComponent(id)}`, {
-    method: "DELETE",
-    headers: authHeaders(),
-  }).catch(() => {
-    /* ignore */
-  })
-}
+const persist = (draft: PolicyDraft) =>
+  enqueue(draft.id, () =>
+    fetch(`${API_BASE}/conversions/${encodeURIComponent(draft.id)}`, {
+      method: "PUT",
+      headers: authHeaders(),
+      body: JSON.stringify(draft),
+    }).catch(() => {
+      /* offline — localStorage keeps the record */
+    }),
+  )
+
+const persistDelete = (id: string) =>
+  enqueue(id, () =>
+    fetch(`${API_BASE}/conversions/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    }).catch(() => {
+      /* ignore */
+    }),
+  )
 
 const writeOne = (next: PolicyDraft, list?: PolicyDraft[]) => {
   const current = list ?? read()
@@ -125,13 +143,20 @@ const writeOne = (next: PolicyDraft, list?: PolicyDraft[]) => {
 const mergeRemote = (remote: PolicyDraft[]) => {
   const local = read()
   const byId = new Map<string, PolicyDraft>()
+  const remoteIds = new Set(remote.map((d) => d.id))
   local.forEach((d) => byId.set(d.id, d))
   remote.forEach((d) => {
     const existing = byId.get(d.id)
     if (!existing || (d.updatedAt || "") >= (existing.updatedAt || "")) byId.set(d.id, d)
   })
+  // Records that only exist in this browser (created while the API was down)
+  // are pushed up so other roles can see them too.
+  local.forEach((d) => {
+    if (!remoteIds.has(d.id) && draftStatus(d) !== "draft") persist(d)
+  })
   write([...byId.values()].sort((a, b) => ((a.updatedAt || "") < (b.updatedAt || "") ? 1 : -1)))
 }
+
 
 export const usePolicyDrafts = () => {
   const [drafts, setDrafts] = useState<PolicyDraft[]>(read)
