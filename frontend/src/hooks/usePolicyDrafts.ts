@@ -237,13 +237,6 @@ export const usePolicyDrafts = () => {
         reviewedAt: null,
         updatedAt: now,
       }
-      // Update the current browser immediately, then wait for the shared store
-      // before allowing the assignment notification to be sent.
-      const idx = current.findIndex((item) => item.id === next.id)
-      if (idx >= 0) current[idx] = next
-      else current.unshift(next)
-      write([...current])
-
       const saved = await enqueue(next.id, async () => {
         const response = await fetch(
           `${API_BASE}/conversions/${encodeURIComponent(next.id)}/submit`,
@@ -263,7 +256,11 @@ export const usePolicyDrafts = () => {
         return response.json() as Promise<PolicyDraft>
       })
 
-      writeOne(saved, read())
+      const latest = read()
+      const savedIndex = latest.findIndex((item) => item.id === saved.id)
+      if (savedIndex >= 0) latest[savedIndex] = saved
+      else latest.unshift(saved)
+      write([...latest])
       return saved
     },
     [],
