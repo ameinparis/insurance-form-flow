@@ -216,7 +216,7 @@ export const usePolicyDrafts = () => {
         policyOk ? policyRes.json() : [],
       ])
       const merged = [...(Array.isArray(convData) ? convData : []), ...(Array.isArray(policyData) ? policyData : [])]
-      if (merged.length) mergeRemote(merged as PolicyDraft[])
+      mergeRemote(merged as PolicyDraft[])
       setSyncFailed(false)
     } catch {
       /* offline — keep local cache, but say so */
@@ -489,7 +489,9 @@ export const usePolicyDrafts = () => {
       body: JSON.stringify({ note: note || null }),
     })
     if (!res.ok) throw new Error("Failed to approve policy")
-    return res.json()
+    const saved = await res.json() as PolicyDraft
+    writeOne(saved, read())
+    return saved
   }, [])
 
   const returnPolicy = useCallback(async (id: string, reason: string) => {
@@ -499,7 +501,21 @@ export const usePolicyDrafts = () => {
       body: JSON.stringify({ reason }),
     })
     if (!res.ok) throw new Error("Failed to return policy")
-    return res.json()
+    const saved = await res.json() as PolicyDraft
+    writeOne(saved, read())
+    return saved
+  }, [])
+
+  const fetchPolicy = useCallback(async (id: string) => {
+    const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}`, { headers: authHeaders() })
+    if (!res.ok) throw new Error(res.status === 403 ? "You do not have access to this conversion" : "Failed to load conversion")
+    const saved = await res.json() as PolicyDraft
+    const current = read()
+    const index = current.findIndex((item) => item.id === saved.id)
+    if (index >= 0) current[index] = saved
+    else current.unshift(saved)
+    write([...current])
+    return saved
   }, [])
 
   const fetchPipeline = useCallback(async () => {
@@ -530,6 +546,7 @@ export const usePolicyDrafts = () => {
     submitPolicy,
     approvePolicy,
     returnPolicy,
+    fetchPolicy,
     fetchPipeline,
     fetchClientPolicies,
   }

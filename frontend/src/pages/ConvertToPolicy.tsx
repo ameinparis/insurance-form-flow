@@ -152,7 +152,7 @@ const ConvertToPolicy = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const prefill = (location.state as ConvertState) || {}
-  const { drafts, saveDraft, submitForApproval, createPolicy, updatePolicy, submitPolicy } = usePolicyDrafts()
+  const { drafts, saveDraft, createPolicy, updatePolicy, submitPolicy } = usePolicyDrafts()
   const { addNotification } = useNotifications()
   const { userId, userName } = useAuth()
   const { emitApprovalAssign, onNotification } = useSocket()
@@ -1046,27 +1046,26 @@ const ConvertToPolicy = () => {
           onOpenChange={setAssignOpen}
           excludeId={userId}
           onConfirm={async (approver) => {
-            const saved = saveDraft({
-              id: draftId,
-              step: currentStep,
-              form: {
-                ...form,
-                purchasePremium: purchasePremium.toFixed(2),
-                upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
-                administrationFee: administrationFee.toFixed(2),
-                switchFee: SWITCH_FEE.toFixed(2),
-                funeralPremium: FUNERAL_PREMIUM.toFixed(2),
-                ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
-                ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
-              },
-              productType: prefill.productType,
-              optionLabel: prefill.optionLabel,
-              quoteId: prefill.quoteId,
-              premium: prefill.premium,
-            })
-            setDraftId(saved.id)
-            // Moves the conversion into "Pending Review" and assigns the reviewer.
             try {
+              const payload = {
+                step: currentStep,
+                form: {
+                  ...form,
+                  purchasePremium: purchasePremium.toFixed(2),
+                  upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
+                  administrationFee: administrationFee.toFixed(2),
+                  switchFee: SWITCH_FEE.toFixed(2),
+                  funeralPremium: FUNERAL_PREMIUM.toFixed(2),
+                  ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
+                  ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
+                },
+                productType: prefill.productType,
+                optionLabel: prefill.optionLabel,
+                quoteId: prefill.quoteId,
+                premium: prefill.premium,
+              }
+              const saved = draftId ? await updatePolicy(draftId, payload) : await createPolicy(payload)
+              setDraftId(saved.id)
               const submitted = await submitPolicy(saved.id, {
                 id: approver.id,
                 name: approver.name,
