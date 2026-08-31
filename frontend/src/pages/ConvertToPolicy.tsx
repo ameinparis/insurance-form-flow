@@ -1045,7 +1045,7 @@ const ConvertToPolicy = () => {
           open={assignOpen}
           onOpenChange={setAssignOpen}
           excludeId={userId}
-          onConfirm={(approver) => {
+          onConfirm={async (approver) => {
             const saved = saveDraft({
               id: draftId,
               step: currentStep,
@@ -1066,21 +1066,29 @@ const ConvertToPolicy = () => {
             })
             setDraftId(saved.id)
             // Moves the conversion into "Pending Review" and assigns the reviewer.
-            submitForApproval(saved.id, { id: approver.id, name: approver.name })
-            const notification = {
-              draftId: saved.id,
-              kind: "assignment" as const,
-              status: "pending" as const,
-              recipientId: approver.id,
-              recipientName: approver.name,
-              advisorName: userName || saved.initiatedByName || "An advisor",
-              clientName: form.fullName,
-              policyType: form.productName,
+            try {
+              const submitted = await submitForApproval(saved.id, {
+                id: approver.id,
+                name: approver.name,
+              })
+              if (!submitted) throw new Error("Conversion could not be submitted")
+              const notification = {
+                draftId: submitted.id,
+                kind: "assignment" as const,
+                status: "pending" as const,
+                recipientId: approver.id,
+                recipientName: approver.name,
+                advisorName: userName || submitted.initiatedByName || "An advisor",
+                clientName: form.fullName,
+                policyType: form.productName,
+              }
+              addNotification(notification)
+              emitApprovalAssign(notification)
+              toast.success(`Submitted to ${approver.name} for approval`)
+              navigate("/conversions")
+            } catch {
+              toast.error("The conversion was saved, but could not be submitted. Please try again.")
             }
-            addNotification(notification)
-            emitApprovalAssign(notification)
-            toast.success(`Submitted to ${approver.name} for approval`)
-            navigate("/conversions")
           }}
         />
 

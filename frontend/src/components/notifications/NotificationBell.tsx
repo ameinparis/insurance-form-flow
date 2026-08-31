@@ -29,7 +29,7 @@ export function NotificationBell() {
   const navigate = useNavigate()
   const { userId, userName, permissions } = useAuth()
   const { notifications, addNotification, markRead, markAllRead, resolveForDraft } = useNotifications()
-  const { drafts, approveDraft, rejectDraft } = usePolicyDrafts()
+  const { drafts, approveDraft, rejectDraft, refresh } = usePolicyDrafts()
   const [open, setOpen] = useState(false)
   const [rejecting, setRejecting] = useState<AppNotification | null>(null)
   const [reason, setReason] = useState("")
@@ -39,9 +39,10 @@ export function NotificationBell() {
   useEffect(() => {
     const unsubscribe = onNotification((n) => {
       addNotification(n)
+      void refresh()
     })
     return unsubscribe
-  }, [addNotification, onNotification])
+  }, [addNotification, onNotification, refresh])
 
   const isSuper = permissions.role === "super_admin"
 
@@ -54,6 +55,13 @@ export function NotificationBell() {
   )
 
   const unread = visible.filter((n) => !n.read).length
+
+  const viewPolicy = async (n: AppNotification) => {
+    markRead(n.id)
+    setOpen(false)
+    await refresh()
+    navigate(`/policies/drafts/${n.draftId}`)
+  }
 
   const canAct = (n: AppNotification) => {
     if (n.status !== "pending") return false
@@ -180,8 +188,17 @@ export function NotificationBell() {
                           {!n.read && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
                         </div>
 
-                        {canAct(n) && (
-                          <div className="flex items-center gap-2 mt-2.5">
+                        <div className="flex items-center gap-2 mt-2.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-full h-7 px-4 text-xs"
+                            onClick={() => void viewPolicy(n)}
+                          >
+                            View policy
+                          </Button>
+                          {canAct(n) && (
+                            <>
                             <Button
                               size="sm"
                               className="rounded-full h-7 px-4 text-xs"
@@ -191,26 +208,15 @@ export function NotificationBell() {
                             </Button>
                             <Button
                               size="sm"
-                              variant="outline"
-                              className="rounded-full h-7 px-4 text-xs"
-                              onClick={() => {
-                                markRead(n.id)
-                                setOpen(false)
-                                navigate(`/policies/drafts/${n.draftId}`)
-                              }}
-                            >
-                              Review
-                            </Button>
-                            <Button
-                              size="sm"
                               variant="ghost"
                               className="rounded-full h-7 px-3 text-xs text-red-500 hover:text-red-600"
                               onClick={() => setRejecting(n)}
                             >
                               Reject
                             </Button>
-                          </div>
-                        )}
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </li>
