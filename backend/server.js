@@ -1741,6 +1741,45 @@ app.put("/api/conversions/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// Atomically submit an existing conversion after its latest draft save has
+// completed. The client waits for this response before notifying the reviewer.
+app.patch("/api/conversions/:id/submit", authenticateToken, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const uid = String(req.user.userId);
+    const conversion = await Conversion.findOne({ id });
+    if (!conversion) return res.status(404).json({ message: "Conversion not found" });
+    if (String(conversion.initiatedBy || "") !== uid) {
+      return res.status(403).json({ message: "Only the initiating advisor can submit this conversion" });
+    }
+
+    const now = new Date().toISOString();
+    conversion.set({
+      status: "pending_approval",
+      assignedTo: req.body?.assignedTo || null,
+      assignedToName: req.body?.assignedToName || null,
+      assignedAt: req.body?.assignedAt || now,
+      submittedAt: req.body?.submittedAt || now,
+      attempt: Number(req.body?.attempt || conversion.attempt || 1),
+      rejectedBy: null,
+      rejectedByName: null,
+      rejectedAt: null,
+      rejectionReason: null,
+      reviewNote: null,
+      reviewedBy: null,
+      reviewedByName: null,
+      reviewedAt: null,
+      updatedAt: now,
+    });
+    const saved = await conversion.save();
+    const { _id, __v, ...rest } = saved.toObject();
+    res.json(rest);
+  } catch (e) {
+    console.error("Submit conversion error:", e);
+    res.status(500).json({ message: "Failed to submit conversion" });
+  }
+});
+
 app.delete("/api/conversions/:id", authenticateToken, async (req, res) => {
   try {
     await Conversion.deleteOne({ id: req.params.id });
