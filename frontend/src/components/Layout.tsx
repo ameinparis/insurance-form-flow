@@ -12,6 +12,9 @@ import { useGlobalSearch } from "@/lib/searchContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { useEffect } from "react";
+import { prefetchApprovers } from "@/hooks/useApprovers";
+
 
 interface LayoutProps {
   children: React.ReactNode;
