@@ -1786,6 +1786,15 @@ const resolveReviewer = async (req) => {
   }
 };
 
+const resolveUserRole = async (req) => {
+  try {
+    const user = await User.findById(req.user.userId).select("role").lean();
+    return String(user?.role || req.user?.role || "").toLowerCase();
+  } catch {
+    return String(req.user?.role || "").toLowerCase();
+  }
+};
+
 // List conversions visible to the caller.
 // Reviewers see every conversion that left "draft"; advisors see their own.
 app.get("/api/conversions", authenticateToken, async (req, res) => {
@@ -1847,7 +1856,7 @@ const cleanNotification = ({ _id, __v, ...rest }) => rest;
 app.get("/api/notifications", authenticateToken, async (req, res) => {
   try {
     const uid = String(req.user.userId);
-    const role = String(req.user.role || "").toLowerCase();
+    const role = await resolveUserRole(req);
     const isSuper = role === "superuser" || role === "super_admin" || role === "superadmin";
     const query = isSuper ? {} : { recipientId: uid };
     const items = await Notification.find(query).sort({ createdAt: -1 }).limit(200).lean();
@@ -2076,7 +2085,8 @@ app.get("/api/policy-records/:id", authenticateToken, async (req, res) => {
     if (!policy) return res.status(404).json({ message: "Policy not found" });
     const uid = String(req.user.userId);
     const reviewer = await resolveReviewer(req);
-    const superAdmin = isReviewer(req.user?.role) && String(req.user?.role || "").toLowerCase() !== "admin";
+    const role = await resolveUserRole(req);
+    const superAdmin = role === "superuser" || role === "super_admin" || role === "superadmin";
     const owner = String(policy.initiatedBy || policy.createdBy || "") === uid;
     const assignee = String(policy.assignedTo || "") === uid;
     if (!owner && !assignee && !superAdmin && !(reviewer && ["APPROVED", "ACTIVE"].includes(policy.status))) {
@@ -2123,6 +2133,7 @@ app.patch("/api/policies/:id/submit", authenticateToken, async (req, res) => {
     if ((policy.initiatedBy || policy.createdBy) && String(policy.initiatedBy || policy.createdBy) !== String(actor.id)) {
       return res.status(403).json({ message: "Only the creator can submit this policy" });
     }
+    if (!req.body?.assignedTo) return res.status(400).json({ message: "A reviewer is required" });
     const update = {
       status: "PENDING_APPROVAL",
       submittedAt: new Date(),
@@ -2266,8 +2277,7 @@ app.patch("/api/policies/:id/return", authenticateToken, async (req, res) => {
 app.get("/api/policies/pipeline", authenticateToken, async (req, res) => {
   try {
     const uid = String(req.user.userId);
-    const user = await User.findById(uid).select("role").lean();
-    const role = String(user?.role || req.user?.role || "").toLowerCase();
+    const role = await resolveUserRole(req);
     const isSuper = role === "superuser" || role === "super_admin" || role === "superadmin";
     const statuses = ["DRAFT", "PENDING_APPROVAL", "APPROVED", "ACTIVE"];
     const ownership = [{ initiatedBy: uid }, { createdBy: uid }];

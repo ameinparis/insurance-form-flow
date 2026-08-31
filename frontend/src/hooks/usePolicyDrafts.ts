@@ -162,6 +162,15 @@ const writeOne = (next: PolicyDraft, list?: PolicyDraft[]) => {
   return next
 }
 
+const cacheOne = (next: PolicyDraft) => {
+  const current = read()
+  const index = current.findIndex((item) => item.id === next.id)
+  if (index >= 0) current[index] = next
+  else current.unshift(next)
+  write([...current])
+  return next
+}
+
 const isLocalDraft = (d?: PolicyDraft | null) => {
   const s = String(draftStatus(d)).toLowerCase()
   return s === "draft"
@@ -333,8 +342,7 @@ export const usePolicyDrafts = () => {
         })
         if (!res.ok) throw new Error("Failed to reassign conversion")
         const saved = await res.json() as PolicyDraft
-        writeOne(saved, read())
-        return saved
+        return cacheOne(saved)
       }
       const current = read()
       const d = current.find((x) => x.id === id)
@@ -488,8 +496,7 @@ export const usePolicyDrafts = () => {
     })
     if (!res.ok) throw new Error("Failed to approve policy")
     const saved = await res.json() as PolicyDraft
-    writeOne(saved, read())
-    return saved
+    return cacheOne(saved)
   }, [])
 
   const returnPolicy = useCallback(async (id: string, reason: string) => {
@@ -500,20 +507,14 @@ export const usePolicyDrafts = () => {
     })
     if (!res.ok) throw new Error("Failed to return policy")
     const saved = await res.json() as PolicyDraft
-    writeOne(saved, read())
-    return saved
+    return cacheOne(saved)
   }, [])
 
   const fetchPolicy = useCallback(async (id: string) => {
     const res = await fetch(`${API_BASE}/policy-records/${encodeURIComponent(id)}`, { headers: authHeaders() })
     if (!res.ok) throw new Error(res.status === 403 ? "You do not have access to this conversion" : "Failed to load conversion")
     const saved = await res.json() as PolicyDraft
-    const current = read()
-    const index = current.findIndex((item) => item.id === saved.id)
-    if (index >= 0) current[index] = saved
-    else current.unshift(saved)
-    write([...current])
-    return saved
+    return cacheOne(saved)
   }, [])
 
   const fetchPipeline = useCallback(async () => {

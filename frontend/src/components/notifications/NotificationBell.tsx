@@ -66,7 +66,7 @@ export function NotificationBell() {
   const canAct = (n: AppNotification) => {
     if (n.status !== "pending") return false
     const draft = drafts.find((d) => d.id === n.draftId)
-    if (!draft || draft.status !== "pending_approval") return false
+    if (!draft || String(draft.status || "").toLowerCase() !== "pending_approval") return false
     if (String(draft.assignedTo || "") !== String(n.recipientId || "")) return false
     return isSuper || String(draft.assignedTo || "") === String(userId || "")
   }

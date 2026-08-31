@@ -172,6 +172,7 @@ const PolicyDraftPreview = () => {
   const canApprove =
     canApproveConversion(userRole, userId, draft?.initiatedBy) && isPending && (isSuper || isAssignee)
   const isOwner = String(draft?.initiatedBy || "") === String(userId || "")
+  const canEdit = isOwner && !isApproved && !isPending
   const canReassign =
     (isPending || isReturned) && (isSuper || isOwner)
 
@@ -352,7 +353,7 @@ const PolicyDraftPreview = () => {
                     <X className="h-4 w-4" />
                     Done
                   </Button>
-                ) : (
+                ) : canEdit ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -362,7 +363,7 @@ const PolicyDraftPreview = () => {
                     <Pencil className="h-3.5 w-3.5" />
                     Edit
                   </Button>
-                )}
+                ) : null}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
