@@ -83,7 +83,7 @@ const SECTIONS: { title: string; step: number; fields: Field[] }[] = [
 const PolicyDraftPreview = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { drafts, saveDraft, approveDraft, rejectDraft, reassignDraft, approvePolicy, returnPolicy } = usePolicyDrafts()
+  const { drafts, saveDraft, reassignDraft, approvePolicy, returnPolicy, fetchPolicy, refresh } = usePolicyDrafts()
   const { addNotification, resolveForDraft, supersedeForDraft } = useNotifications()
   const [reassignOpen, setReassignOpen] = useState(false)
   const [rejectOpen, setRejectOpen] = useState(false)
@@ -91,6 +91,8 @@ const PolicyDraftPreview = () => {
   const [rejectError, setRejectError] = useState(false)
   const [approveOpen, setApproveOpen] = useState(false)
   const [approveNote, setApproveNote] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState("")
   const [previewDoc, setPreviewDoc] = useState<{ label: string; name: string; type?: string; data?: string } | null>(null)
   const { userRole, userId, userName } = useAuth()
   const { emitApprovalResolve, onNotification } = useSocket()
@@ -103,6 +105,15 @@ const PolicyDraftPreview = () => {
   }, [addNotification, onNotification])
 
   const draft = useMemo(() => drafts.find((d) => d.id === id), [drafts, id])
+
+  useEffect(() => {
+    if (!id) return
+    setLoading(true)
+    fetchPolicy(id)
+      .then(() => setLoadError(""))
+      .catch((error) => setLoadError(error instanceof Error ? error.message : "Failed to load conversion"))
+      .finally(() => setLoading(false))
+  }, [fetchPolicy, id])
 
   const [form, setForm] = useState<Record<string, string>>(draft?.form || {})
   const [editing, setEditing] = useState<number | null>(null)
@@ -141,7 +152,9 @@ const PolicyDraftPreview = () => {
     return (
       <div className="relative min-h-full -m-6 bg-slate-50 dark:bg-slate-900 p-6">
         <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-10 text-center">
-          <p className="text-sm text-slate-500 dark:text-slate-400">This draft no longer exists.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {loading ? "Loading conversion…" : loadError || "This conversion no longer exists."}
+          </p>
           <Button className="rounded-full mt-5" onClick={() => navigate("/conversions")}>
             Back to Conversions
           </Button>
@@ -159,6 +172,7 @@ const PolicyDraftPreview = () => {
   const canApprove =
     canApproveConversion(userRole, userId, draft?.initiatedBy) && isPending && (isSuper || isAssignee)
   const isOwner = String(draft?.initiatedBy || "") === String(userId || "")
+  const canEdit = isOwner && !isApproved && !isPending
   const canReassign =
     (isPending || isReturned) && (isSuper || isOwner)
 
@@ -339,7 +353,7 @@ const PolicyDraftPreview = () => {
                     <X className="h-4 w-4" />
                     Done
                   </Button>
-                ) : (
+                ) : canEdit ? (
                   <Button
                     variant="outline"
                     size="sm"
@@ -349,7 +363,7 @@ const PolicyDraftPreview = () => {
                     <Pencil className="h-3.5 w-3.5" />
                     Edit
                   </Button>
-                )}
+                ) : null}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
@@ -564,22 +578,27 @@ const PolicyDraftPreview = () => {
         description="Move this pending conversion to a different Admin or Super Admin."
         confirmLabel="Reassign"
         currentAssigneeId={draft.assignedTo}
-        onConfirm={(approver) => {
-          reassignDraft(draft.id, approver, { id: userId, name: userName })
-          supersedeForDraft(draft.id)
-          const notification = {
-            draftId: draft.id,
-            kind: "reassigned" as const,
-            status: "pending" as const,
-            recipientId: approver.id,
-            recipientName: approver.name,
-            advisorName: userName || draft.initiatedByName || "A user",
-            clientName: form.fullName,
-            policyType: form.productName,
+        onConfirm={async (approver) => {
+          try {
+            await reassignDraft(draft.id, approver, { id: userId, name: userName })
+            supersedeForDraft(draft.id)
+            const notification = {
+              draftId: draft.id,
+              kind: "reassigned" as const,
+              status: "pending" as const,
+              recipientId: approver.id,
+              recipientName: approver.name,
+              advisorName: userName || draft.initiatedByName || "A user",
+              clientName: form.fullName,
+              policyType: form.productName,
+            }
+            addNotification(notification)
+            emitApprovalResolve(notification)
+            await refresh()
+            toast.success(`Reassigned to ${approver.name}`)
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Could not reassign conversion")
           }
-          addNotification(notification)
-          emitApprovalResolve(notification)
-          toast.success(`Reassigned to ${approver.name}`)
         }}
       />
 
@@ -606,12 +625,13 @@ const PolicyDraftPreview = () => {
             </Button>
               <Button
                 className="rounded-full bg-red-500 hover:bg-red-600 text-white"
-                onClick={() => {
+                onClick={async () => {
                   if (!rejectReason.trim()) {
                     setRejectError(true)
                     return
                   }
-                  returnPolicy(draft.id, rejectReason.trim())
+                  try {
+                    await returnPolicy(draft.id, rejectReason.trim())
 
                   resolveForDraft(
                     draft.id,
@@ -631,9 +651,13 @@ const PolicyDraftPreview = () => {
                     reason: rejectReason.trim(),
                   })
 
-                  setRejectOpen(false)
-                  setRejectReason("")
-                  toast.success("Policy conversion returned to draft")
+                    await refresh()
+                    setRejectOpen(false)
+                    setRejectReason("")
+                    toast.success("Policy conversion returned to draft")
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Could not return conversion")
+                  }
                                   }}
               >
                 Reject
@@ -658,8 +682,9 @@ const PolicyDraftPreview = () => {
             </Button>
             <Button
               className="rounded-full"
-              onClick={() => {
-                approvePolicy(draft.id, approveNote.trim() || null)
+              onClick={async () => {
+                try {
+                  await approvePolicy(draft.id, approveNote.trim() || null)
                 resolveForDraft(draft.id, "approved", approveNote.trim() || null)
                 emitApprovalResolve({
                   draftId: draft.id,
@@ -672,9 +697,13 @@ const PolicyDraftPreview = () => {
                   policyType: form.productName,
                   reason: approveNote.trim() || null,
                 })
-                setApproveOpen(false)
-                setApproveNote("")
-                toast.success("Policy conversion approved")
+                  await refresh()
+                  setApproveOpen(false)
+                  setApproveNote("")
+                  toast.success("Policy conversion approved")
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : "Could not approve conversion")
+                }
               }}
             >
               Approve

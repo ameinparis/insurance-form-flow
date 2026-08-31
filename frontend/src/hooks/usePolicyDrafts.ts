@@ -162,6 +162,15 @@ const writeOne = (next: PolicyDraft, list?: PolicyDraft[]) => {
   return next
 }
 
+const cacheOne = (next: PolicyDraft) => {
+  const current = read()
+  const index = current.findIndex((item) => item.id === next.id)
+  if (index >= 0) current[index] = next
+  else current.unshift(next)
+  write([...current])
+  return next
+}
+
 const isLocalDraft = (d?: PolicyDraft | null) => {
   const s = String(draftStatus(d)).toLowerCase()
   return s === "draft"
@@ -175,19 +184,15 @@ const isLocalDraft = (d?: PolicyDraft | null) => {
 const mergeRemote = (remote: PolicyDraft[]) => {
   const local = read()
   const byId = new Map<string, PolicyDraft>()
-  const remoteIds = new Set(remote.map((d) => d.id))
-  local.forEach((d) => byId.set(d.id, d))
+  // Only unsent drafts belong to the browser. Submitted/shared records must
+  // come from the API so another user's stale cache can never populate a queue.
+  local.filter(isLocalDraft).forEach((d) => byId.set(d.id, d))
   remote.forEach((d) => {
     const existing = byId.get(d.id)
     // Keep the local copy only when it is an in-progress draft with newer edits.
     const keepLocal =
       existing && isLocalDraft(existing) && (existing.updatedAt || "") > (d.updatedAt || "")
     if (!keepLocal) byId.set(d.id, d)
-  })
-  // Records that only exist in this browser (created while the API was down)
-  // are pushed up so other roles can see them too.
-  local.forEach((d) => {
-    if (!remoteIds.has(d.id) && !isLocalDraft(d)) persist(d)
   })
   write([...byId.values()].sort((a, b) => ((a.updatedAt || "") < (b.updatedAt || "") ? 1 : -1)))
 }
@@ -216,7 +221,7 @@ export const usePolicyDrafts = () => {
         policyOk ? policyRes.json() : [],
       ])
       const merged = [...(Array.isArray(convData) ? convData : []), ...(Array.isArray(policyData) ? policyData : [])]
-      if (merged.length) mergeRemote(merged as PolicyDraft[])
+      mergeRemote(merged as PolicyDraft[])
       setSyncFailed(false)
     } catch {
       /* offline — keep local cache, but say so */
@@ -323,34 +328,35 @@ export const usePolicyDrafts = () => {
 
   /** Move a pending conversion to a different reviewer. */
   const reassignDraft = useCallback(
-    (
+    async (
       id: string,
       assignee: { id?: string | null; name?: string | null },
       actor: { id?: string | null; name?: string | null },
     ) => {
+      const isPolicy = String(id).startsWith("POL-")
+      if (isPolicy) {
+        const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}/reassign`, {
+          method: "PATCH",
+          headers: authHeaders(),
+          body: JSON.stringify({ assignedTo: assignee.id ?? null, assignedToName: assignee.name ?? null }),
+        })
+        if (!res.ok) throw new Error("Failed to reassign conversion")
+        const saved = await res.json() as PolicyDraft
+        return cacheOne(saved)
+      }
       const current = read()
       const d = current.find((x) => x.id === id)
       if (!d) return undefined
       const now = new Date().toISOString()
-      const entry: ReassignmentEntry = {
-        at: now,
-        byId: actor.id ?? null,
-        byName: actor.name ?? null,
-        fromId: d.assignedTo ?? null,
-        fromName: d.assignedToName ?? null,
-        toId: assignee.id ?? null,
-        toName: assignee.name ?? null,
-      }
-      const next: PolicyDraft = {
+      return writeOne({
         ...d,
         status: "pending_approval",
         assignedTo: assignee.id ?? null,
         assignedToName: assignee.name ?? null,
         assignedAt: now,
-        reassignments: [...(d.reassignments || []), entry],
+        reassignments: [...(d.reassignments || []), { at: now, byId: actor.id ?? null, byName: actor.name ?? null, fromId: d.assignedTo ?? null, fromName: d.assignedToName ?? null, toId: assignee.id ?? null, toName: assignee.name ?? null }],
         updatedAt: now,
-      }
-      return writeOne(next, current)
+      }, current)
     },
     [],
   )
@@ -489,7 +495,8 @@ export const usePolicyDrafts = () => {
       body: JSON.stringify({ note: note || null }),
     })
     if (!res.ok) throw new Error("Failed to approve policy")
-    return res.json()
+    const saved = await res.json() as PolicyDraft
+    return cacheOne(saved)
   }, [])
 
   const returnPolicy = useCallback(async (id: string, reason: string) => {
@@ -499,7 +506,15 @@ export const usePolicyDrafts = () => {
       body: JSON.stringify({ reason }),
     })
     if (!res.ok) throw new Error("Failed to return policy")
-    return res.json()
+    const saved = await res.json() as PolicyDraft
+    return cacheOne(saved)
+  }, [])
+
+  const fetchPolicy = useCallback(async (id: string) => {
+    const res = await fetch(`${API_BASE}/policy-records/${encodeURIComponent(id)}`, { headers: authHeaders() })
+    if (!res.ok) throw new Error(res.status === 403 ? "You do not have access to this conversion" : "Failed to load conversion")
+    const saved = await res.json() as PolicyDraft
+    return cacheOne(saved)
   }, [])
 
   const fetchPipeline = useCallback(async () => {
@@ -530,6 +545,7 @@ export const usePolicyDrafts = () => {
     submitPolicy,
     approvePolicy,
     returnPolicy,
+    fetchPolicy,
     fetchPipeline,
     fetchClientPolicies,
   }
