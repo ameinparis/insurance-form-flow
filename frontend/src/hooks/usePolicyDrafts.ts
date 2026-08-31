@@ -492,7 +492,9 @@ export const usePolicyDrafts = () => {
 
   return {
     drafts,
+    syncError,
     refresh,
+
     saveDraft,
     removeDraft,
     submitForApproval,
