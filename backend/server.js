@@ -1704,6 +1704,21 @@ const isReviewer = (role) => {
   return r === "admin" || r === "superuser" || r === "super_admin" || r === "superadmin";
 };
 
+/**
+ * The JWT carries the role that was current at sign-in. If it does not look
+ * like a reviewer we re-read the user, so a promoted Admin is not locked out
+ * of the review queue until they sign in again.
+ */
+const resolveReviewer = async (req) => {
+  if (isReviewer(req.user?.role)) return true;
+  try {
+    const user = await User.findById(req.user.userId).select("role").lean();
+    return isReviewer(user?.role);
+  } catch {
+    return false;
+  }
+};
+
 // List conversions visible to the caller.
 // Reviewers see every conversion that left "draft"; advisors see their own.
 app.get("/api/conversions", authenticateToken, async (req, res) => {
@@ -1712,8 +1727,16 @@ app.get("/api/conversions", authenticateToken, async (req, res) => {
     // Approved conversions are client records: everyone can see those so the
     // Clients directory is the same for all users.
     const approvedStatuses = ["approved", "APPROVED", "active", "ACTIVE"];
-    const query = isReviewer(req.user.role)
-      ? { $or: [{ status: { $ne: "draft" } }, { initiatedBy: uid }, { assignedTo: uid }] }
+    const draftStatuses = ["draft", "DRAFT"];
+    const reviewer = await resolveReviewer(req);
+    const query = reviewer
+      ? {
+          $or: [
+            { status: { $nin: draftStatuses } },
+            { initiatedBy: uid },
+            { assignedTo: uid },
+          ],
+        }
       : { $or: [{ initiatedBy: uid }, { assignedTo: uid }, { status: { $in: approvedStatuses } }] };
     const items = await Conversion.find(query).sort({ updatedAt: -1 }).lean();
     res.json(items.map(({ _id, __v, ...rest }) => rest));
@@ -1722,6 +1745,109 @@ app.get("/api/conversions", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch conversions" });
   }
 });
+
+/* --------------------------- Notifications --------------------------- */
+/**
+ * Notifications used to live only in the recipient's browser, delivered over
+ * the socket — so a reviewer who was offline (or on another machine) never
+ * learned about an assignment. They are shared records now, read back from
+ * the API, which keeps the bell and the Conversions list in agreement.
+ */
+const notificationSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true, index: true },
+    draftId: { type: String, index: true },
+    kind: { type: String, default: "assignment" },
+    status: { type: String, default: "pending", index: true },
+    recipientId: { type: String, default: null, index: true },
+    recipientName: { type: String, default: null },
+    advisorName: { type: String, default: null },
+    clientName: { type: String, default: null },
+    policyType: { type: String, default: null },
+    reason: { type: String, default: null },
+    read: { type: Boolean, default: false },
+    createdAt: { type: String, default: () => new Date().toISOString() },
+  },
+  { strict: false }
+);
+const Notification =
+  mongoose.models.AppNotification ||
+  mongoose.model("AppNotification", notificationSchema, "notifications");
+
+const cleanNotification = ({ _id, __v, ...rest }) => rest;
+
+// Super Admins see everything; everyone else sees what is addressed to them.
+app.get("/api/notifications", authenticateToken, async (req, res) => {
+  try {
+    const uid = String(req.user.userId);
+    const role = String(req.user.role || "").toLowerCase();
+    const isSuper = role === "superuser" || role === "super_admin" || role === "superadmin";
+    const query = isSuper ? {} : { recipientId: uid };
+    const items = await Notification.find(query).sort({ createdAt: -1 }).limit(200).lean();
+    res.json(items.map(cleanNotification));
+  } catch (e) {
+    console.error("List notifications error:", e);
+    res.status(500).json({ message: "Failed to fetch notifications" });
+  }
+});
+
+app.post("/api/notifications", authenticateToken, async (req, res) => {
+  try {
+    const now = new Date().toISOString();
+    const payload = {
+      ...req.body,
+      id: req.body?.id || `nt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      recipientId: req.body?.recipientId ? String(req.body.recipientId) : null,
+      read: false,
+      createdAt: now,
+    };
+    delete payload._id;
+    const saved = await Notification.findOneAndUpdate(
+      { id: payload.id },
+      { $set: payload },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    ).lean();
+    res.json(cleanNotification(saved));
+  } catch (e) {
+    console.error("Create notification error:", e);
+    res.status(500).json({ message: "Failed to create notification" });
+  }
+});
+
+app.patch("/api/notifications/read", authenticateToken, async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids : null;
+    const query = ids ? { id: { $in: ids } } : { recipientId: String(req.user.userId) };
+    await Notification.updateMany(query, { $set: { read: true } });
+    res.json({ message: "Notifications marked read" });
+  } catch (e) {
+    console.error("Mark notifications read error:", e);
+    res.status(500).json({ message: "Failed to update notifications" });
+  }
+});
+
+// Resolve (or supersede) every pending notification attached to a conversion.
+app.patch("/api/notifications/draft/:draftId", authenticateToken, async (req, res) => {
+  try {
+    const status = req.body?.status || "superseded";
+    await Notification.updateMany(
+      { draftId: req.params.draftId, status: "pending" },
+      {
+        $set: {
+          status,
+          reason: req.body?.reason ?? null,
+          ...(status === "superseded" ? {} : { read: false }),
+        },
+      }
+    );
+    res.json({ message: "Notifications updated" });
+  } catch (e) {
+    console.error("Resolve notifications error:", e);
+    res.status(500).json({ message: "Failed to update notifications" });
+  }
+});
+
+
 
 // Upsert a conversion (create draft, autosave, submit, approve, reject...)
 app.put("/api/conversions/:id", authenticateToken, async (req, res) => {

@@ -54,32 +54,80 @@ export const relativeTime = (iso?: string | null) => {
   return new Date(iso).toLocaleDateString()
 }
 
+const API_BASE =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) || "http://localhost:5002/api"
+
+const authHeaders = (): HeadersInit => {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
+/** Server records win; the local copy is only an offline cache. */
+const mergeRemote = (remote: AppNotification[]) => {
+  const byId = new Map<string, AppNotification>()
+  read().forEach((n) => byId.set(n.id, n))
+  remote.forEach((n) => byId.set(n.id, n))
+  write(
+    [...byId.values()].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).slice(0, 200),
+  )
+}
+
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<AppNotification[]>(read)
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/notifications`, { headers: authHeaders() })
+      if (!res.ok) return
+      const data = await res.json()
+      if (Array.isArray(data)) mergeRemote(data as AppNotification[])
+    } catch {
+      /* offline — keep the cached list */
+    }
+  }, [])
 
   useEffect(() => {
     const sync = () => setNotifications(read())
     window.addEventListener(EVENT, sync)
     window.addEventListener("storage", sync)
+    void refresh()
+    const poll = setInterval(refresh, 20000)
     return () => {
       window.removeEventListener(EVENT, sync)
       window.removeEventListener("storage", sync)
+      clearInterval(poll)
     }
-  }, [])
+  }, [refresh])
 
   const addNotification = useCallback(
-    (n: Omit<AppNotification, "id" | "createdAt" | "read"> & { read?: boolean }) => {
+    (n: Omit<AppNotification, "id" | "createdAt" | "read"> & { id?: string; read?: boolean }) => {
       const item: AppNotification = {
         read: false,
         ...n,
-        id: `nt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        id: n.id || `nt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         createdAt: new Date().toISOString(),
       }
-      write([item, ...read()])
+      write([item, ...read().filter((x) => x.id !== item.id)])
+      // Shared copy so the recipient sees it even if they were offline.
+      void fetch(`${API_BASE}/notifications`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify(item),
+      }).catch(() => undefined)
       return item
     },
     [],
   )
+
+  const patchDraft = (draftId: string, status: string, reason?: string | null) =>
+    fetch(`${API_BASE}/notifications/draft/${encodeURIComponent(draftId)}`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ status, reason: reason ?? null }),
+    }).catch(() => undefined)
 
   /** Marks every pending notification for a draft as no longer actionable. */
   const supersedeForDraft = useCallback((draftId: string) => {
@@ -88,6 +136,7 @@ export const useNotifications = () => {
         n.draftId === draftId && n.status === "pending" ? { ...n, status: "superseded" } : n,
       ),
     )
+    void patchDraft(draftId, "superseded")
   }, [])
 
   const resolveForDraft = useCallback(
@@ -99,12 +148,18 @@ export const useNotifications = () => {
             : n,
         ),
       )
+      void patchDraft(draftId, status, reason ?? null)
     },
     [],
   )
 
   const markRead = useCallback((id: string) => {
     write(read().map((n) => (n.id === id ? { ...n, read: true } : n)))
+    void fetch(`${API_BASE}/notifications/read`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({ ids: [id] }),
+    }).catch(() => undefined)
   }, [])
 
   const markAllRead = useCallback((recipientId?: string | null) => {
@@ -113,10 +168,16 @@ export const useNotifications = () => {
         !recipientId || n.recipientId === recipientId ? { ...n, read: true } : n,
       ),
     )
+    void fetch(`${API_BASE}/notifications/read`, {
+      method: "PATCH",
+      headers: authHeaders(),
+      body: JSON.stringify({}),
+    }).catch(() => undefined)
   }, [])
 
   return {
     notifications,
+    refresh,
     addNotification,
     supersedeForDraft,
     resolveForDraft,
@@ -124,3 +185,4 @@ export const useNotifications = () => {
     markAllRead,
   }
 }
+
