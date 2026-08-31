@@ -185,31 +185,41 @@ const mergeRemote = (remote: PolicyDraft[]) => {
 
 export const usePolicyDrafts = () => {
   const [drafts, setDrafts] = useState<PolicyDraft[]>(read)
+  const [syncError, setSyncError] = useState(syncFailed)
   const { addClient } = useClientDirectory()
 
   const refresh = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/conversions`, { headers: authHeaders() })
-      if (!res.ok) return
+      if (!res.ok) {
+        setSyncFailed(true)
+        return
+      }
       const data = await res.json()
       if (Array.isArray(data)) mergeRemote(data as PolicyDraft[])
+      setSyncFailed(false)
     } catch {
-      /* offline — keep local cache */
+      /* offline — keep local cache, but say so */
+      setSyncFailed(true)
     }
   }, [])
 
   useEffect(() => {
     const sync = () => setDrafts(read())
+    const syncStatus = () => setSyncError(syncFailed)
     window.addEventListener(EVENT, sync)
     window.addEventListener("storage", sync)
+    window.addEventListener(SYNC_EVENT, syncStatus)
     refresh()
     const poll = setInterval(refresh, 20000)
     return () => {
       window.removeEventListener(EVENT, sync)
       window.removeEventListener("storage", sync)
+      window.removeEventListener(SYNC_EVENT, syncStatus)
       clearInterval(poll)
     }
   }, [refresh])
+
 
   const saveDraft = useCallback((draft: Omit<PolicyDraft, "updatedAt"> & { id?: string }) => {
     const current = read()
