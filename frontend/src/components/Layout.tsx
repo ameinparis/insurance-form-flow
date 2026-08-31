@@ -12,6 +12,9 @@ import { useGlobalSearch } from "@/lib/searchContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { useEffect } from "react";
+import { prefetchApprovers } from "@/hooks/useApprovers";
+
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -25,6 +28,12 @@ export function Layout({ children }: LayoutProps) {
 
   const { userRole } = useAuth();
   const userName = localStorage.getItem("userName") || "User";
+
+  // Warm the reviewer list so approval dialogs open instantly.
+  useEffect(() => {
+    prefetchApprovers();
+  }, []);
+
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setGlobalSearchTerm(e.target.value);
