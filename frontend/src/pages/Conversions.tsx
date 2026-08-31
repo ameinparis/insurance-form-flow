@@ -17,7 +17,7 @@ import { formatDate } from "@/lib/quoteUtils"
 
 const Conversions = () => {
   const navigate = useNavigate()
-  const { drafts, removeDraft } = usePolicyDrafts()
+  const { drafts, removeDraft, syncError } = usePolicyDrafts()
   const { userRole, userId } = useAuth()
   const role = permissionsFor(userRole).role
   const isAdvisor = role === "advisor"
