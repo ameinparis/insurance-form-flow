@@ -127,7 +127,13 @@ const Conversions = () => {
       </div>
 
       <div className="px-6 py-6 space-y-6">
+        {syncError && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+            Can't reach the server — this list may be out of date and recent changes are not synced.
+          </div>
+        )}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
           {cards.map((c) => (
             <div
               key={c.key}
