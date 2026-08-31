@@ -108,15 +108,27 @@ const enqueue = (id: string, task: () => Promise<unknown>) => {
   return next
 }
 
+/** Last sync outcome, so the UI can say "not synced" instead of failing quietly. */
+const SYNC_EVENT = "policy-drafts-sync"
+let syncFailed = false
+const setSyncFailed = (failed: boolean) => {
+  if (syncFailed === failed) return
+  syncFailed = failed
+  window.dispatchEvent(new Event(SYNC_EVENT))
+}
+
 const persist = (draft: PolicyDraft) =>
   enqueue(draft.id, () =>
     fetch(`${API_BASE}/conversions/${encodeURIComponent(draft.id)}`, {
       method: "PUT",
       headers: authHeaders(),
       body: JSON.stringify(draft),
-    }).catch(() => {
-      /* offline — localStorage keeps the record */
-    }),
+    })
+      .then((res) => setSyncFailed(!res.ok))
+      .catch(() => {
+        // offline — localStorage keeps the record and the UI shows a warning
+        setSyncFailed(true)
+      }),
   )
 
 const persistDelete = (id: string) =>
@@ -124,9 +136,9 @@ const persistDelete = (id: string) =>
     fetch(`${API_BASE}/conversions/${encodeURIComponent(id)}`, {
       method: "DELETE",
       headers: authHeaders(),
-    }).catch(() => {
-      /* ignore */
-    }),
+    })
+      .then((res) => setSyncFailed(!res.ok))
+      .catch(() => setSyncFailed(true)),
   )
 
 const writeOne = (next: PolicyDraft, list?: PolicyDraft[]) => {
@@ -139,7 +151,16 @@ const writeOne = (next: PolicyDraft, list?: PolicyDraft[]) => {
   return next
 }
 
-/** Merge server records with anything only known locally (offline edits). */
+const isLocalDraft = (d?: PolicyDraft | null) => {
+  const s = String(draftStatus(d)).toLowerCase()
+  return s === "draft"
+}
+
+/**
+ * The server is the source of truth for anything past "draft" — a stale copy
+ * in one browser must never shadow the shared record. Unsent local drafts stay
+ * put, and local records the server has never seen are pushed up.
+ */
 const mergeRemote = (remote: PolicyDraft[]) => {
   const local = read()
   const byId = new Map<string, PolicyDraft>()
@@ -147,15 +168,19 @@ const mergeRemote = (remote: PolicyDraft[]) => {
   local.forEach((d) => byId.set(d.id, d))
   remote.forEach((d) => {
     const existing = byId.get(d.id)
-    if (!existing || (d.updatedAt || "") >= (existing.updatedAt || "")) byId.set(d.id, d)
+    // Keep the local copy only when it is an in-progress draft with newer edits.
+    const keepLocal =
+      existing && isLocalDraft(existing) && (existing.updatedAt || "") > (d.updatedAt || "")
+    if (!keepLocal) byId.set(d.id, d)
   })
   // Records that only exist in this browser (created while the API was down)
   // are pushed up so other roles can see them too.
   local.forEach((d) => {
-    if (!remoteIds.has(d.id) && draftStatus(d) !== "draft") persist(d)
+    if (!remoteIds.has(d.id) && !isLocalDraft(d)) persist(d)
   })
   write([...byId.values()].sort((a, b) => ((a.updatedAt || "") < (b.updatedAt || "") ? 1 : -1)))
 }
+
 
 
 export const usePolicyDrafts = () => {
