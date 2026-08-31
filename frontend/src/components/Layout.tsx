@@ -26,6 +26,12 @@ export function Layout({ children }: LayoutProps) {
   const { userRole } = useAuth();
   const userName = localStorage.getItem("userName") || "User";
 
+  // Warm the reviewer list so approval dialogs open instantly.
+  useEffect(() => {
+    prefetchApprovers();
+  }, []);
+
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setGlobalSearchTerm(e.target.value);
     // Navigate to quotes page if not already there when searching
