@@ -612,11 +612,17 @@ const PolicyDraftPreview = () => {
                     return
                   }
                   returnPolicy(draft.id, rejectReason.trim())
-                  resolveForDraft(draft.id, "draft", rejectReason.trim())
+
+                  resolveForDraft(
+                    draft.id,
+                    "rejected",
+                    rejectReason.trim()
+                  )
+
                   emitApprovalResolve({
                     draftId: draft.id,
                     kind: "returned",
-                    status: "draft",
+                    status: "rejected",
                     recipientId: draft.initiatedBy,
                     recipientName: draft.initiatedByName,
                     advisorName: userName,
@@ -624,10 +630,11 @@ const PolicyDraftPreview = () => {
                     policyType: form.productName,
                     reason: rejectReason.trim(),
                   })
+
                   setRejectOpen(false)
                   setRejectReason("")
                   toast.success("Policy conversion returned to draft")
-                }}
+                                  }}
               >
                 Reject
               </Button>

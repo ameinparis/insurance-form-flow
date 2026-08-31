@@ -270,6 +270,7 @@ const Conversions = () => {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                   {rows.map((d) => {
                     const s = draftStatus(d)
+                    const normalizedStatus = String(s).toLowerCase()    
                     return (
                       <tr
                         key={d.id}
@@ -283,12 +284,12 @@ const Conversions = () => {
                               Attempt {d.attempt}
                             </span>
                           )}
-                           {s === "rejected" && d.rejectionReason && (
+                          {normalizedStatus === "rejected" && d.rejectionReason && (
                              <p className="mt-1 text-xs font-normal text-red-500 max-w-sm">
                                Reason: {d.rejectionReason}
                              </p>
                            )}
-                           {(d.returnReason || d.reviewNote) && (s === "draft" || s === "DRAFT") && (
+                           {(d.returnReason || d.reviewNote) && normalizedStatus === "draft" && (
                              <p className="mt-1 text-xs font-normal text-amber-600 max-w-sm">
                                Returned: {d.returnReason || d.reviewNote}
                              </p>
@@ -318,7 +319,7 @@ const Conversions = () => {
                         </td>
                         {isAdvisor && (
                           <td className="px-6 py-4 text-right">
-                            {(s === "draft" || s === "DRAFT") && (
+                            {normalizedStatus === "draft" && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -331,7 +332,7 @@ const Conversions = () => {
                                 Continue Editing
                               </Button>
                             )}
-                            {(s === "rejected" || s === "REJECTED") &&
+                           {normalizedStatus === "rejected" &&
                               String(d.initiatedBy || "") === String(userId || "") && (
                                 <Button
                                   size="sm"

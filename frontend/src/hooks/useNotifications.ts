@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 
-export type NotificationKind = "assignment" | "approved" | "rejected" | "reassigned"
+export type NotificationKind = "assignment" | "approved" | "rejected" | "reassigned" | "returned"
 export type NotificationStatus = "pending" | "approved" | "rejected" | "superseded"
 
 export interface AppNotification {

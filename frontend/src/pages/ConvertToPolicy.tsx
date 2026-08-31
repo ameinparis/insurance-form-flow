@@ -1067,7 +1067,7 @@ const ConvertToPolicy = () => {
             setDraftId(saved.id)
             // Moves the conversion into "Pending Review" and assigns the reviewer.
             try {
-              const submitted = await submitForApproval(saved.id, {
+              const submitted = await submitPolicy(saved.id, {
                 id: approver.id,
                 name: approver.name,
               })

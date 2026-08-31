@@ -37,7 +37,7 @@ const ensureSocket = (): Socket | null => {
 type SocketNotification = {
   id?: string
   draftId: string
-  kind: "assignment" | "approved" | "rejected" | "reassigned"
+  kind: "assignment" | "approved" | "rejected" | "reassigned" | "returned"
   status: "pending" | "approved" | "rejected" | "superseded"
   recipientId: string | null
   recipientName?: string | null

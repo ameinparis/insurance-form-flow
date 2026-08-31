@@ -18,27 +18,33 @@ const Clients = () => {
 
   // Approved/active conversions are policies, not work in progress: make sure a client
   // record exists for each one (addClient de-dupes).
-  useEffect(() => {
-    drafts
-      .filter((d) => {
-        const s = draftStatus(d)
-        return s === "approved" || s === "APPROVED" || s === "ACTIVE" || s === "active"
-      })
-      .forEach((d) =>
-        addClient({
-          fullName: d.form?.fullName || d.form?.clientName || "Unnamed Client",
-          email: d.form?.email,
-          contactNumber: d.form?.contactNumber,
-          idNumber: d.form?.idNumber,
-          dateOfBirth: d.form?.dateOfBirth,
-          productType: d.productType || d.form?.productName || "Policy",
-          optionLabel: d.optionLabel,
-          quoteId: d.quoteId,
-          draftId: d.id,
-          premium: d.premium,
-        }),
+ useEffect(() => {
+  drafts
+    .filter((d) => {
+      const s = String(draftStatus(d))
+
+      return (
+        s === "approved" ||
+        s === "APPROVED" ||
+        s === "ACTIVE" ||
+        s === "active"
       )
-  }, [drafts, addClient])
+    })
+    .forEach((d) =>
+      addClient({
+        fullName: d.form?.fullName || d.form?.clientName || "Unnamed Client",
+        email: d.form?.email,
+        contactNumber: d.form?.contactNumber,
+        idNumber: d.form?.idNumber,
+        dateOfBirth: d.form?.dateOfBirth,
+        productType: d.productType || d.form?.productName || "Policy",
+        optionLabel: d.optionLabel,
+        quoteId: d.quoteId,
+        draftId: d.id,
+        premium: d.premium,
+      }),
+    )
+}, [drafts, addClient])
 
   // Clients open the same conversion review view used from Approvals.
   const openClient = (client: { draftId?: string; quoteId?: string; optionLabel?: string; fullName: string }) => {

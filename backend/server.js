@@ -196,7 +196,7 @@ const newQuoteSchema = new mongoose.Schema({
   medicalUnderwritingNotes: { type: String, default: "" },
 
 }, { timestamps: true });
-
+newQuoteSchema.index({ createdAt: -1 });
 const Quotes = mongoose.model("Quotes", newQuoteSchema);
 
 // Audit Log Schema
@@ -1292,27 +1292,94 @@ app.post("/api/new-quotes", authenticateToken, async (req, res) => {
 });
 
 // List all new quotes
-app.get("/api/new-quotes", authenticateToken, async (_req, res) => {
+app.get("/api/new-quotes", authenticateToken, async (req, res) => {
   try {
-    const quotes = await Quotes.find()
+    console.log("➡️ GET /api/new-quotes started");
+
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit) || 50, 1),
+      100
+    );
+
+    const skip = Math.max(
+      parseInt(req.query.skip) || 0,
+      0
+    );
+
+    // STEP 1: Fetch quotes only
+    const queryStart = Date.now();
+
+    let quotes = await Quotes.find()
+      .select("-inputs -outputs -termsAndConditions -medicalUnderwritingNotes")
       .sort({ createdAt: -1 })
-      .populate("createdBy", "firstName lastName email");
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const queryTime = Date.now() - queryStart;
+
+    // STEP 2: Populate users separately
+    const populateStart = Date.now();
+
+    quotes = await Quotes.populate(quotes, {
+      path: "createdBy",
+      select: "firstName lastName email"
+    });
+
+    const populateTime = Date.now() - populateStart;
+
+    console.log(`📊 Quote query only: ${queryTime}ms`);
+    console.log(`👤 Populate createdBy: ${populateTime}ms`);
+    console.log(`📄 Quotes returned: ${quotes.length}`);
+    console.log(`📍 Skip: ${skip} | Limit: ${limit}`);
+
     res.json(quotes);
+
   } catch (e) {
     console.error("List new quotes error:", e);
-    res.status(500).json({ message: "Failed to fetch new quotes" });
+    res.status(500).json({
+      message: "Failed to fetch new quotes"
+    });
   }
 });
 
 // Get one new quote
 app.get("/api/new-quotes/:id", authenticateToken, async (req, res) => {
   try {
+    console.log(`➡️ GET /api/new-quotes/${req.params.id} started`);
+
+    // Measure MongoDB retrieval
+    const dbStart = Date.now();
+
     const q = await Quotes.findById(req.params.id);
-    if (!q) return res.status(404).json({ message: "New Quote not found" });
-    res.json(q);
+
+    const dbTime = Date.now() - dbStart;
+
+    if (!q) {
+      return res.status(404).json({ message: "New Quote not found" });
+    }
+
+    // Measure JSON conversion and response size
+    const jsonStart = Date.now();
+
+    const json = JSON.stringify(q);
+
+    const jsonTime = Date.now() - jsonStart;
+
+    const sizeMB =
+      Buffer.byteLength(json, "utf8") / 1024 / 1024;
+
+    console.log(`✅ MongoDB quote query: ${dbTime}ms`);
+    console.log(`📦 Quote size: ${sizeMB.toFixed(2)} MB`);
+    console.log(`🔄 JSON conversion: ${jsonTime}ms`);
+
+    res.type("application/json").send(json);
+
   } catch (e) {
     console.error("Get new quote error:", e);
-    res.status(500).json({ message: "Failed to fetch new quote" });
+    res.status(500).json({
+      message: "Failed to fetch new quote"
+    });
   }
 });
 
@@ -2010,9 +2077,18 @@ app.patch("/api/policies/:id/submit", authenticateToken, async (req, res) => {
     if (policy.createdBy && String(policy.createdBy) !== String(actor.id)) {
       return res.status(403).json({ message: "Only the creator can submit this policy" });
     }
+    const update = {
+      status: "PENDING_APPROVAL",
+      submittedAt: new Date(),
+      returnReason: null,
+      reviewNote: null,
+    };
+    if (req.body?.assignedTo) update.assignedTo = String(req.body.assignedTo);
+    if (req.body?.assignedToName) update.assignedToName = String(req.body.assignedToName);
+    if (req.body?.assignedTo) update.assignedAt = new Date();
     const updated = await Policy.findOneAndUpdate(
       { id: req.params.id },
-      { $set: { status: "PENDING_APPROVAL", submittedAt: new Date(), returnReason: null, reviewNote: null } },
+      { $set: update },
       { new: true }
     ).lean();
     const { _id, __v, ...rest } = updated;

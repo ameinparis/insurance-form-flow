@@ -117,10 +117,15 @@ const setSyncFailed = (failed: boolean) => {
   window.dispatchEvent(new Event(SYNC_EVENT))
 }
 
-const persist = (draft: PolicyDraft) =>
-  enqueue(draft.id, () =>
-    fetch(`${API_BASE}/conversions/${encodeURIComponent(draft.id)}`, {
-      method: "PUT",
+const persist = (draft: PolicyDraft) => {
+  const isNewPolicy = String(draft.id || "").startsWith("POL-")
+  const url = isNewPolicy
+    ? `${API_BASE}/policies/${encodeURIComponent(draft.id)}`
+    : `${API_BASE}/conversions/${encodeURIComponent(draft.id)}`
+  const method = isNewPolicy ? "PATCH" : "PUT"
+  return enqueue(draft.id, () =>
+    fetch(url, {
+      method,
       headers: authHeaders(),
       body: JSON.stringify(draft),
     })
@@ -130,16 +135,22 @@ const persist = (draft: PolicyDraft) =>
         setSyncFailed(true)
       }),
   )
+}
 
-const persistDelete = (id: string) =>
-  enqueue(id, () =>
-    fetch(`${API_BASE}/conversions/${encodeURIComponent(id)}`, {
+const persistDelete = (id: string) => {
+  const isNewPolicy = String(id || "").startsWith("POL-")
+  const url = isNewPolicy
+    ? `${API_BASE}/policies/${encodeURIComponent(id)}`
+    : `${API_BASE}/conversions/${encodeURIComponent(id)}`
+  return enqueue(id, () =>
+    fetch(url, {
       method: "DELETE",
       headers: authHeaders(),
     })
       .then((res) => setSyncFailed(!res.ok))
       .catch(() => setSyncFailed(true)),
   )
+}
 
 const writeOne = (next: PolicyDraft, list?: PolicyDraft[]) => {
   const current = list ?? read()
@@ -190,13 +201,22 @@ export const usePolicyDrafts = () => {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/conversions`, { headers: authHeaders() })
-      if (!res.ok) {
+      const [convRes, policyRes] = await Promise.all([
+        fetch(`${API_BASE}/conversions`, { headers: authHeaders() }),
+        fetch(`${API_BASE}/policies/pipeline`, { headers: authHeaders() }),
+      ])
+      const convOk = convRes.ok
+      const policyOk = policyRes.ok
+      if (!convOk && !policyOk) {
         setSyncFailed(true)
         return
       }
-      const data = await res.json()
-      if (Array.isArray(data)) mergeRemote(data as PolicyDraft[])
+      const [convData, policyData] = await Promise.all([
+        convOk ? convRes.json() : [],
+        policyOk ? policyRes.json() : [],
+      ])
+      const merged = [...(Array.isArray(convData) ? convData : []), ...(Array.isArray(policyData) ? policyData : [])]
+      if (merged.length) mergeRemote(merged as PolicyDraft[])
       setSyncFailed(false)
     } catch {
       /* offline — keep local cache, but say so */
@@ -449,10 +469,14 @@ export const usePolicyDrafts = () => {
     return res.json()
   }, [])
 
-  const submitPolicy = useCallback(async (id: string) => {
+  const submitPolicy = useCallback(async (id: string, assignee?: { id?: string | null; name?: string | null }) => {
     const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}/submit`, {
       method: "PATCH",
       headers: authHeaders(),
+      body: JSON.stringify({
+        assignedTo: assignee?.id ?? null,
+        assignedToName: assignee?.name ?? null,
+      }),
     })
     if (!res.ok) throw new Error("Failed to submit policy")
     return res.json()
