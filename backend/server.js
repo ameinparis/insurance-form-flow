@@ -2068,8 +2068,9 @@ app.post("/api/policies", authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/policies/:id — Load one shared conversion for its owner/reviewer.
-app.get("/api/policies/:id", authenticateToken, async (req, res) => {
+// GET /api/policy-records/:id — Load one shared conversion for its owner/reviewer.
+// This intentionally uses a distinct prefix so it cannot shadow /api/policies/pipeline.
+app.get("/api/policy-records/:id", authenticateToken, async (req, res) => {
   try {
     const policy = await Policy.findOne({ id: req.params.id }).lean();
     if (!policy) return res.status(404).json({ message: "Policy not found" });
@@ -2139,10 +2140,68 @@ app.patch("/api/policies/:id/submit", authenticateToken, async (req, res) => {
       { $set: update },
       { new: true }
     ).lean();
-    res.json(cleanPolicy(updated));
+    const notificationId = `assignment_${updated.id}_${Date.now()}`;
+    await Notification.findOneAndUpdate(
+      { id: notificationId },
+      {
+        $set: {
+          id: notificationId,
+          draftId: updated.id,
+          kind: "assignment",
+          status: "pending",
+          recipientId: updated.assignedTo,
+          recipientName: updated.assignedToName,
+          advisorName: updated.initiatedByName || actor.name,
+          clientName: updated.form?.fullName || updated.form?.clientName || null,
+          policyType: updated.form?.productName || updated.optionLabel || updated.productType || null,
+          read: false,
+          createdAt: new Date().toISOString(),
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    res.json({ ...cleanPolicy(updated), notificationId });
   } catch (e) {
     console.error("Submit policy error:", e);
     policyError(res, e, "Failed to submit policy");
+  }
+});
+
+// PATCH /api/policies/:id/reassign — Move a pending conversion to another reviewer.
+app.patch("/api/policies/:id/reassign", authenticateToken, async (req, res) => {
+  try {
+    if (!(await resolveReviewer(req))) return res.status(403).json({ message: "Only reviewers can reassign conversions" });
+    const policy = await Policy.findOne({ id: req.params.id }).lean();
+    if (!policy) return res.status(404).json({ message: "Policy not found" });
+    if (policy.status !== "PENDING_APPROVAL") return res.status(400).json({ message: "Only pending conversions can be reassigned" });
+    const actor = await resolvedPolicyActor(req);
+    const role = String((await User.findById(actor.id).select("role").lean())?.role || req.user.role || "").toLowerCase();
+    const isSuper = role === "superuser" || role === "super_admin" || role === "superadmin";
+    if (!isSuper && String(policy.assignedTo || "") !== actor.id) {
+      return res.status(403).json({ message: "This conversion is assigned to another reviewer" });
+    }
+    const assignedTo = req.body?.assignedTo ? String(req.body.assignedTo) : null;
+    if (!assignedTo) return res.status(400).json({ message: "A reviewer is required" });
+    const now = new Date();
+    const entry = {
+      at: now.toISOString(),
+      byId: actor.id,
+      byName: actor.name,
+      fromId: policy.assignedTo || null,
+      fromName: policy.assignedToName || null,
+      toId: assignedTo,
+      toName: req.body?.assignedToName || null,
+    };
+    const updated = await Policy.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: { assignedTo, assignedToName: entry.toName, assignedAt: now }, $push: { reassignments: entry } },
+      { new: true }
+    ).lean();
+    await Notification.updateMany({ draftId: req.params.id, status: "pending" }, { $set: { status: "superseded" } });
+    res.json(cleanPolicy(updated));
+  } catch (e) {
+    console.error("Reassign policy error:", e);
+    policyError(res, e, "Failed to reassign policy");
   }
 });
 

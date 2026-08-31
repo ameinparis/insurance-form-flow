@@ -29,7 +29,7 @@ export function NotificationBell() {
   const navigate = useNavigate()
   const { userId, userName, permissions } = useAuth()
   const { notifications, addNotification, markRead, markAllRead, resolveForDraft } = useNotifications()
-  const { drafts, approveDraft, rejectDraft, refresh } = usePolicyDrafts()
+  const { drafts, approvePolicy, returnPolicy, refresh } = usePolicyDrafts()
   const [open, setOpen] = useState(false)
   const [rejecting, setRejecting] = useState<AppNotification | null>(null)
   const [reason, setReason] = useState("")
@@ -71,8 +71,9 @@ export function NotificationBell() {
     return isSuper || String(draft.assignedTo || "") === String(userId || "")
   }
 
-  const handleApprove = (n: AppNotification) => {
-    approveDraft(n.draftId, { id: userId, name: userName })
+  const handleApprove = async (n: AppNotification) => {
+    try {
+      await approvePolicy(n.draftId)
     resolveForDraft(n.draftId, "approved")
     markRead(n.id)
     const draft = drafts.find((d) => d.id === n.draftId)
@@ -86,16 +87,21 @@ export function NotificationBell() {
       clientName: n.clientName,
       policyType: n.policyType,
     })
-    toast.success("Policy conversion approved")
+      await refresh()
+      toast.success("Policy conversion approved")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not approve conversion")
+    }
   }
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!rejecting) return
     if (!reason.trim()) {
       toast.error("A reason is required to reject")
       return
     }
-    rejectDraft(rejecting.draftId, { id: userId, name: userName }, reason.trim())
+    try {
+      await returnPolicy(rejecting.draftId, reason.trim())
     resolveForDraft(rejecting.draftId, "rejected", reason.trim())
     markRead(rejecting.id)
     const draft = drafts.find((d) => d.id === rejecting.draftId)
@@ -112,7 +118,11 @@ export function NotificationBell() {
     })
     setRejecting(null)
     setReason("")
-    toast.success("Policy conversion rejected")
+      await refresh()
+      toast.success("Policy conversion returned to draft")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not return conversion")
+    }
   }
 
   return (
@@ -202,7 +212,7 @@ export function NotificationBell() {
                             <Button
                               size="sm"
                               className="rounded-full h-7 px-4 text-xs"
-                              onClick={() => handleApprove(n)}
+                              onClick={() => void handleApprove(n)}
                             >
                               Approve
                             </Button>
@@ -244,7 +254,7 @@ export function NotificationBell() {
             </Button>
             <Button
               className="rounded-full bg-red-500 hover:bg-red-600 text-white"
-              onClick={handleReject}
+              onClick={() => void handleReject()}
             >
               Reject
             </Button>

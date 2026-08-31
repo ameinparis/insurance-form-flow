@@ -578,21 +578,26 @@ const PolicyDraftPreview = () => {
         confirmLabel="Reassign"
         currentAssigneeId={draft.assignedTo}
         onConfirm={async (approver) => {
-          await reassignDraft(draft.id, approver, { id: userId, name: userName })
-          supersedeForDraft(draft.id)
-          const notification = {
-            draftId: draft.id,
-            kind: "reassigned" as const,
-            status: "pending" as const,
-            recipientId: approver.id,
-            recipientName: approver.name,
-            advisorName: userName || draft.initiatedByName || "A user",
-            clientName: form.fullName,
-            policyType: form.productName,
+          try {
+            await reassignDraft(draft.id, approver, { id: userId, name: userName })
+            supersedeForDraft(draft.id)
+            const notification = {
+              draftId: draft.id,
+              kind: "reassigned" as const,
+              status: "pending" as const,
+              recipientId: approver.id,
+              recipientName: approver.name,
+              advisorName: userName || draft.initiatedByName || "A user",
+              clientName: form.fullName,
+              policyType: form.productName,
+            }
+            addNotification(notification)
+            emitApprovalResolve(notification)
+            await refresh()
+            toast.success(`Reassigned to ${approver.name}`)
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Could not reassign conversion")
           }
-          addNotification(notification)
-          emitApprovalResolve(notification)
-          toast.success(`Reassigned to ${approver.name}`)
         }}
       />
 

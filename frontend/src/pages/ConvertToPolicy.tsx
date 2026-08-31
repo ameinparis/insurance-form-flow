@@ -1072,6 +1072,7 @@ const ConvertToPolicy = () => {
               })
               if (!submitted) throw new Error("Conversion could not be submitted")
               const notification = {
+                id: submitted.notificationId,
                 draftId: submitted.id,
                 kind: "assignment" as const,
                 status: "pending" as const,
