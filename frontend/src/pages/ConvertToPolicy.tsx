@@ -207,6 +207,10 @@ const ConvertToPolicy = () => {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle")
   const timer = useRef<ReturnType<typeof setTimeout>>()
   const first = useRef(true)
+  // Mirror of draftId that is always current inside async callbacks, plus a
+  // one-at-a-time write chain shared by autosave and submit.
+  const draftIdRef = useRef<string | undefined>(prefill.draftId)
+  const saveChain = useRef<Promise<unknown>>(Promise.resolve())
 
   const { config: feeConfig } = useFeeConfig()
   const configuredFunds = useFundOptions()
