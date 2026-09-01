@@ -117,17 +117,37 @@ const setSyncFailed = (failed: boolean) => {
   window.dispatchEvent(new Event(SYNC_EVENT))
 }
 
+/** Shared records live in the /api/policies workflow and carry a POL- id. */
+const isPolicyId = (id?: string | null) => String(id || "").startsWith("POL-")
+
+/** Read the server's error message instead of hiding it behind a generic one. */
+const apiError = async (res: Response, fallback: string) => {
+  let message = fallback
+  try {
+    const body = await res.json()
+    if (body?.message) message = body.detail ? `${body.message}: ${body.detail}` : body.message
+  } catch {
+    /* non-JSON response */
+  }
+  return new Error(message)
+}
+
 const persist = (draft: PolicyDraft) => {
-  const isNewPolicy = String(draft.id || "").startsWith("POL-")
-  const url = isNewPolicy
-    ? `${API_BASE}/policies/${encodeURIComponent(draft.id)}`
-    : `${API_BASE}/conversions/${encodeURIComponent(draft.id)}`
-  const method = isNewPolicy ? "PATCH" : "PUT"
+  // Legacy local-only drafts (pd_ ids) are never pushed to /api/conversions:
+  // the shared workflow is /api/policies and the two must not be mixed.
+  if (!isPolicyId(draft.id)) return Promise.resolve()
   return enqueue(draft.id, () =>
-    fetch(url, {
-      method,
+    fetch(`${API_BASE}/policies/${encodeURIComponent(draft.id)}`, {
+      method: "PATCH",
       headers: authHeaders(),
-      body: JSON.stringify(draft),
+      body: JSON.stringify({
+        form: draft.form,
+        step: draft.step,
+        optionLabel: draft.optionLabel,
+        premium: draft.premium,
+        productType: draft.productType,
+        clientId: draft.clientId,
+      }),
     })
       .then((res) => setSyncFailed(!res.ok))
       .catch(() => {
@@ -138,12 +158,9 @@ const persist = (draft: PolicyDraft) => {
 }
 
 const persistDelete = (id: string) => {
-  const isNewPolicy = String(id || "").startsWith("POL-")
-  const url = isNewPolicy
-    ? `${API_BASE}/policies/${encodeURIComponent(id)}`
-    : `${API_BASE}/conversions/${encodeURIComponent(id)}`
+  if (!isPolicyId(id)) return Promise.resolve()
   return enqueue(id, () =>
-    fetch(url, {
+    fetch(`${API_BASE}/policies/${encodeURIComponent(id)}`, {
       method: "DELETE",
       headers: authHeaders(),
     })
@@ -151,6 +168,7 @@ const persistDelete = (id: string) => {
       .catch(() => setSyncFailed(true)),
   )
 }
+
 
 const writeOne = (next: PolicyDraft, list?: PolicyDraft[]) => {
   const current = list ?? read()
