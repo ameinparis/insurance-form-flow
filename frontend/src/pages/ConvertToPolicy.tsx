@@ -1053,25 +1053,11 @@ const ConvertToPolicy = () => {
           excludeId={userId}
           onConfirm={async (approver) => {
             try {
-              const payload = {
-                step: currentStep,
-                form: {
-                  ...form,
-                  purchasePremium: purchasePremium.toFixed(2),
-                  upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
-                  administrationFee: administrationFee.toFixed(2),
-                  switchFee: SWITCH_FEE.toFixed(2),
-                  funeralPremium: FUNERAL_PREMIUM.toFixed(2),
-                  ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
-                  ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
-                },
-                productType: prefill.productType,
-                optionLabel: prefill.optionLabel,
-                quoteId: prefill.quoteId,
-                premium: prefill.premium,
-              }
-              const saved = draftId ? await updatePolicy(draftId, payload) : await createPolicy(payload)
-              setDraftId(saved.id)
+              if (!approver?.id) throw new Error("Select a reviewer before submitting")
+              // Cancel the pending autosave and flush the latest values through
+              // the same queue, so submit always runs on one saved draft.
+              clearTimeout(timer.current)
+              const saved = await persistDraft(buildPayload())
               const submitted = await submitPolicy(saved.id, {
                 id: approver.id,
                 name: approver.name,
@@ -1090,12 +1076,18 @@ const ConvertToPolicy = () => {
               }
               addNotification(notification)
               emitApprovalAssign(notification)
+              // Pull the shared pipeline so Conversions shows the new
+              // PENDING_APPROVAL record the moment we land on it.
+              await refresh()
               toast.success(`Submitted to ${approver.name} for approval`)
+              setAssignOpen(false)
               navigate("/conversions")
-            } catch {
-              toast.error("The conversion was saved, but could not be submitted. Please try again.")
+            } catch (e) {
+              console.error("Submit for approval failed:", e)
+              toast.error(e instanceof Error ? e.message : "Could not submit this conversion")
             }
           }}
+
         />
 
       </div>
