@@ -519,7 +519,7 @@ export const usePolicyDrafts = () => {
 
     saveDraft,
     removeDraft,
-    submitForApproval,
+    
     reassignDraft,
     approveDraft,
     rejectDraft,
