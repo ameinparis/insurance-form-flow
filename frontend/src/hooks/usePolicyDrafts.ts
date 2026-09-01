@@ -223,29 +223,23 @@ export const usePolicyDrafts = () => {
   const { addClient } = useClientDirectory()
 
   const refresh = useCallback(async () => {
+    // Single source of truth: the shared policy pipeline. /api/conversions is
+    // the legacy workflow and is deliberately not read here.
     try {
-      const [convRes, policyRes] = await Promise.all([
-        fetch(`${API_BASE}/conversions`, { headers: authHeaders() }),
-        fetch(`${API_BASE}/policies/pipeline`, { headers: authHeaders() }),
-      ])
-      const convOk = convRes.ok
-      const policyOk = policyRes.ok
-      if (!convOk && !policyOk) {
+      const res = await fetch(`${API_BASE}/policies/pipeline`, { headers: authHeaders() })
+      if (!res.ok) {
         setSyncFailed(true)
         return
       }
-      const [convData, policyData] = await Promise.all([
-        convOk ? convRes.json() : [],
-        policyOk ? policyRes.json() : [],
-      ])
-      const merged = [...(Array.isArray(convData) ? convData : []), ...(Array.isArray(policyData) ? policyData : [])]
-      mergeRemote(merged as PolicyDraft[])
+      const data = await res.json()
+      mergeRemote((Array.isArray(data) ? data : []) as PolicyDraft[])
       setSyncFailed(false)
     } catch {
       /* offline — keep local cache, but say so */
       setSyncFailed(true)
     }
   }, [])
+
 
   useEffect(() => {
     const sync = () => setDrafts(read())
