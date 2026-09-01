@@ -127,6 +127,17 @@ const App = () => (
                   <Clients />
                 </Layout>
               } />
+              <Route path="/clients/:id" element={
+                <Layout>
+                  <ClientDetail />
+                </Layout>
+              } />
+              <Route path="/clients/:id/policies/:policyId" element={
+                <Layout>
+                  <ClientDetail />
+                </Layout>
+              } />
+
               <Route path="/conversions" element={
                 <Layout>
                   <Conversions />
