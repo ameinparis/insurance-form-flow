@@ -131,7 +131,7 @@ userSchema.index({ pendingExpiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const User = mongoose.model("User", userSchema);
 
-//
+//token schema
 const tokenSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   token: { type: String, required: true },
@@ -199,6 +199,20 @@ const newQuoteSchema = new mongoose.Schema({
 newQuoteSchema.index({ createdAt: -1 });
 const Quotes = mongoose.model("Quotes", newQuoteSchema);
 
+const clientSchema = new mongoose.Schema({
+  clientNumber: { type: String, required: true, unique: true, index: true, trim: true },
+  fullName: { type: String, required: true, trim: true },
+  idNumber: { type: String, required: true, unique: true, index: true, trim: true },
+  email: { type: String, lowercase: true, trim: true },
+  contactNumber: { type: String, trim: true },
+  dateOfBirth: String,
+  status: { type: String, enum: ["ACTIVE", "INACTIVE"], default: "ACTIVE", index: true },
+  createdFromPolicy: { type: String, default: null },
+  createdFromQuote: { type: String, default: null },
+}, { timestamps: true });
+
+const Client = mongoose.models.Client || mongoose.model("Client", clientSchema, "clients");
+
 // Audit Log Schema
 const auditLogSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
@@ -231,6 +245,8 @@ auditLogSchema.index({ userId: 1, createdAt: -1 });
 auditLogSchema.index({ action: 1, createdAt: -1 });
 
 const AuditLog = mongoose.model("AuditLog", auditLogSchema);
+
+
 
 /* ---------------------------- Auth helpers --------------------------- */
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -2232,9 +2248,30 @@ app.patch("/api/policies/:id/approve", authenticateToken, async (req, res) => {
     if (!isSuper && String(policy.initiatedBy || policy.createdBy || "") === actor.id) {
       return res.status(403).json({ message: "Admins cannot approve their own conversions" });
     }
+    const fullName = String(policy.form?.fullName || "").trim();
+    const idNumber = String(policy.form?.idNumber || "").trim();
+    if (!fullName || !idNumber) {
+      return res.status(400).json({ message: "Client name and ID number are required before approval" });
+    }
+    const normalizedIdNumber = String(idNumber).trim();
+    let client = await Client.findOne({ idNumber: normalizedIdNumber });
+    if (!client) {
+      const clientNumber = `ELC-${new Date().getFullYear()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+      client = await Client.create({
+        clientNumber,
+        fullName,
+        idNumber: normalizedIdNumber,
+        email: policy.form?.email || null,
+        contactNumber: policy.form?.contactNumber || null,
+        dateOfBirth: policy.form?.dateOfBirth || null,
+        status: "ACTIVE",
+        createdFromPolicy: policy.id,
+        createdFromQuote: policy.quoteId || null,
+      });
+    }
     const updated = await Policy.findOneAndUpdate(
       { id: req.params.id },
-      { $set: { status: "APPROVED", approvedBy: actor.id, approvedByName: actor.name, approvedAt: new Date(), reviewedBy: actor.id, reviewedByName: actor.name, reviewedAt: new Date(), reviewNote: req.body?.note || null } },
+      { $set: { status: "APPROVED", approvedBy: actor.id, approvedByName: actor.name, approvedAt: new Date(), reviewedBy: actor.id, reviewedByName: actor.name, reviewedAt: new Date(), reviewNote: req.body?.note || null, clientId: client._id.toString() } },
       { new: true }
     ).lean();
     await Notification.updateMany({ draftId: req.params.id, status: "pending" }, { $set: { status: "approved", read: false, reason: req.body?.note || null } });
@@ -2303,5 +2340,28 @@ app.get("/api/clients/:id/policies", authenticateToken, async (req, res) => {
   } catch (e) {
     console.error("Client policies error:", e);
     res.status(500).json({ message: "Failed to fetch client policies" });
+  }
+});
+
+// GET /api/clients — Fetch all clients
+app.get("/api/clients", authenticateToken, async (_req, res) => {
+  try {
+    const clients = await Client.find().sort({ createdAt: -1 }).lean();
+    res.json(clients);
+  } catch (e) {
+    console.error("Fetch clients error:", e);
+    res.status(500).json({ message: "Failed to fetch clients" });
+  }
+});
+
+// GET /api/clients/:id — Fetch a single client
+app.get("/api/clients/:id", authenticateToken, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id).lean();
+    if (!client) return res.status(404).json({ message: "Client not found" });
+    res.json(client);
+  } catch (e) {
+    console.error("Fetch client error:", e);
+    res.status(500).json({ message: "Failed to fetch client" });
   }
 });
