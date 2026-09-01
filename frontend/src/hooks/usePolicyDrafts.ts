@@ -417,37 +417,57 @@ export const usePolicyDrafts = () => {
     optionLabel?: string | null
     premium?: number | null
     clientId?: string | null
-  }) => {
+  }): Promise<PolicyDraft> => {
     const res = await fetch(`${API_BASE}/policies`, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify(payload),
     })
-    if (!res.ok) throw new Error("Failed to create policy")
-    return res.json()
+    if (!res.ok) {
+      setSyncFailed(true)
+      throw await apiError(res, "Failed to create policy")
+    }
+    setSyncFailed(false)
+    // Cache immediately so the new DRAFT shows up in Conversions right away
+    // instead of waiting for the next pipeline poll.
+    return cacheOne((await res.json()) as PolicyDraft)
   }, [])
 
-  const updatePolicy = useCallback(async (id: string, patch: Record<string, unknown>) => {
+  const updatePolicy = useCallback(async (id: string, patch: Record<string, unknown>): Promise<PolicyDraft> => {
     const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify(patch),
     })
-    if (!res.ok) throw new Error("Failed to update policy")
-    return res.json()
+    if (!res.ok) {
+      setSyncFailed(true)
+      throw await apiError(res, "Failed to update policy")
+    }
+    setSyncFailed(false)
+    return cacheOne((await res.json()) as PolicyDraft)
   }, [])
 
-  const submitPolicy = useCallback(async (id: string, assignee?: { id?: string | null; name?: string | null }) => {
+  const submitPolicy = useCallback(async (
+    id: string,
+    assignee?: { id?: string | null; name?: string | null },
+  ): Promise<PolicyDraft & { notificationId?: string }> => {
+    if (!assignee?.id) throw new Error("Select a reviewer before submitting")
     const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}/submit`, {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify({
-        assignedTo: assignee?.id ?? null,
-        assignedToName: assignee?.name ?? null,
+        assignedTo: assignee.id,
+        assignedToName: assignee.name ?? null,
       }),
     })
-    if (!res.ok) throw new Error("Failed to submit policy")
-    return res.json()
+    if (!res.ok) {
+      setSyncFailed(true)
+      throw await apiError(res, "Failed to submit policy")
+    }
+    setSyncFailed(false)
+    const saved = (await res.json()) as PolicyDraft & { notificationId?: string }
+    cacheOne(saved)
+    return saved
   }, [])
 
   const approvePolicy = useCallback(async (id: string, note?: string | null) => {
@@ -456,7 +476,7 @@ export const usePolicyDrafts = () => {
       headers: authHeaders(),
       body: JSON.stringify({ note: note || null }),
     })
-    if (!res.ok) throw new Error("Failed to approve policy")
+    if (!res.ok) throw await apiError(res, "Failed to approve policy")
     const saved = await res.json() as PolicyDraft
     return cacheOne(saved)
   }, [])
@@ -467,10 +487,11 @@ export const usePolicyDrafts = () => {
       headers: authHeaders(),
       body: JSON.stringify({ reason }),
     })
-    if (!res.ok) throw new Error("Failed to return policy")
+    if (!res.ok) throw await apiError(res, "Failed to return policy")
     const saved = await res.json() as PolicyDraft
     return cacheOne(saved)
   }, [])
+
 
   const fetchPolicy = useCallback(async (id: string) => {
     const res = await fetch(`${API_BASE}/policy-records/${encodeURIComponent(id)}`, { headers: authHeaders() })
