@@ -117,17 +117,37 @@ const setSyncFailed = (failed: boolean) => {
   window.dispatchEvent(new Event(SYNC_EVENT))
 }
 
+/** Shared records live in the /api/policies workflow and carry a POL- id. */
+const isPolicyId = (id?: string | null) => String(id || "").startsWith("POL-")
+
+/** Read the server's error message instead of hiding it behind a generic one. */
+const apiError = async (res: Response, fallback: string) => {
+  let message = fallback
+  try {
+    const body = await res.json()
+    if (body?.message) message = body.detail ? `${body.message}: ${body.detail}` : body.message
+  } catch {
+    /* non-JSON response */
+  }
+  return new Error(message)
+}
+
 const persist = (draft: PolicyDraft) => {
-  const isNewPolicy = String(draft.id || "").startsWith("POL-")
-  const url = isNewPolicy
-    ? `${API_BASE}/policies/${encodeURIComponent(draft.id)}`
-    : `${API_BASE}/conversions/${encodeURIComponent(draft.id)}`
-  const method = isNewPolicy ? "PATCH" : "PUT"
+  // Legacy local-only drafts (pd_ ids) are never pushed to /api/conversions:
+  // the shared workflow is /api/policies and the two must not be mixed.
+  if (!isPolicyId(draft.id)) return Promise.resolve()
   return enqueue(draft.id, () =>
-    fetch(url, {
-      method,
+    fetch(`${API_BASE}/policies/${encodeURIComponent(draft.id)}`, {
+      method: "PATCH",
       headers: authHeaders(),
-      body: JSON.stringify(draft),
+      body: JSON.stringify({
+        form: draft.form,
+        step: draft.step,
+        optionLabel: draft.optionLabel,
+        premium: draft.premium,
+        productType: draft.productType,
+        clientId: draft.clientId,
+      }),
     })
       .then((res) => setSyncFailed(!res.ok))
       .catch(() => {
@@ -138,12 +158,9 @@ const persist = (draft: PolicyDraft) => {
 }
 
 const persistDelete = (id: string) => {
-  const isNewPolicy = String(id || "").startsWith("POL-")
-  const url = isNewPolicy
-    ? `${API_BASE}/policies/${encodeURIComponent(id)}`
-    : `${API_BASE}/conversions/${encodeURIComponent(id)}`
+  if (!isPolicyId(id)) return Promise.resolve()
   return enqueue(id, () =>
-    fetch(url, {
+    fetch(`${API_BASE}/policies/${encodeURIComponent(id)}`, {
       method: "DELETE",
       headers: authHeaders(),
     })
@@ -151,6 +168,7 @@ const persistDelete = (id: string) => {
       .catch(() => setSyncFailed(true)),
   )
 }
+
 
 const writeOne = (next: PolicyDraft, list?: PolicyDraft[]) => {
   const current = list ?? read()
@@ -205,29 +223,23 @@ export const usePolicyDrafts = () => {
   const { addClient } = useClientDirectory()
 
   const refresh = useCallback(async () => {
+    // Single source of truth: the shared policy pipeline. /api/conversions is
+    // the legacy workflow and is deliberately not read here.
     try {
-      const [convRes, policyRes] = await Promise.all([
-        fetch(`${API_BASE}/conversions`, { headers: authHeaders() }),
-        fetch(`${API_BASE}/policies/pipeline`, { headers: authHeaders() }),
-      ])
-      const convOk = convRes.ok
-      const policyOk = policyRes.ok
-      if (!convOk && !policyOk) {
+      const res = await fetch(`${API_BASE}/policies/pipeline`, { headers: authHeaders() })
+      if (!res.ok) {
         setSyncFailed(true)
         return
       }
-      const [convData, policyData] = await Promise.all([
-        convOk ? convRes.json() : [],
-        policyOk ? policyRes.json() : [],
-      ])
-      const merged = [...(Array.isArray(convData) ? convData : []), ...(Array.isArray(policyData) ? policyData : [])]
-      mergeRemote(merged as PolicyDraft[])
+      const data = await res.json()
+      mergeRemote((Array.isArray(data) ? data : []) as PolicyDraft[])
       setSyncFailed(false)
     } catch {
       /* offline — keep local cache, but say so */
       setSyncFailed(true)
     }
   }, [])
+
 
   useEffect(() => {
     const sync = () => setDrafts(read())
@@ -270,61 +282,10 @@ export const usePolicyDrafts = () => {
     persistDelete(id)
   }, [])
 
-  /** Submit (or resubmit) for approval, assigning a specific reviewer. */
-  const submitForApproval = useCallback(
-    async (id: string, assignee?: { id?: string | null; name?: string | null }) => {
-      const current = read()
-      const d = current.find((x) => x.id === id)
-      if (!d) return undefined
-      const now = new Date().toISOString()
-      const isResubmission = d.status === "rejected"
-      const next: PolicyDraft = {
-        ...d,
-        status: "pending_approval",
-        attempt: (d.attempt || 1) + (isResubmission ? 1 : 0),
-        assignedTo: assignee?.id ?? d.assignedTo ?? null,
-        assignedToName: assignee?.name ?? d.assignedToName ?? null,
-        assignedAt: now,
-        submittedAt: now,
-        // Clear the current round's decision, history keeps the record.
-        rejectedBy: null,
-        rejectedByName: null,
-        rejectedAt: null,
-        rejectionReason: null,
-        reviewNote: null,
-        reviewedBy: null,
-        reviewedByName: null,
-        reviewedAt: null,
-        updatedAt: now,
-      }
-      const saved = await enqueue(next.id, async () => {
-        const response = await fetch(
-          `${API_BASE}/conversions/${encodeURIComponent(next.id)}/submit`,
-          {
-            method: "PATCH",
-            headers: authHeaders(),
-            body: JSON.stringify({
-              assignedTo: next.assignedTo,
-              assignedToName: next.assignedToName,
-              submittedAt: next.submittedAt,
-              assignedAt: next.assignedAt,
-              attempt: next.attempt,
-            }),
-          },
-        )
-        if (!response.ok) throw new Error("Failed to submit conversion for approval")
-        return response.json() as Promise<PolicyDraft>
-      })
+  // NOTE: submitting goes through `submitPolicy` (PATCH /api/policies/:id/submit).
+  // The legacy /api/conversions submit path was removed so a conversion can
+  // never exist in both workflows.
 
-      const latest = read()
-      const savedIndex = latest.findIndex((item) => item.id === saved.id)
-      if (savedIndex >= 0) latest[savedIndex] = saved
-      else latest.unshift(saved)
-      write([...latest])
-      return saved
-    },
-    [],
-  )
 
   /** Move a pending conversion to a different reviewer. */
   const reassignDraft = useCallback(
@@ -333,14 +294,15 @@ export const usePolicyDrafts = () => {
       assignee: { id?: string | null; name?: string | null },
       actor: { id?: string | null; name?: string | null },
     ) => {
-      const isPolicy = String(id).startsWith("POL-")
+      const isPolicy = isPolicyId(id)
       if (isPolicy) {
         const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}/reassign`, {
           method: "PATCH",
           headers: authHeaders(),
           body: JSON.stringify({ assignedTo: assignee.id ?? null, assignedToName: assignee.name ?? null }),
         })
-        if (!res.ok) throw new Error("Failed to reassign conversion")
+        if (!res.ok) throw await apiError(res, "Failed to reassign conversion")
+
         const saved = await res.json() as PolicyDraft
         return cacheOne(saved)
       }
@@ -455,37 +417,57 @@ export const usePolicyDrafts = () => {
     optionLabel?: string | null
     premium?: number | null
     clientId?: string | null
-  }) => {
+  }): Promise<PolicyDraft> => {
     const res = await fetch(`${API_BASE}/policies`, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify(payload),
     })
-    if (!res.ok) throw new Error("Failed to create policy")
-    return res.json()
+    if (!res.ok) {
+      setSyncFailed(true)
+      throw await apiError(res, "Failed to create policy")
+    }
+    setSyncFailed(false)
+    // Cache immediately so the new DRAFT shows up in Conversions right away
+    // instead of waiting for the next pipeline poll.
+    return cacheOne((await res.json()) as PolicyDraft)
   }, [])
 
-  const updatePolicy = useCallback(async (id: string, patch: Record<string, unknown>) => {
+  const updatePolicy = useCallback(async (id: string, patch: Record<string, unknown>): Promise<PolicyDraft> => {
     const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify(patch),
     })
-    if (!res.ok) throw new Error("Failed to update policy")
-    return res.json()
+    if (!res.ok) {
+      setSyncFailed(true)
+      throw await apiError(res, "Failed to update policy")
+    }
+    setSyncFailed(false)
+    return cacheOne((await res.json()) as PolicyDraft)
   }, [])
 
-  const submitPolicy = useCallback(async (id: string, assignee?: { id?: string | null; name?: string | null }) => {
+  const submitPolicy = useCallback(async (
+    id: string,
+    assignee?: { id?: string | null; name?: string | null },
+  ): Promise<PolicyDraft & { notificationId?: string }> => {
+    if (!assignee?.id) throw new Error("Select a reviewer before submitting")
     const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}/submit`, {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify({
-        assignedTo: assignee?.id ?? null,
-        assignedToName: assignee?.name ?? null,
+        assignedTo: assignee.id,
+        assignedToName: assignee.name ?? null,
       }),
     })
-    if (!res.ok) throw new Error("Failed to submit policy")
-    return res.json()
+    if (!res.ok) {
+      setSyncFailed(true)
+      throw await apiError(res, "Failed to submit policy")
+    }
+    setSyncFailed(false)
+    const saved = (await res.json()) as PolicyDraft & { notificationId?: string }
+    cacheOne(saved)
+    return saved
   }, [])
 
   const approvePolicy = useCallback(async (id: string, note?: string | null) => {
@@ -494,7 +476,7 @@ export const usePolicyDrafts = () => {
       headers: authHeaders(),
       body: JSON.stringify({ note: note || null }),
     })
-    if (!res.ok) throw new Error("Failed to approve policy")
+    if (!res.ok) throw await apiError(res, "Failed to approve policy")
     const saved = await res.json() as PolicyDraft
     return cacheOne(saved)
   }, [])
@@ -505,10 +487,11 @@ export const usePolicyDrafts = () => {
       headers: authHeaders(),
       body: JSON.stringify({ reason }),
     })
-    if (!res.ok) throw new Error("Failed to return policy")
+    if (!res.ok) throw await apiError(res, "Failed to return policy")
     const saved = await res.json() as PolicyDraft
     return cacheOne(saved)
   }, [])
+
 
   const fetchPolicy = useCallback(async (id: string) => {
     const res = await fetch(`${API_BASE}/policy-records/${encodeURIComponent(id)}`, { headers: authHeaders() })
@@ -536,7 +519,7 @@ export const usePolicyDrafts = () => {
 
     saveDraft,
     removeDraft,
-    submitForApproval,
+    
     reassignDraft,
     approveDraft,
     rejectDraft,

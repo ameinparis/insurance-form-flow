@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { ArrowLeft, Check, CloudUpload, CheckCircle2, Trash2, Plus } from "lucide-react"
 import { toast } from "sonner"
@@ -152,7 +152,7 @@ const ConvertToPolicy = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const prefill = (location.state as ConvertState) || {}
-  const { drafts, saveDraft, createPolicy, updatePolicy, submitPolicy } = usePolicyDrafts()
+  const { drafts, createPolicy, updatePolicy, submitPolicy, refresh } = usePolicyDrafts()
   const { addNotification } = useNotifications()
   const { userId, userName } = useAuth()
   const { emitApprovalAssign, onNotification } = useSocket()
@@ -207,6 +207,10 @@ const ConvertToPolicy = () => {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle")
   const timer = useRef<ReturnType<typeof setTimeout>>()
   const first = useRef(true)
+  // Mirror of draftId that is always current inside async callbacks, plus a
+  // one-at-a-time write chain shared by autosave and submit.
+  const draftIdRef = useRef<string | undefined>(prefill.draftId)
+  const saveChain = useRef<Promise<unknown>>(Promise.resolve())
 
   const { config: feeConfig } = useFeeConfig()
   const configuredFunds = useFundOptions()
@@ -230,6 +234,44 @@ const ConvertToPolicy = () => {
   const advisoryPct = feeConfig.ongoingAdvisoryMaxPct
   const ongoingAdvisoryFeeAmount = advisoryOn ? investment * (advisoryPct / 100) : 0
 
+  // Build the payload the /api/policies workflow expects.
+  const buildPayload = () => ({
+    step: currentStep,
+    form: {
+      ...form,
+      purchasePremium: purchasePremium.toFixed(2),
+      upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
+      administrationFee: administrationFee.toFixed(2),
+      switchFee: SWITCH_FEE.toFixed(2),
+      funeralPremium: FUNERAL_PREMIUM.toFixed(2),
+      ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
+      ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
+    },
+    productType: prefill.productType,
+    optionLabel: prefill.optionLabel,
+    quoteId: prefill.quoteId,
+    premium: prefill.premium,
+  })
+
+  /**
+   * All writes go through one queue so an in-flight POST /api/policies can
+   * never race the next save and create a second draft for the same wizard.
+   */
+  const persistDraft = useCallback(async (payload: ReturnType<typeof buildPayload>) => {
+    const task = saveChain.current
+      .catch(() => undefined)
+      .then(async () => {
+        const id = draftIdRef.current
+        const saved = id ? await updatePolicy(id, payload) : await createPolicy(payload)
+        draftIdRef.current = saved.id
+        setDraftId(saved.id)
+        return saved
+      })
+    saveChain.current = task.catch(() => undefined)
+    return task
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createPolicy, updatePolicy])
+
   // Autosave the draft whenever the form or step changes
   useEffect(() => {
     if (!form.fullName.trim()) return
@@ -239,56 +281,20 @@ const ConvertToPolicy = () => {
     }
     setSaveState("saving")
     clearTimeout(timer.current)
-    timer.current = setTimeout(async () => {
-      try {
-        let saved
-        if (draftId) {
-          saved = await updatePolicy(draftId, {
-            step: currentStep,
-            form: {
-              ...form,
-              purchasePremium: purchasePremium.toFixed(2),
-              upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
-              administrationFee: administrationFee.toFixed(2),
-              switchFee: SWITCH_FEE.toFixed(2),
-              funeralPremium: FUNERAL_PREMIUM.toFixed(2),
-              ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
-              ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
-            },
-            productType: prefill.productType,
-            optionLabel: prefill.optionLabel,
-            quoteId: prefill.quoteId,
-            premium: prefill.premium,
-          })
-        } else {
-          saved = await createPolicy({
-            quoteId: prefill.quoteId,
-            productType: prefill.productType,
-            form: {
-              ...form,
-              purchasePremium: purchasePremium.toFixed(2),
-              upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
-              administrationFee: administrationFee.toFixed(2),
-              switchFee: SWITCH_FEE.toFixed(2),
-              funeralPremium: FUNERAL_PREMIUM.toFixed(2),
-              ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
-              ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
-            },
-            step: currentStep,
-            optionLabel: prefill.optionLabel,
-            premium: prefill.premium,
-          })
-        }
-        setDraftId(saved.id)
-        setSaveState("saved")
-      } catch (e) {
-        console.error("Autosave failed:", e)
-        setSaveState("idle")
-      }
+    const payload = buildPayload()
+    timer.current = setTimeout(() => {
+      persistDraft(payload)
+        .then(() => setSaveState("saved"))
+        .catch((e) => {
+          console.error("Autosave failed:", e)
+          setSaveState("idle")
+          toast.error(e instanceof Error ? e.message : "Could not save this conversion")
+        })
     }, 700)
     return () => clearTimeout(timer.current)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, currentStep])
+
 
   const allocations: Record<string, string> = (() => {
     try {
@@ -1047,25 +1053,11 @@ const ConvertToPolicy = () => {
           excludeId={userId}
           onConfirm={async (approver) => {
             try {
-              const payload = {
-                step: currentStep,
-                form: {
-                  ...form,
-                  purchasePremium: purchasePremium.toFixed(2),
-                  upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
-                  administrationFee: administrationFee.toFixed(2),
-                  switchFee: SWITCH_FEE.toFixed(2),
-                  funeralPremium: FUNERAL_PREMIUM.toFixed(2),
-                  ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
-                  ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
-                },
-                productType: prefill.productType,
-                optionLabel: prefill.optionLabel,
-                quoteId: prefill.quoteId,
-                premium: prefill.premium,
-              }
-              const saved = draftId ? await updatePolicy(draftId, payload) : await createPolicy(payload)
-              setDraftId(saved.id)
+              if (!approver?.id) throw new Error("Select a reviewer before submitting")
+              // Cancel the pending autosave and flush the latest values through
+              // the same queue, so submit always runs on one saved draft.
+              clearTimeout(timer.current)
+              const saved = await persistDraft(buildPayload())
               const submitted = await submitPolicy(saved.id, {
                 id: approver.id,
                 name: approver.name,
@@ -1084,12 +1076,18 @@ const ConvertToPolicy = () => {
               }
               addNotification(notification)
               emitApprovalAssign(notification)
+              // Pull the shared pipeline so Conversions shows the new
+              // PENDING_APPROVAL record the moment we land on it.
+              await refresh()
               toast.success(`Submitted to ${approver.name} for approval`)
+              setAssignOpen(false)
               navigate("/conversions")
-            } catch {
-              toast.error("The conversion was saved, but could not be submitted. Please try again.")
+            } catch (e) {
+              console.error("Submit for approval failed:", e)
+              toast.error(e instanceof Error ? e.message : "Could not submit this conversion")
             }
           }}
+
         />
 
       </div>
