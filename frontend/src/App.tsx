@@ -13,6 +13,8 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Calculate from "./pages/Calculate";
 import Clients from "./pages/Clients";
+import ClientDetail from "./pages/ClientDetail";
+
 import Claims from "./pages/Claims";
 import Conversions from "./pages/Conversions";
 import Administration from "./pages/Administration";
@@ -127,6 +129,17 @@ const App = () => (
                   <Clients />
                 </Layout>
               } />
+              <Route path="/clients/:id" element={
+                <Layout>
+                  <ClientDetail />
+                </Layout>
+              } />
+              <Route path="/clients/:id/policies/:policyId" element={
+                <Layout>
+                  <ClientDetail />
+                </Layout>
+              } />
+
               <Route path="/conversions" element={
                 <Layout>
                   <Conversions />
