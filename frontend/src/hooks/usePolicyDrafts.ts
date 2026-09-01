@@ -282,61 +282,10 @@ export const usePolicyDrafts = () => {
     persistDelete(id)
   }, [])
 
-  /** Submit (or resubmit) for approval, assigning a specific reviewer. */
-  const submitForApproval = useCallback(
-    async (id: string, assignee?: { id?: string | null; name?: string | null }) => {
-      const current = read()
-      const d = current.find((x) => x.id === id)
-      if (!d) return undefined
-      const now = new Date().toISOString()
-      const isResubmission = d.status === "rejected"
-      const next: PolicyDraft = {
-        ...d,
-        status: "pending_approval",
-        attempt: (d.attempt || 1) + (isResubmission ? 1 : 0),
-        assignedTo: assignee?.id ?? d.assignedTo ?? null,
-        assignedToName: assignee?.name ?? d.assignedToName ?? null,
-        assignedAt: now,
-        submittedAt: now,
-        // Clear the current round's decision, history keeps the record.
-        rejectedBy: null,
-        rejectedByName: null,
-        rejectedAt: null,
-        rejectionReason: null,
-        reviewNote: null,
-        reviewedBy: null,
-        reviewedByName: null,
-        reviewedAt: null,
-        updatedAt: now,
-      }
-      const saved = await enqueue(next.id, async () => {
-        const response = await fetch(
-          `${API_BASE}/conversions/${encodeURIComponent(next.id)}/submit`,
-          {
-            method: "PATCH",
-            headers: authHeaders(),
-            body: JSON.stringify({
-              assignedTo: next.assignedTo,
-              assignedToName: next.assignedToName,
-              submittedAt: next.submittedAt,
-              assignedAt: next.assignedAt,
-              attempt: next.attempt,
-            }),
-          },
-        )
-        if (!response.ok) throw new Error("Failed to submit conversion for approval")
-        return response.json() as Promise<PolicyDraft>
-      })
+  // NOTE: submitting goes through `submitPolicy` (PATCH /api/policies/:id/submit).
+  // The legacy /api/conversions submit path was removed so a conversion can
+  // never exist in both workflows.
 
-      const latest = read()
-      const savedIndex = latest.findIndex((item) => item.id === saved.id)
-      if (savedIndex >= 0) latest[savedIndex] = saved
-      else latest.unshift(saved)
-      write([...latest])
-      return saved
-    },
-    [],
-  )
 
   /** Move a pending conversion to a different reviewer. */
   const reassignDraft = useCallback(
