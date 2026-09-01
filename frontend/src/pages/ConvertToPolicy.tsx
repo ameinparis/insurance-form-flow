@@ -230,6 +230,44 @@ const ConvertToPolicy = () => {
   const advisoryPct = feeConfig.ongoingAdvisoryMaxPct
   const ongoingAdvisoryFeeAmount = advisoryOn ? investment * (advisoryPct / 100) : 0
 
+  // Build the payload the /api/policies workflow expects.
+  const buildPayload = () => ({
+    step: currentStep,
+    form: {
+      ...form,
+      purchasePremium: purchasePremium.toFixed(2),
+      upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
+      administrationFee: administrationFee.toFixed(2),
+      switchFee: SWITCH_FEE.toFixed(2),
+      funeralPremium: FUNERAL_PREMIUM.toFixed(2),
+      ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
+      ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
+    },
+    productType: prefill.productType,
+    optionLabel: prefill.optionLabel,
+    quoteId: prefill.quoteId,
+    premium: prefill.premium,
+  })
+
+  /**
+   * All writes go through one queue so an in-flight POST /api/policies can
+   * never race the next save and create a second draft for the same wizard.
+   */
+  const persistDraft = useCallback(async (payload: ReturnType<typeof buildPayload>) => {
+    const task = saveChain.current
+      .catch(() => undefined)
+      .then(async () => {
+        const id = draftIdRef.current
+        const saved = id ? await updatePolicy(id, payload) : await createPolicy(payload)
+        draftIdRef.current = saved.id
+        setDraftId(saved.id)
+        return saved
+      })
+    saveChain.current = task.catch(() => undefined)
+    return task
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createPolicy, updatePolicy])
+
   // Autosave the draft whenever the form or step changes
   useEffect(() => {
     if (!form.fullName.trim()) return
@@ -239,56 +277,20 @@ const ConvertToPolicy = () => {
     }
     setSaveState("saving")
     clearTimeout(timer.current)
-    timer.current = setTimeout(async () => {
-      try {
-        let saved
-        if (draftId) {
-          saved = await updatePolicy(draftId, {
-            step: currentStep,
-            form: {
-              ...form,
-              purchasePremium: purchasePremium.toFixed(2),
-              upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
-              administrationFee: administrationFee.toFixed(2),
-              switchFee: SWITCH_FEE.toFixed(2),
-              funeralPremium: FUNERAL_PREMIUM.toFixed(2),
-              ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
-              ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
-            },
-            productType: prefill.productType,
-            optionLabel: prefill.optionLabel,
-            quoteId: prefill.quoteId,
-            premium: prefill.premium,
-          })
-        } else {
-          saved = await createPolicy({
-            quoteId: prefill.quoteId,
-            productType: prefill.productType,
-            form: {
-              ...form,
-              purchasePremium: purchasePremium.toFixed(2),
-              upfrontCommission: commissionOn ? upfrontCommission.toFixed(2) : "",
-              administrationFee: administrationFee.toFixed(2),
-              switchFee: SWITCH_FEE.toFixed(2),
-              funeralPremium: FUNERAL_PREMIUM.toFixed(2),
-              ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
-              ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
-            },
-            step: currentStep,
-            optionLabel: prefill.optionLabel,
-            premium: prefill.premium,
-          })
-        }
-        setDraftId(saved.id)
-        setSaveState("saved")
-      } catch (e) {
-        console.error("Autosave failed:", e)
-        setSaveState("idle")
-      }
+    const payload = buildPayload()
+    timer.current = setTimeout(() => {
+      persistDraft(payload)
+        .then(() => setSaveState("saved"))
+        .catch((e) => {
+          console.error("Autosave failed:", e)
+          setSaveState("idle")
+          toast.error(e instanceof Error ? e.message : "Could not save this conversion")
+        })
     }, 700)
     return () => clearTimeout(timer.current)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, currentStep])
+
 
   const allocations: Record<string, string> = (() => {
     try {
