@@ -152,7 +152,7 @@ const ConvertToPolicy = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const prefill = (location.state as ConvertState) || {}
-  const { drafts, saveDraft, createPolicy, updatePolicy, submitPolicy } = usePolicyDrafts()
+  const { drafts, createPolicy, updatePolicy, submitPolicy, refresh } = usePolicyDrafts()
   const { addNotification } = useNotifications()
   const { userId, userName } = useAuth()
   const { emitApprovalAssign, onNotification } = useSocket()
