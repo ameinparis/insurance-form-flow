@@ -13,6 +13,8 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Calculate from "./pages/Calculate";
 import Clients from "./pages/Clients";
+import ClientDetail from "./pages/ClientDetail";
+
 import Claims from "./pages/Claims";
 import Conversions from "./pages/Conversions";
 import Administration from "./pages/Administration";
