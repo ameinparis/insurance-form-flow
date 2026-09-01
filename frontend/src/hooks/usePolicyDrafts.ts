@@ -294,14 +294,15 @@ export const usePolicyDrafts = () => {
       assignee: { id?: string | null; name?: string | null },
       actor: { id?: string | null; name?: string | null },
     ) => {
-      const isPolicy = String(id).startsWith("POL-")
+      const isPolicy = isPolicyId(id)
       if (isPolicy) {
         const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}/reassign`, {
           method: "PATCH",
           headers: authHeaders(),
           body: JSON.stringify({ assignedTo: assignee.id ?? null, assignedToName: assignee.name ?? null }),
         })
-        if (!res.ok) throw new Error("Failed to reassign conversion")
+        if (!res.ok) throw await apiError(res, "Failed to reassign conversion")
+
         const saved = await res.json() as PolicyDraft
         return cacheOne(saved)
       }
