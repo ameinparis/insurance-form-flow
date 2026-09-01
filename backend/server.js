@@ -770,7 +770,7 @@ app.post("/api/users/login", async (req, res) => {
 /** Annuity calculator proxy → Python */
 app.post("/api/annuity", async (req, res) => {
   try {
-    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/calculate";
+    const PY_URL = process.env.PY_CALC_URL || "http://13.247.66.8:5005/calculate";
     const { data } = await axios.post(PY_URL, req.body);
     res.json(data);
   } catch (e) {
@@ -880,7 +880,7 @@ app.delete("/api/quotes/:id", authenticateToken, async (req, res) => {
 /** Annuity calculator proxy → Python */
 app.post("/api/quotes/calculate-annuity", async (req, res) => {
   try {
-    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/annuity/calculate";
+    const PY_URL = process.env.PY_CALC_URL || "http://13.247.66.8:5005/annuity/calculate";
     const { data } = await axios.post(PY_URL, req.body);
 
     // Log quote calculation
@@ -948,7 +948,7 @@ app.post("/api/quotes/calculate-funeral", authenticateToken, upload.single("file
     const inputs = req.body;
 
     // Step 4: Send to Python for processing
-    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/funeral/calculate";
+    const PY_URL = process.env.PY_CALC_URL || "http://13.247.66.8:5005/funeral/calculate";
     const { data } = await axios.post(PY_URL, { members, inputs });
 
     // Log quote calculation
@@ -1124,7 +1124,7 @@ async function processFuneralJobs() {
 
       try {
         const PY_URL =
-          process.env.PY_CALC_URL || "http://localhost:5005/funeral/calculate";
+          process.env.PY_CALC_URL || "http://13.247.66.8:5005/funeral/calculate";
 
         // VALIDATE required form fields before Python/Excel
         const required = [
@@ -1182,7 +1182,7 @@ setInterval(processFuneralJobs, 1000);
 /** Life Assurance calculator proxy → Python */
 app.post("/api/quotes/calculate-assurance", async (req, res) => {
   try {
-    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/assurance/calculate";
+    const PY_URL = process.env.PY_CALC_URL || "http://13.247.66.8:5005/assurance/calculate";
     const { data } = await axios.post(PY_URL, req.body);
 
     // Log quote calculation
@@ -1211,7 +1211,7 @@ app.post("/api/quotes/calculate-assurance", async (req, res) => {
 app.post("/api/quotes/calculate-individual-life", authenticateToken, async (req, res) => {
   try {
 
-    const PY_URL = (process.env.PY_CALC_URL || "http://localhost:5005") + "/individual/calculate";
+    const PY_URL = (process.env.PY_CALC_URL || "http://13.247.66.8:5005") + "/individual/calculate";
 
     const { data } = await axios.post(PY_URL, req.body, {
       headers: { "Content-Type": "application/json" },
@@ -2328,6 +2328,28 @@ app.get("/api/policies/pipeline", authenticateToken, async (req, res) => {
   } catch (e) {
     console.error("Pipeline policies error:", e);
     res.status(500).json({ message: "Failed to fetch pipeline policies" });
+  }
+});
+
+// GET /api/dashboard/stats — Lightweight dashboard counts
+app.get("/api/dashboard/stats", authenticateToken, async (_req, res) => {
+  try {
+    const [totalQuotations, convertedQuoteIds, activeClients, activePolicies] = await Promise.all([
+      Quote.countDocuments(),
+      Policy.distinct("quoteId", { status: { $in: ["APPROVED", "ACTIVE"] }, quoteId: { $nin: [null, ""] } }),
+      Client.countDocuments({ status: "ACTIVE" }),
+      Policy.countDocuments({ status: { $in: ["APPROVED", "ACTIVE"] } }),
+    ])
+
+    res.json({
+      totalQuotations,
+      convertedQuotations: convertedQuoteIds.length,
+      activeClients,
+      activePolicies,
+    });
+  } catch (e) {
+    console.error("Dashboard stats error:", e);
+    res.status(500).json({ message: "Failed to fetch dashboard stats" });
   }
 });
 
