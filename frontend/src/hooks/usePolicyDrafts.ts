@@ -62,7 +62,7 @@ const STORAGE_KEY = "policy_drafts_v1"
 const EVENT = "policy-drafts-updated"
 
 const API_BASE =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) || "http://localhost:5002/api"
+  `${(import.meta.env.VITE_API_BASE_URL as string | undefined) || "http://localhost:5002"}/api`
 
 const authHeaders = (): HeadersInit => {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null

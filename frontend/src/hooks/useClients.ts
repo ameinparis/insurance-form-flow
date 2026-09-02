@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 
 const API_BASE =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) || "http://localhost:5002/api"
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) || "http://localhost:5002"
 
 const authHeaders = (): HeadersInit => {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
@@ -62,7 +62,8 @@ export const useClients = () => {
   const refresh = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(`${API_BASE}/clients`, { headers: authHeaders() })
+      const res = await fetch(`${API_BASE}/api/clients`, { headers: authHeaders() })
+
       if (!res.ok) throw await apiError(res, "Failed to load clients")
       const data = await res.json()
       setClients(Array.isArray(data) ? data : [])
@@ -93,8 +94,8 @@ export const useClient = (id?: string) => {
     setLoading(true)
     try {
       const [clientRes, policiesRes] = await Promise.all([
-        fetch(`${API_BASE}/clients/${encodeURIComponent(id)}`, { headers: authHeaders() }),
-        fetch(`${API_BASE}/clients/${encodeURIComponent(id)}/policies`, { headers: authHeaders() }),
+        fetch(`${API_BASE}/api/clients/${encodeURIComponent(id)}`, { headers: authHeaders() }),
+        fetch(`${API_BASE}/api/clients/${encodeURIComponent(id)}/policies`, { headers: authHeaders() }),
       ])
       if (!clientRes.ok) throw await apiError(clientRes, "Failed to load client")
       setClient(await clientRes.json())
