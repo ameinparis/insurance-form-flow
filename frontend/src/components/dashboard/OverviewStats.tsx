@@ -1,21 +1,26 @@
 import { useNavigate } from "react-router-dom"
-import { FileText, CheckCircle2, Users, ShieldCheck, Clock, ArrowUpRight } from "lucide-react"
+import { FileText, CheckCircle2, Users, ShieldCheck, ArrowUpRight } from "lucide-react"
 
 interface OverviewStatsProps {
-  totalQuotations: number
+  stats: {
+    totalQuotations: number
+    convertedQuotations: number
+    activeClients: number
+    activePolicies: number
+  }
   loading: boolean
 }
 
 const cardBase =
   "rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm"
 
-export const OverviewStats = ({ totalQuotations, loading }: OverviewStatsProps) => {
+export const OverviewStats = ({ stats, loading }: OverviewStatsProps) => {
   const navigate = useNavigate()
 
   const cards = [
     {
       title: "Total Quotations",
-      value: totalQuotations,
+      value: stats.totalQuotations,
       subtitle: "All records (draft, pending, converted, rejected)",
       icon: FileText,
       badge: "bg-blue-500/15 text-blue-500 dark:text-blue-400",
@@ -23,7 +28,7 @@ export const OverviewStats = ({ totalQuotations, loading }: OverviewStatsProps) 
     },
     {
       title: "Converted Quotations",
-      value: 0,
+      value: stats.convertedQuotations,
       subtitle: "Accepted, ready for onboarding",
       icon: CheckCircle2,
       badge: "bg-emerald-500/15 text-emerald-500 dark:text-emerald-400",
@@ -31,7 +36,7 @@ export const OverviewStats = ({ totalQuotations, loading }: OverviewStatsProps) 
     },
     {
       title: "Active Clients",
-      value: 0,
+      value: stats.activeClients,
       subtitle: "Linked after quotation conversion",
       icon: Users,
       badge: "bg-purple-500/15 text-purple-500 dark:text-purple-400",
@@ -39,26 +44,18 @@ export const OverviewStats = ({ totalQuotations, loading }: OverviewStatsProps) 
     },
     {
       title: "Active Policies",
-      value: 0,
+      value: stats.activePolicies,
       subtitle: "Setup, verified and activated",
       icon: ShieldCheck,
       badge: "bg-orange-500/15 text-orange-500 dark:text-orange-400",
       to: "/clients",
     },
-    {
-      title: "Pending Verification",
-      value: 0,
-      subtitle: "Awaiting admin / compliance review",
-      icon: Clock,
-      badge: "bg-rose-500/15 text-rose-500 dark:text-rose-400",
-      to: "/administration",
-    },
   ]
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
-        {[...Array(5)].map((_, i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
           <div key={i} className={`${cardBase} p-6 animate-pulse h-48`} />
         ))}
       </div>
@@ -66,7 +63,7 @@ export const OverviewStats = ({ totalQuotations, loading }: OverviewStatsProps) 
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
       {cards.map((card) => (
         <button
           key={card.title}

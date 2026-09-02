@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useQuotesList, QUOTES_LIST_KEY } from "@/hooks/useQuotesList"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,10 +27,28 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
+const apiBase = () => import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
+
+const fetchDashboardStats = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${apiBase()}/api/dashboard/stats`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch dashboard stats");
+  return res.json();
+};
+
 const Dashboard = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { data: recentQuotes = [], isLoading, isFetching } = useQuotesList()
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ["dashboard-stats"],
+    queryFn: fetchDashboardStats,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  })
   const loading = isLoading && recentQuotes.length === 0
   const [convertOpen, setConvertOpen] = useState(false)
   const [deleteQuoteId, setDeleteQuoteId] = useState<string | null>(null)
@@ -137,7 +155,15 @@ const Dashboard = () => {
 
       <div className="relative space-y-6 px-6 pt-6 pb-6">
         {/* Overview Stats */}
-        <OverviewStats totalQuotations={recentQuotes.length} loading={loading} />
+        <OverviewStats
+          stats={{
+            totalQuotations: stats?.totalQuotations ?? 0,
+            convertedQuotations: stats?.convertedQuotations ?? 0,
+            activeClients: stats?.activeClients ?? 0,
+            activePolicies: stats?.activePolicies ?? 0,
+          }}
+          loading={statsLoading || loading}
+        />
 
         {/* Recent Activity */}
         <RecentActivity quotes={recentQuotes} loading={loading} />
