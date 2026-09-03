@@ -61,6 +61,10 @@ const io = new Server(httpServer, {
 
 const connectedUsers = new Map()
 
+const PY_CALC_BASE = (
+  process.env.PY_CALC_URL || "http://13.247.66.8:5005"
+).replace(/\/+$/, "")
+
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.split(" ")[1]
   if (!token) return next(new Error("Authentication error"))
@@ -770,7 +774,7 @@ app.post("/api/users/login", async (req, res) => {
 /** Annuity calculator proxy → Python */
 app.post("/api/annuity", async (req, res) => {
   try {
-    const PY_URL = process.env.PY_CALC_URL || "http://13.247.66.8:5005/calculate";
+    const PY_URL = `${PY_CALC_BASE}/annuity/calculate`;
     const { data } = await axios.post(PY_URL, req.body);
     res.json(data);
   } catch (e) {
@@ -880,7 +884,7 @@ app.delete("/api/quotes/:id", authenticateToken, async (req, res) => {
 /** Annuity calculator proxy → Python */
 app.post("/api/quotes/calculate-annuity", async (req, res) => {
   try {
-    const PY_URL = process.env.PY_CALC_URL || "http://13.247.66.8:5005/annuity/calculate";
+    const PY_URL = `${PY_CALC_BASE}/annuity/calculate`;
     const { data } = await axios.post(PY_URL, req.body);
 
     // Log quote calculation
@@ -948,7 +952,7 @@ app.post("/api/quotes/calculate-funeral", authenticateToken, upload.single("file
     const inputs = req.body;
 
     // Step 4: Send to Python for processing
-    const PY_URL = process.env.PY_CALC_URL || "http://13.247.66.8:5005/funeral/calculate";
+    const PY_URL = `${PY_CALC_BASE}/funeral/calculate`;
     const { data } = await axios.post(PY_URL, { members, inputs });
 
     // Log quote calculation
@@ -1123,8 +1127,7 @@ async function processFuneralJobs() {
       }, 1000); // every second
 
       try {
-        const PY_URL =
-          process.env.PY_CALC_URL || "http://13.247.66.8:5005/funeral/calculate";
+        const PY_URL = `${PY_CALC_BASE}/funeral/calculate`;
 
         // VALIDATE required form fields before Python/Excel
         const required = [
@@ -1182,7 +1185,7 @@ setInterval(processFuneralJobs, 1000);
 /** Life Assurance calculator proxy → Python */
 app.post("/api/quotes/calculate-assurance", async (req, res) => {
   try {
-    const PY_URL = process.env.PY_CALC_URL || "http://13.247.66.8:5005/assurance/calculate";
+    const PY_URL = `${PY_CALC_BASE}/assurance/calculate`;
     const { data } = await axios.post(PY_URL, req.body);
 
     // Log quote calculation
@@ -1211,7 +1214,7 @@ app.post("/api/quotes/calculate-assurance", async (req, res) => {
 app.post("/api/quotes/calculate-individual-life", authenticateToken, async (req, res) => {
   try {
 
-    const PY_URL = (process.env.PY_CALC_URL || "http://13.247.66.8:5005") + "/individual/calculate";
+    const PY_URL = `${PY_CALC_BASE}/individual/calculate`;
 
     const { data } = await axios.post(PY_URL, req.body, {
       headers: { "Content-Type": "application/json" },
@@ -2299,7 +2302,7 @@ app.patch("/api/policies/:id/return", authenticateToken, async (req, res) => {
     }
     const updated = await Policy.findOneAndUpdate(
       { id: req.params.id },
-      { $set: { status: "RETURNED", returnReason: reason, rejectionReason: reason, rejectedBy: actor.id, rejectedByName: actor.name, rejectedAt: new Date(), reviewedBy: actor.id, reviewedByName: actor.name, reviewedAt: new Date(), reviewNote: reason, assignedTo: null, assignedToName: null, assignedAt: null } },
+      { $set: { status: "RETURNED", returnReason: reason, rejectionReason: reason, rejectedBy: actor.id, rejectedByName: actor.name, rejectedAt: new Date(), reviewedBy: actor.id, reviewedByName: actor.name, reviewedAt: new Date(), reviewNote: reason } },
       { new: true }
     ).lean();
     await Notification.updateMany({ draftId: req.params.id, status: "pending" }, { $set: { status: "rejected", read: false, reason } });
