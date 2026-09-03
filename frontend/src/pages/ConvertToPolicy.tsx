@@ -1085,6 +1085,9 @@ const ConvertToPolicy = () => {
             } catch (e) {
               console.error("Submit for approval failed:", e)
               toast.error(e instanceof Error ? e.message : "Could not submit this conversion")
+              // Rethrow so the shared AssignApproverDialog keeps the modal open
+              // and resets its "Submitting…" button, letting the advisor retry.
+              throw e
             }
           }}
 

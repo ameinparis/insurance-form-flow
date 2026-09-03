@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { Loader2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -26,7 +27,7 @@ interface Props {
   confirmLabel?: string
   excludeId?: string | null
   currentAssigneeId?: string | null
-  onConfirm: (approver: { id: string; name: string }) => void
+  onConfirm: (approver: { id: string; name: string }) => Promise<void> | void
 }
 
 /** Shared dropdown for picking the Admin / Super Admin who should review a conversion. */
@@ -42,16 +43,37 @@ export const AssignApproverDialog = ({
 }: Props) => {
   const { approvers, loading } = useApprovers()
   const [selected, setSelected] = useState<string>("")
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    if (open) setSelected("")
+    // Reset everything (including any stuck loading state) each time the dialog opens.
+    if (open) {
+      setSelected("")
+      setSubmitting(false)
+    }
   }, [open])
 
   const options = approvers.filter((a) => a.id !== excludeId && a.id !== currentAssigneeId)
   const chosen = options.find((a) => a.id === selected)
 
+  const handleConfirm = async () => {
+    if (!chosen || submitting) return
+    setSubmitting(true)
+    try {
+      // Await the parent's submit so the dialog stays open, the button stays
+      // disabled, and the label reads "Submitting…" until the request settles.
+      // On success we close; on failure we keep it open so the advisor can retry.
+      await onConfirm({ id: chosen.id, name: chosen.name })
+      onOpenChange(false)
+    } catch {
+      // The parent already surfaces the error via toast — don't double-toast.
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(o) => !submitting && onOpenChange(o)}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
@@ -60,7 +82,11 @@ export const AssignApproverDialog = ({
 
         <div className="space-y-2 py-2">
           <Label>Assign to</Label>
-          <Select value={selected} onValueChange={setSelected} disabled={loading}>
+          <Select
+            value={selected}
+            onValueChange={setSelected}
+            disabled={loading || submitting}
+          >
             <SelectTrigger className="rounded-xl">
               <SelectValue placeholder={loading ? "Loading reviewers…" : "Select a reviewer"} />
             </SelectTrigger>
@@ -80,19 +106,27 @@ export const AssignApproverDialog = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            className="rounded-full"
+            disabled={submitting}
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
           <Button
             className="rounded-full"
-            disabled={!chosen}
-            onClick={() => {
-              if (!chosen) return
-              onConfirm({ id: chosen.id, name: chosen.name })
-              onOpenChange(false)
-            }}
+            disabled={!chosen || submitting}
+            onClick={handleConfirm}
           >
-            {confirmLabel}
+            {submitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Submitting…
+              </>
+            ) : (
+              confirmLabel
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
