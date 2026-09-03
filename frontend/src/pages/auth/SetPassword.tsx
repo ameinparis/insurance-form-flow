@@ -5,11 +5,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Lock, CheckCircle, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
+import { API_BASE_URL } from "@/lib/api"
+import { useAuth } from "@/lib/authlibrary"
 
 const SetPassword = () => {
   const [searchParams] = useSearchParams()
   const token = searchParams.get("token")
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -36,7 +39,7 @@ const SetPassword = () => {
     const verifyToken = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5002/api/auth/password-setup/verify?token=${token}`
+          `${API_BASE_URL}/auth/password-setup/verify?token=${token}`
         )
 
         const data = await res.json()
@@ -79,7 +82,7 @@ const SetPassword = () => {
     setIsLoading(true)
 
     try {
-      const response = await fetch("http://localhost:5002/api/auth/set-password", {
+      const response = await fetch(`${API_BASE_URL}/auth/set-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),
@@ -88,7 +91,7 @@ const SetPassword = () => {
       const data = await response.json()
 
       if (response.ok) {
-        localStorage.setItem("token", data.token)
+        login({ token: data.token })
         toast.success("Welcome to Exclusive Life Quote Management 👋")
         navigate("/dashboard")
       }

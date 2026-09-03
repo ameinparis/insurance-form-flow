@@ -1,4 +1,5 @@
 // Utility functions for quote rendering and data fetching
+import { API_BASE_URL } from "@/lib/api"
 
 export interface QuoteData {
   _id: string;
@@ -60,10 +61,10 @@ export const fetchQuoteDetails = async (
   isLegacy: boolean = false
 ): Promise<QuoteData> => {
   const token = localStorage.getItem("token");
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
-  const endpoint = isLegacy 
-    ? `/api/quotes/${quoteId}` 
-    : `/api/new-quotes/${quoteId}`;
+  const baseUrl = API_BASE_URL;
+  const endpoint = isLegacy
+    ? `/quotes/${quoteId}`
+    : `/new-quotes/${quoteId}`;
   
   const response = await fetch(`${baseUrl}${endpoint}`, {
     headers: {

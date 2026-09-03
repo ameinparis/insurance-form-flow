@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { useClientDirectory } from "./useClientDirectory"
+import { API_BASE_URL } from "@/lib/api"
 
 export interface ReassignmentEntry {
   at: string
@@ -20,7 +21,7 @@ export interface ReviewEntry {
   note?: string | null
 }
 
-export type DraftStatus = "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "ACTIVE" | "draft" | "pending_approval" | "approved" | "rejected"
+export type DraftStatus = "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "ACTIVE" | "RETURNED" | "draft" | "pending_approval" | "approved" | "returned" | "rejected"
 
 export interface PolicyDraft {
   id: string
@@ -60,9 +61,6 @@ export interface PolicyDraft {
 
 const STORAGE_KEY = "policy_drafts_v1"
 const EVENT = "policy-drafts-updated"
-
-const API_BASE =
-  `${(import.meta.env.VITE_API_BASE_URL as string | undefined) || "http://localhost:5002"}/api`
 
 const authHeaders = (): HeadersInit => {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
@@ -137,7 +135,7 @@ const persist = (draft: PolicyDraft) => {
   // the shared workflow is /api/policies and the two must not be mixed.
   if (!isPolicyId(draft.id)) return Promise.resolve()
   return enqueue(draft.id, () =>
-    fetch(`${API_BASE}/policies/${encodeURIComponent(draft.id)}`, {
+    fetch(`${API_BASE_URL}/policies/${encodeURIComponent(draft.id)}`, {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify({
@@ -160,7 +158,7 @@ const persist = (draft: PolicyDraft) => {
 const persistDelete = (id: string) => {
   if (!isPolicyId(id)) return Promise.resolve()
   return enqueue(id, () =>
-    fetch(`${API_BASE}/policies/${encodeURIComponent(id)}`, {
+    fetch(`${API_BASE_URL}/policies/${encodeURIComponent(id)}`, {
       method: "DELETE",
       headers: authHeaders(),
     })
@@ -226,7 +224,7 @@ export const usePolicyDrafts = () => {
     // Single source of truth: the shared policy pipeline. /api/conversions is
     // the legacy workflow and is deliberately not read here.
     try {
-      const res = await fetch(`${API_BASE}/policies/pipeline`, { headers: authHeaders() })
+      const res = await fetch(`${API_BASE_URL}/policies/pipeline`, { headers: authHeaders() })
       if (!res.ok) {
         setSyncFailed(true)
         return
@@ -296,7 +294,7 @@ export const usePolicyDrafts = () => {
     ) => {
       const isPolicy = isPolicyId(id)
       if (isPolicy) {
-        const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}/reassign`, {
+        const res = await fetch(`${API_BASE_URL}/policies/${encodeURIComponent(id)}/reassign`, {
           method: "PATCH",
           headers: authHeaders(),
           body: JSON.stringify({ assignedTo: assignee.id ?? null, assignedToName: assignee.name ?? null }),
@@ -418,7 +416,7 @@ export const usePolicyDrafts = () => {
     premium?: number | null
     clientId?: string | null
   }): Promise<PolicyDraft> => {
-    const res = await fetch(`${API_BASE}/policies`, {
+    const res = await fetch(`${API_BASE_URL}/policies`, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify(payload),
@@ -434,7 +432,7 @@ export const usePolicyDrafts = () => {
   }, [])
 
   const updatePolicy = useCallback(async (id: string, patch: Record<string, unknown>): Promise<PolicyDraft> => {
-    const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}`, {
+    const res = await fetch(`${API_BASE_URL}/policies/${encodeURIComponent(id)}`, {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify(patch),
@@ -452,7 +450,7 @@ export const usePolicyDrafts = () => {
     assignee?: { id?: string | null; name?: string | null },
   ): Promise<PolicyDraft & { notificationId?: string }> => {
     if (!assignee?.id) throw new Error("Select a reviewer before submitting")
-    const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}/submit`, {
+    const res = await fetch(`${API_BASE_URL}/policies/${encodeURIComponent(id)}/submit`, {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify({
@@ -471,7 +469,7 @@ export const usePolicyDrafts = () => {
   }, [])
 
   const approvePolicy = useCallback(async (id: string, note?: string | null) => {
-    const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}/approve`, {
+    const res = await fetch(`${API_BASE_URL}/policies/${encodeURIComponent(id)}/approve`, {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify({ note: note || null }),
@@ -482,7 +480,7 @@ export const usePolicyDrafts = () => {
   }, [])
 
   const returnPolicy = useCallback(async (id: string, reason: string) => {
-    const res = await fetch(`${API_BASE}/policies/${encodeURIComponent(id)}/return`, {
+    const res = await fetch(`${API_BASE_URL}/policies/${encodeURIComponent(id)}/return`, {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify({ reason }),
@@ -494,20 +492,20 @@ export const usePolicyDrafts = () => {
 
 
   const fetchPolicy = useCallback(async (id: string) => {
-    const res = await fetch(`${API_BASE}/policy-records/${encodeURIComponent(id)}`, { headers: authHeaders() })
+    const res = await fetch(`${API_BASE_URL}/policy-records/${encodeURIComponent(id)}`, { headers: authHeaders() })
     if (!res.ok) throw new Error(res.status === 403 ? "You do not have access to this conversion" : "Failed to load conversion")
     const saved = await res.json() as PolicyDraft
     return cacheOne(saved)
   }, [])
 
   const fetchPipeline = useCallback(async () => {
-    const res = await fetch(`${API_BASE}/policies/pipeline`, { headers: authHeaders() })
+    const res = await fetch(`${API_BASE_URL}/policies/pipeline`, { headers: authHeaders() })
     if (!res.ok) return []
     return res.json()
   }, [])
 
   const fetchClientPolicies = useCallback(async (clientId: string) => {
-    const res = await fetch(`${API_BASE}/clients/${encodeURIComponent(clientId)}/policies`, { headers: authHeaders() })
+    const res = await fetch(`${API_BASE_URL}/clients/${encodeURIComponent(clientId)}/policies`, { headers: authHeaders() })
     if (!res.ok) return []
     return res.json()
   }, [])
@@ -540,9 +538,11 @@ export const STATUS_LABEL: Record<DraftStatus, string> = {
   PENDING_APPROVAL: "Pending Review",
   APPROVED: "Approved",
   ACTIVE: "Active",
+  RETURNED: "Returned",
   draft: "Draft",
   pending_approval: "Pending Review",
   approved: "Approved",
+  returned: "Returned",
   rejected: "Rejected",
 }
 
@@ -551,9 +551,11 @@ export const STATUS_BADGE: Record<DraftStatus, string> = {
   PENDING_APPROVAL: "border-amber-300 text-amber-600 dark:text-amber-400",
   APPROVED: "border-emerald-300 text-emerald-600 dark:text-emerald-400",
   ACTIVE: "border-emerald-300 text-emerald-600 dark:text-emerald-400",
+  RETURNED: "border-orange-300 text-orange-600 dark:text-orange-400",
   draft: "border-slate-300 text-slate-500 dark:text-slate-400",
   pending_approval: "border-amber-300 text-amber-600 dark:text-amber-400",
   approved: "border-emerald-300 text-emerald-600 dark:text-emerald-400",
+  returned: "border-orange-300 text-orange-600 dark:text-orange-400",
   rejected: "border-red-300 text-red-600 dark:text-red-400",
 }
 

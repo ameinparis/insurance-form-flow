@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { API_BASE_URL } from '@/lib/api'
 
 export interface AuditLog {
   _id: string
@@ -20,8 +21,6 @@ interface AuditLogsResponse {
   limit: number
   skip: number
 }
-
-const API_BASE_URL = 'http://localhost:5002/api'
 
 export function useAuditLogs(filter: string) {
   const [logs, setLogs] = useState<AuditLog[]>([])

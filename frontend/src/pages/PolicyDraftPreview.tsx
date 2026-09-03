@@ -165,7 +165,7 @@ const PolicyDraftPreview = () => {
 
 
   const isApproved = draft?.status === "approved" || draft?.status === "APPROVED"
-  const isReturned = !!(draft?.returnReason || draft?.rejectionReason)
+  const isReturned = (draft?.status === "returned" || draft?.status === "RETURNED") || !!(draft?.returnReason || draft?.rejectionReason)
   const isPending = draft?.status === "pending_approval" || draft?.status === "PENDING_APPROVAL"
   const isSuper = permissionsFor(userRole).role === "super_admin"
   const isAssignee = String(draft?.assignedTo || "") === String(userId || "")

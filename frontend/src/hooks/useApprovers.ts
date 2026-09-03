@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
 import { normalizeRole, roleLabel } from "@/lib/permissions"
+import { API_BASE_URL } from "@/lib/api"
 
 export interface Approver {
   id: string
@@ -47,7 +48,7 @@ const fetchApprovers = (): Promise<Approver[]> => {
   if (inFlight) return inFlight
   const token = localStorage.getItem("token")
   inFlight = axios
-    .get("http://localhost:5002/api/users", {
+    .get(`${API_BASE_URL}/users`, {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 15000,
     })

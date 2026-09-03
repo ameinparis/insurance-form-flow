@@ -2009,7 +2009,7 @@ app.delete("/api/conversions/:id", authenticateToken, async (req, res) => {
 });
 
 /* --------------------------- Policy workflow ---------------------- */
-const policyStatusEnum = ["DRAFT", "PENDING_APPROVAL", "APPROVED", "ACTIVE"];
+const policyStatusEnum = ["DRAFT", "PENDING_APPROVAL", "APPROVED", "ACTIVE", "RETURNED"];
 
 const policySchema = new mongoose.Schema(
   {
@@ -2115,12 +2115,12 @@ app.get("/api/policy-records/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// PATCH /api/policies/:id — Edit policy (only if DRAFT and user is creator)
+// PATCH /api/policies/:id — Edit policy (only if DRAFT/RETURNED and user is creator)
 app.patch("/api/policies/:id", authenticateToken, async (req, res) => {
   try {
     const policy = await Policy.findOne({ id: req.params.id }).lean();
     if (!policy) return res.status(404).json({ message: "Policy not found" });
-    if (policy.status !== "DRAFT") return res.status(400).json({ message: "Only DRAFT policies can be edited" });
+    if (policy.status !== "DRAFT" && policy.status !== "RETURNED") return res.status(400).json({ message: "Only DRAFT or RETURNED policies can be edited" });
     const actor = policyActor(req);
     if (policy.createdBy && String(policy.createdBy) !== String(actor.id)) {
       return res.status(403).json({ message: "Only the creator can edit this policy" });
@@ -2139,12 +2139,12 @@ app.patch("/api/policies/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// PATCH /api/policies/:id/submit — Change status DRAFT → PENDING_APPROVAL
+// PATCH /api/policies/:id/submit — Change status DRAFT/RETURNED → PENDING_APPROVAL
 app.patch("/api/policies/:id/submit", authenticateToken, async (req, res) => {
   try {
     const policy = await Policy.findOne({ id: req.params.id }).lean();
     if (!policy) return res.status(404).json({ message: "Policy not found" });
-    if (policy.status !== "DRAFT") return res.status(400).json({ message: "Only DRAFT policies can be submitted" });
+    if (policy.status !== "DRAFT" && policy.status !== "RETURNED") return res.status(400).json({ message: "Only DRAFT or RETURNED policies can be submitted" });
     const actor = await resolvedPolicyActor(req);
     if ((policy.initiatedBy || policy.createdBy) && String(policy.initiatedBy || policy.createdBy) !== String(actor.id)) {
       return res.status(403).json({ message: "Only the creator can submit this policy" });
@@ -2282,7 +2282,7 @@ app.patch("/api/policies/:id/approve", authenticateToken, async (req, res) => {
   }
 });
 
-// PATCH /api/policies/:id/return — Change status PENDING_APPROVAL → DRAFT with reason
+// PATCH /api/policies/:id/return — Change status PENDING_APPROVAL → RETURNED with reason
 app.patch("/api/policies/:id/return", authenticateToken, async (req, res) => {
   try {
     if (!(await resolveReviewer(req))) return res.status(403).json({ message: "Only admins can return policies" });
@@ -2299,7 +2299,7 @@ app.patch("/api/policies/:id/return", authenticateToken, async (req, res) => {
     }
     const updated = await Policy.findOneAndUpdate(
       { id: req.params.id },
-      { $set: { status: "DRAFT", returnReason: reason, rejectionReason: reason, rejectedBy: actor.id, rejectedByName: actor.name, rejectedAt: new Date(), reviewedBy: actor.id, reviewedByName: actor.name, reviewedAt: new Date(), reviewNote: reason } },
+      { $set: { status: "RETURNED", returnReason: reason, rejectionReason: reason, rejectedBy: actor.id, rejectedByName: actor.name, rejectedAt: new Date(), reviewedBy: actor.id, reviewedByName: actor.name, reviewedAt: new Date(), reviewNote: reason, assignedTo: null, assignedToName: null, assignedAt: null } },
       { new: true }
     ).lean();
     await Notification.updateMany({ draftId: req.params.id, status: "pending" }, { $set: { status: "rejected", read: false, reason } });

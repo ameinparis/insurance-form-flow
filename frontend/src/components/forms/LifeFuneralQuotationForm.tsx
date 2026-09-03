@@ -19,6 +19,7 @@ import { useBackgroundJob } from "@/contexts/BackgroundJobContext"
 import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 import { getSavedQuoteId, waitForQuoteReady } from "@/lib/quoteUtils"
+import { API_BASE_URL } from "@/lib/api"
 
 interface DetectedRoles {
   principal: number
@@ -250,7 +251,7 @@ const LifeFuneralQuotationForm = () => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch(
-          `http://localhost:5002/api/quotes/funeral/status/${backendJobId}`
+          `${API_BASE_URL}/quotes/funeral/status/${backendJobId}`
         )
         const data = await res.json()
         console.log("Polling job:", data)
@@ -390,7 +391,7 @@ const LifeFuneralQuotationForm = () => {
     Object.entries(cleanedFormData).forEach(([key, value]) => payload.append(key, value))
 
     try {
-      const res = await fetch("http://localhost:5002/api/quotes/funeral/start", {
+      const res = await fetch(`${API_BASE_URL}/quotes/funeral/start`, {
         method: "POST",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         body: payload
@@ -431,7 +432,7 @@ const LifeFuneralQuotationForm = () => {
 
     setIsSavingQuote(true)
     try {
-      const res = await fetch("http://localhost:5002/api/new-quotes", {
+      const res = await fetch(`${API_BASE_URL}/new-quotes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

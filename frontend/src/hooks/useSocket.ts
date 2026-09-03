@@ -1,7 +1,8 @@
 import { useEffect, useRef, useCallback } from "react"
 import { io, Socket } from "socket.io-client"
+import { API_ORIGIN } from "@/lib/api"
 
-const SOCKET_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, "") || "http://localhost:5002"
+const SOCKET_URL = API_ORIGIN
 
 let socket: Socket | null = null
 

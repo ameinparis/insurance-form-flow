@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
+import { API_BASE_URL } from "@/lib/api"
 
 export interface ClientSuggestion {
   // Corporate/Scheme clients (Funeral, GLA)
@@ -25,8 +26,6 @@ interface QuoteData {
   client?: ClientSuggestion
 }
 
-const API_BASE_URL = "http://localhost:5002"
-
 export const useClientSuggestions = () => {
   const [clients, setClients] = useState<ClientSuggestion[]>([])
   const [loading, setLoading] = useState(true)
@@ -39,10 +38,10 @@ export const useClientSuggestions = () => {
         
         // Fetch from both legacy and new quotes
         const [legacyRes, newRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/quotes`, {
+          fetch(`${API_BASE_URL}/quotes`, {
             headers: { Authorization: `Bearer ${token}` }
           }).catch(() => null),
-          fetch(`${API_BASE_URL}/api/new-quotes`, {
+          fetch(`${API_BASE_URL}/new-quotes`, {
             headers: { Authorization: `Bearer ${token}` }
           }).catch(() => null)
         ])

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { API_BASE_URL } from "@/lib/api";
 
 export interface NormalizedQuote {
   id: string;
@@ -15,15 +16,13 @@ export interface NormalizedQuote {
   premium?: number;
 }
 
-const apiBase = () => import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
-
 const fetchQuotesList = async (): Promise<NormalizedQuote[]> => {
   const token = localStorage.getItem("token");
   const headers = { Authorization: `Bearer ${token}` };
 
   const [oldRes, newRes] = await Promise.all([
-    fetch(`${apiBase()}/api/quotes`, { headers }),
-    fetch(`${apiBase()}/api/new-quotes`, { headers }),
+    fetch(`${API_BASE_URL}/quotes`, { headers }),
+    fetch(`${API_BASE_URL}/new-quotes`, { headers }),
   ]);
 
   if (!oldRes.ok || !newRes.ok) throw new Error("Failed to fetch quotes");

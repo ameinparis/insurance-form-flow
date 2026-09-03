@@ -1,4 +1,5 @@
 import axios from "axios";
+import { API_BASE_URL } from "@/lib/api";
 
 export const LIFE_ANNUITY_PERIODS = [5, 10, 15, 20] as const;
 
@@ -32,7 +33,7 @@ export async function fetchLifeAnnuityPeriods(
       }
       try {
         const { data } = await axios.post(
-          "http://localhost:5002/api/quotes/calculate-annuity",
+          `${API_BASE_URL}/quotes/calculate-annuity`,
           {
             annuityType: "life",
             age,

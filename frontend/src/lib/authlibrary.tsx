@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react"
+import React, { createContext, useContext, useEffect, useMemo, useCallback, useState } from "react"
 import { AppRole, Permissions, permissionsFor, normalizeRole } from "./permissions"
 
 interface AuthContextType {
@@ -10,6 +10,13 @@ interface AuthContextType {
   permissions: Permissions
   token: string | null
   isLoggedIn: boolean
+  login: (params: {
+    token: string
+    userId?: string | null
+    role?: string | null
+    userName?: string | null
+    userEmail?: string | null
+  }) => void
   logout: () => void
 }
 
@@ -29,7 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userRole, setUserRole] = useState<string | null>(() => read("userRole"))
   const [token, setToken] = useState<string | null>(() => read("token"))
   const [userName, setUserName] = useState<string | null>(() => read("userName"))
-  const [userEmail, setUserEmail] = useState<string | null>(() => read("email"))
+  const [userEmail, setUserEmail] = useState<string | null>(() => read("userEmail"))
 
   useEffect(() => {
     const sync = () => {
@@ -37,22 +44,60 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUserId(read("userId"))
       setUserRole(read("userRole"))
       setUserName(read("userName"))
-      setUserEmail(read("email"))
+      setUserEmail(read("userEmail"))
     }
     sync()
     window.addEventListener("storage", sync)
     return () => window.removeEventListener("storage", sync)
   }, [])
 
+  const login = useCallback(({ token: newToken, userId: newUserId, role, userName: newUserName, userEmail: newUserEmail }: {
+    token: string
+    userId?: string | null
+    role?: string | null
+    userName?: string | null
+    userEmail?: string | null
+  }) => {
+    localStorage.setItem("token", newToken)
+    if (newUserId) {
+      localStorage.setItem("userId", newUserId)
+    } else {
+      localStorage.removeItem("userId")
+    }
+    if (role) {
+      localStorage.setItem("userRole", role)
+    } else {
+      localStorage.removeItem("userRole")
+    }
+    if (newUserName) {
+      localStorage.setItem("userName", newUserName)
+    } else {
+      localStorage.removeItem("userName")
+    }
+    if (newUserEmail) {
+      localStorage.setItem("userEmail", newUserEmail)
+    } else {
+      localStorage.removeItem("userEmail")
+    }
+    setToken(newToken)
+    setUserId(newUserId || null)
+    setUserRole(role || null)
+    setUserName(newUserName || null)
+    setUserEmail(newUserEmail || null)
+  }, [])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("token")
     localStorage.removeItem("userId")
     localStorage.removeItem("userRole")
+    localStorage.removeItem("userName")
+    localStorage.removeItem("userEmail")
     setToken(null)
     setUserId(null)
     setUserRole(null)
-  }
+    setUserName(null)
+    setUserEmail(null)
+  }, [])
 
   const permissions = useMemo(() => permissionsFor(userRole), [userRole])
 
@@ -67,6 +112,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         permissions,
         token,
         isLoggedIn: !!token,
+        login,
         logout,
       }}
     >

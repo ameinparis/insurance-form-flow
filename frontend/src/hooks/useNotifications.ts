@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
+import { API_BASE_URL } from "@/lib/api"
 
 export type NotificationKind = "assignment" | "approved" | "rejected" | "reassigned" | "returned"
 export type NotificationStatus = "pending" | "approved" | "rejected" | "superseded"
@@ -54,9 +55,6 @@ export const relativeTime = (iso?: string | null) => {
   return new Date(iso).toLocaleDateString()
 }
 
-const API_BASE =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) || "http://localhost:5002"
-
 const authHeaders = (): HeadersInit => {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
   return {
@@ -80,7 +78,7 @@ export const useNotifications = () => {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/notifications`, { headers: authHeaders() })
+      const res = await fetch(`${API_BASE_URL}/notifications`, { headers: authHeaders() })
       if (!res.ok) return
       const data = await res.json()
       if (Array.isArray(data)) mergeRemote(data as AppNotification[])
@@ -112,7 +110,7 @@ export const useNotifications = () => {
       }
       write([item, ...read().filter((x) => x.id !== item.id)])
       // Shared copy so the recipient sees it even if they were offline.
-      void fetch(`${API_BASE}/api/notifications`, {
+      void fetch(`${API_BASE_URL}/notifications`, {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify(item),
@@ -123,7 +121,7 @@ export const useNotifications = () => {
   )
 
   const patchDraft = (draftId: string, status: string, reason?: string | null) =>
-    fetch(`${API_BASE}/api/notifications/draft/${encodeURIComponent(draftId)}`, {
+    fetch(`${API_BASE_URL}/notifications/draft/${encodeURIComponent(draftId)}`, {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify({ status, reason: reason ?? null }),
@@ -155,7 +153,7 @@ export const useNotifications = () => {
 
   const markRead = useCallback((id: string) => {
     write(read().map((n) => (n.id === id ? { ...n, read: true } : n)))
-    void fetch(`${API_BASE}/api/notifications/read`, {
+    void fetch(`${API_BASE_URL}/notifications/read`, {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify({ ids: [id] }),
@@ -168,7 +166,7 @@ export const useNotifications = () => {
         !recipientId || n.recipientId === recipientId ? { ...n, read: true } : n,
       ),
     )
-    void fetch(`${API_BASE}/api/notifications/read`, {
+    void fetch(`${API_BASE_URL}/notifications/read`, {
       method: "PATCH",
       headers: authHeaders(),
       body: JSON.stringify({}),

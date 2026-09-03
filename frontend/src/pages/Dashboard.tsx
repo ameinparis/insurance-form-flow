@@ -27,8 +27,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-const apiBase = () => import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
-
 const fetchDashboardStats = async () => {
   const token = localStorage.getItem("token");
   const res = await fetch(`${apiBase()}/api/dashboard/stats`, {
@@ -78,8 +76,8 @@ const Dashboard = () => {
     try {
       const token = localStorage.getItem("token")
       const endpoint = isLegacy
-        ? `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/quotes/${quoteId}`
-        : `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"}/api/new-quotes/${quoteId}`
+        ? `${API_BASE_URL}/quotes/${quoteId}`
+        : `${API_BASE_URL}/new-quotes/${quoteId}`
       const res = await fetch(endpoint, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -99,7 +97,7 @@ const Dashboard = () => {
   const handleDownloadPdf = async (e: React.MouseEvent, quoteId: string, id: string, isLegacy: boolean) => {
     e.stopPropagation()
     try {
-      const url = `http://localhost:5002/api/quotes/${id}/generate-pdf?legacy=${isLegacy}`
+      const url = `${API_BASE_URL}/quotes/${id}/generate-pdf?legacy=${isLegacy}`
       const res = await fetch(url, { method: "GET" })
       if (!res.ok) throw new Error(`PDF generation failed: ${res.status}`)
       const blob = await res.blob()

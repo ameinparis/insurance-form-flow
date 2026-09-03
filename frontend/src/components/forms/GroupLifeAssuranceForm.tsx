@@ -20,6 +20,7 @@ import {
 import { AutocompleteInput, AutocompleteSuggestion } from "@/components/ui/autocomplete-input"
 import { useClientSuggestions } from "@/hooks/useClientSuggestions"
 import { getSavedQuoteId, waitForQuoteReady } from "@/lib/quoteUtils"
+import { API_BASE_URL } from "@/lib/api"
 
 const GeneratingOverlay = () => (
   <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -313,7 +314,7 @@ const GroupLifeAssuranceForm = () => {
 
       const token = localStorage.getItem("token")
 
-      const res = await fetch("http://localhost:5002/api/quotes/calculate-assurance", {
+      const res = await fetch(`${API_BASE_URL}/quotes/calculate-assurance`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -393,7 +394,7 @@ const GroupLifeAssuranceForm = () => {
       setIsSavingQuote(true);
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:5002/api/new-quotes", {
+      const res = await fetch(`${API_BASE_URL}/new-quotes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

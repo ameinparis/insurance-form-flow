@@ -7,6 +7,8 @@ import { Shield, ArrowRight, Lock, Mail } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { authApi } from "@/lib/api"
 import { toast } from "sonner"
+import { API_BASE_URL } from "@/lib/api"
+import { useAuth } from "@/lib/authlibrary"
 
 const Landing = () => {
   const [showAuthDialog, setShowAuthDialog] = useState(false)
@@ -14,13 +16,14 @@ const Landing = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      const response = await fetch("http://localhost:5002/api/users/login", {
+      const response = await fetch(`${API_BASE_URL}/users/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -31,14 +34,14 @@ const Landing = () => {
       const data = await response.json()
 
       if (response.ok) {
-        localStorage.setItem("token", data.token)
-        localStorage.setItem("userId", data.userId)
-        if (data.role) localStorage.setItem("userRole", data.role)
-
         const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ")
-        localStorage.setItem("userName", fullName)
-        // Store the email used for login
-        localStorage.setItem("userEmail", email)
+        login({
+          token: data.token,
+          userId: data.userId,
+          role: data.role,
+          userName: fullName,
+          userEmail: email,
+        })
 
         toast.success("Welcome to Exclusive Insurance!")
         navigate("/dashboard")

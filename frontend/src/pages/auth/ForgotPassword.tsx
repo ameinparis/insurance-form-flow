@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react"
 import { toast } from "sonner"
+import { API_BASE_URL } from "@/lib/api"
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("")
@@ -16,7 +17,7 @@ const ForgotPassword = () => {
     setIsLoading(true)
 
     try {
-      const response = await fetch("http://localhost:5002/api/auth/forgot-password", {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

@@ -13,6 +13,7 @@ import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 import { fetchQuoteDetails, getClientInfo, formatDate, QuoteData } from "@/lib/quoteUtils";
 import { exportQuotePdf } from "@/lib/pdfExport";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/lib/api";
 
 const QuoteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -57,10 +58,10 @@ const QuoteDetail = () => {
 
   const handleSaveNotes = async (medicalUnderwritingNotes: string) => {
     if (!id) return;
-    const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
+    const apiBase = API_BASE_URL;
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`${apiBase}/api/new-quotes/${id}/notes`, {
+      const res = await fetch(`${apiBase}/new-quotes/${id}/notes`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

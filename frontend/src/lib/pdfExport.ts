@@ -7,6 +7,7 @@ import { FuneralDisplay } from "@/components/quote-displays/FuneralDisplay";
 import { LifeDisplay } from "@/components/quote-displays/LifeDisplay";
 import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLifeDisplay";
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
+import { API_BASE_URL } from "@/lib/api";
 
 const PDF_EXTRA_STYLES = `
   .no-print { display: none !important; }
@@ -161,7 +162,7 @@ export async function exportQuotePdf(
   quoteOverride?: QuoteData
 ): Promise<void> {
   const baseUrl = window.location.origin;
-  const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
+  const apiBase = API_BASE_URL;
 
   // 1. Use the quote already loaded on the page when available, otherwise fetch it.
   const quote = quoteOverride ?? (await fetchQuoteDetails(quoteMongoId, isLegacy));

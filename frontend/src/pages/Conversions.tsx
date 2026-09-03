@@ -22,13 +22,13 @@ const Conversions = () => {
   const role = permissionsFor(userRole).role
   const isAdvisor = role === "advisor"
 
-  // Unsubmitted drafts stay private to whoever started them.
+  // Unsubmitted drafts and returned items stay private to whoever started them.
   const pipeline = useMemo(() => {
     const advisorOwn = (d: PolicyDraft) =>
       !d.initiatedBy || String(d.initiatedBy) === String(userId || "")
     const isDraft = (d: PolicyDraft) => {
       const s = draftStatus(d)
-      return s === "draft" || s === "DRAFT"
+      return s === "draft" || s === "DRAFT" || s === "returned" || s === "RETURNED"
     }
     return drafts
       .filter((d) => (isDraft(d) || isAdvisor ? advisorOwn(d) : true))
@@ -38,7 +38,7 @@ const Conversions = () => {
   const byStatus = (list: PolicyDraft[], ...statuses: string[]) =>
     list.filter((d) => statuses.includes(String(draftStatus(d)).toLowerCase()))
 
-  const myDrafts = useMemo(() => byStatus(pipeline, "draft"), [pipeline])
+  const myDrafts = useMemo(() => byStatus(pipeline, "draft", "returned"), [pipeline])
   const pending = useMemo(() => byStatus(pipeline, "pending_approval"), [pipeline])
   const approved = useMemo(() => byStatus(pipeline, "approved"), [pipeline])
   const rejected = useMemo(() => byStatus(pipeline, "rejected"), [pipeline])
@@ -74,7 +74,7 @@ const Conversions = () => {
       if (tab === "pending") return s === "pending_approval"
       if (tab === "approved") return s === "approved"
       if (tab === "rejected") return s === "rejected"
-      return s === "draft"
+      return s === "draft" || s === "returned"
     })
     return [...list].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
   }, [pipeline, tab, userId])
@@ -93,11 +93,11 @@ const Conversions = () => {
         ? "All"
         : t === "assigned"
           ? "Assigned to me"
-          : t === "approved"
-            ? "Approved"
-            : t === "rejected"
-              ? "Rejected"
-              : "Pending"
+          : t === "pending"
+            ? "Pending"
+            : t === "approved"
+              ? "Approved"
+              : "Rejected"
 
 
   const continueEditing = (d: PolicyDraft) =>
@@ -284,16 +284,16 @@ const Conversions = () => {
                               Attempt {d.attempt}
                             </span>
                           )}
-                          {normalizedStatus === "rejected" && d.rejectionReason && (
-                             <p className="mt-1 text-xs font-normal text-red-500 max-w-sm">
-                               Reason: {d.rejectionReason}
-                             </p>
-                           )}
-                           {(d.returnReason || d.reviewNote) && normalizedStatus === "draft" && (
-                             <p className="mt-1 text-xs font-normal text-amber-600 max-w-sm">
-                               Returned: {d.returnReason || d.reviewNote}
-                             </p>
-                           )}
+                           {normalizedStatus === "rejected" && d.rejectionReason && (
+                              <p className="mt-1 text-xs font-normal text-red-500 max-w-sm">
+                                Reason: {d.rejectionReason}
+                              </p>
+                            )}
+                            {(normalizedStatus === "returned" || normalizedStatus === "RETURNED") && (d.returnReason || d.reviewNote) && (
+                              <p className="mt-1 text-xs font-normal text-orange-600 max-w-sm">
+                                Returned: {d.returnReason || d.reviewNote}
+                              </p>
+                            )}
                         </td>
                         <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
                           {d.optionLabel || d.productType || "—"}
@@ -332,20 +332,20 @@ const Conversions = () => {
                                 Continue Editing
                               </Button>
                             )}
-                           {normalizedStatus === "rejected" &&
-                              String(d.initiatedBy || "") === String(userId || "") && (
-                                <Button
-                                  size="sm"
-                                  className="rounded-full"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    continueEditing(d)
-                                  }}
-                                >
-                                  <RotateCcw className="h-3.5 w-3.5" />
-                                  Resubmit
-                                </Button>
-                              )}
+                            {(normalizedStatus === "rejected" || normalizedStatus === "returned" || normalizedStatus === "RETURNED") &&
+                               String(d.initiatedBy || "") === String(userId || "") && (
+                                 <Button
+                                   size="sm"
+                                   className="rounded-full"
+                                   onClick={(e) => {
+                                     e.stopPropagation()
+                                     continueEditing(d)
+                                   }}
+                                 >
+                                   <RotateCcw className="h-3.5 w-3.5" />
+                                   Resubmit
+                                 </Button>
+                               )}
 
                           </td>
                         )}

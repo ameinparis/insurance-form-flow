@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { KeyRound, CheckCircle, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
+import { API_BASE_URL } from "@/lib/api"
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams()
@@ -34,7 +35,7 @@ const ResetPassword = () => {
     setIsLoading(true)
 
     try {
-      const response = await fetch("http://localhost:5002/api/auth/reset-password", {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),

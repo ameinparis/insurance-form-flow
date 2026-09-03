@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Clock, Mail, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
+import { API_BASE_URL } from "@/lib/api"
 
 const AccountPending = () => {
   const [email, setEmail] = useState("")
@@ -15,7 +16,7 @@ const AccountPending = () => {
     setIsLoading(true)
 
     try {
-      const response = await fetch("http://localhost:5002/api/auth/resend-setup", {
+      const response = await fetch(`${API_BASE_URL}/auth/resend-setup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
