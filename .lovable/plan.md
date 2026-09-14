@@ -12,7 +12,7 @@ Add an "Edit" mode to the Annuity quote detail page that lets an advisor correct
 
 ## What will be editable
 
-`client.fullName`, `client.dateOfBirth`, `client.gender`, `client.idNumber`, `client.contactNumber`, `client.email`, and `termsAndConditions`.
+Six fields inside `client`: `fullName`, `dateOfBirth`, `gender`, `idNumber`, `contactNumber`, `email`. Plus a seventh, top-level value: `termsAndConditions`.
 
 Everything else stays read-only: quote number, created by/date, age, purchase amount, frequency, drawdown, guarantee fields, commissions, and all `inputs`/`outputs`.
 
@@ -23,8 +23,9 @@ Everything else stays read-only: quote number, created by/date, age, purchase am
 Add `PATCH /api/new-quotes/:id/client` (authenticated) that:
 
 - Accepts only `{ client: {...}, termsAndConditions }`.
-- Whitelists the seven fields server-side (`fullName`, `dateOfBirth`, `gender`, `idNumber`, `contactNumber`, `email`) and ignores anything else in the payload, so `inputs`/`outputs`/quoteId can never be modified through this route.
-- Validates the same required fields the create endpoint does (fullName, idNumber, email present for annuity).
+- Whitelists the six client fields server-side (`fullName`, `dateOfBirth`, `gender`, `idNumber`, `contactNumber`, `email`) plus top-level `termsAndConditions`, ignoring everything else in the payload, so `inputs`/`outputs`/`quoteId` can never be modified through this route.
+- Does **not** replace the `client` object. Builds a `$set` using dotted paths (`client.fullName`, `client.email`, ...) for only the fields present in the request, so every other existing property inside the Mixed `client` object is preserved.
+- Required-field validation confirmed against the actual annuity creation logic, not assumed: `POST /api/new-quotes` requires `fullName`, `idNumber`, `email` for "Exclusive Annuity"; the annuity form (`LivingAnnuitiesQuotationForm.tsx`, line 306) additionally requires `dateOfBirth` and `contactNumber`. `gender` is required nowhere. The endpoint enforces the backend trio; the dialog enforces the fuller form set.
 - Logs an audit entry `QUOTE_UPDATED` with the changed fields.
 - Returns the updated quote.
 
@@ -32,9 +33,10 @@ Add `PATCH /api/new-quotes/:id/client` (authenticated) that:
 
 - Add an "Edit Quote" button (pencil icon) in the sticky action bar, next to Download PDF — visible only for annuity quotes (`productType` is "Exclusive Annuity" or legacy annuity).
 - Clicking it opens a dialog (reusing shadcn `Dialog`) titled "Edit Client Details" with inputs prefilled from `quote.client`:
-  - Full Name (text), Date of Birth (existing `DatePicker` component, `dd.MM.yyyy`), Gender (select: Male/Female), ID Number (text), Contact Number (tel), Email (email).
+  - Full Name (text), Date of Birth, Gender (select: Male/Female), ID Number (text), Contact Number (tel), Email (email).
+  - Date of Birth displays as `dd.MM.yyyy` in the picker but is written back in the exact storage format already used at creation — `yyyy-MM-dd` (confirmed: `format(date, "yyyy-MM-dd")` in the annuity form). No format migration, and an unchanged DOB is sent back byte-identical.
   - Terms & Conditions (textarea), prefilled from `quote.termsAndConditions`.
-- Required-field validation (name, ID, email) with inline messages; Save disabled with a spinner while submitting.
+- Required-field validation (fullName, dateOfBirth, idNumber, contactNumber, email; gender optional) with inline messages; Save disabled with a spinner while submitting.
 - New helper `updateQuoteClient(id, payload)` in `frontend/src/lib/quoteUtils.ts` that calls the PATCH endpoint with the auth token.
 - On success: update local `quote` state (so the displayed document, header, and any later PDF export reflect the change immediately), close the dialog, show a "Quote updated" toast. On failure: destructive toast, dialog stays open.
 - The PDF export already renders from live quote state, so the downloaded PDF automatically reflects edits — no PDF changes needed.
