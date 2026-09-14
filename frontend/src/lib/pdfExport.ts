@@ -8,6 +8,19 @@ import { LifeDisplay } from "@/components/quote-displays/LifeDisplay";
 import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLifeDisplay";
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 
+const sanitizeFilename = (value: string) =>
+  value
+    .replace(/\//g, "-")
+    .replace(/[^a-zA-Z0-9-_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const buildPdfFilename = (quoteId: string, clientName: string) => {
+  const safeQuoteId = sanitizeFilename(quoteId);
+  const safeClientName = sanitizeFilename(clientName);
+  return `Quote_${safeQuoteId}_${safeClientName}.pdf`;
+};
+
 const PDF_EXTRA_STYLES = `
   /* A4 with tight margins */
   @page { size: A4; margin: 12mm 12mm; }
@@ -23,32 +36,32 @@ const PDF_EXTRA_STYLES = `
   body {
     font-family: 'Urbanist', 'Open Sans', system-ui, -apple-system, Arial, sans-serif;
     font-weight: 300;
-    font-size: 10.5px;
-    line-height: 1.4;
+    font-size: 11.5px;
+    line-height: 1.32;
   }
   /* Compact the rendered quote: shrink every text utility a notch */
-  .text-xs { font-size: 9px !important; }
-  .text-sm { font-size: 10px !important; }
-  .text-base { font-size: 11px !important; }
-  .text-lg { font-size: 12.5px !important; }
-  .text-xl { font-size: 14px !important; }
-  .text-2xl { font-size: 16px !important; }
+  .text-xs { font-size: 10px !important; }
+  .text-sm { font-size: 11px !important; }
+  .text-base { font-size: 12.5px !important; }
+  .text-lg { font-size: 14px !important; }
+  .text-xl { font-size: 15.5px !important; }
+  .text-2xl { font-size: 17.5px !important; }
   /* Tighten vertical rhythm */
-  .space-y-8 > * + * { margin-top: 1rem !important; }
-  .space-y-6 > * + * { margin-top: 0.8rem !important; }
-  .space-y-4 > * + * { margin-top: 0.55rem !important; }
-  .p-8 { padding: 1rem !important; }
-  .p-6 { padding: 0.8rem !important; }
-  .p-5 { padding: 0.75rem !important; }
-  .py-2 { padding-top: 0.22rem !important; padding-bottom: 0.22rem !important; }
-  .py-3 { padding-top: 0.32rem !important; padding-bottom: 0.32rem !important; }
-  .mt-12 { margin-top: 1rem !important; }
-  .mt-8 { margin-top: 0.8rem !important; }
-  .mb-12 { margin-bottom: 0.8rem !important; }
-  .mb-8 { margin-bottom: 0.65rem !important; }
-  .pt-8 { padding-top: 0.7rem !important; }
-  .pb-3 { padding-bottom: 0.3rem !important; }
-  .gap-y-4 { row-gap: 0.25rem !important; }
+  .space-y-8 > * + * { margin-top: 0.8rem !important; }
+  .space-y-6 > * + * { margin-top: 0.6rem !important; }
+  .space-y-4 > * + * { margin-top: 0.45rem !important; }
+  .p-8 { padding: 0.85rem !important; }
+  .p-6 { padding: 0.65rem !important; }
+  .p-5 { padding: 0.6rem !important; }
+  .py-2 { padding-top: 0.18rem !important; padding-bottom: 0.18rem !important; }
+  .py-3 { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
+  .mt-12 { margin-top: 0.85rem !important; }
+  .mt-8 { margin-top: 0.65rem !important; }
+  .mb-12 { margin-bottom: 0.65rem !important; }
+  .mb-8 { margin-bottom: 0.5rem !important; }
+  .pt-8 { padding-top: 0.55rem !important; }
+  .pb-3 { padding-bottom: 0.22rem !important; }
+  .gap-y-4 { row-gap: 0.2rem !important; }
   .gap-x-12 { column-gap: 1.25rem !important; }
   /* Darker, print-safe borders so the print-out never renders faint hairlines */
   .border, .border-t, .border-b, .border-l, .border-r,
@@ -102,77 +115,57 @@ const PDF_EXTRA_STYLES = `
   .pdf-terms p { text-align: justify; text-justify: inter-word; }
 
   /* ---- Compact mode (4+ annuity options) ---- */
-  .pdf-compact { font-size: 9.6px; line-height: 1.28; }
-  .pdf-compact .text-xs { font-size: 8.2px !important; }
-  .pdf-compact .text-sm { font-size: 9.2px !important; }
-  .pdf-compact .text-base { font-size: 10px !important; }
-  .pdf-compact .text-lg { font-size: 11.2px !important; }
-  .pdf-compact .p-8 { padding: 0.7rem !important; }
-  .pdf-compact .p-5 { padding: 0.5rem !important; }
-  .pdf-compact .space-y-8 > * + * { margin-top: 0.55rem !important; }
-  .pdf-compact .space-y-6 > * + * { margin-top: 0.45rem !important; }
-  .pdf-compact .space-y-4 > * + * { margin-top: 0.35rem !important; }
-  .pdf-compact .py-2 { padding-top: 0.12rem !important; padding-bottom: 0.12rem !important; }
-  .pdf-compact .mb-5 { margin-bottom: 0.4rem !important; }
-  .pdf-compact .mb-4 { margin-bottom: 0.3rem !important; }
-  .pdf-compact .mt-12 { margin-top: 0.6rem !important; }
-  .pdf-compact .pt-8 { padding-top: 0.45rem !important; }
-  .pdf-compact th, .pdf-compact td { padding-top: 0.15rem !important; padding-bottom: 0.15rem !important; }
+  .pdf-compact { font-size: 10.8px; line-height: 1.25; }
+  .pdf-compact .text-xs { font-size: 9.5px !important; }
+  .pdf-compact .text-sm { font-size: 10.5px !important; }
+  .pdf-compact .text-base { font-size: 11.5px !important; }
+  .pdf-compact .text-lg { font-size: 12.5px !important; }
+  .pdf-compact .p-8 { padding: 0.55rem !important; }
+  .pdf-compact .p-5 { padding: 0.4rem !important; }
+  .pdf-compact .space-y-8 > * + * { margin-top: 0.45rem !important; }
+  .pdf-compact .space-y-6 > * + * { margin-top: 0.35rem !important; }
+  .pdf-compact .space-y-4 > * + * { margin-top: 0.25rem !important; }
+  .pdf-compact .py-2 { padding-top: 0.08rem !important; padding-bottom: 0.08rem !important; }
+  .pdf-compact .mb-5 { margin-bottom: 0.3rem !important; }
+  .pdf-compact .mb-4 { margin-bottom: 0.22rem !important; }
+  .pdf-compact .mt-12 { margin-top: 0.5rem !important; }
+  .pdf-compact .pt-8 { padding-top: 0.35rem !important; }
+  .pdf-compact th, .pdf-compact td { padding-top: 0.12rem !important; padding-bottom: 0.12rem !important; }
 
-  /* ---- Slim running header repeated on every page ----
-     Uses a table-header-group so Chromium repeats it AND reserves its space
-     on every printed page (a position:fixed header would overlap content). */
-  .pdf-page-table { width: 100%; border-collapse: collapse; break-inside: auto !important; }
-  .pdf-page-table > thead { display: table-header-group; }
-  .pdf-page-table > thead th { padding: 0; font-weight: 400; }
-  .pdf-page-table > tbody > tr > td { padding: 0; vertical-align: top; }
-  .pdf-running-header {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 14px;
-    height: 20px;
-    font-size: 8.5px;
-    color: #4b5563;
-    border-bottom: 1px solid #9ca3af;
-    margin-bottom: 6px;
-    background: #ffffff;
-  }
-  .pdf-page-label {
-    position: absolute;
-    right: 0;
-    font-size: 8.5px;
-    color: #4b5563;
-    line-height: 20px;
-    height: 20px;
-    background: #ffffff;
-    z-index: 60;
+  /* ---- Compact two-page mode (1-3 annuity options) ---- */
+  .compact-two-page { font-size: 10.8px; line-height: 1.25; }
+  .compact-two-page .text-xs { font-size: 9.5px !important; }
+  .compact-two-page .text-sm { font-size: 10.5px !important; }
+  .compact-two-page .text-base { font-size: 11.5px !important; }
+  .compact-two-page .text-lg { font-size: 12.5px !important; }
+  .compact-two-page .p-8 { padding: 0.5rem !important; }
+  .compact-two-page .p-5 { padding: 0.35rem !important; }
+  .compact-two-page .space-y-8 > * + * { margin-top: 0.4rem !important; }
+  .compact-two-page .space-y-6 > * + * { margin-top: 0.3rem !important; }
+  .compact-two-page .space-y-4 > * + * { margin-top: 0.2rem !important; }
+  .compact-two-page .py-2 { padding-top: 0.06rem !important; padding-bottom: 0.06rem !important; }
+  .compact-two-page .py-3 { padding-top: 0.1rem !important; padding-bottom: 0.1rem !important; }
+  .compact-two-page .mb-5 { margin-bottom: 0.22rem !important; }
+  .compact-two-page .mb-4 { margin-bottom: 0.18rem !important; }
+  .compact-two-page .mb-8 { margin-bottom: 0.35rem !important; }
+  .compact-two-page .mb-12 { margin-bottom: 0.4rem !important; }
+  .compact-two-page .mt-8 { margin-top: 0.5rem !important; }
+  .compact-two-page .mt-12 { margin-top: 0.55rem !important; }
+  .compact-two-page .pt-8 { padding-top: 0.3rem !important; }
+  .compact-two-page .pb-3 { padding-bottom: 0.15rem !important; }
+  .compact-two-page .gap-y-4 { row-gap: 0.15rem !important; }
+  .compact-two-page .gap-x-12 { column-gap: 0.9rem !important; }
+  .compact-two-page header img, .compact-two-page .h-20 { height: 2.6rem !important; }
+  .compact-two-page table { border-collapse: collapse; }
+  .compact-two-page th, .compact-two-page td { padding-top: 0.1rem !important; padding-bottom: 0.1rem !important; }
+  .compact-two-page .scenario-block,
+  .compact-two-page .pdf-fees-signature {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
 `;
 
-
-/** A4 printable area height at 96dpi with the 12mm print margins. */
-const PRINT_HEIGHT_PX = Math.round(((297 - 24) / 25.4) * 96);
-
-/** Count pages in a generated PDF by scanning its object dictionary. */
-async function countPdfPages(blob: Blob): Promise<number> {
-  try {
-    const bytes = new Uint8Array(await blob.arrayBuffer());
-    let text = "";
-    for (let i = 0; i < bytes.length; i++) text += String.fromCharCode(bytes[i]);
-    const counts = text.match(/\/Count\s+(\d+)/g);
-    if (counts && counts.length) {
-      const nums = counts.map((c) => parseInt(c.replace(/\D/g, ""), 10));
-      const max = Math.max(...nums);
-      if (max > 0) return max;
-    }
-    const pages = text.match(/\/Type\s*\/Page[^s]/g);
-    return pages ? pages.length : 1;
-  } catch {
-    return 1;
-  }
-}
 
 /**
  * Collect every stylesheet the running app currently has loaded so the PDF
@@ -331,7 +324,8 @@ export async function exportQuotePdf(
 
   // 5b. 4+ annuity option cards → compact typography/spacing.
   const optionCount = (contentHtml.match(/class="[^"]*scenario-block/g) || []).length;
-  const compactClass = optionCount >= 4 ? " pdf-compact" : "";
+  const printMode = optionCount <= 3 ? "compact-two-page" : optionCount <= 5 ? "pdf-compact" : "";
+  const compactClass = printMode ? ` ${printMode}` : "";
 
   const buildHtml = (bodyInner: string) => `<!DOCTYPE html>
 <html lang="en">
@@ -349,23 +343,6 @@ export async function exportQuotePdf(
 
   const rootHtml = `<div class="pdf-root${compactClass} max-w-5xl mx-auto bg-white">${contentHtml}</div>`;
 
-  // 5c. Simulate pagination (without the running header) for a first guess.
-  const HEADER_H = 26; // running header band + its bottom margin
-  const SAFETY = 16; // Chromium rounds the printable box down a little
-  const usable = PRINT_HEIGHT_PX - HEADER_H - SAFETY;
-  const company = "Exclusive Life Insurance";
-  const header = `<div class="pdf-running-header"><span>${company}</span><span>Quote #${quote.quoteId ?? ""}</span></div>`;
-
-  const withHeader = (pages: number) => {
-    const labels = Array.from({ length: pages }, (_, i) => {
-      const top = HEADER_H + i * usable + 2;
-      return `<div class="pdf-page-label" style="top:${top}px;">Page ${i + 1} of ${pages}</div>`;
-    }).join("");
-    return buildHtml(
-      `<table class="pdf-page-table"><thead><tr><th>${header}</th></tr></thead><tbody><tr><td>${labels}${rootHtml}</td></tr></tbody></table>`
-    );
-  };
-
   const requestPdf = async (docHtml: string): Promise<Blob> => {
     const res = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
       method: "POST",
@@ -379,27 +356,17 @@ export async function exportQuotePdf(
     return res.blob();
   };
 
-  // 6. Generate. Single-page quotes stay plain; multi-page ones get the slim
-  // running header with an accurate "Page X of Y", verified against the
-  // produced PDF (at most 3 round-trips, normally 1–2).
+  // 6. Generate PDF without running header or page numbers.
   let blob = await requestPdf(buildHtml(rootHtml));
-  let actualPages = await countPdfPages(blob);
-  if (actualPages > 1) {
-    let guess = actualPages;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      blob = await requestPdf(withHeader(guess));
-      const produced = await countPdfPages(blob);
-      if (produced === guess || produced < 1) break;
-      guess = produced;
-    }
-  }
 
   // 7. Download the blob
   const url = URL.createObjectURL(blob);
 
+  const pdfFilename = buildPdfFilename(quote.quoteId, clientInfo.fullName);
+
   const a = document.createElement("a");
   a.href = url;
-  a.download = `quote-${quoteId}.pdf`;
+  a.download = pdfFilename;
   document.body.appendChild(a);
   a.click();
   a.remove();

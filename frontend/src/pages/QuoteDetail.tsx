@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Download, Loader2, Pencil, Save, X } from "lucide-react";
+import { Download, Loader2, Pencil, Save, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { QuoteHeader } from "@/components/QuoteHeader";
 import { AnnuityDisplay } from "@/components/quote-displays/AnnuityDisplay";
@@ -13,6 +13,7 @@ import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 import { fetchQuoteDetails, getClientInfo, QuoteData, updateQuoteClient } from "@/lib/quoteUtils";
 import { exportQuotePdf } from "@/lib/pdfExport";
 import { useToast } from "@/hooks/use-toast";
+import { DocumentViewer } from "@/components/document-viewer/DocumentViewer";
 
 const QuoteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -231,25 +232,17 @@ const QuoteDetail = () => {
 
   return (
     <div className="-mx-6 -mb-6 min-h-screen bg-card">
-      {/* Sticky Action Bar */}
-      <div className="sticky  z-30 bg-card">
-        <div className="max-w-5xl mx-auto flex justify-between items-center px-6 py-12">
-          <Button
-            variant="outline"
-            onClick={() => navigate(-1)}
-            className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div className="flex items-center gap-3">
+      <DocumentViewer
+        filename={`${quote.quoteId}.pdf`}
+        actions={
+          <>
             {canEditQuote && !isEditing && (
               <Button
                 variant="outline"
                 onClick={openEditDialog}
-                className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-6"
+                className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-4 text-xs"
               >
-                <Pencil className="h-4 w-4 mr-2" />
+                <Pencil className="h-3.5 w-3.5 mr-1.5" />
                 Edit Quote
               </Button>
             )}
@@ -259,17 +252,17 @@ const QuoteDetail = () => {
                   variant="outline"
                   onClick={cancelEdit}
                   disabled={editSaving}
-                  className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-6"
+                  className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-4 text-xs"
                 >
-                  <X className="h-4 w-4 mr-2" />
+                  <X className="h-3.5 w-3.5 mr-1.5" />
                   Cancel
                 </Button>
                 <Button
                   onClick={handleEditSave}
                   disabled={editSaving}
-                  className="rounded-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-900 disabled:opacity-100 text-white px-6 min-w-[148px] focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="rounded-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-900 disabled:opacity-100 text-white px-4 text-xs"
                 >
-                  <Save className="h-4 w-4 mr-2" />
+                  <Save className="h-3.5 w-3.5 mr-1.5" />
                   {editSaving ? "Saving" : "Save Changes"}
                 </Button>
               </>
@@ -277,21 +270,14 @@ const QuoteDetail = () => {
             <Button
               onClick={handleDownloadPdf}
               disabled={downloadStarted}
-              className="rounded-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-900 disabled:opacity-100 text-white px-6 min-w-[148px] focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="rounded-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-900 disabled:opacity-100 text-white px-4 text-xs"
             >
-              <Download className="h-4 w-4 mr-2" />
-              {downloadStarted ? "Downloading" : "Download PDF"}
+              {downloadStarted ? "Downloading..." : "Download PDF"}
             </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Paper Document */}
-      <div className="max-w-5xl mx-auto px-6 pb-12">
-        <div
-          className="bg-white dark:bg-slate-900 shadow-lg rounded-2xl overflow-hidden ring-1 ring-gray-200/80 dark:ring-slate-800"
-          id="quote-pdf"
-        >
+          </>
+        }
+      >
+        <div id="quote-pdf">
           <QuoteHeader
             quoteId={quote.quoteId}
             clientName={clientInfo.fullName}
@@ -321,7 +307,7 @@ const QuoteDetail = () => {
             </div>
           )}
         </div>
-      </div>
+      </DocumentViewer>
     </div>
   );
 };
