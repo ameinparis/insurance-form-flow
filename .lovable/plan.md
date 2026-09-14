@@ -22,16 +22,18 @@ Everything else stays read-only: quote number, created by/date, age, purchase am
 
 Add `PATCH /api/new-quotes/:id/client` (authenticated) that:
 
+- **Product-type guard:** loads the quote first and rejects with 400 unless `productType === "Exclusive Annuity"` — this endpoint is annuity-only, no other product type can be edited through it.
+- **Role restriction:** `req.user.role` comes from the JWT (backend roles are `"user"`, `"admin"`, `"superuser"`). Only Advisor (`"user"`) and Admin (`"admin"`, plus `"superuser"` as the admin-level superrole) may update; anything else gets 403.
 - Accepts only `{ client: {...}, termsAndConditions }`.
 - Whitelists the six client fields server-side (`fullName`, `dateOfBirth`, `gender`, `idNumber`, `contactNumber`, `email`) plus top-level `termsAndConditions`, ignoring everything else in the payload, so `inputs`/`outputs`/`quoteId` can never be modified through this route.
 - Does **not** replace the `client` object. Builds a `$set` using dotted paths (`client.fullName`, `client.email`, ...) for only the fields present in the request, so every other existing property inside the Mixed `client` object is preserved.
-- Required-field validation confirmed against the actual annuity creation logic, not assumed: `POST /api/new-quotes` requires `fullName`, `idNumber`, `email` for "Exclusive Annuity"; the annuity form (`LivingAnnuitiesQuotationForm.tsx`, line 306) additionally requires `dateOfBirth` and `contactNumber`. `gender` is required nowhere. The endpoint enforces the backend trio; the dialog enforces the fuller form set.
+- Required-field validation matches the current annuity form exactly (verified in `LivingAnnuitiesQuotationForm.tsx`, line 306): `fullName`, `dateOfBirth`, `idNumber`, `contactNumber`, `email` are required; `gender` is optional.
 - Logs an audit entry `QUOTE_UPDATED` with the changed fields.
 - Returns the updated quote.
 
 ### 2. Frontend — edit UI on `QuoteDetail.tsx`
 
-- Add an "Edit Quote" button (pencil icon) in the sticky action bar, next to Download PDF — visible only for annuity quotes (`productType` is "Exclusive Annuity" or legacy annuity).
+- Add an "Edit Quote" button (pencil icon) in the sticky action bar, next to Download PDF — visible **only** for new-schema quotes with `productType === "Exclusive Annuity"`. Legacy annuity quotes loaded via `legacy=true` (old `Quotations` model) stay read-only: no button, no dialog.
 - Clicking it opens a dialog (reusing shadcn `Dialog`) titled "Edit Client Details" with inputs prefilled from `quote.client`:
   - Full Name (text), Date of Birth, Gender (select: Male/Female), ID Number (text), Contact Number (tel), Email (email).
   - Date of Birth displays as `dd.MM.yyyy` in the picker but is written back in the exact storage format already used at creation — `yyyy-MM-dd` (confirmed: `format(date, "yyyy-MM-dd")` in the annuity form). No format migration, and an unchanged DOB is sent back byte-identical.
