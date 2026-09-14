@@ -238,24 +238,26 @@ const QuoteDetail = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          {canEditQuote && (
+          <div className="flex items-center gap-3">
+            {canEditQuote && (
+              <Button
+                variant="outline"
+                onClick={openEditDialog}
+                className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-6"
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit Quote
+              </Button>
+            )}
             <Button
-              variant="outline"
-              onClick={openEditDialog}
-              className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-6"
+              onClick={handleDownloadPdf}
+              disabled={downloadStarted}
+              className="rounded-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-900 disabled:opacity-100 text-white px-6 min-w-[148px] focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
             >
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit Quote
+              <Download className="h-4 w-4 mr-2" />
+              {downloadStarted ? "Downloading" : "Download PDF"}
             </Button>
-          )}
-          <Button
-            onClick={handleDownloadPdf}
-            disabled={downloadStarted}
-            className="rounded-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-900 disabled:opacity-100 text-white px-6 min-w-[148px] focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            {downloadStarted ? "Downloading" : "Download PDF"}
-          </Button>
+          </div>
         </div>
       </div>
 
