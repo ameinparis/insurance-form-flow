@@ -82,6 +82,44 @@ export const getSavedQuoteId = (response: SavedQuoteResponse): string | null => 
   return response._id || response.quote?._id || null;
 };
 
+export interface EditableAnnuityClient {
+  fullName?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  idNumber?: string;
+  contactNumber?: string;
+  email?: string;
+}
+
+/**
+ * Update editable client fields / terms on an Exclusive Annuity quote.
+ * Backend whitelists fields and only supports annuity quotes.
+ */
+export const updateQuoteClient = async (
+  quoteId: string,
+  payload: { client: EditableAnnuityClient; termsAndConditions?: string }
+): Promise<QuoteData> => {
+  const token = localStorage.getItem("token");
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw";
+
+  const response = await fetch(`${baseUrl}/api/new-quotes/${quoteId}/client`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.message || `Failed to update quote: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data.quote;
+};
+
 export const waitForQuoteReady = async (
   quoteId: string,
   options: {
