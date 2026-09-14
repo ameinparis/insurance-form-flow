@@ -2,23 +2,15 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CalendarIcon, Download, Loader2, Pencil } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ArrowLeft, Download, Loader2, Pencil, Save, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
 import { QuoteHeader } from "@/components/QuoteHeader";
 import { AnnuityDisplay } from "@/components/quote-displays/AnnuityDisplay";
 import { FuneralDisplay } from "@/components/quote-displays/FuneralDisplay";
 import { LifeDisplay } from "@/components/quote-displays/LifeDisplay";
 import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLifeDisplay";
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
-import { fetchQuoteDetails, getClientInfo, formatDate, QuoteData, updateQuoteClient } from "@/lib/quoteUtils";
+import { fetchQuoteDetails, getClientInfo, QuoteData, updateQuoteClient } from "@/lib/quoteUtils";
 import { exportQuotePdf } from "@/lib/pdfExport";
 import { useToast } from "@/hooks/use-toast";
 
@@ -32,7 +24,7 @@ const QuoteDetail = () => {
   const [loading, setLoading] = useState(true);
   const [downloadStarted, setDownloadStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
   const [editForm, setEditForm] = useState({
     fullName: "",
@@ -121,16 +113,21 @@ const QuoteDetail = () => {
   const openEditDialog = () => {
     if (!quote) return;
     setEditForm({
-      fullName: quote.client?.fullName || "",
-      dateOfBirth: quote.client?.dateOfBirth || "",
+      fullName: quote.client?.fullName || quote.fullName || "",
+      dateOfBirth: quote.client?.dateOfBirth || quote.dateOfBirth || "",
       gender: quote.client?.gender || "",
-      idNumber: quote.client?.idNumber || "",
-      contactNumber: quote.client?.contactNumber || "",
-      email: quote.client?.email || "",
-      termsAndConditions: quote.termsAndConditions || "",
+      idNumber: quote.client?.idNumber || quote.idNumber || "",
+      contactNumber: quote.client?.contactNumber || quote.contactNumber || "",
+      email: quote.client?.email || quote.email || "",
+      termsAndConditions: quote.termsAndConditions || quote.disclaimerText || "",
     });
     setEditErrors({});
-    setEditOpen(true);
+    setIsEditing(true);
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditErrors({});
   };
 
   const handleEditSave = async () => {
@@ -164,7 +161,7 @@ const QuoteDetail = () => {
         termsAndConditions: editForm.termsAndConditions,
       });
       setQuote(updated);
-      setEditOpen(false);
+      setIsEditing(false);
       toast({ title: "Quote updated", description: "Client details have been saved." });
     } catch (err: any) {
       console.error("Edit quote failed:", err);
@@ -212,7 +209,14 @@ const QuoteDetail = () => {
     switch (productType) {
       case "Exclusive Annuity":
       case "annuity":
-        return <AnnuityDisplay quote={quote} />;
+        return (
+          <AnnuityDisplay
+            quote={quote}
+            isEditing={isEditing}
+            editForm={editForm}
+            onFieldChange={(field, value) => setEditForm((f) => ({ ...f, [field]: value }))}
+          />
+        );
       case "Exclusive Funeral":
       case "funeral":
         return <FuneralDisplay quote={quote} />;
@@ -239,7 +243,7 @@ const QuoteDetail = () => {
             Back
           </Button>
           <div className="flex items-center gap-3">
-            {canEditQuote && (
+            {canEditQuote && !isEditing && (
               <Button
                 variant="outline"
                 onClick={openEditDialog}
@@ -248,6 +252,27 @@ const QuoteDetail = () => {
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit Quote
               </Button>
+            )}
+            {canEditQuote && isEditing && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={cancelEdit}
+                  disabled={editSaving}
+                  className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-6"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleEditSave}
+                  disabled={editSaving}
+                  className="rounded-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-900 disabled:opacity-100 text-white px-6 min-w-[148px] focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {editSaving ? "Saving" : "Save Changes"}
+                </Button>
+              </>
             )}
             <Button
               onClick={handleDownloadPdf}
@@ -282,134 +307,23 @@ const QuoteDetail = () => {
           {(quote.termsAndConditions || quote.disclaimerText) && (
             <div className="border-t border-border p-8 bg-card">
               <h3 className="text-xl font-semibold text-center mb-4 text-foreground">Terms & Conditions</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {quote.termsAndConditions || quote.disclaimerText}
-              </p>
+              {isEditing ? (
+                <Textarea
+                  value={editForm.termsAndConditions}
+                  onChange={(e) => setEditForm((f) => ({ ...f, termsAndConditions: e.target.value }))}
+                  className="min-h-[120px] bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {quote.termsAndConditions || quote.disclaimerText}
+                </p>
+              )}
             </div>
           )}
         </div>
       </div>
-
-      {/* Edit Client Details Dialog (Annuity only) */}
-      <Dialog open={editOpen} onOpenChange={(open) => { if (!editSaving) setEditOpen(open); }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Client Details</DialogTitle>
-            <DialogDescription>
-              Update the client's personal details and terms. Calculated figures are not affected.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-fullName">Full Name</Label>
-              <Input
-                id="edit-fullName"
-                value={editForm.fullName}
-                onChange={(e) => setEditForm((f) => ({ ...f, fullName: e.target.value }))}
-              />
-              {editErrors.fullName && <p className="text-sm text-destructive">{editErrors.fullName}</p>}
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Date of Birth</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {editForm.dateOfBirth
-                      ? format(new Date(editForm.dateOfBirth), "dd.MM.yyyy")
-                      : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={editForm.dateOfBirth ? new Date(editForm.dateOfBirth) : undefined}
-                    onSelect={(date) =>
-                      setEditForm((f) => ({ ...f, dateOfBirth: date ? format(date, "yyyy-MM-dd") : "" }))
-                    }
-                    disabled={(date) => date > new Date()}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              {editErrors.dateOfBirth && <p className="text-sm text-destructive">{editErrors.dateOfBirth}</p>}
-            </div>
-
-            <div className="grid gap-2">
-              <Label>Gender</Label>
-              <Select
-                value={editForm.gender}
-                onValueChange={(value) => setEditForm((f) => ({ ...f, gender: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="edit-idNumber">ID Number</Label>
-              <Input
-                id="edit-idNumber"
-                value={editForm.idNumber}
-                onChange={(e) => setEditForm((f) => ({ ...f, idNumber: e.target.value }))}
-              />
-              {editErrors.idNumber && <p className="text-sm text-destructive">{editErrors.idNumber}</p>}
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="edit-contactNumber">Contact Number</Label>
-              <Input
-                id="edit-contactNumber"
-                type="tel"
-                value={editForm.contactNumber}
-                onChange={(e) => setEditForm((f) => ({ ...f, contactNumber: e.target.value }))}
-              />
-              {editErrors.contactNumber && <p className="text-sm text-destructive">{editErrors.contactNumber}</p>}
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="edit-email">Email</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={editForm.email}
-                onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
-              />
-              {editErrors.email && <p className="text-sm text-destructive">{editErrors.email}</p>}
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="edit-terms">Terms &amp; Conditions</Label>
-              <Textarea
-                id="edit-terms"
-                rows={5}
-                value={editForm.termsAndConditions}
-                onChange={(e) => setEditForm((f) => ({ ...f, termsAndConditions: e.target.value }))}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={editSaving}>
-              Cancel
-            </Button>
-            <Button onClick={handleEditSave} disabled={editSaving} className="min-w-[120px]">
-              {editSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {editSaving ? "Saving" : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
-
 };
 
 export default QuoteDetail;

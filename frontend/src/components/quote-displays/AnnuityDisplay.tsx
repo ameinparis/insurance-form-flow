@@ -5,16 +5,28 @@ import {
   LIFE_ANNUITY_PERIODS,
   LifePeriodResult,
 } from "@/lib/lifeAnnuityPeriods";
+import { Input } from "@/components/ui/input";
 
 interface AnnuityDisplayProps {
   quote: any;
+  isEditing?: boolean;
+  editForm?: {
+    fullName: string;
+    dateOfBirth: string;
+    gender: string;
+    idNumber: string;
+    contactNumber: string;
+    email: string;
+  };
+  onFieldChange?: (field: string, value: string) => void;
 }
 
-export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
+export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: AnnuityDisplayProps) => {
   // Support both new and legacy schema
   const clientData = quote.client || {
     fullName: quote.fullName,
     dateOfBirth: quote.dateOfBirth,
+    gender: quote.gender,
     idNumber: quote.idNumber,
     contactNumber: quote.contactNumber,
     email: quote.email
@@ -96,31 +108,81 @@ export const AnnuityDisplay = ({ quote }: AnnuityDisplayProps) => {
   }, [lifeAge, lifeAmount, knownPeriod, knownAnnuity, hasScenarios]);
 
 
+  const editing = Boolean(isEditing && editForm && onFieldChange);
+
+  const renderClientField = (label: string, field: keyof typeof editForm, type: string = "text") => {
+    const value = editForm?.[field] || "";
+    if (editing) {
+      return (
+        <div className="flex items-baseline gap-2 border-b border-blue-100 dark:border-blue-900/40 py-2">
+          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">{label}:</span>
+          <Input
+            type={type}
+            value={value}
+            onChange={(e) => onFieldChange(field, e.target.value)}
+            className="h-7 text-sm bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
+          />
+        </div>
+      );
+    }
+    const displayValue = clientData?.[field] || "N/A";
+    return (
+      <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+        <span className="font-medium text-sm text-gray-500 dark:text-gray-400">{label}:</span>
+        <span className="text-sm text-gray-800 dark:text-gray-100">{displayValue}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="bg-white dark:bg-slate-900 p-8 space-y-8">
       {/* Personal & Annuity Details */}
       <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-block">
-          Quotation for {toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "Client Name"}
+          {editing ? (
+            <Input
+              value={editForm?.fullName || ""}
+              onChange={(e) => onFieldChange("fullName", e.target.value)}
+              className="text-center font-semibold bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
+            />
+          ) : (
+            `Quotation for ${toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "Client Name"}`
+          )}
         </h2>
       </div>
       <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Date of Birth:</span>
-          <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.dateOfBirth || "N/A"}</span>
-        </div>
-        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">ID/Passport Number:</span>
-          <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.idNumber || "N/A"}</span>
-        </div>
-        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Contact:</span>
-          <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.contactNumber || "N/A"}</span>
-        </div>
-        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Email:</span>
-          <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.email || "N/A"}</span>
-        </div>
+        {editing ? (
+          <>
+            {renderClientField("Date of Birth", "dateOfBirth")}
+            {renderClientField("Gender", "gender")}
+            {renderClientField("ID/Passport Number", "idNumber")}
+            {renderClientField("Contact", "contactNumber")}
+            {renderClientField("Email", "email", "email")}
+          </>
+        ) : (
+          <>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Date of Birth:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.dateOfBirth || "N/A"}</span>
+            </div>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Gender:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.gender || "N/A"}</span>
+            </div>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">ID/Passport Number:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.idNumber || "N/A"}</span>
+            </div>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Contact:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.contactNumber || "N/A"}</span>
+            </div>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Email:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.email || "N/A"}</span>
+            </div>
+          </>
+        )}
         <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
           <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Funeral Cover:</span>
           <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(15000)}</span>
