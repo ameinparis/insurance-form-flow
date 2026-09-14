@@ -238,6 +238,16 @@ const QuoteDetail = () => {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
+          {canEditQuote && (
+            <Button
+              variant="outline"
+              onClick={openEditDialog}
+              className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-6"
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit Quote
+            </Button>
+          )}
           <Button
             onClick={handleDownloadPdf}
             disabled={downloadStarted}
