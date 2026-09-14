@@ -1259,6 +1259,61 @@ app.patch("/api/new-quotes/:id/notes", authenticateToken, async (req, res) => {
   }
 });
 
+// Update client details / terms on an Exclusive Annuity quote (advisor/admin only)
+app.patch("/api/new-quotes/:id/client", authenticateToken, async (req, res) => {
+  try {
+    const role = String(req.user?.role || "").toLowerCase();
+    if (!["user", "admin", "superuser"].includes(role)) {
+      return res.status(403).json({ message: "You do not have permission to edit quotes" });
+    }
+
+    const q = await Quotes.findById(req.params.id);
+    if (!q) return res.status(404).json({ message: "Quote not found" });
+    if (q.productType !== "Exclusive Annuity") {
+      return res.status(400).json({ message: "Only Exclusive Annuity quotes can be edited" });
+    }
+
+    const { client = {}, termsAndConditions } = req.body || {};
+    const CLIENT_FIELDS = ["fullName", "dateOfBirth", "gender", "idNumber", "contactNumber", "email"];
+    const REQUIRED_FIELDS = ["fullName", "dateOfBirth", "idNumber", "contactNumber", "email"];
+
+    const $set = {};
+    for (const field of CLIENT_FIELDS) {
+      if (client[field] !== undefined) $set[`client.${field}`] = client[field];
+    }
+    if (termsAndConditions !== undefined) $set.termsAndConditions = termsAndConditions;
+
+    // Validate required fields against the merged result (existing values + incoming)
+    for (const field of REQUIRED_FIELDS) {
+      const value = client[field] !== undefined ? client[field] : q.client?.[field];
+      if (!value) {
+        return res.status(400).json({ message: `Missing required field: ${field}` });
+      }
+    }
+
+    if (Object.keys($set).length === 0) {
+      return res.status(400).json({ message: "No editable fields provided" });
+    }
+
+    const updated = await Quotes.findByIdAndUpdate(req.params.id, { $set }, { new: true });
+
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "QUOTE_UPDATED",
+      details: `Annuity quote ${q.quoteId || req.params.id} client details updated`,
+      metadata: { quoteId: q.quoteId, updatedFields: Object.keys($set) },
+      req,
+    });
+
+    res.json({ message: "Quote updated", quote: updated });
+  } catch (e) {
+    console.error("Update quote client error:", e);
+    res.status(500).json({ message: "Failed to update quote" });
+  }
+});
+
 // Delete new quote
 app.delete("/api/new-quotes/:id", authenticateToken, async (req, res) => {
   try {
