@@ -33,7 +33,7 @@ Add `PATCH /api/new-quotes/:id/client` (authenticated) that:
 
 ### 2. Frontend — edit UI on `QuoteDetail.tsx`
 
-- Add an "Edit Quote" button (pencil icon) in the sticky action bar, next to Download PDF — visible only for annuity quotes (`productType` is "Exclusive Annuity" or legacy annuity).
+- Add an "Edit Quote" button (pencil icon) in the sticky action bar, next to Download PDF — visible **only** for new-schema quotes with `productType === "Exclusive Annuity"`. Legacy annuity quotes loaded via `legacy=true` (old `Quotations` model) stay read-only: no button, no dialog.
 - Clicking it opens a dialog (reusing shadcn `Dialog`) titled "Edit Client Details" with inputs prefilled from `quote.client`:
   - Full Name (text), Date of Birth, Gender (select: Male/Female), ID Number (text), Contact Number (tel), Email (email).
   - Date of Birth displays as `dd.MM.yyyy` in the picker but is written back in the exact storage format already used at creation — `yyyy-MM-dd` (confirmed: `format(date, "yyyy-MM-dd")` in the annuity form). No format migration, and an unchanged DOB is sent back byte-identical.
