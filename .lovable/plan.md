@@ -22,10 +22,12 @@ Everything else stays read-only: quote number, created by/date, age, purchase am
 
 Add `PATCH /api/new-quotes/:id/client` (authenticated) that:
 
+- **Product-type guard:** loads the quote first and rejects with 400 unless `productType === "Exclusive Annuity"` — this endpoint is annuity-only, no other product type can be edited through it.
+- **Role restriction:** `req.user.role` comes from the JWT (backend roles are `"user"`, `"admin"`, `"superuser"`). Only Advisor (`"user"`) and Admin (`"admin"`, plus `"superuser"` as the admin-level superrole) may update; anything else gets 403.
 - Accepts only `{ client: {...}, termsAndConditions }`.
 - Whitelists the six client fields server-side (`fullName`, `dateOfBirth`, `gender`, `idNumber`, `contactNumber`, `email`) plus top-level `termsAndConditions`, ignoring everything else in the payload, so `inputs`/`outputs`/`quoteId` can never be modified through this route.
 - Does **not** replace the `client` object. Builds a `$set` using dotted paths (`client.fullName`, `client.email`, ...) for only the fields present in the request, so every other existing property inside the Mixed `client` object is preserved.
-- Required-field validation confirmed against the actual annuity creation logic, not assumed: `POST /api/new-quotes` requires `fullName`, `idNumber`, `email` for "Exclusive Annuity"; the annuity form (`LivingAnnuitiesQuotationForm.tsx`, line 306) additionally requires `dateOfBirth` and `contactNumber`. `gender` is required nowhere. The endpoint enforces the backend trio; the dialog enforces the fuller form set.
+- Required-field validation matches the current annuity form exactly (verified in `LivingAnnuitiesQuotationForm.tsx`, line 306): `fullName`, `dateOfBirth`, `idNumber`, `contactNumber`, `email` are required; `gender` is optional.
 - Logs an audit entry `QUOTE_UPDATED` with the changed fields.
 - Returns the updated quote.
 
