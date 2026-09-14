@@ -32,6 +32,18 @@ const QuoteDetail = () => {
   const [loading, setLoading] = useState(true);
   const [downloadStarted, setDownloadStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullName: "",
+    dateOfBirth: "",
+    gender: "",
+    idNumber: "",
+    contactNumber: "",
+    email: "",
+    termsAndConditions: "",
+  });
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const loadQuote = async () => {
@@ -98,8 +110,71 @@ const QuoteDetail = () => {
       console.error("Export PDF failed:", err);
       const msg = err?.message || "Failed to export PDF. Please try again.";
       toast({ title: "Download failed", description: msg, variant: "destructive" });
+      } finally {
+        window.setTimeout(() => setDownloadStarted(false), 1200);
+      }
+  };
+
+  const isLegacy = searchParams.get("legacy") === "true";
+  const canEditQuote = !isLegacy && quote?.productType === "Exclusive Annuity";
+
+  const openEditDialog = () => {
+    if (!quote) return;
+    setEditForm({
+      fullName: quote.client?.fullName || "",
+      dateOfBirth: quote.client?.dateOfBirth || "",
+      gender: quote.client?.gender || "",
+      idNumber: quote.client?.idNumber || "",
+      contactNumber: quote.client?.contactNumber || "",
+      email: quote.client?.email || "",
+      termsAndConditions: quote.termsAndConditions || "",
+    });
+    setEditErrors({});
+    setEditOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!id || editSaving) return;
+
+    const required: Array<[keyof typeof editForm, string]> = [
+      ["fullName", "Full name"],
+      ["dateOfBirth", "Date of birth"],
+      ["idNumber", "ID number"],
+      ["contactNumber", "Contact number"],
+      ["email", "Email"],
+    ];
+    const errors: Record<string, string> = {};
+    for (const [field, label] of required) {
+      if (!editForm[field].trim()) errors[field] = `${label} is required`;
+    }
+    setEditErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    setEditSaving(true);
+    try {
+      const updated = await updateQuoteClient(id, {
+        client: {
+          fullName: editForm.fullName.trim(),
+          dateOfBirth: editForm.dateOfBirth,
+          gender: editForm.gender,
+          idNumber: editForm.idNumber.trim(),
+          contactNumber: editForm.contactNumber.trim(),
+          email: editForm.email.trim(),
+        },
+        termsAndConditions: editForm.termsAndConditions,
+      });
+      setQuote(updated);
+      setEditOpen(false);
+      toast({ title: "Quote updated", description: "Client details have been saved." });
+    } catch (err: any) {
+      console.error("Edit quote failed:", err);
+      toast({
+        title: "Save failed",
+        description: err?.message || "Failed to update the quote. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      window.setTimeout(() => setDownloadStarted(false), 1200);
+      setEditSaving(false);
     }
   };
   if (loading) {
