@@ -289,6 +289,124 @@ const QuoteDetail = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Client Details Dialog (Annuity only) */}
+      <Dialog open={editOpen} onOpenChange={(open) => { if (!editSaving) setEditOpen(open); }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Client Details</DialogTitle>
+            <DialogDescription>
+              Update the client's personal details and terms. Calculated figures are not affected.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-fullName">Full Name</Label>
+              <Input
+                id="edit-fullName"
+                value={editForm.fullName}
+                onChange={(e) => setEditForm((f) => ({ ...f, fullName: e.target.value }))}
+              />
+              {editErrors.fullName && <p className="text-sm text-destructive">{editErrors.fullName}</p>}
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Date of Birth</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editForm.dateOfBirth
+                      ? format(new Date(editForm.dateOfBirth), "dd.MM.yyyy")
+                      : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={editForm.dateOfBirth ? new Date(editForm.dateOfBirth) : undefined}
+                    onSelect={(date) =>
+                      setEditForm((f) => ({ ...f, dateOfBirth: date ? format(date, "yyyy-MM-dd") : "" }))
+                    }
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {editErrors.dateOfBirth && <p className="text-sm text-destructive">{editErrors.dateOfBirth}</p>}
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Gender</Label>
+              <Select
+                value={editForm.gender}
+                onValueChange={(value) => setEditForm((f) => ({ ...f, gender: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-idNumber">ID Number</Label>
+              <Input
+                id="edit-idNumber"
+                value={editForm.idNumber}
+                onChange={(e) => setEditForm((f) => ({ ...f, idNumber: e.target.value }))}
+              />
+              {editErrors.idNumber && <p className="text-sm text-destructive">{editErrors.idNumber}</p>}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-contactNumber">Contact Number</Label>
+              <Input
+                id="edit-contactNumber"
+                type="tel"
+                value={editForm.contactNumber}
+                onChange={(e) => setEditForm((f) => ({ ...f, contactNumber: e.target.value }))}
+              />
+              {editErrors.contactNumber && <p className="text-sm text-destructive">{editErrors.contactNumber}</p>}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+              />
+              {editErrors.email && <p className="text-sm text-destructive">{editErrors.email}</p>}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-terms">Terms &amp; Conditions</Label>
+              <Textarea
+                id="edit-terms"
+                rows={5}
+                value={editForm.termsAndConditions}
+                onChange={(e) => setEditForm((f) => ({ ...f, termsAndConditions: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)} disabled={editSaving}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditSave} disabled={editSaving} className="min-w-[120px]">
+              {editSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {editSaving ? "Saving" : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
