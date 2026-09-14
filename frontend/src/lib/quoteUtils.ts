@@ -8,6 +8,7 @@ export interface QuoteData {
   client?: {
     fullName?: string;
     dateOfBirth?: string;
+    gender?: string;
     idNumber?: string;
     contactNumber?: string;
     email?: string;
