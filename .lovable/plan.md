@@ -8,14 +8,16 @@ Keep the current Quote Detail viewer, toolbar, quote styling, editing, PDF downl
 ### 1. Add a small A4 pagination layer
 - Add a focused pagination component beside `DocumentViewer` that owns the page measurements and page list.
 - Use the PDF export dimensions: A4 `210mm × 297mm` with `12mm` content margins.
-- Measure the rendered quote blocks in an off-screen layout at the same A4 content width, then assign each block to the first page where it fits.
+- Measure the rendered quote blocks only at the fixed A4 printable area (`210mm × 297mm`, less `12mm` margins on every side), then assign each block to the first page where it fits. Viewer width and zoom affect display scale only and never pagination.
+- Wait for `document.fonts.ready` before the first final measurement so Urbanist/Wix font loading cannot change the initial page count.
 - Render each assigned group once inside its own white A4 sheet; do not duplicate the full quote or clip a continuous document.
-- Recalculate after quote data, edit state, fonts, asynchronous annuity values, or viewer width changes.
+- Recalculate after quote data, edit state, font readiness, or asynchronous annuity values. Do not repaginate for viewer-width or zoom changes.
 
 ### 2. Define safe quote pagination blocks
 - Split the existing Quote Detail content into logical React blocks without changing their visual classes or text.
-- Expose the annuity sections as pagination-safe blocks: customer details, each complete scenario card/group, life-annuity table, fees/signature, and terms.
-- Keep each `.scenario-block` atomic whenever it fits on one page. If any single block is taller than an A4 content area, allow that exceptional block to flow rather than losing content.
+- Expose the annuity sections as pagination-safe blocks: customer details, each complete scenario card, the single-quote life-annuity table, fees/signature, and terms.
+- Treat every complete scenario card as one atomic unit, including its Living Annuity details and Life Annuity Guarantee Period table/note. Keep it together whenever it fits within one printable area.
+- Allow naturally splittable content, especially long Terms & Conditions, to continue onto additional A4 sheets instead of overflowing. If any other single atomic block is taller than one printable area, preserve all content with a safe fallback.
 - Preserve the current live inputs and handlers in the rendered blocks so Edit Quote remains fully interactive.
 
 ### 3. Extend the existing viewer behavior only

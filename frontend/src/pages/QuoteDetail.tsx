@@ -37,6 +37,7 @@ const QuoteDetail = () => {
     termsAndConditions: "",
   });
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [pageCount, setPageCount] = useState(1);
 
   useEffect(() => {
     const loadQuote = async () => {
@@ -234,6 +235,8 @@ const QuoteDetail = () => {
     <div className="-mx-6 -mb-6 min-h-screen bg-card">
       <DocumentViewer
         filename={`${quote.quoteId}.pdf`}
+        pageCount={pageCount}
+        paginated={productType === "Exclusive Annuity" || productType === "annuity"}
         actions={
           <>
             {canEditQuote && !isEditing && (
@@ -277,20 +280,51 @@ const QuoteDetail = () => {
           </>
         }
       >
-        <div id="quote-pdf">
-          <QuoteHeader
-            quoteId={quote.quoteId}
-            clientName={clientInfo.fullName}
-            productType={productType}
-            date={quote.createdAt}
-            clientEmail={clientInfo.email}
-            clientContact={clientInfo.contactNumber}
-            clientId={clientInfo.idNumber}
+        {productType === "Exclusive Annuity" || productType === "annuity" ? (
+          <AnnuityDisplay
+            quote={quote}
+            isEditing={isEditing}
+            editForm={editForm}
+            onFieldChange={(field, value) => setEditForm((f) => ({ ...f, [field]: value }))}
+            pagination={{
+              header: (
+                <QuoteHeader
+                  quoteId={quote.quoteId}
+                  clientName={clientInfo.fullName}
+                  productType={productType}
+                  date={quote.createdAt}
+                  clientEmail={clientInfo.email}
+                  clientContact={clientInfo.contactNumber}
+                  clientId={clientInfo.idNumber}
+                />
+              ),
+              termsText: isEditing ? undefined : quote.termsAndConditions || quote.disclaimerText,
+              termsEditor: isEditing && (quote.termsAndConditions || quote.disclaimerText) ? (
+                <div className="border-t border-border p-8 bg-card">
+                  <h3 className="text-xl font-semibold text-center mb-4 text-foreground">Terms & Conditions</h3>
+                  <Textarea
+                    value={editForm.termsAndConditions}
+                    onChange={(e) => setEditForm((f) => ({ ...f, termsAndConditions: e.target.value }))}
+                    className="min-h-[120px] bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
+                  />
+                </div>
+              ) : undefined,
+              onPageCountChange: setPageCount,
+            }}
           />
-
-          {renderProductDisplay()}
-
-          {(quote.termsAndConditions || quote.disclaimerText) && (
+        ) : (
+          <div id="quote-pdf">
+            <QuoteHeader
+              quoteId={quote.quoteId}
+              clientName={clientInfo.fullName}
+              productType={productType}
+              date={quote.createdAt}
+              clientEmail={clientInfo.email}
+              clientContact={clientInfo.contactNumber}
+              clientId={clientInfo.idNumber}
+            />
+            {renderProductDisplay()}
+            {(quote.termsAndConditions || quote.disclaimerText) && (
             <div className="border-t border-border p-8 bg-card">
               <h3 className="text-xl font-semibold text-center mb-4 text-foreground">Terms & Conditions</h3>
               {isEditing ? (
@@ -305,8 +339,9 @@ const QuoteDetail = () => {
                 </p>
               )}
             </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </DocumentViewer>
     </div>
   );

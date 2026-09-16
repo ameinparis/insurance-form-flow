@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { formatCurrency, toTitleCase } from "@/lib/quoteUtils";
 import {
   fetchLifeAnnuityPeriods,
@@ -6,6 +6,7 @@ import {
   LifePeriodResult,
 } from "@/lib/lifeAnnuityPeriods";
 import { Input } from "@/components/ui/input";
+import { A4PaginatedDocument, A4DocumentBlock } from "@/components/document-viewer/A4PaginatedDocument";
 
 interface AnnuityDisplayProps {
   quote: any;
@@ -19,9 +20,15 @@ interface AnnuityDisplayProps {
     email: string;
   };
   onFieldChange?: (field: string, value: string) => void;
+  pagination?: {
+    header: ReactNode;
+    termsText?: string;
+    termsEditor?: ReactNode;
+    onPageCountChange: (count: number) => void;
+  };
 }
 
-export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: AnnuityDisplayProps) => {
+export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange, pagination }: AnnuityDisplayProps) => {
   // Support both new and legacy schema
   const clientData = quote.client || {
     fullName: quote.fullName,
@@ -109,6 +116,7 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
 
 
   const editing = Boolean(isEditing && editForm && onFieldChange);
+  const scenarioGroups = hasScenarios ? groupScenariosByLiving(scenarios) : [];
 
   const renderClientField = (label: string, field: keyof typeof editForm, type: string = "text") => {
     const value = editForm?.[field] || "";
@@ -134,8 +142,8 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
     );
   };
 
-  return (
-    <div className="bg-white dark:bg-slate-900 p-8 space-y-8">
+  const personalDetails = (
+    <div className="bg-white p-8 dark:bg-slate-900">
       {/* Personal & Annuity Details */}
       <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-block">
@@ -228,30 +236,31 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
           </>
         )}
       </div>
+    </div>
+  );
 
-      {/* Additional Scenarios — grouped by identical Living Annuity inputs/outputs */}
-      {hasScenarios && (() => {
-        const groups = groupScenariosByLiving(scenarios);
-        return (
-          <div>
+  const scenariosSection = hasScenarios ? (
+    <>
+      <div className="bg-white px-8 pt-8 dark:bg-slate-900">
+        <div>
             <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                {groups.length > 1 ? `Annuity Income Options (${groups.length})` : "Annuity Income Option"}
+              {scenarioGroups.length > 1 ? `Annuity Income Options (${scenarioGroups.length})` : "Annuity Income Option"}
               </h3>
             </div>
-            <div className="space-y-8">
-              {groups.map((group, idx) => (
-                <ScenarioGroupBlock key={idx} group={group} index={idx} showOptionLabel={groups.length > 1} />
-              ))}
-            </div>
           </div>
-        );
-      })()}
+      </div>
+      {scenarioGroups.map((group, idx) => (
+        <div key={group.signature} className="bg-white px-8 pb-8 dark:bg-slate-900">
+          <ScenarioGroupBlock group={group} index={idx} showOptionLabel={scenarioGroups.length > 1} />
+        </div>
+      ))}
+    </>
+  ) : null;
 
-
-      {/* Life Annuity Section — only if a life guarantee period was selected */}
-      {!hasScenarios && typeof knownPeriod === "number" && (
-        <div>
+  const lifeSection = !hasScenarios && typeof knownPeriod === "number" ? (
+    <div className="bg-white p-8 dark:bg-slate-900">
+      <div>
           <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
               Life Annuity — Guarantee Period Options
@@ -262,10 +271,12 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
             selectedPeriods={[knownPeriod]}
             loading={loadingPeriods}
           />
-        </div>
-      )}
+      </div>
+    </div>
+  ) : null;
 
-      {/* Fees + Signature — kept together as one unbreakable block in the PDF */}
+  const feesAndSignature = (
+    <div className="bg-white p-8 dark:bg-slate-900">
       <div className="pdf-fees-signature space-y-8">
       {/* Fees Section */}
       <div>
@@ -353,7 +364,72 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
         </div> */}
       </div>
       </div>
+    </div>
+  );
 
+  if (pagination) {
+    const blocks: A4DocumentBlock[] = [
+      { id: "quote-header", content: pagination.header, keepTogether: true },
+      { id: "annuity-personal-details", content: personalDetails, keepTogether: true },
+    ];
+    if (hasScenarios) {
+      blocks.push({
+        id: "annuity-scenarios-heading",
+        content: (
+          <div className="bg-white px-8 pt-8 dark:bg-slate-900">
+            <div className="border-b border-gray-200 pb-2 mb-4 dark:border-gray-800">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                {scenarioGroups.length > 1 ? `Annuity Income Options (${scenarioGroups.length})` : "Annuity Income Option"}
+              </h3>
+            </div>
+          </div>
+        ),
+        keepTogether: true,
+      });
+      scenarioGroups.forEach((group, idx) => {
+        blocks.push({
+          id: `annuity-scenario-${idx}`,
+          content: (
+            <div className="bg-white px-8 pb-8 dark:bg-slate-900">
+              <ScenarioGroupBlock group={group} index={idx} showOptionLabel={scenarioGroups.length > 1} />
+            </div>
+          ),
+          keepTogether: true,
+        });
+      });
+    }
+    if (lifeSection) blocks.push({ id: "annuity-life-period", content: lifeSection, keepTogether: true });
+    blocks.push({ id: "annuity-fees-signature", content: feesAndSignature, keepTogether: true });
+
+    const renderTerms = (text: string, continued: boolean) => (
+      <div className="border-t border-border bg-card p-8">
+        <h3 className="text-xl font-semibold text-center mb-4 text-foreground">
+          {continued ? "Terms & Conditions (continued)" : "Terms & Conditions"}
+        </h3>
+        <p data-splittable-text className="text-sm text-muted-foreground leading-relaxed text-justify">{text}</p>
+      </div>
+    );
+
+    if (pagination.termsEditor) {
+      blocks.push({ id: "quote-terms-editor", content: pagination.termsEditor, keepTogether: true });
+    } else if (pagination.termsText) {
+      blocks.push({
+        id: "quote-terms",
+        content: renderTerms(pagination.termsText, false),
+        splitText: pagination.termsText,
+        renderTextChunk: renderTerms,
+      });
+    }
+
+    return <A4PaginatedDocument blocks={blocks} onPageCountChange={pagination.onPageCountChange} />;
+  }
+
+  return (
+    <div className="bg-white dark:bg-slate-900 space-y-8">
+      {personalDetails}
+      {scenariosSection}
+      {lifeSection}
+      {feesAndSignature}
     </div>
   );
 };
