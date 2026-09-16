@@ -236,6 +236,7 @@ const QuoteDetail = () => {
       <DocumentViewer
         filename={`${quote.quoteId}.pdf`}
         pageCount={pageCount}
+        paginated={productType === "Exclusive Annuity" || productType === "annuity"}
         actions={
           <>
             {canEditQuote && !isEditing && (

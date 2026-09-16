@@ -27,9 +27,9 @@ const splitTextToFit = (
   source: HTMLElement,
   text: string,
   availableHeight: number,
-): [string, string] => {
+): [string, string, number] => {
   const words = text.trim().split(/\s+/);
-  if (words.length < 2) return [text, ""];
+  if (words.length < 2) return [text, "", source.getBoundingClientRect().height];
 
   const clone = source.cloneNode(true) as HTMLElement;
   clone.style.position = "fixed";
@@ -45,7 +45,7 @@ const splitTextToFit = (
 
   if (!paragraph) {
     clone.remove();
-    return [text, ""];
+    return [text, "", source.getBoundingClientRect().height];
   }
 
   let low = 1;
@@ -61,13 +61,17 @@ const splitTextToFit = (
       high = middle - 1;
     }
   }
+  paragraph.textContent = words.slice(0, fit).join(" ");
+  const fittedHeight = clone.getBoundingClientRect().height;
   clone.remove();
 
-  return [words.slice(0, fit).join(" "), words.slice(fit).join(" ")];
+  return [words.slice(0, fit).join(" "), words.slice(fit).join(" "), fittedHeight];
 };
 
 export const A4PaginatedDocument = ({ blocks, onPageCountChange }: A4PaginatedDocumentProps) => {
   const measureRefs = useRef(new Map<string, HTMLDivElement>());
+  const blocksRef = useRef(blocks);
+  blocksRef.current = blocks;
   const [pages, setPages] = useState<PlacedBlock[][]>([]);
   const [fontsReady, setFontsReady] = useState(false);
   const [measurementVersion, setMeasurementVersion] = useState(0);
@@ -101,7 +105,7 @@ export const A4PaginatedDocument = ({ blocks, onPageCountChange }: A4PaginatedDo
       usedHeight = 0;
     };
 
-    blocks.forEach((block) => {
+    blocksRef.current.forEach((block) => {
       const measured = measureRefs.current.get(block.id);
       if (!measured) return;
       const height = measured.getBoundingClientRect().height;
@@ -111,7 +115,7 @@ export const A4PaginatedDocument = ({ blocks, onPageCountChange }: A4PaginatedDo
         let continued = false;
         while (remaining.trim()) {
           const available = pageCapacity - usedHeight;
-          const [chunk, rest] = splitTextToFit(measured, remaining, available);
+          const [chunk, rest, fittedHeight] = splitTextToFit(measured, remaining, available);
           if (!chunk && usedHeight > 0) {
             pushPage();
             continue;
@@ -121,8 +125,7 @@ export const A4PaginatedDocument = ({ blocks, onPageCountChange }: A4PaginatedDo
             key: `${block.id}-${nextPages.length}`,
             content: block.renderTextChunk(safeChunk, continued),
           });
-          const ratio = safeChunk.length / Math.max(remaining.length, 1);
-          usedHeight += Math.min(height * ratio, pageCapacity);
+          usedHeight += Math.min(fittedHeight, pageCapacity);
           remaining = rest;
           continued = true;
           if (remaining.trim()) pushPage();
@@ -140,7 +143,7 @@ export const A4PaginatedDocument = ({ blocks, onPageCountChange }: A4PaginatedDo
 
     const populatedPages = nextPages.filter((page) => page.length > 0);
     setPages(populatedPages.length > 0 ? populatedPages : [[]]);
-  }, [blocks, fontsReady]);
+  }, [fontsReady]);
 
   useLayoutEffect(() => {
     paginate();

@@ -11,9 +11,10 @@ interface DocumentViewerProps {
   children: React.ReactNode;
   actions?: React.ReactNode;
   pageCount?: number;
+  paginated?: boolean;
 }
 
-export const DocumentViewer = ({ filename, pageLabel, children, actions, pageCount = 1 }: DocumentViewerProps) => {
+export const DocumentViewer = ({ filename, pageLabel, children, actions, pageCount = 1, paginated = false }: DocumentViewerProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState<ZoomLevel>(0.9);
   const [currentPage, setCurrentPage] = useState(1);
@@ -127,17 +128,25 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions, pageCou
             className="h-full overflow-auto bg-[#EAECF0] dark:bg-slate-900/80"
             style={{ padding: "clamp(16px, 3vw, 48px)" }}
           >
-            <div
-              className="mx-auto"
-              style={{
-                width: `${210 * zoom}mm`,
-                height: `calc(${297 * pageCount * zoom}mm + ${Math.max(0, pageCount - 1) * 32 * zoom}px)`,
-              }}
-            >
-              <div style={{ width: "210mm", transform: `scale(${zoom})`, transformOrigin: "top left" }}>
-                {children}
+            {paginated ? (
+              <div
+                className="mx-auto"
+                style={{
+                  width: `${210 * zoom}mm`,
+                  height: `calc(${297 * pageCount * zoom}mm + ${Math.max(0, pageCount - 1) * 32 * zoom}px)`,
+                }}
+              >
+                <div style={{ width: "210mm", transform: `scale(${zoom})`, transformOrigin: "top left" }}>
+                  {children}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="mx-auto" style={{ width: "min(210mm, 100%)", transform: `scale(${zoom})`, transformOrigin: "top center" }}>
+                <div data-paper className="min-h-[297mm] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:bg-slate-900">
+                  {children}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
