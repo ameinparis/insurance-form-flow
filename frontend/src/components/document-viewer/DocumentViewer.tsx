@@ -127,8 +127,16 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions, pageCou
             className="h-full overflow-auto bg-[#EAECF0] dark:bg-slate-900/80"
             style={{ padding: "clamp(16px, 3vw, 48px)" }}
           >
-            <div className="mx-auto" style={{ width: "210mm", transform: `scale(${zoom})`, transformOrigin: "top center" }}>
-              {children}
+            <div
+              className="mx-auto"
+              style={{
+                width: `${210 * zoom}mm`,
+                height: `calc(${297 * pageCount * zoom}mm + ${Math.max(0, pageCount - 1) * 32 * zoom}px)`,
+              }}
+            >
+              <div style={{ width: "210mm", transform: `scale(${zoom})`, transformOrigin: "top left" }}>
+                {children}
+              </div>
             </div>
           </div>
         </div>

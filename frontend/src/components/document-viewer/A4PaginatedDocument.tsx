@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 const PAGE_WIDTH = "210mm";
 const PAGE_HEIGHT = "297mm";
@@ -70,6 +70,7 @@ export const A4PaginatedDocument = ({ blocks, onPageCountChange }: A4PaginatedDo
   const measureRefs = useRef(new Map<string, HTMLDivElement>());
   const [pages, setPages] = useState<PlacedBlock[][]>([]);
   const [fontsReady, setFontsReady] = useState(false);
+  const [measurementVersion, setMeasurementVersion] = useState(0);
 
   const blockSignature = useMemo(
     () => blocks.map((block) => `${block.id}:${block.splitText?.length ?? 0}`).join("|"),
@@ -87,7 +88,7 @@ export const A4PaginatedDocument = ({ blocks, onPageCountChange }: A4PaginatedDo
     };
   }, []);
 
-  useLayoutEffect(() => {
+  const paginate = useCallback(() => {
     if (!fontsReady) return;
 
     const pxPerMm = 96 / 25.4;
@@ -139,7 +140,25 @@ export const A4PaginatedDocument = ({ blocks, onPageCountChange }: A4PaginatedDo
 
     const populatedPages = nextPages.filter((page) => page.length > 0);
     setPages(populatedPages.length > 0 ? populatedPages : [[]]);
-  }, [blockSignature, blocks, fontsReady]);
+  }, [blocks, fontsReady]);
+
+  useLayoutEffect(() => {
+    paginate();
+  }, [blockSignature, fontsReady, measurementVersion, paginate]);
+
+  useEffect(() => {
+    if (!fontsReady || typeof ResizeObserver === "undefined") return;
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => setMeasurementVersion((version) => version + 1));
+    });
+    measureRefs.current.forEach((element) => observer.observe(element));
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [blockSignature, fontsReady]);
 
   useEffect(() => {
     onPageCountChange?.(pages.length || 1);
