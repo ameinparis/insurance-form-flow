@@ -6,4 +6,4 @@
 - [x] Verify the continuous preview compiles and the independent PDF export path remains unchanged.
 - [x] Redesign the Exclusive Annuity quotation as a premium editorial document.
 - [x] Match the A4 PDF export styling to the redesigned preview.
-- [ ] Verify document controls, editing, screen layout, and export-safe styles.
+- [x] Verify document controls, editing, screen layout, and export-safe styles.

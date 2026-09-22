@@ -404,7 +404,7 @@ export async function exportQuotePdf(
   };
 
   // 6. Generate PDF without running header or page numbers.
-  let blob = await requestPdf(buildHtml(rootHtml));
+  const blob = await requestPdf(buildHtml(rootHtml));
 
   // 7. Download the blob
   const url = URL.createObjectURL(blob);
