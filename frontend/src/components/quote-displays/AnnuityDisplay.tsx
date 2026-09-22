@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { formatCurrency, toTitleCase } from "@/lib/quoteUtils";
+import { formatCurrency } from "@/lib/quoteUtils";
 import {
   fetchLifeAnnuityPeriods,
   LIFE_ANNUITY_PERIODS,
@@ -235,17 +235,16 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
 
   const scenariosSection = hasScenarios ? (
     <>
-      <div className="bg-white px-8 pt-8 dark:bg-slate-900">
-        <div>
-            <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+      <div className="quote-section quote-scenarios-intro">
+        <div className="quote-section-heading">
+              <span>02</span>
+              <h3>
               {scenarioGroups.length > 1 ? `Annuity Income Options (${scenarioGroups.length})` : "Annuity Income Option"}
               </h3>
-            </div>
-          </div>
+        </div>
       </div>
       {scenarioGroups.map((group, idx) => (
-        <div key={group.signature} className="bg-white px-8 pb-8 dark:bg-slate-900">
+        <div key={group.signature} className="quote-scenario-wrap">
           <ScenarioGroupBlock group={group} index={idx} showOptionLabel={scenarioGroups.length > 1} />
         </div>
       ))}
@@ -253,10 +252,10 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
   ) : null;
 
   const lifeSection = !hasScenarios && typeof knownPeriod === "number" ? (
-    <div className="bg-white p-8 dark:bg-slate-900">
-      <div>
-          <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+    <section className="quote-section">
+          <div className="quote-section-heading">
+            <span>02</span>
+            <h3>
               Life Annuity — Guarantee Period Options
             </h3>
           </div>
@@ -265,33 +264,33 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
             selectedPeriods={[knownPeriod]}
             loading={loadingPeriods}
           />
-      </div>
-    </div>
+    </section>
   ) : null;
 
   const feesAndSignature = (
-    <div className="bg-white p-8 dark:bg-slate-900">
-      <div className="pdf-fees-signature space-y-8">
+    <section className="quote-section quote-fees-section">
+      <div className="pdf-fees-signature">
       {/* Fees Section */}
       <div>
-        <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Living Annuity Fees</h3>
+        <div className="quote-section-heading">
+          <span>03</span>
+          <h3>Living Annuity Fees</h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+        <div className="quote-table-wrap">
+          <table className="quote-table">
             <thead>
               <tr>
-                <th colSpan={2} className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Upfront Fees</th>
+                <th colSpan={2}>Upfront Fees</th>
               </tr>
             </thead>
-            <tbody className="text-gray-700 dark:text-gray-300">
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="px-4 py-2">Purchase Premium</td>
-                <td className="px-4 py-2">2%</td>
+            <tbody>
+              <tr>
+                <td>Purchase Premium</td>
+                <td>2%</td>
               </tr>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="px-4 py-2">Upfront Commission</td>
-                <td className="px-4 py-2">
+              <tr>
+                <td>Upfront Commission</td>
+                <td>
                   {/* Display dynamic value or default */}
                   {inputData?.upfrontCommission !== undefined && inputData?.upfrontCommission !== null
                     ? `${inputData.upfrontCommission}%`
@@ -301,30 +300,30 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
             </tbody>
             <thead>
               <tr>
-                <th colSpan={2} className="px-4 py-2 pt-4 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Ongoing Fees</th>
+                <th colSpan={2}>Ongoing Fees</th>
               </tr>
             </thead>
-            <tbody className="text-gray-700 dark:text-gray-300">
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="px-4 py-2">Ongoing Commission</td>
-                <td className="px-4 py-2">
+            <tbody>
+              <tr>
+                <td>Ongoing Commission</td>
+                <td>
                   {/* Display dynamic value or default */}
                   {inputData?.ongoingCommission !== undefined && inputData?.ongoingCommission !== null
                     ? `${inputData.ongoingCommission}% p.a`
                     : "0% p.a"}
                 </td>
               </tr>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="px-4 py-2">Administration Fee</td>
-                <td className="px-4 py-2">1% p.a</td>
-              </tr>
-              <tr className="border-b border-gray-100 dark:border-gray-800">
-                <td className="px-4 py-2">Assets Management Fee</td>
-                <td className="px-4 py-2">0.75% p.a</td>
+              <tr>
+                <td>Administration Fee</td>
+                <td>1% p.a</td>
               </tr>
               <tr>
-                <td className="px-4 py-2">Funeral Cover Fee</td>
-                <td className="px-4 py-2">{formatCurrency(20)} p.m</td>
+                <td>Assets Management Fee</td>
+                <td>0.75% p.a</td>
+              </tr>
+              <tr>
+                <td>Funeral Cover Fee</td>
+                <td>{formatCurrency(20)} p.m</td>
               </tr>
             </tbody>
           </table>
@@ -332,22 +331,22 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
       </div>
 
       {/* Customer Acceptance Signature Section */}
-      <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
-        <h3 className="text-base font-semibold mb-6 text-gray-800 dark:text-gray-100">
+      <div className="quote-acceptance">
+        <h3>
           Customer Acceptance
         </h3>
-        <div className="grid grid-cols-2 gap-8">
+        <div className="quote-signature-grid">
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Signature:
+            <label>
+              Signature
             </label>
-            <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
+            <div className="quote-signature-line" />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Date:
+            <label>
+              Date
             </label>
-            <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
+            <div className="quote-signature-line" />
           </div>
         </div>
         {/* <div className="mt-6">
@@ -358,7 +357,7 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
         </div> */}
       </div>
       </div>
-    </div>
+    </section>
   );
 
 
@@ -382,15 +381,15 @@ interface LifePeriodsTableProps {
 
 const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriodsTableProps) => (
   <>
-  <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
-    <table className="w-full text-sm border-collapse">
+  <div className="quote-table-wrap">
+    <table className="quote-table quote-life-table">
       <thead>
-        <tr className="bg-gray-50 dark:bg-slate-800/40">
-          <th className="px-4 py-3 text-left font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800" />
+        <tr>
+          <th />
           {periods.map((row) => (
             <th
               key={row.guarantee_period}
-              className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-800"
+              className="quote-period-heading"
             >
               {row.guarantee_period}-Year Guarantee
               {selectedPeriods.includes(row.guarantee_period) && (
@@ -404,7 +403,7 @@ const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriod
       </thead>
       <tbody className="text-gray-700 dark:text-gray-300">
         <tr>
-          <td className="px-4 py-3 font-semibold text-gray-800 dark:text-gray-100">
+          <td className="quote-row-heading">
             Monthly Life Annuity
           </td>
           {periods.map((row) => {
@@ -413,7 +412,7 @@ const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriod
               <td
                 key={row.guarantee_period}
                 className={
-                  "px-4 py-3 " +
+                  "quote-table-value " +
                   (isSelected
                     ? "font-semibold text-gray-900 dark:text-white"
                     : "text-gray-800 dark:text-gray-100")
@@ -431,7 +430,7 @@ const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriod
       </tbody>
     </table>
   </div>
-  <p className="mt-2 text-xs italic text-gray-500 dark:text-gray-400">
+  <p className="quote-table-note">
     Life Annuity Guaranteed Period Options are based on zero escalation.
   </p>
   </>
@@ -570,21 +569,21 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
   const livingLabel = `Living Annuity / ${String(frequency).toLowerCase()}`;
 
   return (
-    <div className="scenario-block border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+    <article className="scenario-block quote-scenario">
       {showOptionLabel && (
-        <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
-          Option {index + 1}
-          {inputs.drawdown != null ? ` — ${inputs.drawdown}% Drawdown` : ""}
-        </h4>
+        <div className="quote-option-heading">
+          <span>Option {String(index + 1).padStart(2, "0")}</span>
+          <h4>{inputs.drawdown != null ? `${inputs.drawdown}% Drawdown` : "Annuity option"}</h4>
+        </div>
       )}
 
 
       {/* Living Annuity summary — shared across grouped scenarios */}
-      <div className="mb-5">
-        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+      <div className="quote-option-section">
+        <h5>
           Living Annuity
         </h5>
-        <div className="grid grid-cols-2 gap-x-12 gap-y-0">
+        <div className="quote-details-grid quote-details-grid--compact">
           <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
             <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Drawdown:</span>
             <span className="text-sm text-gray-800 dark:text-gray-100">{inputs.drawdown ?? "—"}%</span>
@@ -613,13 +612,13 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
       {/* Life annuity guarantee period comparison — only if any life option was selected */}
       {hasLife && (
         <div>
-          <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+          <h5 className="quote-option-subheading">
             Life Annuity — Guarantee Period Options
           </h5>
           <LifePeriodsTable periods={periods} selectedPeriods={selectedPeriods} loading={loading} />
         </div>
       )}
-    </div>
+    </article>
   );
 };
 
