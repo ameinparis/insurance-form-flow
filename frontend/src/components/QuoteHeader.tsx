@@ -13,9 +13,6 @@ export const QuoteHeader = ({
   clientName,
   productType,
   date,
-  clientEmail,
-  clientContact,
-  clientId
 }: QuoteHeaderProps) => {
   return (
     <header className="quote-masthead">

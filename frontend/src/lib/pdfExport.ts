@@ -164,6 +164,53 @@ const PDF_EXTRA_STYLES = `
     page-break-inside: avoid !important;
   }
 
+  /* Editorial quotation system — shared with the on-screen document */
+  .quote-document { font-size: 11px !important; line-height: 1.42 !important; }
+  .quote-masthead { padding: 0 0 8mm !important; }
+  .quote-masthead__top { padding-bottom: 5mm !important; }
+  .quote-logo { height: 15mm !important; width: auto !important; }
+  .quote-brand-kicker, .quote-eyebrow, .quote-section-heading > span,
+  .quote-option-heading > span, .quote-detail-label, .quote-metadata dt {
+    font-size: 8px !important;
+    letter-spacing: 0.08em !important;
+  }
+  .quote-company-details { font-size: 8.5px !important; line-height: 1.45 !important; }
+  .quote-title-row { padding-top: 6mm !important; }
+  .quote-document-title { font-size: 22px !important; line-height: 1.12 !important; }
+  .quote-metadata { min-width: 38mm !important; gap: 2mm !important; }
+  .quote-section { padding: 6mm 0 !important; }
+  .quote-section-heading { margin-bottom: 4mm !important; }
+  .quote-section-heading h2, .quote-section-heading h3 { font-size: 14px !important; }
+  .quote-details-grid { column-gap: 10mm !important; }
+  .quote-detail-item { padding: 2mm 0 !important; grid-template-columns: minmax(29mm, .9fr) minmax(0, 1.1fr) !important; }
+  .quote-scenarios-intro { padding-bottom: 3mm !important; }
+  .quote-scenario-wrap { padding: 0 0 4mm !important; }
+  .quote-scenario { padding: 5mm !important; border-radius: 1.5mm !important; }
+  .quote-option-heading { padding-bottom: 3mm !important; }
+  .quote-option-section { margin-top: 3mm !important; }
+  .quote-option-section h5, .quote-option-subheading { margin-bottom: 2mm !important; font-size: 10px !important; }
+  .quote-table-wrap { border-radius: 1.5mm !important; }
+  .quote-table { font-size: 9px !important; }
+  .quote-table th, .quote-table td { padding: 2mm 3mm !important; }
+  .quote-table-note { margin-top: 1.5mm !important; font-size: 8px !important; }
+  .quote-acceptance { margin-top: 6mm !important; padding-top: 5mm !important; }
+  .quote-acceptance h3 { margin-bottom: 4mm !important; font-size: 11px !important; }
+  .quote-signature-grid { gap: 12mm !important; }
+  .quote-signature-line { height: 10mm !important; }
+  .quote-terms { padding: 6mm 0 0 !important; margin-top: 0 !important; }
+  .quote-terms-copy { font-size: 8.5px !important; line-height: 1.5 !important; }
+
+  .compact-two-page .quote-masthead { padding-bottom: 5mm !important; }
+  .compact-two-page .quote-masthead__top { padding-bottom: 3mm !important; }
+  .compact-two-page .quote-title-row { padding-top: 4mm !important; }
+  .compact-two-page .quote-logo { height: 12mm !important; }
+  .compact-two-page .quote-section { padding-top: 3.5mm !important; padding-bottom: 3.5mm !important; }
+  .compact-two-page .quote-section-heading { margin-bottom: 2.5mm !important; }
+  .compact-two-page .quote-detail-item { padding-top: 1.2mm !important; padding-bottom: 1.2mm !important; }
+  .compact-two-page .quote-scenario { padding: 3.5mm !important; }
+  .compact-two-page .quote-scenario-wrap { padding-bottom: 2.5mm !important; }
+  .compact-two-page .quote-acceptance { margin-top: 3mm !important; padding-top: 3mm !important; }
+
 `;
 
 
@@ -302,10 +349,10 @@ export async function exportQuotePdf(
   // 4c. Render terms & conditions if present
   const termsText = quote.termsAndConditions || quote.disclaimerText;
   const termsHtml = termsText
-    ? `<div class="pdf-terms" style="border-top: 1px solid #4b5563; padding: 1rem; margin-top: 1rem;">
-        <h3 style="font-size: 12.5px; font-weight: 600; text-align: center; margin: 0 0 0.5rem 0;">Terms &amp; Conditions</h3>
-        <p style="font-size: 10px; color: #1f2937; line-height: 1.45; text-align: justify; text-justify: inter-word; margin: 0;">${termsText}</p>
-      </div>`
+    ? `<section class="quote-section quote-terms pdf-terms">
+        <div class="quote-section-heading"><span>Legal</span><h3>Terms &amp; Conditions</h3></div>
+        <p class="quote-terms-copy">${termsText}</p>
+      </section>`
     : "";
 
   // 5. Fix relative image URLs. Embed the logo so the PDF server never waits on localhost/preview assets.
@@ -341,7 +388,7 @@ export async function exportQuotePdf(
   <body style="position: relative;">${bodyInner}</body>
 </html>`;
 
-  const rootHtml = `<div class="pdf-root${compactClass} max-w-5xl mx-auto bg-white">${contentHtml}</div>`;
+  const rootHtml = `<div class="pdf-root quote-document${compactClass} max-w-5xl mx-auto bg-white">${contentHtml}</div>`;
 
   const requestPdf = async (docHtml: string): Promise<Blob> => {
     const res = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
