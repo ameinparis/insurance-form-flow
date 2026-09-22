@@ -8,6 +8,7 @@ const CONTENT_HEIGHT_MM = 273;
 export interface A4DocumentBlock {
   id: string;
   content: ReactNode;
+  measureContent?: ReactNode;
   keepTogether?: boolean;
   splitText?: string;
   renderTextChunk?: (text: string, continued: boolean) => ReactNode;
@@ -77,7 +78,13 @@ export const A4PaginatedDocument = ({ blocks, onPageCountChange }: A4PaginatedDo
   const [measurementVersion, setMeasurementVersion] = useState(0);
 
   const blockSignature = useMemo(
-    () => blocks.map((block) => `${block.id}:${block.splitText?.length ?? 0}`).join("|"),
+    () =>
+      blocks
+        .map(
+          (block) =>
+            `${block.id}:${block.keepTogether ? "1" : "0"}:${block.splitText?.length ?? 0}:${block.renderTextChunk ? "1" : "0"}`,
+        )
+        .join("|"),
     [blocks],
   );
 
@@ -182,7 +189,7 @@ export const A4PaginatedDocument = ({ blocks, onPageCountChange }: A4PaginatedDo
               else measureRefs.current.delete(block.id);
             }}
           >
-            {block.content}
+            {block.measureContent ?? block.content}
           </div>
         ))}
       </div>

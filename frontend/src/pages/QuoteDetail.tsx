@@ -241,12 +241,13 @@ const QuoteDetail = () => {
           <>
             {canEditQuote && !isEditing && (
               <Button
-                variant="outline"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
                 onClick={openEditDialog}
-                className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-4 text-xs"
+                aria-label="Edit Quote"
               >
-                <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                Edit Quote
+                <Pencil className="h-4 w-4 text-[#009fe3]" />
               </Button>
             )}
             {canEditQuote && isEditing && (
@@ -271,11 +272,14 @@ const QuoteDetail = () => {
               </>
             )}
             <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
               onClick={handleDownloadPdf}
               disabled={downloadStarted}
-              className="rounded-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-900 disabled:opacity-100 text-white px-4 text-xs"
+              aria-label="Download PDF"
             >
-              {downloadStarted ? "Downloading..." : "Download PDF"}
+              <Download className="h-4 w-4 text-slate-700 dark:text-slate-200" />
             </Button>
           </>
         }

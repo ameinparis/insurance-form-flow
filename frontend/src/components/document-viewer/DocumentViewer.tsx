@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { FileText, ZoomIn, ZoomOut, Maximize } from "lucide-react";
+import { FileText, ZoomIn, ZoomOut, Maximize, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const ZOOM_LEVELS = [0.75, 0.9, 1, 1.1, 1.25] as const;
@@ -83,16 +83,17 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions, pageCou
       {/* White preview section */}
       <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 border-x border-border">
         {/* Document toolbar */}
-        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-white/95 dark:bg-slate-900/95 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60">
+        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-white/95 dark:bg-slate-900/95 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60">
           {/* Left */}
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
-              size="sm"
-              className="h-8 text-xs"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => window.history.length > 1 ? window.history.back() : window.location.assign("/")}
+              aria-label="Back"
             >
-              Back
+              <ArrowLeft className="h-4 w-4" />
             </Button>
             <span className="text-xs text-muted-foreground">·</span>
             <FileText className="h-4 w-4 text-muted-foreground" />
