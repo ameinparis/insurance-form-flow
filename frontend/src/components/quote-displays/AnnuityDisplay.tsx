@@ -8,31 +8,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { A4PaginatedDocument, A4DocumentBlock } from "@/components/document-viewer/A4PaginatedDocument";
 
-// -------------------- Editorial document primitives --------------------
-
-const DocSection = ({ title, children }: { title: string; children: ReactNode }) => (
-  <section>
-    <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-      {title}
-    </h3>
-    {children}
-  </section>
-);
-
-const Field = ({ label, value, strong }: { label: string; value: ReactNode; strong?: boolean }) => (
-  <div className="flex items-baseline justify-between gap-6 border-b border-slate-100 py-2 dark:border-slate-800">
-    <span className="text-xs text-slate-500 dark:text-slate-400">{label}</span>
-    <span
-      className={
-        "text-right text-sm " +
-        (strong ? "font-semibold text-slate-900 dark:text-white" : "text-slate-700 dark:text-slate-200")
-      }
-    >
-      {value}
-    </span>
-  </div>
-);
-
 interface AnnuityDisplayProps {
   quote: any;
   isEditing?: boolean;
@@ -147,96 +122,119 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange, pagi
     const value = editForm?.[field] || "";
     if (editing) {
       return (
-        <div className="flex items-baseline justify-between gap-4 border-b border-blue-100 py-2 dark:border-blue-900/40">
-          <span className="text-xs text-slate-500 dark:text-slate-400">{label}</span>
+        <div className="flex items-baseline gap-2 border-b border-blue-100 dark:border-blue-900/40 py-2">
+          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">{label}:</span>
           <Input
             type={type}
             value={value}
             onChange={(e) => onFieldChange(field, e.target.value)}
-            className="h-7 w-1/2 border-blue-200 bg-blue-50/50 text-sm dark:border-blue-800 dark:bg-blue-950/20"
+            className="h-7 text-sm bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
           />
         </div>
       );
     }
-    return <Field label={label} value={clientData?.[field] || "N/A"} />;
+    const displayValue = clientData?.[field] || "N/A";
+    return (
+      <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+        <span className="font-medium text-sm text-gray-500 dark:text-gray-400">{label}:</span>
+        <span className="text-sm text-gray-800 dark:text-gray-100">{displayValue}</span>
+      </div>
+    );
   };
-
-  const quotationTitle =
-    toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "Client Name";
-
-  const summaryFields = (
-    <>
-      <Field label="Funeral Cover" value={formatCurrency(15000)} />
-      <Field label="Purchase Premium" value={formatCurrency(inputData?.purchaseAmount)} strong />
-      {!hasScenarios && (
-        <>
-          <Field label="Drawdown %" value={`${inputData?.drawdown ?? "N/A"}%`} />
-          <Field
-            label={`Living Annuity per Month${inputData?.age && inputData?.guaranteedStartAge ? ` (Age ${inputData.age} to ${inputData.guaranteedStartAge})` : ""}`}
-            value={formatCurrency(outputData?.living?.guaranteed_annuity)}
-            strong
-          />
-          <Field label="Estimated Funds Remaining" value={formatCurrency(outputData?.living?.funds_remaining)} />
-          <Field label="Frequency" value={inputData?.frequency || "N/A"} />
-          {knownPeriod != null && (
-            <Field label="Selected Guarantee Period" value={`${knownPeriod} years`} strong />
-          )}
-          {knownAnnuity != null && (
-            <Field label="Monthly Life Annuity" value={formatCurrency(knownAnnuity)} strong />
-          )}
-        </>
-      )}
-    </>
-  );
-
-  const documentTitle = (
-    <div className="mb-12 pb-3">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
-        Quotation for
-      </p>
-      {editing ? (
-        <Input
-          value={editForm?.fullName || ""}
-          onChange={(e) => onFieldChange("fullName", e.target.value)}
-          className="mt-2 border-blue-200 bg-blue-50/50 text-xl font-semibold dark:border-blue-800 dark:bg-blue-950/20"
-        />
-      ) : (
-        <h2 className="font-heading mt-2 text-[26px] font-semibold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
-          {quotationTitle}
-        </h2>
-      )}
-    </div>
-  );
 
   const personalDetails = (
     <div className="bg-white p-8 dark:bg-slate-900">
-      {documentTitle}
-      <div className="space-y-8">
-        <DocSection title="Client Details">
-          <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-            {editing ? (
-              <>
-                {renderClientField("Date of Birth", "dateOfBirth")}
-                {renderClientField("Gender", "gender")}
-                {renderClientField("ID/Passport Number", "idNumber")}
-                {renderClientField("Contact", "contactNumber")}
-                {renderClientField("Email", "email", "email")}
-              </>
-            ) : (
-              <>
-                <Field label="Date of Birth" value={clientData?.dateOfBirth || "N/A"} />
-                <Field label="Gender" value={clientData?.gender || "N/A"} />
-                <Field label="ID/Passport Number" value={clientData?.idNumber || "N/A"} />
-                <Field label="Contact" value={clientData?.contactNumber || "N/A"} />
-                <Field label="Email" value={clientData?.email || "N/A"} />
-              </>
+      {/* Personal & Annuity Details */}
+      <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-block">
+          {editing ? (
+            <Input
+              value={editForm?.fullName || ""}
+              onChange={(e) => onFieldChange("fullName", e.target.value)}
+              className="text-center font-semibold bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
+            />
+          ) : (
+            `Quotation for ${toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "Client Name"}`
+          )}
+        </h2>
+      </div>
+      <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+        {editing ? (
+          <>
+            {renderClientField("Date of Birth", "dateOfBirth")}
+            {renderClientField("Gender", "gender")}
+            {renderClientField("ID/Passport Number", "idNumber")}
+            {renderClientField("Contact", "contactNumber")}
+            {renderClientField("Email", "email", "email")}
+          </>
+        ) : (
+          <>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Date of Birth:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.dateOfBirth || "N/A"}</span>
+            </div>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Gender:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.gender || "N/A"}</span>
+            </div>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">ID/Passport Number:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.idNumber || "N/A"}</span>
+            </div>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Contact:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.contactNumber || "N/A"}</span>
+            </div>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Email:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.email || "N/A"}</span>
+            </div>
+          </>
+        )}
+        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Funeral Cover:</span>
+          <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(15000)}</span>
+        </div>
+        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Purchase Premium:</span>
+          <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(inputData?.purchaseAmount)}</span>
+        </div>
+        {!hasScenarios && (
+          <>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Drawdown %:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.drawdown || "N/A"}%</span>
+            </div>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">
+                Living Annuity per Month{inputData?.age && inputData?.guaranteedStartAge ? ` (Age ${inputData.age} to ${inputData.guaranteedStartAge})` : ''}:
+              </span>
+              <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
+                {formatCurrency(outputData?.living?.guaranteed_annuity)}
+              </span>
+            </div>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Estimated Funds Remaining:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.living?.funds_remaining)}</span>
+            </div>
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Frequency:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.frequency || "N/A"}</span>
+            </div>
+            {knownPeriod != null && (
+              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Selected Guarantee Period:</span>
+                <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{knownPeriod} years</span>
+              </div>
             )}
-          </div>
-        </DocSection>
-
-        <DocSection title="Quotation Summary">
-          <div className="grid grid-cols-2 gap-x-12 gap-y-4">{summaryFields}</div>
-        </DocSection>
+            {knownAnnuity != null && (
+              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Monthly Life Annuity:</span>
+                <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(knownAnnuity)}</span>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -244,9 +242,13 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange, pagi
   const scenariosSection = hasScenarios ? (
     <>
       <div className="bg-white px-8 pt-8 dark:bg-slate-900">
-        <h3 className="mb-4 mt-8 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-          {scenarioGroups.length > 1 ? `Annuity Income Options (${scenarioGroups.length})` : "Annuity Income Option"}
-        </h3>
+        <div>
+            <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+              {scenarioGroups.length > 1 ? `Annuity Income Options (${scenarioGroups.length})` : "Annuity Income Option"}
+              </h3>
+            </div>
+          </div>
       </div>
       {scenarioGroups.map((group, idx) => (
         <div key={group.signature} className="bg-white px-8 pb-8 dark:bg-slate-900">
@@ -258,14 +260,17 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange, pagi
 
   const lifeSection = !hasScenarios && typeof knownPeriod === "number" ? (
     <div className="bg-white p-8 dark:bg-slate-900">
-      <div className="mt-8">
-        <DocSection title="Life Annuity — Guarantee Period Options">
+      <div>
+          <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+              Life Annuity — Guarantee Period Options
+            </h3>
+          </div>
           <LifePeriodsTable
             periods={lifePeriods.filter((p) => p.guarantee_period === knownPeriod)}
             selectedPeriods={[knownPeriod]}
             loading={loadingPeriods}
           />
-        </DocSection>
       </div>
     </div>
   ) : null;
@@ -273,55 +278,91 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange, pagi
   const feesAndSignature = (
     <div className="bg-white p-8 dark:bg-slate-900">
       <div className="pdf-fees-signature space-y-8">
-        <div className="mt-8">
-          <DocSection title="Living Annuity Fees">
-            <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-              <div>
-                <p className="mb-2 text-xs font-semibold text-slate-700 dark:text-slate-200">Upfront Fees</p>
-                <Field label="Purchase Premium" value="2%" />
-                <Field
-                  label="Upfront Commission"
-                  value={
-                    inputData?.upfrontCommission !== undefined && inputData?.upfrontCommission !== null
-                      ? `${inputData.upfrontCommission}%`
-                      : "0%"
-                  }
-                />
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-semibold text-slate-700 dark:text-slate-200">Ongoing Fees</p>
-                <Field
-                  label="Ongoing Commission"
-                  value={
-                    inputData?.ongoingCommission !== undefined && inputData?.ongoingCommission !== null
-                      ? `${inputData.ongoingCommission}% p.a`
-                      : "0% p.a"
-                  }
-                />
-                <Field label="Administration Fee" value="1% p.a" />
-                <Field label="Assets Management Fee" value="0.75% p.a" />
-                <Field label="Funeral Cover Fee" value={`${formatCurrency(20)} p.m`} />
-              </div>
-            </div>
-          </DocSection>
+      {/* Fees Section */}
+      <div>
+        <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-4 mt-8">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Living Annuity Fees</h3>
         </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead>
+              <tr>
+                <th colSpan={2} className="px-4 py-2 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Upfront Fees</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-700 dark:text-gray-300">
+              <tr className="border-b border-gray-100 dark:border-gray-800">
+                <td className="px-4 py-2">Purchase Premium</td>
+                <td className="px-4 py-2">2%</td>
+              </tr>
+              <tr className="border-b border-gray-100 dark:border-gray-800">
+                <td className="px-4 py-2">Upfront Commission</td>
+                <td className="px-4 py-2">
+                  {/* Display dynamic value or default */}
+                  {inputData?.upfrontCommission !== undefined && inputData?.upfrontCommission !== null
+                    ? `${inputData.upfrontCommission}%`
+                    : "0%"}
+                </td>
+              </tr>
+            </tbody>
+            <thead>
+              <tr>
+                <th colSpan={2} className="px-4 py-2 pt-4 font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800">Ongoing Fees</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-700 dark:text-gray-300">
+              <tr className="border-b border-gray-100 dark:border-gray-800">
+                <td className="px-4 py-2">Ongoing Commission</td>
+                <td className="px-4 py-2">
+                  {/* Display dynamic value or default */}
+                  {inputData?.ongoingCommission !== undefined && inputData?.ongoingCommission !== null
+                    ? `${inputData.ongoingCommission}% p.a`
+                    : "0% p.a"}
+                </td>
+              </tr>
+              <tr className="border-b border-gray-100 dark:border-gray-800">
+                <td className="px-4 py-2">Administration Fee</td>
+                <td className="px-4 py-2">1% p.a</td>
+              </tr>
+              <tr className="border-b border-gray-100 dark:border-gray-800">
+                <td className="px-4 py-2">Assets Management Fee</td>
+                <td className="px-4 py-2">0.75% p.a</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2">Funeral Cover Fee</td>
+                <td className="px-4 py-2">{formatCurrency(20)} p.m</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-        {/* Customer Acceptance */}
-        <div className="mt-12 border-t border-slate-200 pt-8 dark:border-slate-800">
-          <h3 className="mb-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-            Customer Acceptance
-          </h3>
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <div className="h-10 border-b border-slate-400 dark:border-slate-600" />
-              <label className="mt-2 block text-xs text-slate-500 dark:text-slate-400">Signature</label>
-            </div>
-            <div>
-              <div className="h-10 border-b border-slate-400 dark:border-slate-600" />
-              <label className="mt-2 block text-xs text-slate-500 dark:text-slate-400">Date</label>
-            </div>
+      {/* Customer Acceptance Signature Section */}
+      <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
+        <h3 className="text-base font-semibold mb-6 text-gray-800 dark:text-gray-100">
+          Customer Acceptance
+        </h3>
+        <div className="grid grid-cols-2 gap-8">
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+              Signature:
+            </label>
+            <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+              Date:
+            </label>
+            <div className="border-b-2 border-gray-400 dark:border-gray-600 h-10" />
           </div>
         </div>
+        {/* <div className="mt-6">
+          <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+          
+          </label>
+          <div className="border-b-2 border-gray-400 dark:border-gray-600 h-16" />
+        </div> */}
+      </div>
       </div>
     </div>
   );
@@ -329,42 +370,86 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange, pagi
   if (pagination) {
     const personalDetailsMeasure = (
       <div className="bg-white p-8 dark:bg-slate-900">
-        <div className="mb-12 pb-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
-            Quotation for
-          </p>
-          <h2 className="font-heading mt-2 text-[26px] font-semibold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
-            {quotationTitle}
+        <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-block">
+            Quotation for {toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "Client Name"}
           </h2>
         </div>
-        <div className="space-y-8">
-          <DocSection title="Client Details">
-            <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-              <Field label="Date of Birth" value={clientData?.dateOfBirth || "N/A"} />
-              <Field label="Gender" value={clientData?.gender || "N/A"} />
-              <Field label="ID/Passport Number" value={clientData?.idNumber || "N/A"} />
-              <Field label="Contact" value={clientData?.contactNumber || "N/A"} />
-              <Field label="Email" value={clientData?.email || "N/A"} />
-            </div>
-          </DocSection>
-          <DocSection title="Quotation Summary">
-            <div className="grid grid-cols-2 gap-x-12 gap-y-4">{summaryFields}</div>
-          </DocSection>
+        <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Date of Birth:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.dateOfBirth || "N/A"}</span>
+          </div>
+          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Gender:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.gender || "N/A"}</span>
+          </div>
+          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">ID/Passport Number:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.idNumber || "N/A"}</span>
+          </div>
+          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Contact:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.contactNumber || "N/A"}</span>
+          </div>
+          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Email:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.email || "N/A"}</span>
+          </div>
+          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Funeral Cover:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(15000)}</span>
+          </div>
+          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Purchase Premium:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(inputData?.purchaseAmount)}</span>
+          </div>
+          {!hasScenarios && (
+            <>
+              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Drawdown %:</span>
+                <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.drawdown || "N/A"}%</span>
+              </div>
+              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">
+                  Living Annuity per Month{inputData?.age && inputData?.guaranteedStartAge ? ` (Age ${inputData.age} to ${inputData.guaranteedStartAge})` : ''}:
+                </span>
+                <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
+                  {formatCurrency(outputData?.living?.guaranteed_annuity)}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Estimated Funds Remaining:</span>
+                <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.living?.funds_remaining)}</span>
+              </div>
+              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Frequency:</span>
+                <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.frequency || "N/A"}</span>
+              </div>
+              {knownPeriod != null && (
+                <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+                  <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Selected Guarantee Period:</span>
+                  <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{knownPeriod} years</span>
+                </div>
+              )}
+              {knownAnnuity != null && (
+                <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+                  <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Monthly Life Annuity:</span>
+                  <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(knownAnnuity)}</span>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     );
 
     const renderTerms = (text: string, continued: boolean) => (
-      <div className="pdf-terms border-t border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-900">
-        <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+      <div className="border-t border-border bg-card p-8">
+        <h3 className="text-xl font-semibold text-center mb-4 text-foreground">
           {continued ? "Terms & Conditions (continued)" : "Terms & Conditions"}
         </h3>
-        <p
-          data-splittable-text
-          className="text-justify text-sm leading-relaxed text-slate-600 dark:text-slate-300"
-        >
-          {text}
-        </p>
+        <p data-splittable-text className="text-sm text-muted-foreground leading-relaxed text-justify">{text}</p>
       </div>
     );
 
@@ -449,24 +534,29 @@ interface LifePeriodsTableProps {
 
 const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriodsTableProps) => (
   <>
-  <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
-    <table className="w-full border-collapse text-sm">
+  <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+    <table className="w-full text-sm border-collapse">
       <thead>
-        <tr className="bg-slate-50/80 dark:bg-slate-800/40">
-          <th className="border-b border-slate-200 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400 dark:border-slate-800 dark:text-slate-500" />
+        <tr className="bg-gray-50 dark:bg-slate-800/40">
+          <th className="px-4 py-3 text-left font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800" />
           {periods.map((row) => (
             <th
               key={row.guarantee_period}
-              className="border-b border-slate-200 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:border-slate-800 dark:text-slate-400"
+              className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-800"
             >
               {row.guarantee_period}-Year Guarantee
+              {selectedPeriods.includes(row.guarantee_period) && (
+                <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
+                
+                </span>
+              )}
             </th>
           ))}
         </tr>
       </thead>
-      <tbody className="text-slate-700 dark:text-slate-300">
+      <tbody className="text-gray-700 dark:text-gray-300">
         <tr>
-          <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+          <td className="px-4 py-3 font-semibold text-gray-800 dark:text-gray-100">
             Monthly Life Annuity
           </td>
           {periods.map((row) => {
@@ -477,8 +567,8 @@ const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriod
                 className={
                   "px-4 py-3 " +
                   (isSelected
-                    ? "font-semibold text-slate-900 dark:text-white"
-                    : "text-slate-700 dark:text-slate-200")
+                    ? "font-semibold text-gray-900 dark:text-white"
+                    : "text-gray-800 dark:text-gray-100")
                 }
               >
                 {row.monthly_annuity != null
@@ -493,7 +583,7 @@ const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriod
       </tbody>
     </table>
   </div>
-  <p className="mt-2 text-xs italic text-slate-400 dark:text-slate-500">
+  <p className="mt-2 text-xs italic text-gray-500 dark:text-gray-400">
     Life Annuity Guaranteed Period Options are based on zero escalation.
   </p>
   </>
@@ -632,34 +722,50 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
   const livingLabel = `Living Annuity / ${String(frequency).toLowerCase()}`;
 
   return (
-    <div className="scenario-block rounded-xl border border-slate-200 bg-slate-50/40 p-5 dark:border-slate-800 dark:bg-slate-900/40">
+    <div className="scenario-block border border-gray-200 dark:border-gray-800 rounded-lg p-5">
       {showOptionLabel && (
-        <h4 className="mb-4 text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+        <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
           Option {index + 1}
           {inputs.drawdown != null ? ` — ${inputs.drawdown}% Drawdown` : ""}
         </h4>
       )}
 
+
       {/* Living Annuity summary — shared across grouped scenarios */}
       <div className="mb-5">
-        <h5 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
           Living Annuity
         </h5>
         <div className="grid grid-cols-2 gap-x-12 gap-y-0">
-          <Field label="Drawdown" value={`${inputs.drawdown ?? "—"}%`} />
-          <Field label="Frequency" value={inputs.frequency ?? "—"} />
+          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Drawdown:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">{inputs.drawdown ?? "—"}%</span>
+          </div>
+          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Frequency:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">{inputs.frequency ?? "—"}</span>
+          </div>
           {living?.guarantee_period != null && (
-            <Field label="Living Guarantee Period" value={`${living.guarantee_period} years`} />
+            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Living Guarantee Period:</span>
+              <span className="text-sm text-gray-800 dark:text-gray-100">{living.guarantee_period} years</span>
+            </div>
           )}
-          <Field label={livingLabel} value={formatCurrency(living?.guaranteed_annuity)} strong />
-          <Field label="Estimated Funds Remaining" value={formatCurrency(living?.funds_remaining)} />
+          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">{livingLabel}:</span>
+            <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(living?.guaranteed_annuity)}</span>
+          </div>
+          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
+            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Estimated Funds Remaining:</span>
+            <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(living?.funds_remaining)}</span>
+          </div>
         </div>
       </div>
 
       {/* Life annuity guarantee period comparison — only if any life option was selected */}
       {hasLife && (
         <div>
-          <h5 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+          <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
             Life Annuity — Guarantee Period Options
           </h5>
           <LifePeriodsTable periods={periods} selectedPeriods={selectedPeriods} loading={loading} />

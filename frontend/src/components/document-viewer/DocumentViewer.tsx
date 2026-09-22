@@ -126,7 +126,7 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions, pageCou
         <div className="flex-1 overflow-hidden" style={{ padding: "20px 24px 24px" }}>
           <div
             ref={canvasRef}
-            className="h-full overflow-auto rounded-2xl bg-[#F4F5F7] dark:bg-slate-950/70"
+            className="h-full overflow-auto bg-[#EAECF0] dark:bg-slate-900/80"
             style={{ padding: "clamp(16px, 3vw, 48px)" }}
           >
             {paginated ? (
@@ -143,7 +143,7 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions, pageCou
               </div>
             ) : (
               <div className="mx-auto" style={{ width: "min(210mm, 100%)", transform: `scale(${zoom})`, transformOrigin: "top center" }}>
-                <div data-paper className="min-h-[297mm] rounded-[6px] bg-white ring-1 ring-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_18px_44px_-20px_rgba(15,23,42,0.28)] dark:bg-slate-900 dark:ring-slate-800">
+                <div data-paper className="min-h-[297mm] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:bg-slate-900">
                   {children}
                 </div>
               </div>
