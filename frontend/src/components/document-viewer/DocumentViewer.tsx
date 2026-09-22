@@ -14,7 +14,7 @@ interface DocumentViewerProps {
 
 export const DocumentViewer = ({ filename, pageLabel, children, actions }: DocumentViewerProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [zoom, setZoom] = useState<ZoomLevel>(0.9);
+  const [zoom, setZoom] = useState<ZoomLevel>(1);
 
   const handleZoomIn = useCallback(() => {
     setZoom((z) => {
@@ -98,7 +98,7 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions }: Docum
             className="document-workspace h-full overflow-auto rounded-lg p-4 sm:p-5"
           >
             <div className="mx-auto w-[95%]" style={{ transform: `scale(${zoom})`, transformOrigin: "top center" }}>
-              <div data-paper className="quote-paper min-h-[297mm] overflow-hidden rounded-[18px] border border-border/70 bg-card">
+              <div data-paper className="quote-paper overflow-hidden rounded-[18px] border border-border/70 bg-card">
                 {children}
               </div>
             </div>
