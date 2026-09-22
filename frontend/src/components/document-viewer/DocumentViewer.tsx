@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { FileText, ZoomIn, ZoomOut, Maximize, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -10,14 +10,11 @@ interface DocumentViewerProps {
   pageLabel?: string;
   children: React.ReactNode;
   actions?: React.ReactNode;
-  pageCount?: number;
-  paginated?: boolean;
 }
 
-export const DocumentViewer = ({ filename, pageLabel, children, actions, pageCount = 1, paginated = false }: DocumentViewerProps) => {
+export const DocumentViewer = ({ filename, pageLabel, children, actions }: DocumentViewerProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState<ZoomLevel>(0.9);
-  const [currentPage, setCurrentPage] = useState(1);
 
   const handleZoomIn = useCallback(() => {
     setZoom((z) => {
@@ -48,34 +45,6 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions, pageCou
     }
   }, []);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const updateCurrentPage = () => {
-      const papers = Array.from(canvas.querySelectorAll<HTMLElement>("[data-page-number]"));
-      if (papers.length === 0) return;
-      const readingLine = canvas.getBoundingClientRect().top + Math.min(140, canvas.clientHeight * 0.25);
-      let closestPage = 1;
-      let closestDistance = Number.POSITIVE_INFINITY;
-      papers.forEach((paper, index) => {
-        const rect = paper.getBoundingClientRect();
-        const distance = readingLine < rect.top
-          ? rect.top - readingLine
-          : readingLine > rect.bottom
-            ? readingLine - rect.bottom
-            : 0;
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          closestPage = index + 1;
-        }
-      });
-      setCurrentPage(closestPage);
-    };
-    updateCurrentPage();
-    canvas.addEventListener("scroll", updateCurrentPage, { passive: true });
-    return () => canvas.removeEventListener("scroll", updateCurrentPage);
-  }, [pageCount, zoom]);
-
   const zoomPercent = Math.round(zoom * 100);
 
   return (
@@ -102,7 +71,7 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions, pageCou
 
           {/* Center */}
           <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground mr-1">{pageLabel ?? `${currentPage} / ${pageCount}`}</span>
+            <span className="text-xs text-muted-foreground mr-1">{pageLabel ?? "Document"}</span>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomOut} disabled={zoom === ZOOM_LEVELS[0]}>
               <ZoomOut className="h-4 w-4" />
             </Button>
@@ -129,25 +98,11 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions, pageCou
             className="h-full overflow-auto bg-[#EAECF0] dark:bg-slate-900/80"
             style={{ padding: "clamp(16px, 3vw, 48px)" }}
           >
-            {paginated ? (
-              <div
-                className="mx-auto"
-                style={{
-                  width: `${210 * zoom}mm`,
-                  height: `calc(${297 * pageCount * zoom}mm + ${Math.max(0, pageCount - 1) * 32 * zoom}px)`,
-                }}
-              >
-                <div style={{ width: "210mm", transform: `scale(${zoom})`, transformOrigin: "top left" }}>
-                  {children}
-                </div>
+            <div className="mx-auto" style={{ width: "min(210mm, 100%)", transform: `scale(${zoom})`, transformOrigin: "top center" }}>
+              <div data-paper className="min-h-[297mm] overflow-hidden bg-white shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:bg-slate-900">
+                {children}
               </div>
-            ) : (
-              <div className="mx-auto" style={{ width: "min(210mm, 100%)", transform: `scale(${zoom})`, transformOrigin: "top center" }}>
-                <div data-paper className="min-h-[297mm] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:bg-slate-900">
-                  {children}
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
