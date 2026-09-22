@@ -166,30 +166,39 @@ const PDF_EXTRA_STYLES = `
 
   /* Editorial quotation system — shared with the on-screen document */
   .quote-document { font-size: 11px !important; line-height: 1.42 !important; }
-  .quote-masthead { padding: 0 0 8mm !important; }
-  .quote-masthead__top { padding-bottom: 5mm !important; }
-  .quote-logo { height: 15mm !important; width: auto !important; }
-  .quote-brand-kicker, .quote-eyebrow, .quote-section-heading > span,
+  .quote-masthead { padding: 0 0 6mm !important; }
+  .quote-masthead__top {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 7mm !important;
+    padding-bottom: 4mm !important;
+  }
+  .quote-company-details { grid-column: 1 !important; text-align: left !important; }
+  .quote-brand-block { grid-column: 2 !important; justify-content: center !important; }
+  .quote-header-summary { grid-column: 3 !important; justify-self: end !important; min-width: 36mm !important; text-align: right !important; }
+  .quote-logo { height: 13mm !important; width: auto !important; }
+  .quote-eyebrow, .quote-header-product, .quote-section-heading > span,
   .quote-option-heading > span, .quote-detail-label, .quote-metadata dt {
     font-size: 8px !important;
     letter-spacing: 0.08em !important;
   }
   .quote-company-details { font-size: 8.5px !important; line-height: 1.45 !important; }
-  .quote-title-row { padding-top: 6mm !important; }
-  .quote-document-title { font-size: 22px !important; line-height: 1.12 !important; }
-  .quote-metadata { min-width: 38mm !important; gap: 2mm !important; }
-  .quote-section { padding: 6mm 0 !important; }
-  .quote-section-heading { margin-bottom: 4mm !important; }
-  .quote-section-heading h2, .quote-section-heading h3 { font-size: 14px !important; }
+  .quote-title-row { display: block !important; padding-top: 5mm !important; }
+  .quote-document-title { font-size: 19px !important; font-weight: 600 !important; line-height: 1.16 !important; }
+  .quote-metadata { min-width: 0 !important; gap: 1.5mm !important; }
+  .quote-section { padding: 5mm 0 !important; }
+  .quote-section-heading { margin-bottom: 3mm !important; }
+  .quote-section-heading h2, .quote-section-heading h3 { font-size: 11px !important; font-weight: 600 !important; }
   .quote-details-grid { column-gap: 10mm !important; }
   .quote-detail-item { padding: 2mm 0 !important; grid-template-columns: minmax(29mm, .9fr) minmax(0, 1.1fr) !important; }
   .quote-scenarios-intro { padding-bottom: 3mm !important; }
   .quote-scenario-wrap { padding: 0 0 4mm !important; }
-  .quote-scenario { padding: 5mm !important; border-radius: 1.5mm !important; }
+  .quote-scenario { padding: 4mm 0 !important; border-right: 0 !important; border-left: 0 !important; border-radius: 0 !important; }
   .quote-option-heading { padding-bottom: 3mm !important; }
   .quote-option-section { margin-top: 3mm !important; }
   .quote-option-section h5, .quote-option-subheading { margin-bottom: 2mm !important; font-size: 10px !important; }
-  .quote-table-wrap { border-radius: 1.5mm !important; }
+  .quote-table-wrap { border-right: 0 !important; border-left: 0 !important; border-radius: 0 !important; }
   .quote-table { font-size: 9px !important; }
   .quote-table th, .quote-table td { padding: 2mm 3mm !important; }
   .quote-table-note { margin-top: 1.5mm !important; font-size: 8px !important; }
@@ -203,7 +212,7 @@ const PDF_EXTRA_STYLES = `
   .compact-two-page .quote-masthead { padding-bottom: 5mm !important; }
   .compact-two-page .quote-masthead__top { padding-bottom: 3mm !important; }
   .compact-two-page .quote-title-row { padding-top: 4mm !important; }
-  .compact-two-page .quote-logo { height: 12mm !important; }
+  .compact-two-page .quote-logo { height: 11mm !important; }
   .compact-two-page .quote-section { padding-top: 3.5mm !important; padding-bottom: 3.5mm !important; }
   .compact-two-page .quote-section-heading { margin-bottom: 2.5mm !important; }
   .compact-two-page .quote-detail-item { padding-top: 1.2mm !important; padding-bottom: 1.2mm !important; }
@@ -356,13 +365,13 @@ export async function exportQuotePdf(
     : "";
 
   // 5. Fix relative image URLs. Embed the logo so the PDF server never waits on localhost/preview assets.
-  const logoDataUrl = await assetToDataUrl("/exclusive.png");
+  const logoDataUrl = await assetToDataUrl("/exclusive2.png");
   let contentHtml = (headerHtml + processedDisplayHtml + termsHtml).replace(
     /src="\/([^"]+)"/g,
     `src="${baseUrl}/$1"`
   );
   if (logoDataUrl) {
-    contentHtml = contentHtml.replace(/src="[^"]*\/exclusive\.png"/g, `src="${logoDataUrl}"`);
+    contentHtml = contentHtml.replace(/src="[^"]*\/exclusive2\.png"/g, `src="${logoDataUrl}"`);
   }
 
   const appStyles = await collectAppStyles();
