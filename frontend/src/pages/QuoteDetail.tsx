@@ -245,7 +245,7 @@ const QuoteDetail = () => {
                 onClick={openEditDialog}
                 aria-label="Edit Quote"
               >
-                <Pencil className="h-4 w-4 text-[#009fe3]" />
+                <Pencil className="h-4 w-4 text-[hsl(var(--brand-accent))]" />
               </Button>
             )}
             {canEditQuote && isEditing && (
@@ -254,7 +254,7 @@ const QuoteDetail = () => {
                   variant="outline"
                   onClick={cancelEdit}
                   disabled={editSaving}
-                  className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-4 text-xs"
+                  className="rounded-full border-2 border-[hsl(var(--brand-accent))] px-4 text-xs text-[hsl(var(--brand-accent))] hover:bg-accent"
                 >
                   <X className="h-3.5 w-3.5 mr-1.5" />
                   Cancel
@@ -262,7 +262,7 @@ const QuoteDetail = () => {
                 <Button
                   onClick={handleEditSave}
                   disabled={editSaving}
-                  className="rounded-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-900 disabled:opacity-100 text-white px-4 text-xs"
+                  className="rounded-full bg-primary px-4 text-xs text-primary-foreground hover:bg-primary/90 disabled:bg-primary disabled:opacity-100"
                 >
                   <Save className="h-3.5 w-3.5 mr-1.5" />
                   {editSaving ? "Saving" : "Save Changes"}

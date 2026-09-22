@@ -140,21 +140,12 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
       {/* Personal & Annuity Details */}
       <div className="quote-section-heading">
         <span>01</span>
-        <h2>
-          {editing ? (
-            <Input
-              value={editForm?.fullName || ""}
-              onChange={(e) => onFieldChange("fullName", e.target.value)}
-              className="text-center font-semibold bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
-            />
-          ) : (
-            "Client details"
-          )}
-        </h2>
+        <h2>Client details</h2>
       </div>
       <div className="quote-details-grid">
         {editing ? (
           <>
+            {renderClientField("Full Name", "fullName")}
             {renderClientField("Date of Birth", "dateOfBirth")}
             {renderClientField("Gender", "gender")}
             {renderClientField("ID/Passport Number", "idNumber")}
@@ -401,7 +392,7 @@ const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriod
           ))}
         </tr>
       </thead>
-      <tbody className="text-gray-700 dark:text-gray-300">
+      <tbody>
         <tr>
           <td className="quote-row-heading">
             Monthly Life Annuity
@@ -413,9 +404,7 @@ const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriod
                 key={row.guarantee_period}
                 className={
                   "quote-table-value " +
-                  (isSelected
-                    ? "font-semibold text-gray-900 dark:text-white"
-                    : "text-gray-800 dark:text-gray-100")
+                  (isSelected ? "quote-table-value--selected" : "")
                 }
               >
                 {row.monthly_annuity != null

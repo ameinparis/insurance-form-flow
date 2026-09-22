@@ -242,6 +242,7 @@
   .quote-table td { padding: 0.7rem 1rem; border-top: 1px solid hsl(var(--document-rule)); }
   .quote-table td:last-child { color: hsl(var(--document-ink)); font-weight: 600; text-align: right; }
   .quote-life-table td:last-child { text-align: left; }
+  .quote-table-value--selected { color: hsl(var(--document-ink)); font-weight: 700; }
   .quote-period-heading { color: hsl(var(--document-copy)); font-weight: 600; }
   .quote-row-heading { color: hsl(var(--document-ink)); font-weight: 700; }
   .quote-table-note { margin: 0.65rem 0 0; color: hsl(var(--document-muted)); font-size: 0.6875rem; font-style: italic; }
