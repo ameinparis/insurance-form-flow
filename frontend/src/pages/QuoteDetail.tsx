@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Loader2, Pencil, Save, X } from "lucide-react";
+import { ArrowLeft, Download, Loader2, Pencil, Save, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { QuoteHeader } from "@/components/QuoteHeader";
 import { AnnuityDisplay } from "@/components/quote-displays/AnnuityDisplay";
