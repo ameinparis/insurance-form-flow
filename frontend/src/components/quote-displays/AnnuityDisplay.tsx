@@ -195,42 +195,42 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
         </div>
         {!hasScenarios && (
           <>
-            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Drawdown %:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.drawdown || "N/A"}%</span>
+            <div className="quote-detail-item">
+              <span className="quote-detail-label">Drawdown</span>
+              <span className="quote-detail-value">{inputData?.drawdown || "N/A"}%</span>
             </div>
-            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">
-                Living Annuity per Month{inputData?.age && inputData?.guaranteedStartAge ? ` (Age ${inputData.age} to ${inputData.guaranteedStartAge})` : ''}:
+            <div className="quote-detail-item">
+              <span className="quote-detail-label">
+                Living Annuity per Month{inputData?.age && inputData?.guaranteedStartAge ? ` · Age ${inputData.age} to ${inputData.guaranteedStartAge}` : ''}
               </span>
-              <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
+              <span className="quote-detail-value quote-detail-value--strong">
                 {formatCurrency(outputData?.living?.guaranteed_annuity)}
               </span>
             </div>
-            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Estimated Funds Remaining:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.living?.funds_remaining)}</span>
+            <div className="quote-detail-item">
+              <span className="quote-detail-label">Estimated Funds Remaining</span>
+              <span className="quote-detail-value">{formatCurrency(outputData?.living?.funds_remaining)}</span>
             </div>
-            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Frequency:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.frequency || "N/A"}</span>
+            <div className="quote-detail-item">
+              <span className="quote-detail-label">Frequency</span>
+              <span className="quote-detail-value">{inputData?.frequency || "N/A"}</span>
             </div>
             {knownPeriod != null && (
-              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Selected Guarantee Period:</span>
-                <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{knownPeriod} years</span>
+              <div className="quote-detail-item">
+                <span className="quote-detail-label">Selected Guarantee Period</span>
+                <span className="quote-detail-value quote-detail-value--strong">{knownPeriod} years</span>
               </div>
             )}
             {knownAnnuity != null && (
-              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Monthly Life Annuity:</span>
-                <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(knownAnnuity)}</span>
+              <div className="quote-detail-item">
+                <span className="quote-detail-label">Monthly Life Annuity</span>
+                <span className="quote-detail-value quote-detail-value--strong">{formatCurrency(knownAnnuity)}</span>
               </div>
             )}
           </>
         )}
       </div>
-    </div>
+    </section>
   );
 
   const scenariosSection = hasScenarios ? (
@@ -584,27 +584,27 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
           Living Annuity
         </h5>
         <div className="quote-details-grid quote-details-grid--compact">
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Drawdown:</span>
-            <span className="text-sm text-gray-800 dark:text-gray-100">{inputs.drawdown ?? "—"}%</span>
+          <div className="quote-detail-item">
+            <span className="quote-detail-label">Drawdown</span>
+            <span className="quote-detail-value">{inputs.drawdown ?? "—"}%</span>
           </div>
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Frequency:</span>
-            <span className="text-sm text-gray-800 dark:text-gray-100">{inputs.frequency ?? "—"}</span>
+          <div className="quote-detail-item">
+            <span className="quote-detail-label">Frequency</span>
+            <span className="quote-detail-value">{inputs.frequency ?? "—"}</span>
           </div>
           {living?.guarantee_period != null && (
-            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Living Guarantee Period:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-100">{living.guarantee_period} years</span>
+            <div className="quote-detail-item">
+              <span className="quote-detail-label">Living Guarantee Period</span>
+              <span className="quote-detail-value">{living.guarantee_period} years</span>
             </div>
           )}
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">{livingLabel}:</span>
-            <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(living?.guaranteed_annuity)}</span>
+          <div className="quote-detail-item">
+            <span className="quote-detail-label">{livingLabel}</span>
+            <span className="quote-detail-value quote-detail-value--strong">{formatCurrency(living?.guaranteed_annuity)}</span>
           </div>
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Estimated Funds Remaining:</span>
-            <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(living?.funds_remaining)}</span>
+          <div className="quote-detail-item">
+            <span className="quote-detail-label">Estimated Funds Remaining</span>
+            <span className="quote-detail-value">{formatCurrency(living?.funds_remaining)}</span>
           </div>
         </div>
       </div>
