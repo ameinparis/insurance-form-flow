@@ -511,7 +511,7 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
       ? preInjected
       : selectedPeriods.map((p) => ({
           guarantee_period: p,
-          monthly_annuity: knownByPeriod.has(p) ? knownByPeriod.get(p)! : null,
+          monthly_annuity: knownByPeriod.has(p) ? knownByPeriod.get(p) ?? null : null,
         }));
 
   const [periods, setPeriods] = useState<LifePeriodResult[]>(initial);
@@ -540,7 +540,7 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
         .filter((r) => selectedPeriods.includes(r.guarantee_period))
         .map((r) =>
           knownByPeriod.has(r.guarantee_period)
-            ? { ...r, monthly_annuity: knownByPeriod.get(r.guarantee_period)! }
+            ? { ...r, monthly_annuity: knownByPeriod.get(r.guarantee_period) ?? null }
             : r
         );
       if (!cancelled) {

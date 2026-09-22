@@ -37,7 +37,7 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions }: Docum
     const canvas = canvasRef.current;
     const paper = canvas.querySelector("[data-paper]");
     if (!paper) return;
-    const availableWidth = canvas.clientWidth - 64;
+    const availableWidth = canvas.clientWidth - 40;
     const paperWidth = (paper as HTMLElement).offsetWidth;
     if (paperWidth > 0) {
       const fitZoom = Math.max(0.5, Math.min(1, availableWidth / paperWidth));
@@ -92,13 +92,13 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions }: Docum
         </div>
 
         {/* Grey document canvas */}
-        <div className="flex-1 overflow-hidden bg-muted/30 p-4 sm:p-6">
+        <div className="flex-1 overflow-hidden bg-muted/30 p-2 sm:p-3">
           <div
             ref={canvasRef}
-            className="document-workspace h-full overflow-auto rounded-sm bg-muted/70 p-4 sm:p-8 lg:p-12 dark:bg-background/70"
+            className="document-workspace h-full overflow-auto rounded-lg p-4 sm:p-5"
           >
-            <div className="mx-auto" style={{ width: "min(210mm, 100%)", transform: `scale(${zoom})`, transformOrigin: "top center" }}>
-              <div data-paper className="quote-paper min-h-[297mm] overflow-hidden bg-card">
+            <div className="mx-auto w-[95%]" style={{ transform: `scale(${zoom})`, transformOrigin: "top center" }}>
+              <div data-paper className="quote-paper min-h-[297mm] overflow-hidden rounded-[18px] border border-border/70 bg-card">
                 {children}
               </div>
             </div>
