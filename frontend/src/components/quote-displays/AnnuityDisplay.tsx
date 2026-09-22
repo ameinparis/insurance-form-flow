@@ -115,8 +115,8 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
     const value = editForm?.[field] || "";
     if (editing) {
       return (
-        <div className="flex items-baseline gap-2 border-b border-blue-100 dark:border-blue-900/40 py-2">
-          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">{label}:</span>
+        <div className="quote-detail-item quote-detail-item--editing">
+          <span className="quote-detail-label">{label}</span>
           <Input
             type={type}
             value={value}
@@ -128,18 +128,19 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
     }
     const displayValue = clientData?.[field] || "N/A";
     return (
-      <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-        <span className="font-medium text-sm text-gray-500 dark:text-gray-400">{label}:</span>
-        <span className="text-sm text-gray-800 dark:text-gray-100">{displayValue}</span>
+      <div className="quote-detail-item">
+        <span className="quote-detail-label">{label}</span>
+        <span className="quote-detail-value">{displayValue}</span>
       </div>
     );
   };
 
   const personalDetails = (
-    <div className="bg-white p-8 dark:bg-slate-900">
+    <section className="quote-section quote-client-section">
       {/* Personal & Annuity Details */}
-      <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-block">
+      <div className="quote-section-heading">
+        <span>01</span>
+        <h2>
           {editing ? (
             <Input
               value={editForm?.fullName || ""}
@@ -147,11 +148,11 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
               className="text-center font-semibold bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
             />
           ) : (
-            `Quotation for ${toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "Client Name"}`
+            "Client details"
           )}
         </h2>
       </div>
-      <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+      <div className="quote-details-grid">
         {editing ? (
           <>
             {renderClientField("Date of Birth", "dateOfBirth")}
@@ -162,35 +163,35 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
           </>
         ) : (
           <>
-            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Date of Birth:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.dateOfBirth || "N/A"}</span>
+            <div className="quote-detail-item">
+              <span className="quote-detail-label">Date of Birth</span>
+              <span className="quote-detail-value">{clientData?.dateOfBirth || "N/A"}</span>
             </div>
-            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Gender:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.gender || "N/A"}</span>
+            <div className="quote-detail-item">
+              <span className="quote-detail-label">Gender</span>
+              <span className="quote-detail-value">{clientData?.gender || "N/A"}</span>
             </div>
-            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">ID/Passport Number:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.idNumber || "N/A"}</span>
+            <div className="quote-detail-item">
+              <span className="quote-detail-label">ID / Passport Number</span>
+              <span className="quote-detail-value">{clientData?.idNumber || "N/A"}</span>
             </div>
-            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Contact:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.contactNumber || "N/A"}</span>
+            <div className="quote-detail-item">
+              <span className="quote-detail-label">Contact</span>
+              <span className="quote-detail-value">{clientData?.contactNumber || "N/A"}</span>
             </div>
-            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Email:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.email || "N/A"}</span>
+            <div className="quote-detail-item">
+              <span className="quote-detail-label">Email</span>
+              <span className="quote-detail-value">{clientData?.email || "N/A"}</span>
             </div>
           </>
         )}
-        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Funeral Cover:</span>
-          <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(15000)}</span>
+        <div className="quote-detail-item">
+          <span className="quote-detail-label">Funeral Cover</span>
+          <span className="quote-detail-value">{formatCurrency(15000)}</span>
         </div>
-        <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-          <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Purchase Premium:</span>
-          <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(inputData?.purchaseAmount)}</span>
+        <div className="quote-detail-item">
+          <span className="quote-detail-label">Purchase Premium</span>
+          <span className="quote-detail-value quote-detail-value--strong">{formatCurrency(inputData?.purchaseAmount)}</span>
         </div>
         {!hasScenarios && (
           <>
@@ -362,7 +363,7 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
 
 
   return (
-    <div className="bg-white dark:bg-slate-900 space-y-8">
+    <div className="quote-document-body">
       {personalDetails}
       {scenariosSection}
       {lifeSection}

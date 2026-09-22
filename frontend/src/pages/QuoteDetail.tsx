@@ -282,7 +282,7 @@ const QuoteDetail = () => {
           </>
         }
       >
-        <div id="quote-pdf">
+        <div id="quote-pdf" className="quote-document">
           <QuoteHeader
             quoteId={quote.quoteId}
             clientName={clientInfo.fullName}
@@ -294,8 +294,11 @@ const QuoteDetail = () => {
           />
           {renderProductDisplay()}
           {(quote.termsAndConditions || quote.disclaimerText) && (
-          <div className="border-t border-border p-8 bg-card">
-            <h3 className="text-xl font-semibold text-center mb-4 text-foreground">Terms & Conditions</h3>
+          <section className="quote-section quote-terms pdf-terms">
+            <div className="quote-section-heading">
+              <span>Legal</span>
+              <h3>Terms &amp; Conditions</h3>
+            </div>
             {isEditing ? (
               <Textarea
                 value={editForm.termsAndConditions}
@@ -303,11 +306,11 @@ const QuoteDetail = () => {
                 className="min-h-[120px] bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
               />
             ) : (
-              <p className="text-sm text-muted-foreground leading-relaxed text-justify">
+              <p className="quote-terms-copy">
                 {quote.termsAndConditions || quote.disclaimerText}
               </p>
             )}
-          </div>
+          </section>
           )}
         </div>
       </DocumentViewer>
