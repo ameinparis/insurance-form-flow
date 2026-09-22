@@ -632,50 +632,34 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
   const livingLabel = `Living Annuity / ${String(frequency).toLowerCase()}`;
 
   return (
-    <div className="scenario-block border border-gray-200 dark:border-gray-800 rounded-lg p-5">
+    <div className="scenario-block rounded-xl border border-slate-200 bg-slate-50/40 p-5 dark:border-slate-800 dark:bg-slate-900/40">
       {showOptionLabel && (
-        <h4 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
+        <h4 className="mb-4 text-sm font-semibold tracking-tight text-slate-900 dark:text-slate-50">
           Option {index + 1}
           {inputs.drawdown != null ? ` — ${inputs.drawdown}% Drawdown` : ""}
         </h4>
       )}
 
-
       {/* Living Annuity summary — shared across grouped scenarios */}
       <div className="mb-5">
-        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+        <h5 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
           Living Annuity
         </h5>
         <div className="grid grid-cols-2 gap-x-12 gap-y-0">
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Drawdown:</span>
-            <span className="text-sm text-gray-800 dark:text-gray-100">{inputs.drawdown ?? "—"}%</span>
-          </div>
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Frequency:</span>
-            <span className="text-sm text-gray-800 dark:text-gray-100">{inputs.frequency ?? "—"}</span>
-          </div>
+          <Field label="Drawdown" value={`${inputs.drawdown ?? "—"}%`} />
+          <Field label="Frequency" value={inputs.frequency ?? "—"} />
           {living?.guarantee_period != null && (
-            <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-              <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Living Guarantee Period:</span>
-              <span className="text-sm text-gray-800 dark:text-gray-100">{living.guarantee_period} years</span>
-            </div>
+            <Field label="Living Guarantee Period" value={`${living.guarantee_period} years`} />
           )}
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">{livingLabel}:</span>
-            <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(living?.guaranteed_annuity)}</span>
-          </div>
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Estimated Funds Remaining:</span>
-            <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(living?.funds_remaining)}</span>
-          </div>
+          <Field label={livingLabel} value={formatCurrency(living?.guaranteed_annuity)} strong />
+          <Field label="Estimated Funds Remaining" value={formatCurrency(living?.funds_remaining)} />
         </div>
       </div>
 
       {/* Life annuity guarantee period comparison — only if any life option was selected */}
       {hasLife && (
         <div>
-          <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+          <h5 className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
             Life Annuity — Guarantee Period Options
           </h5>
           <LifePeriodsTable periods={periods} selectedPeriods={selectedPeriods} loading={loading} />
