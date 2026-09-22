@@ -200,7 +200,7 @@ export const A4PaginatedDocument = ({ blocks, onPageCountChange }: A4PaginatedDo
             key={`page-${pageIndex}`}
             data-paper
             data-page-number={pageIndex + 1}
-            className="overflow-hidden bg-white shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:bg-slate-900"
+            className="overflow-hidden rounded-[6px] bg-white ring-1 ring-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_18px_44px_-20px_rgba(15,23,42,0.28)] dark:bg-slate-900 dark:ring-slate-800"
             style={{ width: PAGE_WIDTH, height: PAGE_HEIGHT, padding: PAGE_MARGIN }}
           >
             {page.map((block) => (
