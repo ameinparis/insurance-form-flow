@@ -63,15 +63,22 @@ const PDF_EXTRA_STYLES = `
   .pb-3 { padding-bottom: 0.22rem !important; }
   .gap-y-4 { row-gap: 0.2rem !important; }
   .gap-x-12 { column-gap: 1.25rem !important; }
-  /* Darker, print-safe borders so the print-out never renders faint hairlines */
+  /* Print-safe borders: visible on paper, still soft and editorial */
   .border, .border-t, .border-b, .border-l, .border-r,
   [class*="border-gray-100"], [class*="border-gray-200"],
   [class*="border-gray-300"], [class*="border-gray-400"],
   [class*="border-slate-"] {
-    border-color: #4b5563 !important;
+    border-color: #94a3b8 !important;
   }
-  table, th, td { border-color: #4b5563 !important; }
-  hr { border-color: #4b5563 !important; }
+  [class*="border-slate-400"], [class*="border-slate-600"],
+  [class*="border-gray-400"] { border-color: #64748b !important; }
+  table, th, td { border-color: #94a3b8 !important; }
+  hr { border-color: #94a3b8 !important; }
+  /* Editorial section labels stay legible when scaled down */
+  .tracking-\\[0\\.2em\\], .tracking-\\[0\\.22em\\], .tracking-\\[0\\.16em\\], .tracking-\\[0\\.14em\\], .tracking-\\[0\\.12em\\] {
+    letter-spacing: 0.12em !important;
+  }
+  .bg-slate-50\\/40, .bg-slate-50\\/80 { background-color: #f8fafc !important; }
   /* Header logo shouldn't dominate a compact layout */
   header img, .h-20 { height: 3rem !important; }
   /* Neutralize dark-mode variants that ship in the rendered markup */
