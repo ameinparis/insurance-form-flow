@@ -1,47 +1,24 @@
-# True A4 quote preview pagination
+# Continuous quotation preview
 
 ## Goal
-Keep the current Quote Detail viewer, toolbar, quote styling, editing, PDF download, and backend unchanged while rendering the on-screen quotation as real, separate A4 sheets.
+Keep the existing Quote Detail viewer, toolbar, quote styling, editing, zoom, PDF download, and backend unchanged while making the on-screen quotation read as one seamless white document.
 
 ## Implementation
-
-### 1. Add a small A4 pagination layer
-- Add a focused pagination component beside `DocumentViewer` that owns the page measurements and page list.
-- Use the PDF export dimensions: A4 `210mm × 297mm` with `12mm` content margins.
-- Measure the rendered quote blocks only at the fixed A4 printable area (`210mm × 297mm`, less `12mm` margins on every side), then assign each block to the first page where it fits. Viewer width and zoom affect display scale only and never pagination.
-- Wait for `document.fonts.ready` before the first final measurement so Urbanist/Wix font loading cannot change the initial page count.
-- Render each assigned group once inside its own white A4 sheet; do not duplicate the full quote or clip a continuous document.
-- Recalculate after quote data, edit state, font readiness, or asynchronous annuity values. Do not repaginate for viewer-width or zoom changes.
-
-### 2. Define safe quote pagination blocks
-- Split the existing Quote Detail content into logical React blocks without changing their visual classes or text.
-- Expose the annuity sections as pagination-safe blocks: customer details, each complete scenario card, the single-quote life-annuity table, fees/signature, and terms.
-- Treat every complete scenario card as one atomic unit, including its Living Annuity details and Life Annuity Guarantee Period table/note. Keep it together whenever it fits within one printable area.
-- Allow naturally splittable content, especially long Terms & Conditions, to continue onto additional A4 sheets instead of overflowing. If any other single atomic block is taller than one printable area, preserve all content with a safe fallback.
-- Preserve the current live inputs and handlers in the rendered blocks so Edit Quote remains fully interactive.
-
-### 3. Extend the existing viewer behavior only
-- Keep the current grey canvas, toolbar, buttons, zoom levels, and styling.
-- Render the paginated sheets in a vertical stack with a visible gap and existing paper shadow.
-- Make zoom and Fit Width apply to the complete page stack without changing page dimensions or introducing horizontal drift.
-- Derive the toolbar total from the generated pages.
-- Observe page positions inside the existing scroll canvas and update the current page to the sheet nearest the viewport reading position.
+- Replace the annuity viewer's visible A4 page stack with one continuous white document surface inside the existing soft-grey workspace.
+- Render the existing quote header, personal details, scenarios, fees/signature, and Terms & Conditions in their current order without page gaps or page-sized clipping.
+- Keep the document at the existing A4 width so Zoom and Fit Width continue to behave consistently.
+- Simplify the on-screen toolbar indicator because there are no visible screen pages; scrolling remains continuous.
+- Leave PDF export code and its A4 pagination rules untouched, so downloaded quotes remain properly paginated.
+- Preserve all inline Edit Quote fields and Save/Cancel behavior.
 
 ## Files expected to change
-- `frontend/src/components/document-viewer/DocumentViewer.tsx`
 - `frontend/src/pages/QuoteDetail.tsx`
+- `frontend/src/components/document-viewer/DocumentViewer.tsx`
 - `frontend/src/components/quote-displays/AnnuityDisplay.tsx`
-- One small new pagination component under `frontend/src/components/document-viewer/`
-
-## Explicitly unchanged
-- PDF export code and output
-- Backend and API endpoints
-- Quote calculations and data
-- Existing toolbar design and actions
-- Existing inline editing behavior and save flow
+- Remove the now-unused on-screen pagination helper if nothing else references it.
 
 ## Verification
-- Build the frontend.
-- Open short and multi-scenario annuity quotes and verify real A4 sheets, accurate page totals, current-page updates while scrolling, intact scenario cards, and no missing content.
-- Verify Edit Quote fields still accept changes and Save/Cancel still work.
-- Verify zoom and Fit Width affect all sheets together.
+- Open an annuity quote and confirm it displays as one white, uninterrupted document on the grey workspace.
+- Confirm there are no large page gaps, clipping, or duplicated content.
+- Confirm Zoom, Fit Width, Edit Quote, and Download PDF still work.
+- Confirm the downloaded PDF remains A4-paginated.
