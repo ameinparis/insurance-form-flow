@@ -41,6 +41,15 @@
     --input: 240 6% 90%;
     --ring: 207 100% 62%;
 
+    --document-ink: 218 45% 15%;
+    --document-copy: 218 18% 34%;
+    --document-muted: 218 12% 48%;
+    --document-rule: 214 22% 84%;
+    --document-wash: 210 33% 97%;
+    --document-paper: 0 0% 100%;
+    --document-accent: 199 100% 45%;
+    --document-workspace: 216 14% 92%;
+
     --radius: 1rem;
 
     /* Sidebar - Clean white with blue accents */
@@ -91,6 +100,15 @@
     --border: 225 25% 15%;
     --input: 225 25% 15%;
     --ring: 199 89% 48%;
+
+    --document-ink: 218 45% 15%;
+    --document-copy: 218 18% 34%;
+    --document-muted: 218 12% 48%;
+    --document-rule: 214 22% 84%;
+    --document-wash: 210 33% 97%;
+    --document-paper: 0 0% 100%;
+    --document-accent: 199 100% 45%;
+    --document-workspace: 216 14% 92%;
     
     --sidebar-background: 225 30% 11%;      /* Match card color for consistent sidebar */
     --sidebar-foreground: 210 40% 98%;
@@ -103,6 +121,149 @@
     --sidebar-ring: 199 89% 48%;
     --sidebar-active: 225 28% 15%;
     --sidebar-active-foreground: 199 89% 60%;
+  }
+}
+
+@layer components {
+  .document-workspace {
+    background: hsl(var(--document-workspace));
+  }
+
+  .quote-paper {
+    color: hsl(var(--document-copy));
+    background: hsl(var(--document-paper));
+    box-shadow: 0 1px 2px hsl(var(--document-ink) / 0.08), 0 18px 48px hsl(var(--document-ink) / 0.12);
+  }
+
+  .quote-document {
+    color: hsl(var(--document-copy));
+    background: hsl(var(--document-paper));
+    font-size: 0.9375rem;
+    line-height: 1.55;
+  }
+
+  .quote-masthead {
+    padding: 3.5rem 3.75rem 2.5rem;
+    background: hsl(var(--document-paper));
+  }
+
+  .quote-masthead__top,
+  .quote-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2.5rem;
+  }
+
+  .quote-masthead__top {
+    padding-bottom: 2.25rem;
+    border-bottom: 1px solid hsl(var(--document-rule));
+  }
+
+  .quote-brand-block { display: flex; flex-direction: column; gap: 0.75rem; }
+  .quote-logo-wrap { display: flex; align-items: center; min-height: 4rem; }
+  .quote-logo { width: auto; height: 4.5rem; object-fit: contain; }
+  .quote-brand-kicker,
+  .quote-eyebrow,
+  .quote-section-heading > span,
+  .quote-option-heading > span,
+  .quote-detail-label,
+  .quote-metadata dt {
+    margin: 0;
+    color: hsl(var(--document-muted));
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .quote-company-details {
+    color: hsl(var(--document-muted));
+    font-size: 0.75rem;
+    line-height: 1.6;
+    text-align: right;
+  }
+  .quote-company-details p { margin: 0; }
+  .quote-company-contact { margin-top: 0.4rem !important; color: hsl(var(--document-copy)); }
+
+  .quote-title-row { align-items: flex-end; padding-top: 2.5rem; }
+  .quote-eyebrow { margin-bottom: 0.65rem; color: hsl(var(--document-accent)); }
+  .quote-document-title {
+    max-width: 32rem;
+    margin: 0;
+    color: hsl(var(--document-ink));
+    font-family: theme(fontFamily.heading);
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: 0;
+  }
+
+  .quote-metadata { display: grid; min-width: 11rem; gap: 0.75rem; margin: 0; }
+  .quote-metadata > div { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 1rem; }
+  .quote-metadata dd { margin: 0; color: hsl(var(--document-ink)); font-weight: 600; text-align: right; }
+
+  .quote-document-body { background: hsl(var(--document-paper)); }
+  .quote-section { padding: 2.5rem 3.75rem; background: hsl(var(--document-paper)); }
+  .quote-section + .quote-section { border-top: 1px solid hsl(var(--document-rule)); }
+  .quote-section-heading { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 1.75rem; }
+  .quote-section-heading > span { color: hsl(var(--document-accent)); }
+  .quote-section-heading h2,
+  .quote-section-heading h3 {
+    margin: 0;
+    color: hsl(var(--document-ink));
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0;
+  }
+
+  .quote-details-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 3.5rem; }
+  .quote-detail-item { display: grid; grid-template-columns: minmax(7.5rem, 0.8fr) minmax(0, 1.2fr); gap: 1rem; align-items: baseline; padding: 0.75rem 0; border-bottom: 1px solid hsl(var(--document-rule)); }
+  .quote-detail-value { min-width: 0; color: hsl(var(--document-ink)); font-weight: 500; overflow-wrap: anywhere; }
+  .quote-detail-value--strong { font-weight: 700; }
+  .quote-detail-item--editing { align-items: center; }
+
+  .quote-scenarios-intro { padding-bottom: 1rem; border-top: 1px solid hsl(var(--document-rule)); }
+  .quote-scenarios-intro .quote-section-heading { margin-bottom: 0; }
+  .quote-scenario-wrap { padding: 0 3.75rem 1.5rem; background: hsl(var(--document-paper)); }
+  .quote-scenario { padding: 1.75rem; border: 1px solid hsl(var(--document-rule)); border-radius: 0.375rem; background: hsl(var(--document-paper)); }
+  .quote-option-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid hsl(var(--document-rule)); }
+  .quote-option-heading h4 { margin: 0; color: hsl(var(--document-ink)); font-size: 1.0625rem; font-weight: 700; letter-spacing: 0; }
+  .quote-option-section { margin-top: 1.25rem; }
+  .quote-option-section h5,
+  .quote-option-subheading { margin: 0 0 0.75rem; color: hsl(var(--document-ink)); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0; }
+  .quote-details-grid--compact .quote-detail-item { padding: 0.55rem 0; }
+
+  .quote-table-wrap { overflow: hidden; border: 1px solid hsl(var(--document-rule)); border-radius: 0.375rem; }
+  .quote-table { width: 100%; border-collapse: collapse; color: hsl(var(--document-copy)); font-size: 0.8125rem; text-align: left; }
+  .quote-table th { padding: 0.75rem 1rem; background: hsl(var(--document-wash)); color: hsl(var(--document-ink)); font-weight: 700; }
+  .quote-table td { padding: 0.7rem 1rem; border-top: 1px solid hsl(var(--document-rule)); }
+  .quote-table td:last-child { color: hsl(var(--document-ink)); font-weight: 600; text-align: right; }
+  .quote-life-table td:last-child { text-align: left; }
+  .quote-table-value--selected { color: hsl(var(--document-ink)); font-weight: 700; }
+  .quote-period-heading { color: hsl(var(--document-copy)); font-weight: 600; }
+  .quote-row-heading { color: hsl(var(--document-ink)); font-weight: 700; }
+  .quote-table-note { margin: 0.65rem 0 0; color: hsl(var(--document-muted)); font-size: 0.6875rem; font-style: italic; }
+
+  .quote-fees-section { border-top: 1px solid hsl(var(--document-rule)); }
+  .quote-acceptance { margin-top: 2.75rem; padding-top: 2rem; border-top: 1px solid hsl(var(--document-rule)); }
+  .quote-acceptance h3 { margin: 0 0 1.75rem; color: hsl(var(--document-ink)); font-size: 1rem; letter-spacing: 0; }
+  .quote-signature-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3rem; }
+  .quote-signature-grid label { color: hsl(var(--document-muted)); font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+  .quote-signature-line { height: 3rem; border-bottom: 1px solid hsl(var(--document-copy)); }
+
+  .quote-terms { border-top: 1px solid hsl(var(--document-rule)); }
+  .quote-terms-copy { margin: 0; color: hsl(var(--document-copy)); font-size: 0.8125rem; line-height: 1.7; text-align: justify; text-justify: inter-word; }
+
+  @media (max-width: 760px) {
+    .quote-masthead, .quote-section { padding: 2rem; }
+    .quote-scenario-wrap { padding-right: 2rem; padding-left: 2rem; }
+    .quote-title-row { align-items: flex-start; flex-direction: column; }
+    .quote-details-grid { grid-template-columns: 1fr; }
+    .quote-company-details { display: none; }
+    .quote-document-title { font-size: 1.75rem; }
   }
 }
 

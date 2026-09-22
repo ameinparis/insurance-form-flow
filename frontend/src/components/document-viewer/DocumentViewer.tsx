@@ -92,14 +92,13 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions }: Docum
         </div>
 
         {/* Grey document canvas */}
-        <div className="flex-1 overflow-hidden" style={{ padding: "20px 24px 24px" }}>
+        <div className="flex-1 overflow-hidden bg-muted/30 p-4 sm:p-6">
           <div
             ref={canvasRef}
-            className="h-full overflow-auto bg-[#EAECF0] dark:bg-slate-900/80"
-            style={{ padding: "clamp(16px, 3vw, 48px)" }}
+            className="document-workspace h-full overflow-auto rounded-sm bg-muted/70 p-4 sm:p-8 lg:p-12 dark:bg-background/70"
           >
             <div className="mx-auto" style={{ width: "min(210mm, 100%)", transform: `scale(${zoom})`, transformOrigin: "top center" }}>
-              <div data-paper className="min-h-[297mm] overflow-hidden bg-white shadow-[0_4px_20px_rgba(0,0,0,0.12)] dark:bg-slate-900">
+              <div data-paper className="quote-paper min-h-[297mm] overflow-hidden bg-card">
                 {children}
               </div>
             </div>
