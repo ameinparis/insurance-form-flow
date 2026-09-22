@@ -329,86 +329,42 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange, pagi
   if (pagination) {
     const personalDetailsMeasure = (
       <div className="bg-white p-8 dark:bg-slate-900">
-        <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-3 mb-12">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 inline-block">
-            Quotation for {toTitleCase(clientData?.fullName) !== "—" ? toTitleCase(clientData?.fullName) : "Client Name"}
+        <div className="mb-12 pb-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
+            Quotation for
+          </p>
+          <h2 className="font-heading mt-2 text-[26px] font-semibold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+            {quotationTitle}
           </h2>
         </div>
-        <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Date of Birth:</span>
-            <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.dateOfBirth || "N/A"}</span>
-          </div>
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Gender:</span>
-            <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.gender || "N/A"}</span>
-          </div>
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">ID/Passport Number:</span>
-            <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.idNumber || "N/A"}</span>
-          </div>
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Contact:</span>
-            <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.contactNumber || "N/A"}</span>
-          </div>
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Email:</span>
-            <span className="text-sm text-gray-800 dark:text-gray-100">{clientData?.email || "N/A"}</span>
-          </div>
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Funeral Cover:</span>
-            <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(15000)}</span>
-          </div>
-          <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-            <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Purchase Premium:</span>
-            <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(inputData?.purchaseAmount)}</span>
-          </div>
-          {!hasScenarios && (
-            <>
-              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Drawdown %:</span>
-                <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.drawdown || "N/A"}%</span>
-              </div>
-              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">
-                  Living Annuity per Month{inputData?.age && inputData?.guaranteedStartAge ? ` (Age ${inputData.age} to ${inputData.guaranteedStartAge})` : ''}:
-                </span>
-                <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
-                  {formatCurrency(outputData?.living?.guaranteed_annuity)}
-                </span>
-              </div>
-              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Estimated Funds Remaining:</span>
-                <span className="text-sm text-gray-800 dark:text-gray-100">{formatCurrency(outputData?.living?.funds_remaining)}</span>
-              </div>
-              <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-                <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Frequency:</span>
-                <span className="text-sm text-gray-800 dark:text-gray-100">{inputData?.frequency || "N/A"}</span>
-              </div>
-              {knownPeriod != null && (
-                <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-                  <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Selected Guarantee Period:</span>
-                  <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{knownPeriod} years</span>
-                </div>
-              )}
-              {knownAnnuity != null && (
-                <div className="flex items-baseline gap-2 border-b border-gray-100 dark:border-gray-800 py-2">
-                  <span className="font-medium text-sm text-gray-500 dark:text-gray-400">Monthly Life Annuity:</span>
-                  <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">{formatCurrency(knownAnnuity)}</span>
-                </div>
-              )}
-            </>
-          )}
+        <div className="space-y-8">
+          <DocSection title="Client Details">
+            <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+              <Field label="Date of Birth" value={clientData?.dateOfBirth || "N/A"} />
+              <Field label="Gender" value={clientData?.gender || "N/A"} />
+              <Field label="ID/Passport Number" value={clientData?.idNumber || "N/A"} />
+              <Field label="Contact" value={clientData?.contactNumber || "N/A"} />
+              <Field label="Email" value={clientData?.email || "N/A"} />
+            </div>
+          </DocSection>
+          <DocSection title="Quotation Summary">
+            <div className="grid grid-cols-2 gap-x-12 gap-y-4">{summaryFields}</div>
+          </DocSection>
         </div>
       </div>
     );
 
     const renderTerms = (text: string, continued: boolean) => (
-      <div className="border-t border-border bg-card p-8">
-        <h3 className="text-xl font-semibold text-center mb-4 text-foreground">
+      <div className="pdf-terms border-t border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-900">
+        <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
           {continued ? "Terms & Conditions (continued)" : "Terms & Conditions"}
         </h3>
-        <p data-splittable-text className="text-sm text-muted-foreground leading-relaxed text-justify">{text}</p>
+        <p
+          data-splittable-text
+          className="text-justify text-sm leading-relaxed text-slate-600 dark:text-slate-300"
+        >
+          {text}
+        </p>
       </div>
     );
 
