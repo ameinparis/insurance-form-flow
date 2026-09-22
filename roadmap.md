@@ -1,6 +1,6 @@
 # Roadmap
 
-- [x] Render Quote Detail as genuinely paginated A4 sheets using fixed printable dimensions.
-- [x] Keep annuity scenarios atomic and allow long Terms & Conditions to continue across pages.
-- [x] Update the live page indicator while preserving editing, zoom, Fit Width, PDF export, and backend behavior.
-- [x] Verify the changed viewer files compile in the live preview and pass focused lint checks.
+- [x] Replace the visible A4 page stack with one continuous quotation document.
+- [x] Keep the grey workspace, white document surface, editing, zoom, and Fit Width behavior.
+- [x] Leave the separately generated A4 PDF export unchanged.
+- [ ] Verify the continuous preview and PDF download flow.
