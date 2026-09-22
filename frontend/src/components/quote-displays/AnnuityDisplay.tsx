@@ -449,29 +449,24 @@ interface LifePeriodsTableProps {
 
 const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriodsTableProps) => (
   <>
-  <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
-    <table className="w-full text-sm border-collapse">
+  <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+    <table className="w-full border-collapse text-sm">
       <thead>
-        <tr className="bg-gray-50 dark:bg-slate-800/40">
-          <th className="px-4 py-3 text-left font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-800" />
+        <tr className="bg-slate-50/80 dark:bg-slate-800/40">
+          <th className="border-b border-slate-200 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400 dark:border-slate-800 dark:text-slate-500" />
           {periods.map((row) => (
             <th
               key={row.guarantee_period}
-              className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-800"
+              className="border-b border-slate-200 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:border-slate-800 dark:text-slate-400"
             >
               {row.guarantee_period}-Year Guarantee
-              {selectedPeriods.includes(row.guarantee_period) && (
-                <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
-                
-                </span>
-              )}
             </th>
           ))}
         </tr>
       </thead>
-      <tbody className="text-gray-700 dark:text-gray-300">
+      <tbody className="text-slate-700 dark:text-slate-300">
         <tr>
-          <td className="px-4 py-3 font-semibold text-gray-800 dark:text-gray-100">
+          <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
             Monthly Life Annuity
           </td>
           {periods.map((row) => {
@@ -482,8 +477,8 @@ const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriod
                 className={
                   "px-4 py-3 " +
                   (isSelected
-                    ? "font-semibold text-gray-900 dark:text-white"
-                    : "text-gray-800 dark:text-gray-100")
+                    ? "font-semibold text-slate-900 dark:text-white"
+                    : "text-slate-700 dark:text-slate-200")
                 }
               >
                 {row.monthly_annuity != null
@@ -498,7 +493,7 @@ const LifePeriodsTable = ({ periods, selectedPeriods = [], loading }: LifePeriod
       </tbody>
     </table>
   </div>
-  <p className="mt-2 text-xs italic text-gray-500 dark:text-gray-400">
+  <p className="mt-2 text-xs italic text-slate-400 dark:text-slate-500">
     Life Annuity Guaranteed Period Options are based on zero escalation.
   </p>
   </>
