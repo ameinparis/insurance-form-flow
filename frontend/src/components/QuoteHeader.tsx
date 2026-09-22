@@ -27,12 +27,9 @@ export const QuoteHeader = ({
         <div className="quote-brand-block">
           <div className="quote-logo-wrap">
             <img
-              src="/exclusive.png"
+              src="/exclusive2.png"
               alt="Exclusive Life Insurance"
               className="quote-logo"
-              onError={(e) => {
-                e.currentTarget.src = "/exclusive2.png";
-              }}
             />
           </div>
         </div>

@@ -365,13 +365,13 @@ export async function exportQuotePdf(
     : "";
 
   // 5. Fix relative image URLs. Embed the logo so the PDF server never waits on localhost/preview assets.
-  const logoDataUrl = await assetToDataUrl("/exclusive.png");
+  const logoDataUrl = await assetToDataUrl("/exclusive2.png");
   let contentHtml = (headerHtml + processedDisplayHtml + termsHtml).replace(
     /src="\/([^"]+)"/g,
     `src="${baseUrl}/$1"`
   );
   if (logoDataUrl) {
-    contentHtml = contentHtml.replace(/src="[^"]*\/exclusive\.png"/g, `src="${logoDataUrl}"`);
+    contentHtml = contentHtml.replace(/src="[^"]*\/exclusive2\.png"/g, `src="${logoDataUrl}"`);
   }
 
   const appStyles = await collectAppStyles();
