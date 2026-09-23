@@ -45,6 +45,73 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("MongoDB connected"))
   .catch(err => { console.error("MongoDB error", err); process.exit(1); });
 
+const httpServer = require("http").createServer(app)
+const { Server } = require("socket.io")
+const io = new Server(httpServer, {
+  cors: {
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:8080",
+      process.env.FRONTEND_ORIGIN,
+    ].filter(Boolean),
+    credentials: true,
+  },
+})
+
+const connectedUsers = new Map()
+
+const PY_CALC_BASE = (
+  process.env.PY_CALC_URL || "http://13.247.66.8:5005"
+).replace(/\/+$/, "")
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.split(" ")[1]
+  if (!token) return next(new Error("Authentication error"))
+  jwt.verify(token, process.env.JWT_SECRET, (err, payload) => {
+    if (err) return next(new Error("Authentication error"))
+    socket.user = payload
+    next()
+  })
+})
+
+io.on("connection", (socket) => {
+  const userId = socket.user?.userId
+  if (!userId) return
+
+  const set = connectedUsers.get(userId) || new Set()
+  set.add(socket.id)
+  connectedUsers.set(userId, set)
+
+  socket.on("approval:assign", (payload) => {
+    const recipientId = payload?.recipientId
+    if (!recipientId) return
+    const targets = connectedUsers.get(recipientId)
+    if (!targets?.size) return
+    targets.forEach((id) => io.to(id).emit("notification:new", payload))
+  })
+
+  socket.on("approval:resolve", (payload) => {
+    const recipientId = payload?.recipientId
+    if (!recipientId) return
+    const targets = connectedUsers.get(recipientId)
+    if (!targets?.size) return
+    targets.forEach((id) => io.to(id).emit("notification:new", payload))
+  })
+
+  socket.on("disconnect", () => {
+    const set = connectedUsers.get(userId)
+    if (set) {
+      set.delete(socket.id)
+      if (!set.size) connectedUsers.delete(userId)
+    }
+  })
+})
+
+httpServer.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`)
+})
+
 
 
 
@@ -60,11 +127,15 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ["pending", "active", "suspended"],
     default: "pending"
-  }
+  },
+  pendingExpiresAt: { type: Date, index: true }
 }, { timestamps: true });
+
+userSchema.index({ pendingExpiresAt: 1 }, { expireAfterSeconds: 0 });
+
 const User = mongoose.model("User", userSchema);
 
-//
+//token schema
 const tokenSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   token: { type: String, required: true },
@@ -129,8 +200,22 @@ const newQuoteSchema = new mongoose.Schema({
   medicalUnderwritingNotes: { type: String, default: "" },
 
 }, { timestamps: true });
-
+newQuoteSchema.index({ createdAt: -1 });
 const Quotes = mongoose.model("Quotes", newQuoteSchema);
+
+const clientSchema = new mongoose.Schema({
+  clientNumber: { type: String, required: true, unique: true, index: true, trim: true },
+  fullName: { type: String, required: true, trim: true },
+  idNumber: { type: String, required: true, unique: true, index: true, trim: true },
+  email: { type: String, lowercase: true, trim: true },
+  contactNumber: { type: String, trim: true },
+  dateOfBirth: String,
+  status: { type: String, enum: ["ACTIVE", "INACTIVE"], default: "ACTIVE", index: true },
+  createdFromPolicy: { type: String, default: null },
+  createdFromQuote: { type: String, default: null },
+}, { timestamps: true });
+
+const Client = mongoose.models.Client || mongoose.model("Client", clientSchema, "clients");
 
 // Audit Log Schema
 const auditLogSchema = new mongoose.Schema({
@@ -164,6 +249,8 @@ auditLogSchema.index({ userId: 1, createdAt: -1 });
 auditLogSchema.index({ action: 1, createdAt: -1 });
 
 const AuditLog = mongoose.model("AuditLog", auditLogSchema);
+
+
 
 /* ---------------------------- Auth helpers --------------------------- */
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -290,9 +377,9 @@ const sendPasswordChangedEmail = async (email, firstName) => {
 /** Create user (admin creates from Team screen) */
 app.post("/api/users/register", authenticateToken, async (req, res) => {
   try {
-    // Only superuser can create users
-    if ((req.user?.role || "").toLowerCase() !== "superuser") {
-      return res.status(403).json({ message: "Forbidden: superuser only" });
+    const requesterRole = String(req.user?.role || "").toLowerCase()
+    if (requesterRole !== "superuser" && requesterRole !== "admin") {
+      return res.status(403).json({ message: "Forbidden: admin or superuser only" });
     }
 
     let { email, firstName, lastName, role } = req.body;
@@ -329,7 +416,8 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
       lastName,
       password: hash,
       role,
-      status: "pending"
+      status: "pending",
+      pendingExpiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
     });
 
     // Generate token for password setup
@@ -645,6 +733,12 @@ app.post("/api/users/login", async (req, res) => {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(400).json({ message: "Invalid password" });
 
+    if (user.status === "pending") {
+      user.status = "active"
+      user.pendingExpiresAt = undefined
+      await user.save()
+    }
+
     const token = jwt.sign({ userId: user._id.toString(), role: user.role }, JWT_SECRET);
 
     // Log successful login
@@ -680,7 +774,7 @@ app.post("/api/users/login", async (req, res) => {
 /** Annuity calculator proxy → Python */
 app.post("/api/annuity", async (req, res) => {
   try {
-    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/calculate";
+    const PY_URL = `${PY_CALC_BASE}/annuity/calculate`;
     const { data } = await axios.post(PY_URL, req.body);
     res.json(data);
   } catch (e) {
@@ -790,7 +884,7 @@ app.delete("/api/quotes/:id", authenticateToken, async (req, res) => {
 /** Annuity calculator proxy → Python */
 app.post("/api/quotes/calculate-annuity", async (req, res) => {
   try {
-    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/annuity/calculate";
+    const PY_URL = `${PY_CALC_BASE}/annuity/calculate`;
     const { data } = await axios.post(PY_URL, req.body);
 
     // Log quote calculation
@@ -858,7 +952,7 @@ app.post("/api/quotes/calculate-funeral", authenticateToken, upload.single("file
     const inputs = req.body;
 
     // Step 4: Send to Python for processing
-    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/funeral/calculate";
+    const PY_URL = `${PY_CALC_BASE}/funeral/calculate`;
     const { data } = await axios.post(PY_URL, { members, inputs });
 
     // Log quote calculation
@@ -1033,8 +1127,7 @@ async function processFuneralJobs() {
       }, 1000); // every second
 
       try {
-        const PY_URL =
-          process.env.PY_CALC_URL || "http://localhost:5005/funeral/calculate";
+        const PY_URL = `${PY_CALC_BASE}/funeral/calculate`;
 
         // VALIDATE required form fields before Python/Excel
         const required = [
@@ -1092,7 +1185,7 @@ setInterval(processFuneralJobs, 1000);
 /** Life Assurance calculator proxy → Python */
 app.post("/api/quotes/calculate-assurance", async (req, res) => {
   try {
-    const PY_URL = process.env.PY_CALC_URL || "http://localhost:5005/assurance/calculate";
+    const PY_URL = `${PY_CALC_BASE}/assurance/calculate`;
     const { data } = await axios.post(PY_URL, req.body);
 
     // Log quote calculation
@@ -1121,7 +1214,7 @@ app.post("/api/quotes/calculate-assurance", async (req, res) => {
 app.post("/api/quotes/calculate-individual-life", authenticateToken, async (req, res) => {
   try {
 
-    const PY_URL = (process.env.PY_CALC_URL || "http://localhost:5005") + "/individual/calculate";
+    const PY_URL = `${PY_CALC_BASE}/individual/calculate`;
 
     const { data } = await axios.post(PY_URL, req.body, {
       headers: { "Content-Type": "application/json" },
@@ -1260,6 +1353,7 @@ app.get("/api/new-quotes", authenticateToken, async (req, res) => {
     console.log(`Skip: ${skip} | Limit: ${limit}`);
 
     res.json(quotes);
+
   } catch (e) {
     console.error("List new quotes error:", e);
     res.status(500).json({
@@ -1271,12 +1365,40 @@ app.get("/api/new-quotes", authenticateToken, async (req, res) => {
 // Get one new quote
 app.get("/api/new-quotes/:id", authenticateToken, async (req, res) => {
   try {
+    console.log(`➡️ GET /api/new-quotes/${req.params.id} started`);
+
+    // Measure MongoDB retrieval
+    const dbStart = Date.now();
+
     const q = await Quotes.findById(req.params.id);
-    if (!q) return res.status(404).json({ message: "New Quote not found" });
-    res.json(q);
+
+    const dbTime = Date.now() - dbStart;
+
+    if (!q) {
+      return res.status(404).json({ message: "New Quote not found" });
+    }
+
+    // Measure JSON conversion and response size
+    const jsonStart = Date.now();
+
+    const json = JSON.stringify(q);
+
+    const jsonTime = Date.now() - jsonStart;
+
+    const sizeMB =
+      Buffer.byteLength(json, "utf8") / 1024 / 1024;
+
+    console.log(`✅ MongoDB quote query: ${dbTime}ms`);
+    console.log(`📦 Quote size: ${sizeMB.toFixed(2)} MB`);
+    console.log(`🔄 JSON conversion: ${jsonTime}ms`);
+
+    res.type("application/json").send(json);
+
   } catch (e) {
     console.error("Get new quote error:", e);
-    res.status(500).json({ message: "Failed to fetch new quote" });
+    res.status(500).json({
+      message: "Failed to fetch new quote"
+    });
   }
 });
 
@@ -1387,6 +1509,98 @@ app.get("/api/users", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch users" });
   }
 });
+
+/** Update user by id */
+app.put("/api/users/:id", authenticateToken, async (req, res) => {
+  try {
+    const target = await User.findById(req.params.id)
+    if (!target) return res.status(404).json({ message: "User not found" })
+
+    const actor = await User.findById(req.user.userId)
+    if (!actor) return res.status(401).json({ message: "Unauthorized" })
+
+    const actorRole = String(actor.role || "").toLowerCase()
+    const targetRole = String(target.role || "").toLowerCase()
+
+    if (actorRole !== "superuser" && actorRole !== "admin") {
+      return res.status(403).json({ message: "Forbidden: admin or superuser only" })
+    }
+
+    if (actorRole !== "superuser") {
+      if (targetRole === "superuser") {
+        return res.status(403).json({ message: "Forbidden: cannot update super admins" })
+      }
+      if (targetRole === "admin") {
+        return res.status(403).json({ message: "Forbidden: cannot update other admins" })
+      }
+      const nextRole = String(req.body?.role || target.role || "").toLowerCase()
+      if (nextRole === "superuser") {
+        return res.status(403).json({ message: "Forbidden: cannot assign super admin role" })
+      }
+    }
+
+    const allowedFields = ["firstName", "lastName", "email", "role", "isActive"]
+    const updates = {}
+    for (const key of allowedFields) {
+      if (req.body?.[key] !== undefined) {
+        updates[key] = req.body[key]
+      }
+    }
+
+    if (updates.email !== undefined) updates.email = String(updates.email).toLowerCase().trim()
+    if (updates.role !== undefined) {
+      const normalized = String(updates.role).toLowerCase()
+      if (!["user", "admin", "superuser"].includes(normalized)) {
+        return res.status(400).json({ message: "Invalid role" })
+      }
+      updates.role = normalized
+    }
+
+    const updated = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select("-password")
+
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: actor.email,
+      userName: `${actor.firstName} ${actor.lastName}`,
+      action: "USER_UPDATED",
+      details: `User ${updated?.email} updated by ${actor.email}`,
+      metadata: { targetUserId: target._id, targetUserEmail: target.email, updates },
+      req
+    })
+
+    res.json({ message: "Member updated successfully", user: updated })
+  } catch (e) {
+    console.error("Update user error:", e)
+    res.status(500).json({ message: "Failed to update member" })
+  }
+})
+
+/** Delete user by id */
+app.delete("/api/users/:id", authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password")
+    if (!user) return res.status(404).json({ message: "User not found" })
+
+    const actor = await User.findById(req.user.userId).select("-password")
+
+    await user.deleteOne()
+
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: actor?.email,
+      userName: actor ? `${actor.firstName} ${actor.lastName}` : undefined,
+      action: "USER_DELETED",
+      details: `User ${user.email} deleted`,
+      metadata: { deletedUserId: user._id, deletedUserEmail: user.email },
+      req
+    })
+
+    res.json({ message: "Member deleted successfully", id: req.params.id })
+  } catch (e) {
+    console.error("Delete user error:", e)
+    res.status(500).json({ message: "Failed to delete member" })
+  }
+})
 
 
 // Utility function to fetch quote by ID
@@ -1656,4 +1870,628 @@ app.get("/api/audit-logs/summary", authenticateToken, async (req, res) => {
 });
 
 /* ----------------------------- Start server -------------------------- */
-app.listen(PORT, () => console.log(`Server running on Port ${PORT}`));
+// Server is started via httpServer.listen above for Socket.io support
+
+/* --------------------------- Policy conversions ---------------------- */
+/**
+ * Conversions (policy drafts) are shared across users so that Admins /
+ * Super Admins can review what Advisors submit. Documents are stored as
+ * loose sub-documents; the schema is intentionally permissive.
+ */
+const conversionSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true, index: true },
+    status: { type: String, default: "draft", index: true },
+    initiatedBy: { type: String, default: null, index: true },
+    assignedTo: { type: String, default: null, index: true },
+  },
+  { strict: false, timestamps: true }
+);
+const Conversion =
+  mongoose.models.Conversion || mongoose.model("Conversion", conversionSchema, "conversions");
+
+const isReviewer = (role) => {
+  const r = String(role || "").toLowerCase();
+  return r === "admin" || r === "superuser" || r === "super_admin" || r === "superadmin";
+};
+
+/**
+ * The JWT carries the role that was current at sign-in. If it does not look
+ * like a reviewer we re-read the user, so a promoted Admin is not locked out
+ * of the review queue until they sign in again.
+ */
+const resolveReviewer = async (req) => {
+  if (isReviewer(req.user?.role)) return true;
+  try {
+    const user = await User.findById(req.user.userId).select("role").lean();
+    return isReviewer(user?.role);
+  } catch {
+    return false;
+  }
+};
+
+const resolveUserRole = async (req) => {
+  try {
+    const user = await User.findById(req.user.userId).select("role").lean();
+    return String(user?.role || req.user?.role || "").toLowerCase();
+  } catch {
+    return String(req.user?.role || "").toLowerCase();
+  }
+};
+
+// List conversions visible to the caller.
+// Reviewers see every conversion that left "draft"; advisors see their own.
+app.get("/api/conversions", authenticateToken, async (req, res) => {
+  try {
+    const uid = String(req.user.userId);
+    // Approved conversions are client records: everyone can see those so the
+    // Clients directory is the same for all users.
+    const approvedStatuses = ["approved", "APPROVED", "active", "ACTIVE"];
+    const draftStatuses = ["draft", "DRAFT"];
+    const reviewer = await resolveReviewer(req);
+    const query = reviewer
+      ? {
+          $or: [
+            { status: { $nin: draftStatuses } },
+            { initiatedBy: uid },
+            { assignedTo: uid },
+          ],
+        }
+      : { $or: [{ initiatedBy: uid }, { assignedTo: uid }, { status: { $in: approvedStatuses } }] };
+    const items = await Conversion.find(query).sort({ updatedAt: -1 }).lean();
+    res.json(items.map(({ _id, __v, ...rest }) => rest));
+  } catch (e) {
+    console.error("List conversions error:", e);
+    res.status(500).json({ message: "Failed to fetch conversions" });
+  }
+});
+
+/* --------------------------- Notifications --------------------------- */
+/**
+ * Notifications used to live only in the recipient's browser, delivered over
+ * the socket — so a reviewer who was offline (or on another machine) never
+ * learned about an assignment. They are shared records now, read back from
+ * the API, which keeps the bell and the Conversions list in agreement.
+ */
+const notificationSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true, index: true },
+    draftId: { type: String, index: true },
+    kind: { type: String, default: "assignment" },
+    status: { type: String, default: "pending", index: true },
+    recipientId: { type: String, default: null, index: true },
+    recipientName: { type: String, default: null },
+    advisorName: { type: String, default: null },
+    clientName: { type: String, default: null },
+    policyType: { type: String, default: null },
+    reason: { type: String, default: null },
+    read: { type: Boolean, default: false },
+    createdAt: { type: String, default: () => new Date().toISOString() },
+  },
+  { strict: false }
+);
+const Notification =
+  mongoose.models.AppNotification ||
+  mongoose.model("AppNotification", notificationSchema, "notifications");
+
+const cleanNotification = ({ _id, __v, ...rest }) => rest;
+
+// Super Admins see everything; everyone else sees what is addressed to them.
+app.get("/api/notifications", authenticateToken, async (req, res) => {
+  try {
+    const uid = String(req.user.userId);
+    const role = await resolveUserRole(req);
+    const isSuper = role === "superuser" || role === "super_admin" || role === "superadmin";
+    const query = isSuper ? {} : { recipientId: uid };
+    const items = await Notification.find(query).sort({ createdAt: -1 }).limit(200).lean();
+    res.json(items.map(cleanNotification));
+  } catch (e) {
+    console.error("List notifications error:", e);
+    res.status(500).json({ message: "Failed to fetch notifications" });
+  }
+});
+
+app.post("/api/notifications", authenticateToken, async (req, res) => {
+  try {
+    const now = new Date().toISOString();
+    const payload = {
+      ...req.body,
+      id: req.body?.id || `nt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      recipientId: req.body?.recipientId ? String(req.body.recipientId) : null,
+      read: false,
+      createdAt: now,
+    };
+    delete payload._id;
+    const saved = await Notification.findOneAndUpdate(
+      { id: payload.id },
+      { $set: payload },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    ).lean();
+    res.json(cleanNotification(saved));
+  } catch (e) {
+    console.error("Create notification error:", e);
+    res.status(500).json({ message: "Failed to create notification" });
+  }
+});
+
+app.patch("/api/notifications/read", authenticateToken, async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids : null;
+    const query = ids ? { id: { $in: ids } } : { recipientId: String(req.user.userId) };
+    await Notification.updateMany(query, { $set: { read: true } });
+    res.json({ message: "Notifications marked read" });
+  } catch (e) {
+    console.error("Mark notifications read error:", e);
+    res.status(500).json({ message: "Failed to update notifications" });
+  }
+});
+
+// Resolve (or supersede) every pending notification attached to a conversion.
+app.patch("/api/notifications/draft/:draftId", authenticateToken, async (req, res) => {
+  try {
+    const status = req.body?.status || "superseded";
+    await Notification.updateMany(
+      { draftId: req.params.draftId, status: "pending" },
+      {
+        $set: {
+          status,
+          reason: req.body?.reason ?? null,
+          ...(status === "superseded" ? {} : { read: false }),
+        },
+      }
+    );
+    res.json({ message: "Notifications updated" });
+  } catch (e) {
+    console.error("Resolve notifications error:", e);
+    res.status(500).json({ message: "Failed to update notifications" });
+  }
+});
+
+
+
+// Upsert a conversion (create draft, autosave, submit, approve, reject...)
+app.put("/api/conversions/:id", authenticateToken, async (req, res) => {
+  try {
+    const payload = { ...req.body, id: req.params.id };
+    delete payload._id;
+    const saved = await Conversion.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: payload },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    ).lean();
+    const { _id, __v, ...rest } = saved;
+    res.json(rest);
+  } catch (e) {
+    console.error("Save conversion error:", e);
+    res.status(500).json({ message: "Failed to save conversion" });
+  }
+});
+
+// Atomically submit an existing conversion after its latest draft save has
+// completed. The client waits for this response before notifying the reviewer.
+app.patch("/api/conversions/:id/submit", authenticateToken, async (req, res) => {
+  try {
+    const id = req.params.id;
+    const uid = String(req.user.userId);
+    const conversion = await Conversion.findOne({ id });
+    if (!conversion) return res.status(404).json({ message: "Conversion not found" });
+    if (String(conversion.initiatedBy || "") !== uid) {
+      return res.status(403).json({ message: "Only the initiating advisor can submit this conversion" });
+    }
+
+    const now = new Date().toISOString();
+    conversion.set({
+      status: "pending_approval",
+      assignedTo: req.body?.assignedTo || null,
+      assignedToName: req.body?.assignedToName || null,
+      assignedAt: req.body?.assignedAt || now,
+      submittedAt: req.body?.submittedAt || now,
+      attempt: Number(req.body?.attempt || conversion.attempt || 1),
+      rejectedBy: null,
+      rejectedByName: null,
+      rejectedAt: null,
+      rejectionReason: null,
+      reviewNote: null,
+      reviewedBy: null,
+      reviewedByName: null,
+      reviewedAt: null,
+      updatedAt: now,
+    });
+    const saved = await conversion.save();
+    const { _id, __v, ...rest } = saved.toObject();
+    res.json(rest);
+  } catch (e) {
+    console.error("Submit conversion error:", e);
+    res.status(500).json({ message: "Failed to submit conversion" });
+  }
+});
+
+app.delete("/api/conversions/:id", authenticateToken, async (req, res) => {
+  try {
+    await Conversion.deleteOne({ id: req.params.id });
+    res.json({ message: "Conversion deleted", id: req.params.id });
+  } catch (e) {
+    console.error("Delete conversion error:", e);
+    res.status(500).json({ message: "Failed to delete conversion" });
+  }
+});
+
+/* --------------------------- Policy workflow ---------------------- */
+const policyStatusEnum = ["DRAFT", "PENDING_APPROVAL", "APPROVED", "ACTIVE", "RETURNED"];
+
+const policySchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true, index: true },
+    status: { type: String, enum: policyStatusEnum, default: "DRAFT", index: true },
+    clientId: { type: String, index: true },
+    createdBy: { type: String, index: true },
+    initiatedBy: { type: String, default: null, index: true },
+    initiatedByName: { type: String, default: null },
+    initiatedAt: { type: Date, default: null },
+    assignedTo: { type: String, default: null, index: true },
+    assignedToName: { type: String, default: null },
+    assignedAt: { type: Date, default: null },
+    approvedBy: { type: String, default: null },
+    approvedByName: { type: String, default: null },
+    submittedAt: { type: Date, default: null },
+    approvedAt: { type: Date, default: null },
+    productType: { type: String },
+    quoteId: { type: String, index: true },
+    premium: { type: Number },
+    form: { type: mongoose.Schema.Types.Mixed, default: {} },
+    step: { type: Number, default: 0 },
+    optionLabel: { type: String },
+    returnReason: { type: String, default: null },
+    reviewNote: { type: String, default: null },
+  },
+  { strict: false, timestamps: true }
+);
+const Policy =
+  mongoose.models.Policy || mongoose.model("Policy", policySchema, "policies");
+
+const policyActor = (req) => ({
+  id: String(req.user?.userId || ""),
+  name: req.user?.userName || req.user?.name || req.user?.email || null,
+});
+
+const resolvedPolicyActor = async (req) => {
+  const actor = policyActor(req);
+  if (actor.name) return actor;
+  const user = await User.findById(actor.id).select("firstName lastName email").lean();
+  return {
+    id: actor.id,
+    name: user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email : null,
+  };
+};
+
+const cleanPolicy = ({ _id, __v, ...rest }) => ({
+  ...rest,
+  initiatedBy: rest.initiatedBy || rest.createdBy || null,
+});
+
+const policyError = (res, e, fallback = "Policy operation failed") =>
+  res.status(500).json({ message: fallback, detail: e?.message });
+
+// POST /api/policies — Create policy in DRAFT status from quote
+app.post("/api/policies", authenticateToken, async (req, res) => {
+  try {
+    const { quoteId, productType, form, step, optionLabel, premium, clientId } = req.body || {};
+    const actor = await resolvedPolicyActor(req);
+    const now = new Date();
+    const id = `POL-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+    const policy = await Policy.create({
+      id,
+      status: "DRAFT",
+      createdBy: actor.id,
+      initiatedBy: actor.id,
+      initiatedByName: actor.name,
+      initiatedAt: now,
+      quoteId: quoteId || null,
+      productType: productType || null,
+      form: form || {},
+      step: step || 0,
+      optionLabel: optionLabel || null,
+      premium: premium || null,
+      clientId: clientId || null,
+    });
+    res.status(201).json(cleanPolicy(policy.toObject()));
+  } catch (e) {
+    console.error("Create policy error:", e);
+    policyError(res, e, "Failed to create policy");
+  }
+});
+
+// GET /api/policy-records/:id — Load one shared conversion for its owner/reviewer.
+// This intentionally uses a distinct prefix so it cannot shadow /api/policies/pipeline.
+app.get("/api/policy-records/:id", authenticateToken, async (req, res) => {
+  try {
+    const policy = await Policy.findOne({ id: req.params.id }).lean();
+    if (!policy) return res.status(404).json({ message: "Policy not found" });
+    const uid = String(req.user.userId);
+    const reviewer = await resolveReviewer(req);
+    const role = await resolveUserRole(req);
+    const superAdmin = role === "superuser" || role === "super_admin" || role === "superadmin";
+    const owner = String(policy.initiatedBy || policy.createdBy || "") === uid;
+    const assignee = String(policy.assignedTo || "") === uid;
+    if (!owner && !assignee && !superAdmin && !(reviewer && ["APPROVED", "ACTIVE"].includes(policy.status))) {
+      return res.status(403).json({ message: "You do not have access to this conversion" });
+    }
+    res.json(cleanPolicy(policy));
+  } catch (e) {
+    console.error("Get policy error:", e);
+    policyError(res, e, "Failed to fetch policy");
+  }
+});
+
+// PATCH /api/policies/:id — Edit policy (only if DRAFT/RETURNED and user is creator)
+app.patch("/api/policies/:id", authenticateToken, async (req, res) => {
+  try {
+    const policy = await Policy.findOne({ id: req.params.id }).lean();
+    if (!policy) return res.status(404).json({ message: "Policy not found" });
+    if (policy.status !== "DRAFT" && policy.status !== "RETURNED") return res.status(400).json({ message: "Only DRAFT or RETURNED policies can be edited" });
+    const actor = policyActor(req);
+    if (policy.createdBy && String(policy.createdBy) !== String(actor.id)) {
+      return res.status(403).json({ message: "Only the creator can edit this policy" });
+    }
+    const allowed = ["form", "step", "optionLabel", "premium", "productType", "clientId"];
+    const update = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) update[key] = req.body[key];
+    }
+    const updated = await Policy.findOneAndUpdate({ id: req.params.id }, { $set: update }, { new: true }).lean();
+    const { _id, __v, ...rest } = updated;
+    res.json(rest);
+  } catch (e) {
+    console.error("Update policy error:", e);
+    policyError(res, e, "Failed to update policy");
+  }
+});
+
+// PATCH /api/policies/:id/submit — Change status DRAFT/RETURNED → PENDING_APPROVAL
+app.patch("/api/policies/:id/submit", authenticateToken, async (req, res) => {
+  try {
+    const policy = await Policy.findOne({ id: req.params.id }).lean();
+    if (!policy) return res.status(404).json({ message: "Policy not found" });
+    if (policy.status !== "DRAFT" && policy.status !== "RETURNED") return res.status(400).json({ message: "Only DRAFT or RETURNED policies can be submitted" });
+    const actor = await resolvedPolicyActor(req);
+    if ((policy.initiatedBy || policy.createdBy) && String(policy.initiatedBy || policy.createdBy) !== String(actor.id)) {
+      return res.status(403).json({ message: "Only the creator can submit this policy" });
+    }
+    if (!req.body?.assignedTo) return res.status(400).json({ message: "A reviewer is required" });
+    const update = {
+      status: "PENDING_APPROVAL",
+      submittedAt: new Date(),
+      initiatedBy: policy.initiatedBy || policy.createdBy || actor.id,
+      initiatedByName: policy.initiatedByName || actor.name,
+      initiatedAt: policy.initiatedAt || policy.createdAt || new Date(),
+      returnReason: null,
+      reviewNote: null,
+    };
+    if (req.body?.assignedTo) update.assignedTo = String(req.body.assignedTo);
+    if (req.body?.assignedToName) update.assignedToName = String(req.body.assignedToName);
+    if (req.body?.assignedTo) update.assignedAt = new Date();
+    const updated = await Policy.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: update },
+      { new: true }
+    ).lean();
+    const notificationId = `assignment_${updated.id}_${Date.now()}`;
+    await Notification.findOneAndUpdate(
+      { id: notificationId },
+      {
+        $set: {
+          id: notificationId,
+          draftId: updated.id,
+          kind: "assignment",
+          status: "pending",
+          recipientId: updated.assignedTo,
+          recipientName: updated.assignedToName,
+          advisorName: updated.initiatedByName || actor.name,
+          clientName: updated.form?.fullName || updated.form?.clientName || null,
+          policyType: updated.form?.productName || updated.optionLabel || updated.productType || null,
+          read: false,
+          createdAt: new Date().toISOString(),
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    res.json({ ...cleanPolicy(updated), notificationId });
+  } catch (e) {
+    console.error("Submit policy error:", e);
+    policyError(res, e, "Failed to submit policy");
+  }
+});
+
+// PATCH /api/policies/:id/reassign — Move a pending conversion to another reviewer.
+app.patch("/api/policies/:id/reassign", authenticateToken, async (req, res) => {
+  try {
+    if (!(await resolveReviewer(req))) return res.status(403).json({ message: "Only reviewers can reassign conversions" });
+    const policy = await Policy.findOne({ id: req.params.id }).lean();
+    if (!policy) return res.status(404).json({ message: "Policy not found" });
+    if (policy.status !== "PENDING_APPROVAL") return res.status(400).json({ message: "Only pending conversions can be reassigned" });
+    const actor = await resolvedPolicyActor(req);
+    const role = String((await User.findById(actor.id).select("role").lean())?.role || req.user.role || "").toLowerCase();
+    const isSuper = role === "superuser" || role === "super_admin" || role === "superadmin";
+    if (!isSuper && String(policy.assignedTo || "") !== actor.id) {
+      return res.status(403).json({ message: "This conversion is assigned to another reviewer" });
+    }
+    const assignedTo = req.body?.assignedTo ? String(req.body.assignedTo) : null;
+    if (!assignedTo) return res.status(400).json({ message: "A reviewer is required" });
+    const now = new Date();
+    const entry = {
+      at: now.toISOString(),
+      byId: actor.id,
+      byName: actor.name,
+      fromId: policy.assignedTo || null,
+      fromName: policy.assignedToName || null,
+      toId: assignedTo,
+      toName: req.body?.assignedToName || null,
+    };
+    const updated = await Policy.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: { assignedTo, assignedToName: entry.toName, assignedAt: now }, $push: { reassignments: entry } },
+      { new: true }
+    ).lean();
+    await Notification.updateMany({ draftId: req.params.id, status: "pending" }, { $set: { status: "superseded" } });
+    res.json(cleanPolicy(updated));
+  } catch (e) {
+    console.error("Reassign policy error:", e);
+    policyError(res, e, "Failed to reassign policy");
+  }
+});
+
+// PATCH /api/policies/:id/approve — Change status PENDING_APPROVAL → APPROVED (admin/super admin only)
+app.patch("/api/policies/:id/approve", authenticateToken, async (req, res) => {
+  try {
+    if (!(await resolveReviewer(req))) return res.status(403).json({ message: "Only admins can approve policies" });
+    const policy = await Policy.findOne({ id: req.params.id }).lean();
+    if (!policy) return res.status(404).json({ message: "Policy not found" });
+    if (policy.status !== "PENDING_APPROVAL") return res.status(400).json({ message: "Only PENDING_APPROVAL policies can be approved" });
+    const actor = await resolvedPolicyActor(req);
+    const role = String((await User.findById(actor.id).select("role").lean())?.role || req.user.role || "").toLowerCase();
+    const isSuper = role === "superuser" || role === "super_admin" || role === "superadmin";
+    if (!isSuper && String(policy.assignedTo || "") !== actor.id) {
+      return res.status(403).json({ message: "This conversion is assigned to another reviewer" });
+    }
+    if (!isSuper && String(policy.initiatedBy || policy.createdBy || "") === actor.id) {
+      return res.status(403).json({ message: "Admins cannot approve their own conversions" });
+    }
+    const fullName = String(policy.form?.fullName || "").trim();
+    const idNumber = String(policy.form?.idNumber || "").trim();
+    if (!fullName || !idNumber) {
+      return res.status(400).json({ message: "Client name and ID number are required before approval" });
+    }
+    const normalizedIdNumber = String(idNumber).trim();
+    let client = await Client.findOne({ idNumber: normalizedIdNumber });
+    if (!client) {
+      const clientNumber = `ELC-${new Date().getFullYear()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+      client = await Client.create({
+        clientNumber,
+        fullName,
+        idNumber: normalizedIdNumber,
+        email: policy.form?.email || null,
+        contactNumber: policy.form?.contactNumber || null,
+        dateOfBirth: policy.form?.dateOfBirth || null,
+        status: "ACTIVE",
+        createdFromPolicy: policy.id,
+        createdFromQuote: policy.quoteId || null,
+      });
+    }
+    const updated = await Policy.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: { status: "APPROVED", approvedBy: actor.id, approvedByName: actor.name, approvedAt: new Date(), reviewedBy: actor.id, reviewedByName: actor.name, reviewedAt: new Date(), reviewNote: req.body?.note || null, clientId: client._id.toString() } },
+      { new: true }
+    ).lean();
+    await Notification.updateMany({ draftId: req.params.id, status: "pending" }, { $set: { status: "approved", read: false, reason: req.body?.note || null } });
+    res.json(cleanPolicy(updated));
+  } catch (e) {
+    console.error("Approve policy error:", e);
+    policyError(res, e, "Failed to approve policy");
+  }
+});
+
+// PATCH /api/policies/:id/return — Change status PENDING_APPROVAL → RETURNED with reason
+app.patch("/api/policies/:id/return", authenticateToken, async (req, res) => {
+  try {
+    if (!(await resolveReviewer(req))) return res.status(403).json({ message: "Only admins can return policies" });
+    const policy = await Policy.findOne({ id: req.params.id }).lean();
+    if (!policy) return res.status(404).json({ message: "Policy not found" });
+    if (policy.status !== "PENDING_APPROVAL") return res.status(400).json({ message: "Only PENDING_APPROVAL policies can be returned" });
+    const reason = String(req.body?.reason || "").trim();
+    if (!reason) return res.status(400).json({ message: "Return reason is required" });
+    const actor = await resolvedPolicyActor(req);
+    const role = String((await User.findById(actor.id).select("role").lean())?.role || req.user.role || "").toLowerCase();
+    const isSuper = role === "superuser" || role === "super_admin" || role === "superadmin";
+    if (!isSuper && String(policy.assignedTo || "") !== actor.id) {
+      return res.status(403).json({ message: "This conversion is assigned to another reviewer" });
+    }
+    const updated = await Policy.findOneAndUpdate(
+      { id: req.params.id },
+      { $set: { status: "RETURNED", returnReason: reason, rejectionReason: reason, rejectedBy: actor.id, rejectedByName: actor.name, rejectedAt: new Date(), reviewedBy: actor.id, reviewedByName: actor.name, reviewedAt: new Date(), reviewNote: reason } },
+      { new: true }
+    ).lean();
+    await Notification.updateMany({ draftId: req.params.id, status: "pending" }, { $set: { status: "rejected", read: false, reason } });
+    res.json(cleanPolicy(updated));
+  } catch (e) {
+    console.error("Return policy error:", e);
+    policyError(res, e, "Failed to return policy");
+  }
+});
+
+// GET /api/policies/pipeline — Shared conversion workspace, scoped by role.
+app.get("/api/policies/pipeline", authenticateToken, async (req, res) => {
+  try {
+    const uid = String(req.user.userId);
+    const role = await resolveUserRole(req);
+    const isSuper = role === "superuser" || role === "super_admin" || role === "superadmin";
+    const statuses = ["DRAFT", "PENDING_APPROVAL", "APPROVED", "ACTIVE"];
+    const ownership = [{ initiatedBy: uid }, { createdBy: uid }];
+    const query = isSuper
+      ? { status: { $in: statuses } }
+      : role === "admin"
+        ? { status: { $in: statuses }, $or: [...ownership, { assignedTo: uid }, { status: { $in: ["APPROVED", "ACTIVE"] } }] }
+        : { status: { $in: statuses }, $or: [...ownership, { status: { $in: ["APPROVED", "ACTIVE"] } }] };
+    const items = await Policy.find(query).sort({ updatedAt: -1 }).lean();
+    res.json(items.map(cleanPolicy));
+  } catch (e) {
+    console.error("Pipeline policies error:", e);
+    res.status(500).json({ message: "Failed to fetch pipeline policies" });
+  }
+});
+
+// GET /api/dashboard/stats — Lightweight dashboard counts
+app.get("/api/dashboard/stats", authenticateToken, async (_req, res) => {
+  try {
+    const [totalQuotations, convertedQuoteIds, activeClients, activePolicies] = await Promise.all([
+      Quote.countDocuments(),
+      Policy.distinct("quoteId", { status: { $in: ["APPROVED", "ACTIVE"] }, quoteId: { $nin: [null, ""] } }),
+      Client.countDocuments({ status: "ACTIVE" }),
+      Policy.countDocuments({ status: { $in: ["APPROVED", "ACTIVE"] } }),
+    ])
+
+    res.json({
+      totalQuotations,
+      convertedQuotations: convertedQuoteIds.length,
+      activeClients,
+      activePolicies,
+    });
+  } catch (e) {
+    console.error("Dashboard stats error:", e);
+    res.status(500).json({ message: "Failed to fetch dashboard stats" });
+  }
+});
+
+// GET /api/clients/:id/policies — Fetch approved/active policies for a client
+app.get("/api/clients/:id/policies", authenticateToken, async (req, res) => {
+  try {
+    const clientId = req.params.id;
+    const items = await Policy.find({ clientId, status: { $in: ["APPROVED", "ACTIVE"] } }).sort({ approvedAt: -1 }).lean();
+    res.json(items.map(({ _id, __v, ...rest }) => rest));
+  } catch (e) {
+    console.error("Client policies error:", e);
+    res.status(500).json({ message: "Failed to fetch client policies" });
+  }
+});
+
+// GET /api/clients — Fetch all clients
+app.get("/api/clients", authenticateToken, async (_req, res) => {
+  try {
+    const clients = await Client.find().sort({ createdAt: -1 }).lean();
+    res.json(clients);
+  } catch (e) {
+    console.error("Fetch clients error:", e);
+    res.status(500).json({ message: "Failed to fetch clients" });
+  }
+});
+
+// GET /api/clients/:id — Fetch a single client
+app.get("/api/clients/:id", authenticateToken, async (req, res) => {
+  try {
+    const client = await Client.findById(req.params.id).lean();
+    if (!client) return res.status(404).json({ message: "Client not found" });
+    res.json(client);
+  } catch (e) {
+    console.error("Fetch client error:", e);
+    res.status(500).json({ message: "Failed to fetch client" });
+  }
+});
