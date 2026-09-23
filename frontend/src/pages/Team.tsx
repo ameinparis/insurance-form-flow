@@ -24,6 +24,8 @@ import {
 import { PageLoader } from "@/components/PageLoader"
 import { toast } from "sonner"
 import { DeleteMemberDialog } from "@/components/team/DeleteMemberDialog"
+import { normalizeRole, roleLabel } from "@/lib/permissions"
+import { useAuth } from "@/lib/authlibrary"
 
 interface TeamMember {
   id: string
@@ -39,11 +41,30 @@ interface TeamMember {
 }
 
 const Team = () => {
+  const { userRole, permissions } = useAuth()
+  const canManageUsers = permissions.canManageUsers
+  const canManageSuperAdmins = permissions.canManageSuperAdmins
+
+  const canEditMember = (member: TeamMember) => {
+    const canEdit =
+      canManageUsers &&
+      (canManageSuperAdmins || normalizeRole(member.role) !== "super_admin")
+
+    if (!canEdit) return false
+
+    if (
+      normalizeRole(userRole || "") !== "super_admin" &&
+      normalizeRole(member.role) === "admin"
+    ) {
+      return false
+    }
+
+    return true
+  }
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddUserModal, setShowAddUserModal] = useState(false)
   const [showEditUserModal, setShowEditUserModal] = useState(false)
-  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
   const [editingUser, setEditingUser] = useState<TeamMember | null>(null)
   const [addLoading, setAddLoading] = useState(false)
   const [editLoading, setEditLoading] = useState(false)
@@ -127,7 +148,7 @@ const Team = () => {
     setAddLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.post("https://njs.exclusivelife.co.bw/api/users/register", newUser, {
+      await axios.post("http://localhost:5002/api/users/register", newUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member added successfully")
@@ -149,7 +170,7 @@ const Team = () => {
     setEditLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.put(`https://njs.exclusivelife.co.bw/api/users/${editingUser.id}`, editUser, {
+      await axios.put(`http://localhost:5002/api/users/${editingUser.id}`, editUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member updated successfully")
@@ -182,7 +203,7 @@ const Team = () => {
     setDeleteLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.delete(`https://njs.exclusivelife.co.bw/api/users/${deletingMember.id}`, {
+      await axios.delete(`http://localhost:5002/api/users/${deletingMember.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member deleted successfully")
@@ -200,7 +221,7 @@ const Team = () => {
   const handleToggleStatus = async (member: TeamMember) => {
     try {
       const token = localStorage.getItem("token")
-      await axios.put(`https://njs.exclusivelife.co.bw/api/users/${member.id}`, {
+      await axios.put(`http://localhost:5002/api/users/${member.id}`, {
         firstName: member.firstName,
         lastName: member.lastName,
         email: member.email,
@@ -221,7 +242,7 @@ const Team = () => {
     try {
       setLoading(true)
       const token = localStorage.getItem("token")
-      const res = await axios.get("https://njs.exclusivelife.co.bw/api/users", {
+      const res = await axios.get("http://localhost:5002/api/users", {
         headers: { Authorization: `Bearer ${token}` }
       })
       const pastelColors = [
@@ -248,12 +269,6 @@ const Team = () => {
       }))
       setTeamMembers(mapped)
 
-      // Check if current user is superuser
-      const currentEmail = localStorage.getItem("email")
-      const currentMember = mapped.find((m: TeamMember) => m.email === currentEmail)
-      if (currentMember) {
-        setCurrentUserRole(currentMember.role)
-      }
     } catch (err) {
       console.error("Failed to fetch users", err)
     } finally {
@@ -294,217 +309,226 @@ const Team = () => {
       <div className="px-6 pb-6 space-y-6">
 
 
-      {loading ? (
-        <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0"><CardContent className="py-6"><PageLoader /></CardContent></Card>
-      ) : teamMembers.length === 0 ? (
-        <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
-          <CardContent className="text-center py-12">
-            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No team members yet</h3>
-            <p className="text-muted-foreground mb-4">Add your first team member to get started.</p>
-            {currentUserRole?.toLowerCase() === "superuser" && (
-              <Button onClick={() => setShowAddUserModal(true)}>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add First Member
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="bg-gray-50 dark:bg-slate-800 rounded-3xl p-6">
-          <div className="overflow-x-auto">
-            <Table className="border-separate border-spacing-y-3 w-full">
-              <TableHeader className="sticky top-0 z-10">
-                <TableRow className="bg-gray-100 dark:bg-slate-700/50 border-0 rounded-full">
-                  <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs rounded-l-full">
-                    Member
-                  </TableHead>
-                  <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
-                    Email
-                  </TableHead>
-                  <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
-                    Role
-                  </TableHead>
-                  <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
-                    Status
-                  </TableHead>
-                  <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs text-right rounded-r-full">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
+        {loading ? (
+          <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0"><CardContent className="py-6"><PageLoader /></CardContent></Card>
+        ) : teamMembers.length === 0 ? (
+          <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
+            <CardContent className="text-center py-12">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No team members yet</h3>
+              <p className="text-muted-foreground mb-4">Add your first team member to get started.</p>
+              {permissions.canManageUsers && (
+                <Button onClick={() => setShowAddUserModal(true)}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add First Member
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="bg-gray-50 dark:bg-slate-800 rounded-3xl p-6">
+            <div className="overflow-x-auto">
+              <Table className="border-separate border-spacing-y-3 w-full">
+                <TableHeader className="sticky top-0 z-10">
+                  <TableRow className="bg-gray-100 dark:bg-slate-700/50 border-0 rounded-full">
+                    <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs rounded-l-full">
+                      Member
+                    </TableHead>
+                    <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
+                      Email
+                    </TableHead>
+                    <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
+                      Role
+                    </TableHead>
+                    <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
+                      Status
+                    </TableHead>
+                    <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs text-right rounded-r-full">
+                      Actions
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
 
-              <TableBody>
-                {teamMembers.map((member) => (
-                  <TableRow
-                    key={member.id}
-                    className="group bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm transition-all duration-200 my-2 overflow-hidden"
-                  >
-                    <TableCell className="py-5 px-6 rounded-l-xl group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
-                      <div className="flex items-center gap-3">
-                        <Avatar className={`h-10 w-10 border-2 ${member.borderColor}`}>
-                          <AvatarFallback className={`${member.bgColor} font-semibold`}>
-                            {member.initials}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">{member.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
-                      {member.email}
-                    </TableCell>
-                    <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
-                      <Badge
-                        variant="outline"
-                        className={`rounded-full px-2 py-1.5 text-xs font-medium border capitalize ${getRoleBadgeClass(member.role)}`}
-                      >
-                        {member.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
-                      {currentUserRole?.toLowerCase() === "superuser" ? (
-                        <Badge
-                          variant="outline"
-                          className={`rounded-full px-2 py-1.5 text-xs font-medium border cursor-pointer transition-colors ${getStatusBadgeClass(member.isActive !== false)}`}
-                          onClick={() => handleToggleStatus(member)}
-                          title="Click to toggle status"
-                        >
-                          {member.isActive !== false ? "Active" : "Inactive"}
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className={`rounded-full px-2 py-1.5 text-xs font-medium border ${getStatusBadgeClass(member.isActive !== false)}`}
-                        >
-                          {member.isActive !== false ? "Active" : "Inactive"}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="py-5 px-6 text-right rounded-r-xl group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => openEditModal(member)}
-                            title="Edit User"
-                          >
-                            <Pencil className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => setDeletingMember(member)}
-                            title="Delete User"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                <TableBody>
+                  {teamMembers.map((member) => (
+                    <TableRow
+                      key={member.id}
+                      className="group bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm transition-all duration-200 my-2 overflow-hidden"
+                    >
+                      <TableCell className="py-5 px-6 rounded-l-xl group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
+                        <div className="flex items-center gap-3">
+                          <Avatar className={`h-10 w-10 border-2 ${member.borderColor}`}>
+                            <AvatarFallback className={`${member.bgColor} font-semibold`}>
+                              {member.initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-gray-700 dark:text-gray-300 font-medium">{member.name}</span>
                         </div>
                       </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      )}
+                      <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
+                        {member.email}
+                      </TableCell>
+                      <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
+                        <Badge
+                          variant="outline"
+                          className={`rounded-full px-2 py-1.5 text-xs font-medium border capitalize ${getRoleBadgeClass(member.role)}`}
+                        >
+                          {roleLabel(member.role)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
+                        {canEditMember(member) ? (
+                          <Badge
+                            variant="outline"
+                            className={`rounded-full px-2 py-1.5 text-xs font-medium border cursor-pointer transition-colors ${getStatusBadgeClass(member.isActive !== false)}`}
+                            onClick={() => handleToggleStatus(member)}
+                            title="Click to toggle status"
+                          >
+                            {member.isActive !== false ? "Active" : "Inactive"}
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className={`rounded-full px-2 py-1.5 text-xs font-medium border ${getStatusBadgeClass(member.isActive !== false)}`}
+                          >
+                            {member.isActive !== false ? "Active" : "Inactive"}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-5 px-6 text-right rounded-r-xl group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
+                        <div className="flex items-center justify-end gap-1">
+                          {canEditMember(member) ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-transparent"
+                                onClick={() => openEditModal(member)}
+                                title="Edit User"
+                              >
+                                <Pencil className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                              </Button>
 
-      {/* Add User Dialog */}
-      <Dialog open={showAddUserModal} onOpenChange={setShowAddUserModal}>
-        <DialogContent className="bg-white dark:bg-slate-900 rounded-3xl max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add New Member</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>First Name</Label>
-                <Input name="firstName" value={newUser.firstName} onChange={handleInputChange} className="mt-1" />
-              </div>
-              <div>
-                <Label>Last Name</Label>
-                <Input name="lastName" value={newUser.lastName} onChange={handleInputChange} className="mt-1" />
-              </div>
-            </div>
-            <div>
-              <Label>Email</Label>
-              <Input name="email" type="email" value={newUser.email} onChange={handleInputChange} className="mt-1" />
-            </div>
-            <div>
-              <Label>Role</Label>
-              <Select value={newUser.role} onValueChange={handleRoleChange}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="superuser">Superuser</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="outline" onClick={() => setShowAddUserModal(false)} disabled={addLoading}>Cancel</Button>
-              <Button onClick={handleAddUser} disabled={addLoading}>
-                {addLoading ? "Adding..." : "Add Member"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit User Dialog */}
-      <Dialog open={showEditUserModal} onOpenChange={setShowEditUserModal}>
-        <DialogContent className="bg-white dark:bg-slate-900 rounded-3xl max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Member</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>First Name</Label>
-                <Input name="firstName" value={editUser.firstName} onChange={handleEditInputChange} className="mt-1" />
-              </div>
-              <div>
-                <Label>Last Name</Label>
-                <Input name="lastName" value={editUser.lastName} onChange={handleEditInputChange} className="mt-1" />
-              </div>
-            </div>
-            <div>
-              <Label>Email</Label>
-              <Input name="email" type="email" value={editUser.email} onChange={handleEditInputChange} className="mt-1" />
-            </div>
-            <div>
-              <Label>Role</Label>
-              <Select value={editUser.role} onValueChange={handleEditRoleChange}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="superuser">Superuser</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="outline" onClick={() => setShowEditUserModal(false)} disabled={editLoading}>Cancel</Button>
-              <Button onClick={handleEditUser} disabled={editLoading}>
-                {editLoading ? "Saving..." : "Save Changes"}
-              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 hover:bg-transparent"
+                                onClick={() => setDeletingMember(member)}
+                                title="Delete User"
+                              >
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              {normalizeRole(member.role) === "super_admin" ? "Super Admin only" : "—"}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        )}
 
-      {/* Delete Confirmation Dialog */}
-      <DeleteMemberDialog
-        open={!!deletingMember}
-        onOpenChange={(open) => { if (!open) setDeletingMember(null) }}
-        memberName={deletingMember?.name || ""}
-        memberEmail={deletingMember?.email || ""}
-        onConfirm={handleDeleteUser}
-        loading={deleteLoading}
-      />
+        {/* Add User Dialog */}
+        <Dialog open={showAddUserModal} onOpenChange={setShowAddUserModal}>
+          <DialogContent className="bg-white dark:bg-slate-900 rounded-3xl max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add New Member</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>First Name</Label>
+                  <Input name="firstName" value={newUser.firstName} onChange={handleInputChange} className="mt-1" />
+                </div>
+                <div>
+                  <Label>Last Name</Label>
+                  <Input name="lastName" value={newUser.lastName} onChange={handleInputChange} className="mt-1" />
+                </div>
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input name="email" type="email" value={newUser.email} onChange={handleInputChange} className="mt-1" />
+              </div>
+              <div>
+                <Label>Role</Label>
+                <Select value={newUser.role} onValueChange={handleRoleChange}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="superuser">Superuser</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setShowAddUserModal(false)} disabled={addLoading}>Cancel</Button>
+                <Button onClick={handleAddUser} disabled={addLoading}>
+                  {addLoading ? "Adding..." : "Add Member"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit User Dialog */}
+        <Dialog open={showEditUserModal} onOpenChange={setShowEditUserModal}>
+          <DialogContent className="bg-white dark:bg-slate-900 rounded-3xl max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Member</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>First Name</Label>
+                  <Input name="firstName" value={editUser.firstName} onChange={handleEditInputChange} className="mt-1" />
+                </div>
+                <div>
+                  <Label>Last Name</Label>
+                  <Input name="lastName" value={editUser.lastName} onChange={handleEditInputChange} className="mt-1" />
+                </div>
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input name="email" type="email" value={editUser.email} onChange={handleEditInputChange} className="mt-1" />
+              </div>
+              <div>
+                <Label>Role</Label>
+                <Select value={editUser.role} onValueChange={handleEditRoleChange}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="superuser">Superuser</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setShowEditUserModal(false)} disabled={editLoading}>Cancel</Button>
+                <Button onClick={handleEditUser} disabled={editLoading}>
+                  {editLoading ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <DeleteMemberDialog
+          open={!!deletingMember}
+          onOpenChange={(open) => { if (!open) setDeletingMember(null) }}
+          memberName={deletingMember?.name || ""}
+          memberEmail={deletingMember?.email || ""}
+          onConfirm={handleDeleteUser}
+          loading={deleteLoading}
+        />
       </div>
     </div>
   )

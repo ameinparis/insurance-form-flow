@@ -5,12 +5,13 @@ import {
   SidebarContent,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { usePermissions } from "@/lib/authlibrary"
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Calculator", url: "/calculator", icon: Calculator },
   { title: "Quotation Management", url: "/quotes", icon: FileText },
-  { title: "Team", url: "/team", icon: Users },
+  { title: "Team", url: "/team", icon: Users, permission: "canManageUsers" as const },
 ]
 
 const settingsItems = [
@@ -19,6 +20,11 @@ const settingsItems = [
 ]
 
 export function AppSidebar() {
+    const permissions = usePermissions()
+
+    const visibleMenuItems = menuItems.filter(
+  (item) => !("permission" in item) || permissions[item.permission]
+)
   return (
     <Sidebar variant="inset" className="w-64 bg-card rounded-[40px] sticky top-0 h-[calc(100vh-7rem)] overflow-hidden border-0 shadow-sm">
       <SidebarContent className="flex flex-col h-full">
@@ -29,7 +35,7 @@ export function AppSidebar() {
           </div>
 
           <nav className="space-y-2">
-            {menuItems.map((item) => (
+            {visibleMenuItems.map((item) => (
               <NavLink
                 key={item.title}
                 to={item.url}
