@@ -1218,15 +1218,53 @@ app.post("/api/new-quotes", authenticateToken, async (req, res) => {
 });
 
 // List all new quotes
-app.get("/api/new-quotes", authenticateToken, async (_req, res) => {
+app.get("/api/new-quotes", authenticateToken, async (req, res) => {
   try {
-    const quotes = await Quotes.find()
+    console.log("➡️ GET /api/new-quotes started");
+
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit) || 50, 1),
+      100
+    );
+
+    const skip = Math.max(
+      parseInt(req.query.skip) || 0,
+      0
+    );
+
+    // STEP 1: Fetch quotes only
+    const queryStart = Date.now();
+
+    let quotes = await Quotes.find()
+      .select("-inputs -outputs -termsAndConditions -medicalUnderwritingNotes")
       .sort({ createdAt: -1 })
-      .populate("createdBy", "firstName lastName email");
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const queryTime = Date.now() - queryStart;
+
+    // STEP 2: Populate users separately
+    const populateStart = Date.now();
+
+    quotes = await Quotes.populate(quotes, {
+      path: "createdBy",
+      select: "firstName lastName email"
+    });
+
+    const populateTime = Date.now() - populateStart;
+
+    console.log(`Quote query only: ${queryTime}ms`);
+    console.log(`Populate createdBy: ${populateTime}ms`);
+    console.log(`Quotes returned: ${quotes.length}`);
+    console.log(`Skip: ${skip} | Limit: ${limit}`);
+
     res.json(quotes);
   } catch (e) {
     console.error("List new quotes error:", e);
-    res.status(500).json({ message: "Failed to fetch new quotes" });
+    res.status(500).json({
+      message: "Failed to fetch new quotes"
+    });
   }
 });
 
