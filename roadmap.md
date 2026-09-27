@@ -18,4 +18,4 @@
 - [x] Restore the older compact two-column client details and quotation summary structure.
 - [x] Restore compact, intact annuity option blocks in both preview and PDF.
 - [x] Keep one through four options on the established two-page pagination structure.
-- [ ] Verify matching preview/export pagination without changing the masthead or calculations.
+- [x] Verify matching preview/export pagination without changing the masthead or calculations.

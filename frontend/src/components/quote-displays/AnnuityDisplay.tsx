@@ -57,7 +57,7 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
   };
 
   const scenarios: Array<any> = Array.isArray(quote?.outputs?.scenarios) ? quote.outputs.scenarios : [];
-  const hasScenarios = scenarios.length > 1;
+  const hasScenarios = scenarios.length > 0;
 
   // Life annuity guarantee-period table (5/10/15/20 years).
   // If the pdf/export layer already pre-fetched them and attached to the quote,
