@@ -251,6 +251,12 @@ const PDF_EXTRA_STYLES = `
   .quote-page-break-before { break-before: page !important; page-break-before: always !important; }
   .quote-option-count-1 .quote-fees-section,
   .quote-option-count-2 .quote-fees-section { break-before: page !important; page-break-before: always !important; }
+  .quote-page-break-before,
+  .quote-option-count-1 .quote-fees-section,
+  .quote-option-count-2 .quote-fees-section { margin-top: 0 !important; }
+  .quote-page-break-before::before,
+  .quote-option-count-1 .quote-fees-section::before,
+  .quote-option-count-2 .quote-fees-section::before { display: none !important; content: none !important; }
 
 `;
 

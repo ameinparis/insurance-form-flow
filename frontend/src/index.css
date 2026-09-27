@@ -313,6 +313,25 @@
   .quote-scenarios-intro .quote-section-heading { margin-bottom: 0; }
   .quote-scenario-wrap { padding: 0 4.25rem 0.85rem; background: hsl(var(--document-paper)); }
   .quote-scenario { padding: 1rem; border: 1px solid hsl(var(--document-rule)); border-radius: 0.75rem; background: hsl(var(--document-paper)); }
+  .quote-page-break-before,
+  .quote-option-count-1 .quote-fees-section,
+  .quote-option-count-2 .quote-fees-section {
+    position: relative;
+    margin-top: 2.5rem;
+  }
+  .quote-page-break-before::before,
+  .quote-option-count-1 .quote-fees-section::before,
+  .quote-option-count-2 .quote-fees-section::before {
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    left: 0;
+    height: 2.5rem;
+    border-top: 1px solid hsl(var(--document-rule));
+    border-bottom: 1px solid hsl(var(--document-rule));
+    background: hsl(var(--document-workspace));
+    content: "";
+  }
   .quote-option-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid hsl(var(--document-rule)); }
   .quote-option-heading h4 { margin: 0; color: hsl(var(--document-ink)); font-size: 0.95rem; font-weight: 600; letter-spacing: 0; }
   .quote-option-section { margin-top: 0.65rem; }
@@ -353,6 +372,12 @@
     .quote-masthead, .quote-section { padding: 2rem 1.75rem; }
     .quote-client-section { padding-top: 0; }
     .quote-scenario-wrap { padding-right: 1.75rem; padding-left: 1.75rem; }
+    .quote-page-break-before,
+    .quote-option-count-1 .quote-fees-section,
+    .quote-option-count-2 .quote-fees-section { margin-top: 1.25rem; }
+    .quote-page-break-before::before,
+    .quote-option-count-1 .quote-fees-section::before,
+    .quote-option-count-2 .quote-fees-section::before { height: 1.25rem; }
     .quote-masthead__top { grid-template-columns: 1fr auto; gap: 1.25rem; }
     .quote-brand-block { grid-column: 1 / -1; grid-row: 1; justify-content: center; }
     .quote-logo { height: 4rem; }
