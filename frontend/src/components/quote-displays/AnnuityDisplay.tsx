@@ -507,13 +507,19 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
   const hasLife = selectedPeriods.length > 0;
 
   const preInjected = preInjectedRaw
-    ? preInjectedRaw.filter((p) => selectedPeriods.includes(p.guarantee_period))
+    ? LIFE_ANNUITY_PERIODS.map((period) => {
+        const injected = preInjectedRaw.find((item) => item.guarantee_period === period);
+        return injected ?? {
+          guarantee_period: period,
+          monthly_annuity: knownByPeriod.get(period) ?? null,
+        };
+      })
     : undefined;
 
   const initial: LifePeriodResult[] =
     preInjected && preInjected.length > 0
       ? preInjected
-      : selectedPeriods.map((p) => ({
+      : LIFE_ANNUITY_PERIODS.map((p) => ({
           guarantee_period: p,
           monthly_annuity: knownByPeriod.has(p) ? knownByPeriod.get(p) ?? null : null,
         }));
@@ -540,9 +546,7 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
         guarantee_period: firstKnownPeriod ?? null,
         monthly_annuity: firstKnownAnnuity ?? null,
       });
-      const filtered = results
-        .filter((r) => selectedPeriods.includes(r.guarantee_period))
-        .map((r) =>
+      const filtered = results.map((r) =>
           knownByPeriod.has(r.guarantee_period)
             ? { ...r, monthly_annuity: knownByPeriod.get(r.guarantee_period) ?? null }
             : r
