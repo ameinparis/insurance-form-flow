@@ -240,7 +240,7 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
           key={group.signature}
           className={`quote-scenario-wrap ${idx > 0 && idx % 2 === 0 ? "quote-page-break-before" : ""}`}
         >
-          <ScenarioGroupBlock group={group} index={idx} showOptionLabel={scenarioGroups.length > 1} />
+          <ScenarioGroupBlock group={group} index={idx} showOptionLabel />
         </div>
       ))}
     </>
