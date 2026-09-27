@@ -203,7 +203,10 @@ Insurance will not accept liability for any losses incurred as a result of using
         guaranteePeriod: toNum(guaranteePeriod),
       }
 
-      const { data } = await axios.post("https://njs.exlusivelife.co.bw/api/quotes/calculate-annuity", payload)
+      const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"
+      const { data } = await axios.post(`${apiBase}/api/quotes/calculate-annuity`, payload, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      })
       const res = data.output
 
       setLivingResult(res)
@@ -232,7 +235,10 @@ Insurance will not accept liability for any losses incurred as a result of using
         purchaseAmount: toNum(lifePurchaseAmount),
         guaranteePeriod: toNum(guaranteePeriod)
       }
-      const { data } = await axios.post("https://njs.exlusivelife.co.bw/api/quotes/calculate-annuity", payload)
+const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"
+      const { data } = await axios.post(`${apiBase}/api/quotes/calculate-annuity`, payload, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      })
       const res = data.output
 
       setLifeResult(res)
@@ -355,8 +361,9 @@ Insurance will not accept liability for any losses incurred as a result of using
       }
 
       // 🔹 Send to the backend
+const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"
       const { data } = await axios.post(
-        "https://njs.exlusivelife.co.bw/api/new-quotes",
+        `${apiBase}/api/new-quotes`,
         payload,
         {
           headers: {

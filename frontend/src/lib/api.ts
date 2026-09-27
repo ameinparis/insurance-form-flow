@@ -1,5 +1,17 @@
-const API_BASE_URL = 'https://njs.exclusivelife.co.bw/api'
-const BASE_URL = "https://njs.exclusivelife.co.bw/api"
+const API_BASE_URL = 'http://localhost:5002/api'
+const BASE_URL = "http://localhost:5002/api"
+
+export interface Organisation {
+  _id: string
+  name: string
+  code: string
+  parentOrganisationId?: string | null
+  isRootOrganisation: boolean
+  allowedCalculators: string[]
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
 
 export interface Quote {
   _id: string
@@ -122,5 +134,61 @@ export const calculatorApi = {
     }
 
     return response.json()
+  }
+}
+
+// Organisations API
+export const organisationsApi = {
+  getAll: async (): Promise<Organisation[]> => {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/organisations`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch organisations");
+    }
+
+    return response.json();
+  },
+
+  create: async (data: { name: string; code: string; allowedCalculators: string[]; parentOrganisationId: string | null; isRootOrganisation: boolean }): Promise<Organisation> => {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/organisations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to create organisation');
+    }
+
+    return response.json();
+  },
+
+  update: async (id: string, data: { name?: string; code?: string; allowedCalculators?: string[]; isActive?: boolean }): Promise<Organisation> => {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/organisations/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to update organisation');
+    }
+
+    return response.json();
   }
 }

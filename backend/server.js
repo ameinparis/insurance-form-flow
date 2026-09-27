@@ -62,7 +62,8 @@ const io = new Server(httpServer, {
 const connectedUsers = new Map()
 
 const PY_CALC_BASE = (
-  process.env.PY_CALC_URL || "http://13.247.66.8:5005"
+  // process.env.PY_CALC_URL || "http://13.247.66.8:5005"
+  process.env.PY_CALC_URL || "http:localhost:5005"
 ).replace(/\/+$/, "")
 
 io.use((socket, next) => {
@@ -116,6 +117,61 @@ httpServer.listen(PORT, () => {
 
 
 /* ------------------------------- Models ------------------------------ */
+// organisation Schema
+// Organisation Schema
+const organisationSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+
+  code: {
+    type: String,
+    required: true,
+    unique: true,
+    uppercase: true,
+    trim: true
+  },
+
+  parentOrganisationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Organisation",
+    default: null
+  },
+
+  isRootOrganisation: {
+    type: Boolean,
+    default: false
+  },
+
+  allowedCalculators: {
+    type: [String],
+    enum: [
+      "annuity",
+      "funeral",
+      "life-assurance",
+      "individual-life"
+    ],
+    default: []
+  },
+
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }
+}, { timestamps: true });
+
+const Organisation = mongoose.model(
+  "Organisation",
+  organisationSchema
+);
+
 // Users Schema
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
@@ -128,7 +184,8 @@ const userSchema = new mongoose.Schema({
     enum: ["pending", "active", "suspended"],
     default: "pending"
   },
-  pendingExpiresAt: { type: Date, index: true }
+  pendingExpiresAt: { type: Date, index: true },
+  organisationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organisation", index: true },
 }, { timestamps: true });
 
 userSchema.index({ pendingExpiresAt: 1 }, { expireAfterSeconds: 0 });
@@ -196,6 +253,7 @@ const newQuoteSchema = new mongoose.Schema({
 
   quoteId: { type: String, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  organisationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organisation", index: true },
   termsAndConditions: { type: String },
   medicalUnderwritingNotes: { type: String, default: "" },
 
@@ -233,7 +291,8 @@ const auditLogSchema = new mongoose.Schema({
       "QUOTE_DELETED",
       "USER_UPDATED",
       "PASSWORD_CHANGED",
-      "PASSWORD_RESET"
+      "PASSWORD_RESET",
+      "ORGANISATION_CREATED",
     ],
     required: true
   },
@@ -268,6 +327,46 @@ const authenticateToken = (req, _res, next) => {
     req.user = payload; // { userId, role }
     next();
   });
+};
+
+/* Calculator access control middleware */
+const requireCalculatorAccess = (calculatorKey) => {
+  return async (req, res, next) => {
+    try {
+      const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+      if (!authUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      const requesterRole = String(authUser.role || "").toLowerCase();
+
+      // Superuser: global access to all calculators
+      if (requesterRole === "superuser") {
+        return next();
+      }
+
+      // Admin and user: must have organisation
+      if (!authUser.organisationId) {
+        return res.status(400).json({ message: "User is not assigned to an organisation" });
+      }
+
+      // Load organisation and check allowedCalculators
+      const org = await Organisation.findById(authUser.organisationId).select("allowedCalculators").lean();
+      if (!org) {
+        return res.status(404).json({ message: "Organisation not found" });
+      }
+
+      const allowed = org.allowedCalculators || [];
+      if (!allowed.includes(calculatorKey)) {
+        return res.status(403).json({ message: `Calculator '${calculatorKey}' not available for this organisation` });
+      }
+
+      next();
+    } catch (e) {
+      console.error("Calculator access check error:", e);
+      res.status(500).json({ message: "Failed to verify calculator access" });
+    }
+  };
 };
 
 /* ---------------------------- Audit Log Helper --------------------------- */
@@ -374,15 +473,38 @@ const sendPasswordChangedEmail = async (email, firstName) => {
 };
 
 
-/** Create user (admin creates from Team screen) */
+/** Create user (superuser or root organisation admin creates users from Team screen) */
 app.post("/api/users/register", authenticateToken, async (req, res) => {
   try {
-    const requesterRole = String(req.user?.role || "").toLowerCase()
-    if (requesterRole !== "superuser" && requesterRole !== "admin") {
-      return res.status(403).json({ message: "Forbidden: admin or superuser only" });
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
     }
 
-    let { email, firstName, lastName, role } = req.body;
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const isSuperuser = requesterRole === "superuser";
+    const isAdmin = requesterRole === "admin";
+
+    if (!isSuperuser && !isAdmin) {
+      return res.status(403).json({ message: "Forbidden: superuser or root organisation admin only" });
+    }
+
+    // Identify the requester's organisation for org admins (Root Admin gate)
+    let requesterOrg = null;
+    if (!isSuperuser) {
+      if (!authUser.organisationId) {
+        return res.status(400).json({ message: "Admin is not assigned to an organisation" });
+      }
+      requesterOrg = await Organisation.findById(authUser.organisationId).select("_id isRootOrganisation").lean();
+      if (!requesterOrg) {
+        return res.status(404).json({ message: "Organisation not found" });
+      }
+      if (!requesterOrg.isRootOrganisation) {
+        return res.status(403).json({ message: "Forbidden: external organisation users cannot create users" });
+      }
+    }
+
+    let { email, firstName, lastName, role, organisationId } = req.body;
 
     // Basic required fields
     if (!email || !firstName || !lastName) {
@@ -395,10 +517,34 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
     lastName = String(lastName).trim();
 
     // Role validation
-    const allowedRoles = ["user", "superuser", "admin"];
-    role = allowedRoles.includes(String(role || "").toLowerCase())
-      ? String(role).toLowerCase()
-      : "user";
+    const allowedRoles = ["user", "admin"];
+    const rawRole = String(role || "").toLowerCase();
+    if (rawRole === "superuser") {
+      return res.status(403).json({ message: "Forbidden: cannot create super admin" });
+    }
+    role = allowedRoles.includes(rawRole) ? rawRole : "user";
+
+    // Organisation assignment logic
+    let finalOrganisationId = null;
+
+    // Superuser: must target an organisation explicitly
+    // Root Admin: may target any organisation, defaults to the root organisation
+    const requestedOrganisationId = organisationId || (isSuperuser ? null : requesterOrg._id);
+    if (!requestedOrganisationId) {
+      return res.status(400).json({ message: "organisationId is required when creating admin or user as superuser" });
+    }
+
+    const targetOrg = await Organisation.findById(requestedOrganisationId).select("_id isRootOrganisation").lean();
+    if (!targetOrg) {
+      return res.status(400).json({ message: "Invalid organisationId" });
+    }
+
+    // Only the Root Organisation may hold admin users
+    if (role === "admin" && !targetOrg.isRootOrganisation) {
+      return res.status(403).json({ message: "Forbidden: external organisations can only have Advisors (role: user)" });
+    }
+
+    finalOrganisationId = targetOrg._id;
 
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: "User already exists" });
@@ -417,7 +563,8 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
       password: hash,
       role,
       status: "pending",
-      pendingExpiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
+      pendingExpiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+      organisationId: finalOrganisationId,
     });
 
     // Generate token for password setup
@@ -451,7 +598,7 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
       userName: req.user.name,
       action: "USER_CREATED",
       details: `New user ${email} created with role ${role}`,
-      metadata: { newUserId: user._id, newUserEmail: email, newUserRole: role },
+      metadata: { newUserId: user._id, newUserEmail: email, newUserRole: role, organisationId: finalOrganisationId?.toString() },
       req
     });
 
@@ -464,7 +611,8 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
-        status: user.status
+        status: user.status,
+        organisationId: user.organisationId
       }
     });
   } catch (e) {
@@ -474,6 +622,251 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
       error: e?.message,
       stack: e?.stack,
     });
+  }
+});
+ 
+/** Create organisation (superuser only) */
+app.post("/api/organisations", authenticateToken, async (req, res) => {
+  try {
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const isSuperuser = requesterRole === "superuser";
+    const isAdmin = requesterRole === "admin";
+
+    if (!isSuperuser && !isAdmin) {
+      return res.status(403).json({ message: "Forbidden: superuser or root organisation admin only" });
+    }
+
+    // Identify root organisation for org admins
+    let requesterOrg = null;
+    if (!isSuperuser) {
+      if (!authUser.organisationId) {
+        return res.status(400).json({ message: "Admin is not assigned to an organisation" });
+      }
+      requesterOrg = await Organisation.findById(authUser.organisationId).select("_id isRootOrganisation").lean();
+      if (!requesterOrg) {
+        return res.status(404).json({ message: "Organisation not found" });
+      }
+      if (!requesterOrg.isRootOrganisation) {
+        return res.status(403).json({ message: "Forbidden: only root organisation admins can create organisations" });
+      }
+    }
+
+    const { name, code, allowedCalculators, parentOrganisationId = null, isRootOrganisation = false } = req.body;
+
+    if (!name || !code) {
+      return res.status(400).json({ message: "name and code are required" });
+    }
+
+    // Root admins cannot create another root organisation
+    if (!isSuperuser && isRootOrganisation) {
+      return res.status(403).json({ message: "Forbidden: root organisation admin cannot create a root organisation" });
+    }
+
+    const normalisedCode = String(code).toUpperCase().trim();
+    const normalisedName = String(name).trim();
+
+    const exists = await Organisation.findOne({ code: normalisedCode });
+    if (exists) {
+      return res.status(400).json({ message: "Organisation code already exists" });
+    }
+
+    // External organisations default to ["annuity"] if allowedCalculators not supplied
+    const defaultCalculators = ["annuity"];
+    const finalCalculators = Array.isArray(allowedCalculators) && allowedCalculators.length > 0
+      ? allowedCalculators
+      : defaultCalculators;
+
+    // Root admin creations are always external children of their own root organisation
+    const finalParentId = isSuperuser
+      ? (parentOrganisationId || null)
+      : requesterOrg._id;
+    const finalIsRoot = isSuperuser ? Boolean(isRootOrganisation) : false;
+
+    const organisation = await Organisation.create({
+      name: normalisedName,
+      code: normalisedCode,
+      allowedCalculators: finalCalculators,
+      parentOrganisationId: finalParentId,
+      isRootOrganisation: finalIsRoot,
+      createdBy: req.user.userId,
+    });
+
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "ORGANISATION_CREATED",
+      details: `Organisation ${normalisedName} (${normalisedCode}) created`,
+      metadata: { organisationId: organisation._id, organisationName: normalisedName, organisationCode: normalisedCode },
+      req,
+    });
+
+    res.status(201).json({ message: "Organisation created", organisation });
+  } catch (e) {
+    console.error("Create organisation error:", e);
+    if (e?.code === 11000) {
+      return res.status(400).json({ message: "Organisation code already exists" });
+    }
+    return res.status(500).json({ message: "Error creating organisation", error: e?.message });
+  }
+});
+
+// GET /api/organisations — List all organisations (superuser or root organisation admin)
+app.get("/api/organisations", authenticateToken, async (req, res) => {
+  try {
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const isSuperuser = requesterRole === "superuser";
+    const isAdmin = requesterRole === "admin";
+
+    if (!isSuperuser && !isAdmin) {
+      return res.status(403).json({ message: "Forbidden: superuser or root organisation admin only" });
+    }
+
+    if (!isSuperuser) {
+      if (!authUser.organisationId) {
+        return res.status(400).json({ message: "Admin is not assigned to an organisation" });
+      }
+      const requesterOrg = await Organisation.findById(authUser.organisationId).select("isRootOrganisation").lean();
+      if (!requesterOrg) {
+        return res.status(404).json({ message: "Organisation not found" });
+      }
+      if (!requesterOrg.isRootOrganisation) {
+        return res.status(403).json({ message: "Forbidden: only root organisation admins can view organisations" });
+      }
+    }
+
+    const organisations = await Organisation.find()
+      .sort({ isRootOrganisation: -1, name: 1 })
+      .select("_id name code parentOrganisationId isRootOrganisation allowedCalculators isActive createdAt updatedAt")
+      .lean();
+
+    res.json(organisations);
+  } catch (e) {
+    console.error("List organisations error:", e);
+    res.status(500).json({ message: "Failed to fetch organisations" });
+  }
+});
+
+// PUT /api/organisations/:id — Update organisation (superuser or root organisation admin)
+app.put("/api/organisations/:id", authenticateToken, async (req, res) => {
+  try {
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const isSuperuser = requesterRole === "superuser";
+    const isAdmin = requesterRole === "admin";
+
+    if (!isSuperuser && !isAdmin) {
+      return res.status(403).json({ message: "Forbidden: superuser or root organisation admin only" });
+    }
+
+    // Identify root organisation for org admins
+    let requesterOrg = null;
+    if (!isSuperuser) {
+      if (!authUser.organisationId) {
+        return res.status(400).json({ message: "Admin is not assigned to an organisation" });
+      }
+      requesterOrg = await Organisation.findById(authUser.organisationId).select("_id isRootOrganisation").lean();
+      if (!requesterOrg) {
+        return res.status(404).json({ message: "Organisation not found" });
+      }
+      if (!requesterOrg.isRootOrganisation) {
+        return res.status(403).json({ message: "Forbidden: only root organisation admins can update organisations" });
+      }
+    }
+
+    const { name, code, allowedCalculators, isActive } = req.body;
+
+    // Immutable fields - cannot be changed via this endpoint
+    // isRootOrganisation, parentOrganisationId, createdBy
+
+    // Root admins cannot attempt to change immutable fields
+    if (!isSuperuser) {
+      const immutableFields = ["isRootOrganisation", "parentOrganisationId", "createdBy"];
+      const attempted = immutableFields.filter((f) => req.body?.[f] !== undefined);
+      if (attempted.length > 0) {
+        return res.status(403).json({ message: `Forbidden: cannot change ${attempted.join(", ")}` });
+      }
+    }
+
+    const organisation = await Organisation.findById(req.params.id);
+    if (!organisation) {
+      return res.status(404).json({ message: "Organisation not found" });
+    }
+
+    // Root admins can only edit external organisations, never the root organisation itself
+    if (!isSuperuser) {
+      if (organisation.isRootOrganisation) {
+        return res.status(403).json({ message: "Forbidden: root organisation admin cannot edit the root organisation" });
+      }
+      if (String(organisation._id) === String(requesterOrg._id)) {
+        return res.status(403).json({ message: "Forbidden: cannot edit your own organisation" });
+      }
+    }
+
+    if (name !== undefined) {
+      organisation.name = String(name).trim();
+    }
+
+    if (code !== undefined) {
+      const normalisedCode = String(code).toUpperCase().trim();
+      if (normalisedCode !== organisation.code) {
+        const exists = await Organisation.findOne({ code: normalisedCode });
+        if (exists) {
+          return res.status(400).json({ message: "Organisation code already exists" });
+        }
+        organisation.code = normalisedCode;
+      }
+    }
+
+    if (allowedCalculators !== undefined) {
+      if (!Array.isArray(allowedCalculators)) {
+        return res.status(400).json({ message: "allowedCalculators must be an array" });
+      }
+      const validCalculators = ["annuity", "funeral", "life-assurance", "individual-life"];
+      const invalid = allowedCalculators.filter(c => !validCalculators.includes(c));
+      if (invalid.length > 0) {
+        return res.status(400).json({ message: `Invalid calculator(s): ${invalid.join(", ")}` });
+      }
+      organisation.allowedCalculators = allowedCalculators;
+    }
+
+    if (isActive !== undefined) {
+      organisation.isActive = Boolean(isActive);
+    }
+
+    await organisation.save();
+
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "ORGANISATION_UPDATED",
+      details: `Organisation ${organisation.name} (${organisation.code}) updated`,
+      metadata: { organisationId: organisation._id, updates: req.body },
+      req,
+    });
+
+    res.json({ message: "Organisation updated", organisation });
+  } catch (e) {
+    console.error("Update organisation error:", e);
+    if (e?.code === 11000) {
+      return res.status(400).json({ message: "Organisation code already exists" });
+    }
+    res.status(500).json({ message: "Failed to update organisation" });
   }
 });
 
@@ -760,19 +1153,48 @@ app.post("/api/users/login", async (req, res) => {
 });
 
 /** Me */
-// app.get("/api/users/me", authenticateToken, async (req, res) => {
-//   try {
-//     const user = await User.findById(req.user.userId).select("-password");
-//     if (!user) return res.status(404).json({ message: "User not found" });
-//     res.json(user);
-//   } catch (e) {
-//     console.error("Me error:", e);
-//     res.status(500).json({ message: "Error fetching user" });
-//   }
-// });
+app.get("/api/users/me", authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId)
+      .select("-password -pendingExpiresAt")
+      .populate({
+        path: "organisationId",
+        select: "name code isRootOrganisation allowedCalculators isActive",
+        match: { isActive: true },
+      })
+      .lean();
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isSuperAdmin = String(user.role || "").toLowerCase() === "superuser";
+
+    let organisation = null;
+    if (!isSuperAdmin && user.organisationId) {
+      organisation = {
+        _id: user.organisationId._id,
+        name: user.organisationId.name,
+        code: user.organisationId.code,
+        isRootOrganisation: user.organisationId.isRootOrganisation,
+        allowedCalculators: user.organisationId.allowedCalculators || [],
+        isActive: user.organisationId.isActive !== false,
+      };
+    }
+
+    const { organisationId, ...safeUser } = user;
+
+    res.json({
+      ...safeUser,
+      role: user.role,
+      organisation: organisation,
+    });
+  } catch (e) {
+    console.error("Me error:", e);
+    res.status(500).json({ message: "Error fetching user" });
+  }
+});
 
 /** Annuity calculator proxy → Python */
-app.post("/api/annuity", async (req, res) => {
+app.post("/api/annuity", authenticateToken, requireCalculatorAccess("annuity"), async (req, res) => {
   try {
     const PY_URL = `${PY_CALC_BASE}/annuity/calculate`;
     const { data } = await axios.post(PY_URL, req.body);
@@ -828,9 +1250,23 @@ app.post("/api/save-quote", authenticateToken, async (req, res) => {
 });
 
 /** List quotes */
-app.get("/api/quotes", authenticateToken, async (_req, res) => {
+app.get("/api/quotes", authenticateToken, async (req, res) => {
   try {
-    const quotes = await Quote.find()
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const query = requesterRole === "superuser"
+      ? {}
+      : { organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    const quotes = await Quote.find(query)
       .sort({ createdAt: -1 })
       .populate("createdBy", "firstName lastName email");
     res.json(quotes);
@@ -882,7 +1318,7 @@ app.delete("/api/quotes/:id", authenticateToken, async (req, res) => {
 /** ----------------- NEW QUOTES (scalable design) ----------------- */
 
 /** Annuity calculator proxy → Python */
-app.post("/api/quotes/calculate-annuity", async (req, res) => {
+app.post("/api/quotes/calculate-annuity", authenticateToken, requireCalculatorAccess("annuity"), async (req, res) => {
   try {
     const PY_URL = `${PY_CALC_BASE}/annuity/calculate`;
     const { data } = await axios.post(PY_URL, req.body);
@@ -907,7 +1343,7 @@ app.post("/api/quotes/calculate-annuity", async (req, res) => {
 
 /** Funeral calculator proxy → Python */
 
-app.post("/api/quotes/calculate-funeral", authenticateToken, upload.single("file"), async (req, res) => {
+app.post("/api/quotes/calculate-funeral", authenticateToken, requireCalculatorAccess("funeral"), upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "Missing file" });
 
@@ -1183,7 +1619,7 @@ setInterval(processFuneralJobs, 1000);
 
 
 /** Life Assurance calculator proxy → Python */
-app.post("/api/quotes/calculate-assurance", async (req, res) => {
+app.post("/api/quotes/calculate-assurance", authenticateToken, requireCalculatorAccess("life-assurance"), async (req, res) => {
   try {
     const PY_URL = `${PY_CALC_BASE}/assurance/calculate`;
     const { data } = await axios.post(PY_URL, req.body);
@@ -1211,7 +1647,7 @@ app.post("/api/quotes/calculate-assurance", async (req, res) => {
 
 
 /** Individual Life Cover calculator proxy → Python (Excel sheet) */
-app.post("/api/quotes/calculate-individual-life", authenticateToken, async (req, res) => {
+app.post("/api/quotes/calculate-individual-life", authenticateToken, requireCalculatorAccess("individual-life"), async (req, res) => {
   try {
 
     const PY_URL = `${PY_CALC_BASE}/individual/calculate`;
@@ -1254,6 +1690,12 @@ app.post("/api/quotes/calculate-individual-life", authenticateToken, async (req,
 // Create a new quote
 app.post("/api/new-quotes", authenticateToken, async (req, res) => {
   try {
+    // Fetch authenticated user from MongoDB to get their organisationId
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
     const now = new Date();
     const yy = String(now.getFullYear()).slice(-2);
     const START_NUMBER = 140;
@@ -1285,11 +1727,25 @@ app.post("/api/new-quotes", authenticateToken, async (req, res) => {
       }
     }
 
-    // ✅ Step 3: Save the quote
+    // Determine organisationId based on role
+    const requesterRole = String(authUser.role || "").toLowerCase();
+
+    if (requesterRole === "superuser") {
+      return res.status(403).json({ message: "Super Admin must create quotations within an organisation workspace" });
+    }
+
+    // Admin or user - must have organisationId
+    const organisationId = authUser.organisationId;
+    if (!organisationId) {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    // ✅ Step 3: Save the quote (ignore any organisationId from frontend)
     const quote = await Quotes.create({
       ...req.body,
       quoteId,
       createdBy: req.user.userId,
+      organisationId,
     });
 
     // Log quote saved
@@ -1299,7 +1755,7 @@ app.post("/api/new-quotes", authenticateToken, async (req, res) => {
       userName: req.user.name,
       action: "QUOTE_SAVED",
       details: `${productType} quote saved with ID ${quoteId}`,
-      metadata: { quoteId, productType, client },
+      metadata: { quoteId, productType, client, organisationId: organisationId?.toString() },
       req
     });
 
@@ -1315,6 +1771,12 @@ app.get("/api/new-quotes", authenticateToken, async (req, res) => {
   try {
     console.log("➡️ GET /api/new-quotes started");
 
+    // Fetch authenticated user to determine organisation visibility
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
     const limit = Math.min(
       Math.max(parseInt(req.query.limit) || 50, 1),
       100
@@ -1325,10 +1787,20 @@ app.get("/api/new-quotes", authenticateToken, async (req, res) => {
       0
     );
 
+    // Build query based on role
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const query = requesterRole === "superuser"
+      ? {}
+      : { organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
     // STEP 1: Fetch quotes only
     const queryStart = Date.now();
 
-    let quotes = await Quotes.find()
+    let quotes = await Quotes.find(query)
       .select("-inputs -outputs -termsAndConditions -medicalUnderwritingNotes")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -1367,10 +1839,27 @@ app.get("/api/new-quotes/:id", authenticateToken, async (req, res) => {
   try {
     console.log(`➡️ GET /api/new-quotes/${req.params.id} started`);
 
+    // Fetch authenticated user
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+
+    // Superuser: global access; others: org-scoped
+    const query = requesterRole === "superuser"
+      ? { _id: req.params.id }
+      : { _id: req.params.id, organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
     // Measure MongoDB retrieval
     const dbStart = Date.now();
 
-    const q = await Quotes.findById(req.params.id);
+    const q = await Quotes.findOne(query);
 
     const dbTime = Date.now() - dbStart;
 
@@ -1405,9 +1894,23 @@ app.get("/api/new-quotes/:id", authenticateToken, async (req, res) => {
 // Update notes (e.g., medical underwriting) on a quote
 app.patch("/api/new-quotes/:id/notes", authenticateToken, async (req, res) => {
   try {
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const query = requesterRole === "superuser"
+      ? { _id: req.params.id }
+      : { _id: req.params.id, organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
     const { medicalUnderwritingNotes } = req.body;
-    const q = await Quotes.findByIdAndUpdate(
-      req.params.id,
+    const q = await Quotes.findOneAndUpdate(
+      query,
       { $set: { medicalUnderwritingNotes: medicalUnderwritingNotes ?? "" } },
       { new: true }
     );
@@ -1422,12 +1925,25 @@ app.patch("/api/new-quotes/:id/notes", authenticateToken, async (req, res) => {
 // Update client details / terms on an Exclusive Annuity quote (advisor/admin only)
 app.patch("/api/new-quotes/:id/client", authenticateToken, async (req, res) => {
   try {
-    const role = String(req.user?.role || "").toLowerCase();
-    if (!["user", "admin", "superuser"].includes(role)) {
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    if (!["user", "admin", "superuser"].includes(requesterRole)) {
       return res.status(403).json({ message: "You do not have permission to edit quotes" });
     }
 
-    const q = await Quotes.findById(req.params.id);
+    const query = requesterRole === "superuser"
+      ? { _id: req.params.id }
+      : { _id: req.params.id, organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    const q = await Quotes.findOne(query);
     if (!q) return res.status(404).json({ message: "Quote not found" });
     if (q.productType !== "Exclusive Annuity") {
       return res.status(400).json({ message: "Only Exclusive Annuity quotes can be edited" });
@@ -1455,7 +1971,7 @@ app.patch("/api/new-quotes/:id/client", authenticateToken, async (req, res) => {
       return res.status(400).json({ message: "No editable fields provided" });
     }
 
-    const updated = await Quotes.findByIdAndUpdate(req.params.id, { $set }, { new: true });
+    const updated = await Quotes.findOneAndUpdate(query, { $set }, { new: true });
 
     await logAudit({
       userId: req.user.userId,
@@ -1477,7 +1993,21 @@ app.patch("/api/new-quotes/:id/client", authenticateToken, async (req, res) => {
 // Delete new quote
 app.delete("/api/new-quotes/:id", authenticateToken, async (req, res) => {
   try {
-    const q = await Quotes.findByIdAndDelete(req.params.id);
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const query = requesterRole === "superuser"
+      ? { _id: req.params.id }
+      : { _id: req.params.id, organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    const q = await Quotes.findOneAndDelete(query);
     if (!q) return res.status(404).json({ message: "New Quote not found" });
 
     // Log quote deletion
@@ -1499,10 +2029,42 @@ app.delete("/api/new-quotes/:id", authenticateToken, async (req, res) => {
 });
 
 // Get users
-
 app.get("/api/users", authenticateToken, async (req, res) => {
   try {
-    const users = await User.find().select("-password");
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const isSuperuser = requesterRole === "superuser";
+    const isAdmin = requesterRole === "admin";
+
+    if (!isSuperuser && !isAdmin) {
+      return res.status(403).json({ message: "Forbidden: user management access denied" });
+    }
+
+    let query = {};
+
+    if (!isSuperuser) {
+      // Root Admin gate: their organisation must be the root organisation
+      if (!authUser.organisationId) {
+        return res.status(400).json({ message: "User is not assigned to an organisation" });
+      }
+
+      const requesterOrg = await Organisation.findById(authUser.organisationId).select("_id isRootOrganisation").lean();
+      if (!requesterOrg) {
+        return res.status(404).json({ message: "Organisation not found" });
+      }
+      if (!requesterOrg.isRootOrganisation) {
+        return res.status(403).json({ message: "Forbidden: external organisation users cannot manage users" });
+      }
+
+      // Root Admin sees users across all organisations, but never platform superuser accounts
+      query = { role: { $ne: "superuser" } };
+    }
+
+    const users = await User.find(query).select("-password");
     res.json(users);
   } catch (e) {
     console.error("Fetch users error:", e);
@@ -1513,50 +2075,109 @@ app.get("/api/users", authenticateToken, async (req, res) => {
 /** Update user by id */
 app.put("/api/users/:id", authenticateToken, async (req, res) => {
   try {
-    const target = await User.findById(req.params.id)
-    if (!target) return res.status(404).json({ message: "User not found" })
+    const actor = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!actor) return res.status(401).json({ message: "Unauthorized" });
 
-    const actor = await User.findById(req.user.userId)
-    if (!actor) return res.status(401).json({ message: "Unauthorized" })
+    const actorRole = String(actor.role || "").toLowerCase();
+    const isSuperuser = actorRole === "superuser";
+    const isAdmin = actorRole === "admin";
 
-    const actorRole = String(actor.role || "").toLowerCase()
-    const targetRole = String(target.role || "").toLowerCase()
-
-    if (actorRole !== "superuser" && actorRole !== "admin") {
-      return res.status(403).json({ message: "Forbidden: admin or superuser only" })
+    if (!isSuperuser && !isAdmin) {
+      return res.status(403).json({ message: "Forbidden: superuser or root organisation admin only" });
     }
 
-    if (actorRole !== "superuser") {
-      if (targetRole === "superuser") {
-        return res.status(403).json({ message: "Forbidden: cannot update super admins" })
+    // Root Admin gate: their organisation must be the root organisation
+    let actorOrg = null;
+    if (!isSuperuser) {
+      if (!actor.organisationId) {
+        return res.status(400).json({ message: "User is not assigned to an organisation" });
       }
-      if (targetRole === "admin") {
-        return res.status(403).json({ message: "Forbidden: cannot update other admins" })
+      actorOrg = await Organisation.findById(actor.organisationId).select("_id isRootOrganisation").lean();
+      if (!actorOrg) {
+        return res.status(404).json({ message: "Organisation not found" });
       }
-      const nextRole = String(req.body?.role || target.role || "").toLowerCase()
+      if (!actorOrg.isRootOrganisation) {
+        return res.status(403).json({ message: "Forbidden: external organisation users cannot manage users" });
+      }
+    }
+
+    // Superuser: any user by id. Root Admin: any non-superuser by id.
+    const query = isSuperuser ? { _id: req.params.id } : { _id: req.params.id, role: { $ne: "superuser" } };
+
+    const target = await User.findOne(query);
+    if (!target) return res.status(404).json({ message: "User not found" });
+
+    const targetRole = String(target.role || "").toLowerCase();
+
+    // Nobody may modify a platform superuser account
+    if (targetRole === "superuser") {
+      return res.status(403).json({ message: "Forbidden: cannot update super admins" });
+    }
+
+    // Never allow promotion to superuser
+    if (req.body?.role !== undefined) {
+      const nextRole = String(req.body.role || "").toLowerCase();
       if (nextRole === "superuser") {
-        return res.status(403).json({ message: "Forbidden: cannot assign super admin role" })
+        return res.status(403).json({ message: "Forbidden: cannot assign super admin role" });
+      }
+      if (!["user", "admin"].includes(nextRole)) {
+        return res.status(400).json({ message: "Invalid role: role must be user or admin" });
       }
     }
 
-    const allowedFields = ["firstName", "lastName", "email", "role", "isActive"]
-    const updates = {}
+    // Resolve the organisation the user will belong to after this update
+    let nextOrganisationId = target.organisationId || null;
+    if (req.body?.organisationId !== undefined) {
+      const requestedOrgId = req.body.organisationId;
+      if (!requestedOrgId) {
+        return res.status(400).json({ message: "organisationId cannot be null" });
+      }
+      const nextOrg = await Organisation.findById(requestedOrgId).select("_id isRootOrganisation").lean();
+      if (!nextOrg) {
+        return res.status(400).json({ message: "Invalid organisationId" });
+      }
+      nextOrganisationId = nextOrg._id;
+    }
+
+    // Determine the resulting organisation so role rules can be enforced
+    const resultOrg = nextOrganisationId
+      ? await Organisation.findById(nextOrganisationId).select("_id isRootOrganisation").lean()
+      : null;
+
+    // admin role is only valid inside the Root Organisation
+    if (resultOrg && !resultOrg.isRootOrganisation) {
+      const desiredRole = req.body?.role !== undefined
+        ? String(req.body.role).toLowerCase()
+        : targetRole;
+      if (desiredRole === "admin") {
+        return res.status(403).json({ message: "Forbidden: external organisations can only have Advisors (role: user)" });
+      }
+    }
+
+    const allowedFields = ["firstName", "lastName", "email", "isActive", "role", "organisationId"];
+    const updates = {};
     for (const key of allowedFields) {
       if (req.body?.[key] !== undefined) {
-        updates[key] = req.body[key]
+        updates[key] = req.body[key];
       }
     }
 
-    if (updates.email !== undefined) updates.email = String(updates.email).toLowerCase().trim()
+    if (updates.email !== undefined) updates.email = String(updates.email).toLowerCase().trim();
+
+    if (updates.organisationId !== undefined) {
+      updates.organisationId = nextOrganisationId;
+    }
+
     if (updates.role !== undefined) {
-      const normalized = String(updates.role).toLowerCase()
-      if (!["user", "admin", "superuser"].includes(normalized)) {
-        return res.status(400).json({ message: "Invalid role" })
-      }
-      updates.role = normalized
+      updates.role = String(updates.role).toLowerCase();
     }
 
-    const updated = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select("-password")
+    // Moving a user into an external organisation forces them back to Advisor
+    if (resultOrg && !resultOrg.isRootOrganisation) {
+      updates.role = "user";
+    }
+
+    const updated = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).select("-password");
 
     await logAudit({
       userId: req.user.userId,
@@ -1566,24 +2187,30 @@ app.put("/api/users/:id", authenticateToken, async (req, res) => {
       details: `User ${updated?.email} updated by ${actor.email}`,
       metadata: { targetUserId: target._id, targetUserEmail: target.email, updates },
       req
-    })
+    });
 
-    res.json({ message: "Member updated successfully", user: updated })
+    res.json({ message: "Member updated successfully", user: updated });
   } catch (e) {
-    console.error("Update user error:", e)
-    res.status(500).json({ message: "Failed to update member" })
+    console.error("Update user error:", e);
+    res.status(500).json({ message: "Failed to update member" });
   }
-})
+});
 
-/** Delete user by id */
+/** Delete user by id (superuser only) */
 app.delete("/api/users/:id", authenticateToken, async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select("-password")
-    if (!user) return res.status(404).json({ message: "User not found" })
+    const actor = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!actor) return res.status(401).json({ message: "Unauthorized" });
 
-    const actor = await User.findById(req.user.userId).select("-password")
+    const actorRole = String(actor.role || "").toLowerCase();
+    if (actorRole !== "superuser") {
+      return res.status(403).json({ message: "Forbidden: superuser only" });
+    }
 
-    await user.deleteOne()
+    const query = { _id: req.params.id };
+
+    const user = await User.findOneAndDelete(query).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     await logAudit({
       userId: req.user.userId,
@@ -1593,14 +2220,14 @@ app.delete("/api/users/:id", authenticateToken, async (req, res) => {
       details: `User ${user.email} deleted`,
       metadata: { deletedUserId: user._id, deletedUserEmail: user.email },
       req
-    })
+    });
 
-    res.json({ message: "Member deleted successfully", id: req.params.id })
+    res.json({ message: "Member deleted successfully", id: req.params.id });
   } catch (e) {
-    console.error("Delete user error:", e)
-    res.status(500).json({ message: "Failed to delete member" })
+    console.error("Delete user error:", e);
+    res.status(500).json({ message: "Failed to delete member" });
   }
-})
+});
 
 
 // Utility function to fetch quote by ID
@@ -2440,20 +3067,60 @@ app.get("/api/policies/pipeline", authenticateToken, async (req, res) => {
 });
 
 // GET /api/dashboard/stats — Lightweight dashboard counts
-app.get("/api/dashboard/stats", authenticateToken, async (_req, res) => {
+app.get("/api/dashboard/stats", authenticateToken, async (req, res) => {
   try {
-    const [totalQuotations, convertedQuoteIds, activeClients, activePolicies] = await Promise.all([
-      Quote.countDocuments(),
-      Policy.distinct("quoteId", { status: { $in: ["APPROVED", "ACTIVE"] }, quoteId: { $nin: [null, ""] } }),
-      Client.countDocuments({ status: "ACTIVE" }),
-      Policy.countDocuments({ status: { $in: ["APPROVED", "ACTIVE"] } }),
-    ])
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+
+    // For non-superusers, require organisationId
+    if (requesterRole !== "superuser" && !authUser.organisationId) {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    const orgFilter = requesterRole === "superuser" ? {} : { organisationId: authUser.organisationId };
+
+    // Only Quotes has organisationId - can safely filter
+    // Client, Policy, Conversion do NOT have organisationId - cannot safely scope
+    const [totalQuotations] = await Promise.all([
+      Quotes.countDocuments(orgFilter),
+    ]);
+
+    let convertedQuotations = 0;
+    let activeClients = 0;
+    let activePolicies = 0;
+
+    if (requesterRole === "superuser") {
+      // Superuser sees global stats for all models
+      [convertedQuotations, activeClients, activePolicies] = await Promise.all([
+        Policy.distinct("quoteId", { status: { $in: ["APPROVED", "ACTIVE"] }, quoteId: { $nin: [null, ""] } }),
+        Client.countDocuments({ status: "ACTIVE" }),
+        Policy.countDocuments({ status: { $in: ["APPROVED", "ACTIVE"] } }),
+      ]);
+      convertedQuotations = convertedQuotations.length;
+    } else {
+      // For organisation users: these models lack organisationId
+      // Return 0 to avoid cross-organisation data leakage
+      convertedQuotations = 0;
+      activeClients = 0;
+      activePolicies = 0;
+    }
 
     res.json({
       totalQuotations,
-      convertedQuotations: convertedQuoteIds.length,
+      convertedQuotations,
       activeClients,
       activePolicies,
+      // Flag fields that cannot yet be safely organisation-scoped
+      _meta: {
+        organisationScoped: requesterRole !== "superuser",
+        note: requesterRole !== "superuser"
+          ? "convertedQuotations, activeClients, activePolicies require organisationId on Client/Policy models for safe scoping"
+          : null,
+      },
     });
   } catch (e) {
     console.error("Dashboard stats error:", e);
@@ -2464,6 +3131,25 @@ app.get("/api/dashboard/stats", authenticateToken, async (_req, res) => {
 // GET /api/clients/:id/policies — Fetch approved/active policies for a client
 app.get("/api/clients/:id/policies", authenticateToken, async (req, res) => {
   try {
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+
+    if (requesterRole !== "superuser" && !authUser.organisationId) {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    if (requesterRole !== "superuser") {
+      // Policy model lacks organisationId - cannot safely scope
+      return res.status(403).json({
+        message: "Client policies not available for organisation-scoped users",
+        reason: "Policy model missing organisationId",
+      });
+    }
+
     const clientId = req.params.id;
     const items = await Policy.find({ clientId, status: { $in: ["APPROVED", "ACTIVE"] } }).sort({ approvedAt: -1 }).lean();
     res.json(items.map(({ _id, __v, ...rest }) => rest));
@@ -2474,8 +3160,30 @@ app.get("/api/clients/:id/policies", authenticateToken, async (req, res) => {
 });
 
 // GET /api/clients — Fetch all clients
-app.get("/api/clients", authenticateToken, async (_req, res) => {
+app.get("/api/clients", authenticateToken, async (req, res) => {
   try {
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+
+    if (requesterRole !== "superuser" && !authUser.organisationId) {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    if (requesterRole !== "superuser") {
+      // Client model lacks organisationId - cannot safely scope
+      return res.json({
+        clients: [],
+        _meta: {
+          organisationScoped: true,
+          note: "Client model missing organisationId - returning empty for organisation users",
+        },
+      });
+    }
+
     const clients = await Client.find().sort({ createdAt: -1 }).lean();
     res.json(clients);
   } catch (e) {
@@ -2487,6 +3195,25 @@ app.get("/api/clients", authenticateToken, async (_req, res) => {
 // GET /api/clients/:id — Fetch a single client
 app.get("/api/clients/:id", authenticateToken, async (req, res) => {
   try {
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+
+    if (requesterRole !== "superuser" && !authUser.organisationId) {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    if (requesterRole !== "superuser") {
+      // Client model lacks organisationId - cannot safely scope
+      return res.status(403).json({
+        message: "Client not available for organisation-scoped users",
+        reason: "Client model missing organisationId",
+      });
+    }
+
     const client = await Client.findById(req.params.id).lean();
     if (!client) return res.status(404).json({ message: "Client not found" });
     res.json(client);

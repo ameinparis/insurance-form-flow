@@ -61,7 +61,7 @@ export const fetchQuoteDetails = async (
   isLegacy: boolean = false
 ): Promise<QuoteData> => {
   const token = localStorage.getItem("token");
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw";
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
   const endpoint = isLegacy 
     ? `/api/quotes/${quoteId}` 
     : `/api/new-quotes/${quoteId}`;
@@ -101,7 +101,7 @@ export const updateQuoteClient = async (
   payload: { client: EditableAnnuityClient; termsAndConditions?: string }
 ): Promise<QuoteData> => {
   const token = localStorage.getItem("token");
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://njs.exclusivelife.co.bw";
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
 
   const response = await fetch(`${baseUrl}/api/new-quotes/${quoteId}/client`, {
     method: "PATCH",

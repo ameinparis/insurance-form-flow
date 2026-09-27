@@ -2,13 +2,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { SearchProvider } from "@/lib/searchContext";
 import { BackgroundJobProvider } from "@/contexts/BackgroundJobContext";
 import MultiJobWidget from "@/components/BackgroundJobWidget";
 import { useBackgroundJob } from "@/contexts/BackgroundJobContext";
 import { Layout } from "./components/Layout";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { useAuth } from "@/lib/authlibrary";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Calculate from "./pages/Calculate";
@@ -21,6 +22,7 @@ import QuotePreview from "./pages/QuotePreview";
 import Quotes from "./pages/Quotes";
 import QuoteDetail from "./pages/QuoteDetail";
 import Settings from "./pages/Settings";
+import Organisations from "./pages/Organisations";
 import NotFound from "./pages/NotFound";
 import LogoutHandler from "./components/LogoutHandler";
 import SetPassword from "./pages/auth/SetPassword";
@@ -41,6 +43,25 @@ const GlobalBackgroundJobWidget = () => {
     />
   );
 };
+
+const OrganisationsRoute = ({ children }: { children: JSX.Element }) => {
+  const { role, organisation, organisationLoading } = useAuth()
+  const location = useLocation()
+
+  // Wait for the organisation to load before deciding access
+  if (organisationLoading) {
+    return null
+  }
+
+  const isSuperAdmin = role === "super_admin"
+  const isRootAdmin = role === "admin" && organisation?.isRootOrganisation === true
+
+  if (!isSuperAdmin && !isRootAdmin) {
+    return <Navigate to="/dashboard" state={{ from: location.pathname }} replace />
+  }
+
+  return children
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -108,6 +129,13 @@ const App = () => (
               <Route path="/team" element={
                 <Layout>
                   <Team />
+                </Layout>
+              } />
+              <Route path="/organisations" element={
+                <Layout>
+                  <OrganisationsRoute>
+                    <Organisations />
+                  </OrganisationsRoute>
                 </Layout>
               } />
               <Route path="/logout" element={<LogoutHandler />} />

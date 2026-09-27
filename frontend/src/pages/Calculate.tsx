@@ -1,57 +1,99 @@
-import { 
-  Heart, 
-  Shield, 
-  Users, 
-  Activity, 
-  User 
+import { useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import {
+  Heart,
+  Shield,
+  Users,
+  Activity,
+  User,
+  AlertCircle,
 } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/lib/authlibrary"
+
+const ALL_CALCULATORS = [
+  {
+    id: "living-annuities",
+    title: "Living Annuities",
+    description: "Retirement income planning",
+    icon: Shield,
+    bgColor: "bg-emerald-100",
+    iconColor: "text-emerald-600",
+    permissionKey: "annuity",
+  },
+  {
+    id: "life-funeral",
+    title: "Life Funeral",
+    description: "Funeral insurance coverage",
+    icon: Heart,
+    bgColor: "bg-rose-100",
+    iconColor: "text-rose-600",
+    permissionKey: "funeral",
+  },
+  {
+    id: "group-life-assurance",
+    title: "Group Life (GLA)",
+    description: "Employee group coverage",
+    icon: Users,
+    bgColor: "bg-purple-100",
+    iconColor: "text-purple-600",
+    permissionKey: "life-assurance",
+  },
+  {
+    id: "individual-life-cover",
+    title: "Individual Life Cover",
+    description: "Personal life insurance",
+    icon: User,
+    bgColor: "bg-teal-100",
+    iconColor: "text-teal-600",
+    permissionKey: "individual-life",
+  },
+  {
+    id: "critical-illness",
+    title: "Critical Illness",
+    description: "Serious illness protection",
+    icon: Activity,
+    bgColor: "bg-red-100",
+    iconColor: "text-red-600",
+    permissionKey: "critical-illness",
+  },
+]
 
 const Calculate = () => {
-  const options = [
-    {
-      id: "living-annuities",
-      title: "Living Annuities",
-      description: "Retirement income planning",
-      icon: Shield,
-      bgColor: "bg-emerald-100",
-      iconColor: "text-emerald-600"
-    },
-    {
-      id: "life-funeral",
-      title: "Life Funeral",
-      description: "Funeral insurance coverage",
-      icon: Heart,
-      bgColor: "bg-rose-100",
-      iconColor: "text-rose-600"
-    },
-    {
-      id: "group-life-assurance",
-      title: "Group Life (GLA)",
-      description: "Employee group coverage",
-      icon: Users,
-      bgColor: "bg-purple-100",
-      iconColor: "text-purple-600"
-    },
-    {
-      id: "individual-life-cover",
-      title: "Individual Life Cover",
-      description: "Personal life insurance",
-      icon: User,
-      bgColor: "bg-teal-100",
-      iconColor: "text-teal-600"
-    },
-    {
-      id: "critical-illness",
-      title: "Critical Illness",
-      description: "Serious illness protection",
-      icon: Activity,
-      bgColor: "bg-red-100",
-      iconColor: "text-red-600"
-    },
-    
-  ]
+  const navigate = useNavigate()
+  const { organisation, role, organisationLoading } = useAuth()
+
+  const isSuperAdmin = role === "super_admin"
+  const isRootOrganisation = organisation?.isRootOrganisation || false
+
+  const allowedCalculators = isSuperAdmin
+    ? ALL_CALCULATORS.map((c) => c.permissionKey)
+    : organisation?.allowedCalculators || []
+
+  const visibleCalculators = ALL_CALCULATORS.filter((calc) =>
+    calc.permissionKey === "critical-illness"
+      ? (isSuperAdmin || isRootOrganisation)
+      : allowedCalculators.includes(calc.permissionKey)
+  )
+
+  useEffect(() => {
+    if (organisationLoading) return
+    if (!isSuperAdmin && !isRootOrganisation && allowedCalculators.length === 1) {
+      const onlyCalc = visibleCalculators[0]
+      if (onlyCalc) {
+        navigate(`/calculator/${onlyCalc.id}`, { replace: true })
+      }
+    }
+  }, [allowedCalculators, visibleCalculators, isSuperAdmin, isRootOrganisation, navigate, organisationLoading])
+
+  if (organisationLoading) {
+    return null
+  }
+
+  if (!isSuperAdmin && !isRootOrganisation && allowedCalculators.length === 1) {
+    return null
+  }
 
   return (
     <div className="-mx-6 -mb-6">
@@ -60,45 +102,43 @@ const Calculate = () => {
         <p className="text-muted-foreground">Choose an insurance type to get started with your calculation.</p>
       </div>
       <div className="px-6 pb-6 space-y-6">
-
-
-
-      <div className="bg-gray-50 dark:bg-slate-800 rounded-3xl p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {options.map((option) => (
-            <div 
-              key={option.id} 
-              className="bg-muted/50 dark:bg-[hsl(225,28%,15%)] dark:border dark:border-[hsl(225,25%,22%)] rounded-2xl p-6 flex flex-col items-center text-center space-y-4 hover:shadow-lg transition-all duration-300"
-            >
-              {/* Icon Container */}
-              <div className={`h-16 w-16 rounded-xl ${option.bgColor} flex items-center justify-center`}>
-                <option.icon className={`h-8 w-8 ${option.iconColor}`} />
-              </div>
-              
-              {/* Title */}
-              <h3 className="text-base font-semibold text-foreground">
-                {option.title}
-              </h3>
-              
-              {/* Description */}
-              <p className="text-sm text-muted-foreground">
-                {option.description}
-              </p>
-
-              {/* View Button */}
-              <Link to={`/calculator/${option.id}`} className="w-full">
-                <Button variant="outline" className="w-full mt-2">
-                  Calculate 
-                </Button>
-              </Link>
+        {allowedCalculators.length === 0 && (!isSuperAdmin && !isRootOrganisation) ? (
+          <div className="bg-gray-50 dark:bg-slate-800 rounded-3xl p-6">
+            <div className="flex items-center gap-4 text-gray-700 dark:text-gray-300">
+              <AlertCircle className="h-8 w-8 text-amber-500" />
+              <p className="text-lg font-medium">No calculators assigned</p>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        ) : (
+          <div className="bg-gray-50 dark:bg-slate-800 rounded-3xl p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visibleCalculators.map((option) => (
+                <div
+                  key={option.id}
+                  className="bg-muted/50 dark:bg-[hsl(225,28%,15%)] dark:border dark:border-[hsl(225,25%,22%)] rounded-2xl p-6 flex flex-col items-center text-center space-y-4 hover:shadow-lg transition-all duration-300"
+                >
+                  <div className={`h-16 w-16 rounded-xl ${option.bgColor} flex items-center justify-center`}>
+                    <option.icon className={`h-8 w-8 ${option.iconColor}`} />
+                  </div>
+                  <h3 className="text-base font-semibold text-foreground">
+                    {option.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {option.description}
+                  </p>
+                  <Link to={`/calculator/${option.id}`} className="w-full">
+                    <Button variant="outline" className="w-full mt-2">
+                      Calculate
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
 }
-
 
 export default Calculate

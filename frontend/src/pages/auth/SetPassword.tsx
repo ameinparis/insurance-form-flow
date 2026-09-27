@@ -36,7 +36,7 @@ const SetPassword = () => {
     const verifyToken = async () => {
       try {
         const res = await fetch(
-          `https://njs.exclusivelife.co.bw/api/auth/password-setup/verify?token=${token}`
+          `http://localhost:5002/api/auth/password-setup/verify?token=${token}`
         )
 
         const data = await res.json()
@@ -79,7 +79,7 @@ const SetPassword = () => {
     setIsLoading(true)
 
     try {
-      const response = await fetch("https://njs.exclusivelife.co.bw/api/auth/set-password", {
+      const response = await fetch("http://localhost:5002/api/auth/set-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),

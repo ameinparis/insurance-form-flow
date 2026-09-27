@@ -24,8 +24,9 @@ import {
 import { PageLoader } from "@/components/PageLoader"
 import { toast } from "sonner"
 import { DeleteMemberDialog } from "@/components/team/DeleteMemberDialog"
-import { normalizeRole, roleLabel } from "@/lib/permissions"
+import { normalizeRole, roleLabel, toStoredRole } from "@/lib/permissions"
 import { useAuth } from "@/lib/authlibrary"
+import { organisationsApi, type Organisation } from "@/lib/api"
 
 interface TeamMember {
   id: string
@@ -34,6 +35,7 @@ interface TeamMember {
   lastName: string
   email: string
   role: string
+  organisationId?: string | null
   initials: string
   bgColor: string
   borderColor: string
@@ -41,9 +43,12 @@ interface TeamMember {
 }
 
 const Team = () => {
-  const { userRole, permissions } = useAuth()
+  const { userRole, permissions, role: authRole, organisation, organisationLoading } = useAuth()
   const canManageUsers = permissions.canManageUsers
   const canManageSuperAdmins = permissions.canManageSuperAdmins
+  const isSuperAdmin = authRole === "super_admin"
+  const isRootAdmin = authRole === "admin" && organisation?.isRootOrganisation === true
+  const canPickOrganisation = isSuperAdmin || isRootAdmin
 
   const canEditMember = (member: TeamMember) => {
     const canEdit =
@@ -70,12 +75,15 @@ const Team = () => {
   const [editLoading, setEditLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deletingMember, setDeletingMember] = useState<TeamMember | null>(null)
+  const [organisations, setOrganisations] = useState<Organisation[]>([])
+  const [orgsLoading, setOrgsLoading] = useState(false)
 
   const [newUser, setNewUser] = useState({
     firstName: "",
     lastName: "",
     email: "",
     role: "",
+    organisationId: "",
   })
 
   const [editUser, setEditUser] = useState({
@@ -84,6 +92,10 @@ const Team = () => {
     email: "",
     role: "",
   })
+
+  const selectedOrganisation = organisations.find((o) => o._id === newUser.organisationId) || null
+  const selectedIsRoot = selectedOrganisation ? selectedOrganisation.isRootOrganisation : true
+  const canAssignAdmin = selectedIsRoot
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -97,6 +109,17 @@ const Team = () => {
 
   const handleRoleChange = (value: string) => {
     setNewUser((prev) => ({ ...prev, role: value }))
+  }
+
+  const handleNewUserOrganisationChange = (value: string) => {
+    const org = organisations.find((o) => o._id === value)
+    setNewUser((prev) => {
+      // External organisations can only hold Advisors, so drop a previously chosen Admin role
+      if (org && !org.isRootOrganisation && prev.role === "admin") {
+        return { ...prev, organisationId: value, role: "user" }
+      }
+      return { ...prev, organisationId: value }
+    })
   }
 
   const handleEditRoleChange = (value: string) => {
@@ -118,6 +141,14 @@ const Team = () => {
     }
     if (!newUser.role) {
       toast.error("Role is required")
+      return false
+    }
+    if (canPickOrganisation && !newUser.organisationId) {
+      toast.error("Organisation is required")
+      return false
+    }
+    if (selectedOrganisation && !selectedOrganisation.isRootOrganisation && newUser.role === "admin") {
+      toast.error("External organisations can only have Advisors")
       return false
     }
     return true
@@ -148,12 +179,21 @@ const Team = () => {
     setAddLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.post("http://localhost:5002/api/users/register", newUser, {
+      const payload: any = {
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        email: newUser.email,
+        role: newUser.role,
+      }
+      if (canPickOrganisation) {
+        payload.organisationId = newUser.organisationId
+      }
+      await axios.post("http://localhost:5002/api/users/register", payload, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member added successfully")
       setShowAddUserModal(false)
-      setNewUser({ firstName: "", lastName: "", email: "", role: "" })
+      setNewUser({ firstName: "", lastName: "", email: "", role: "", organisationId: "" })
       fetchUsers()
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.response?.data?.error || "Failed to add member"
@@ -255,13 +295,14 @@ const Team = () => {
         { bg: "bg-indigo-100 text-indigo-600", border: "border-indigo-400" },
         { bg: "bg-rose-100 text-rose-600", border: "border-rose-400" }
       ]
-      const mapped = res.data.map((user: any, idx: number) => ({
+       const mapped = res.data.map((user: any, idx: number) => ({
         id: user._id,
         name: `${user.firstName} ${user.lastName}`,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        organisationId: user.organisationId || null,
         initials: `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`,
         bgColor: pastelColors[idx % pastelColors.length].bg,
         borderColor: pastelColors[idx % pastelColors.length].border,
@@ -276,15 +317,45 @@ const Team = () => {
     }
   }
 
+  const fetchOrganisations = async () => {
+    if (!canPickOrganisation) return
+    try {
+      setOrgsLoading(true)
+      const data = await organisationsApi.getAll()
+      setOrganisations(data)
+    } catch (err: any) {
+      toast.error(err.message || "Failed to fetch organisations")
+    } finally {
+      setOrgsLoading(false)
+    }
+  }
+
   useEffect(() => {
     fetchUsers()
+    fetchOrganisations()
   }, [])
 
-  const getRoleBadgeClass = (role: string) => {
+  // Default the new-user organisation to the Root Organisation for Super Admin and Root Admin
+  useEffect(() => {
+    if (!canPickOrganisation) return
+    if (newUser.organisationId) return
+    const rootOrg = organisations.find((o) => o.isRootOrganisation)
+    if (rootOrg) {
+      setNewUser((prev) => ({ ...prev, organisationId: rootOrg._id }))
+    }
+  }, [organisations, canPickOrganisation])
+
+   const getRoleBadgeClass = (role: string) => {
     if (role === "superuser") {
       return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-300 dark:border-purple-700"
     }
     return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 border-gray-300 dark:border-gray-700"
+  }
+
+  const getOrganisationName = (orgId: string | null): string => {
+    if (!orgId) return "Platform"
+    const org = organisations.find((o) => o._id === orgId)
+    return org?.name || "Unknown"
   }
 
   const getStatusBadgeClass = (isActive: boolean) => {
@@ -294,6 +365,25 @@ const Team = () => {
     return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-300 dark:border-red-700"
   }
 
+  // Team management is reserved for Super Admins and Root Organisation Admins
+  if (organisationLoading) {
+    return (
+      <div className="-mx-6 -mb-6">
+        <div className="px-6 pb-6 space-y-6">
+          <Card className="bg-gray-50 dark:bg-slate-800 rounded-3xl border-0">
+            <CardContent className="py-6">
+              <PageLoader />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  if (!canManageUsers) {
+    return null
+  }
+
   return (
     <div className="-mx-6 -mb-6">
       <div className="sticky top-0 z-30 bg-card px-6 pt-6 pb-4 flex items-center justify-between">
@@ -301,10 +391,12 @@ const Team = () => {
           <h2 className="text-3xl font-bold mb-2">Team</h2>
           <p className="text-muted-foreground">Manage your team members and their roles.</p>
         </div>
-        <Button onClick={() => setShowAddUserModal(true)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add Member
-        </Button>
+        {canManageUsers && (
+          <Button onClick={() => setShowAddUserModal(true)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add Member
+          </Button>
+        )}
       </div>
       <div className="px-6 pb-6 space-y-6">
 
@@ -337,6 +429,11 @@ const Team = () => {
                     <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
                       Email
                     </TableHead>
+                    {canPickOrganisation && (
+                      <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
+                        Organisation
+                      </TableHead>
+                    )}
                     <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
                       Role
                     </TableHead>
@@ -368,6 +465,11 @@ const Team = () => {
                       <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                         {member.email}
                       </TableCell>
+                      {canPickOrganisation && (
+                        <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
+                          {getOrganisationName(member.organisationId)}
+                        </TableCell>
+                      )}
                       <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                         <Badge
                           variant="outline"
@@ -409,15 +511,21 @@ const Team = () => {
                                 <Pencil className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                               </Button>
 
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 hover:bg-transparent"
-                                onClick={() => setDeletingMember(member)}
-                                title="Delete User"
-                              >
-                                <Trash2 className="h-4 w-4 text-red-500" />
-                              </Button>
+                              {canManageSuperAdmins ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 hover:bg-transparent"
+                                  onClick={() => setDeletingMember(member)}
+                                  title="Delete User"
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">
+                                  —
+                                </span>
+                              )}
                             </>
                           ) : (
                             <span className="text-xs text-muted-foreground">
@@ -455,6 +563,26 @@ const Team = () => {
                 <Label>Email</Label>
                 <Input name="email" type="email" value={newUser.email} onChange={handleInputChange} className="mt-1" />
               </div>
+              {canPickOrganisation && (
+                <div>
+                  <Label>Organisation</Label>
+                  <Select
+                    value={newUser.organisationId}
+                    onValueChange={handleNewUserOrganisationChange}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder={orgsLoading ? "Loading organisations..." : "Select Organisation"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {organisations.map((org) => (
+                        <SelectItem key={org._id} value={org._id}>
+                          {org.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div>
                 <Label>Role</Label>
                 <Select value={newUser.role} onValueChange={handleRoleChange}>
@@ -462,8 +590,8 @@ const Team = () => {
                     <SelectValue placeholder="Select Role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="superuser">Superuser</SelectItem>
+                    {canAssignAdmin && <SelectItem value="admin">Admin</SelectItem>}
+                    <SelectItem value="user">Advisor</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -505,8 +633,17 @@ const Team = () => {
                     <SelectValue placeholder="Select Role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="superuser">Superuser</SelectItem>
+                    {canManageSuperAdmins ? (
+                      <>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="user">Advisor</SelectItem>
+                      </>
+                    ) : (
+                      <>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="user">Advisor</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

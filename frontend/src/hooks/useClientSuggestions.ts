@@ -25,7 +25,7 @@ interface QuoteData {
   client?: ClientSuggestion
 }
 
-const API_BASE_URL = "https://njs.exclusivelife.co.bw"
+const API_BASE_URL = "http://localhost:5002"
 
 export const useClientSuggestions = () => {
   const [clients, setClients] = useState<ClientSuggestion[]>([])

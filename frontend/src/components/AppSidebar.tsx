@@ -1,4 +1,4 @@
-import { Calculator, Home, FileText, Settings, LogOut, Users } from "lucide-react"
+import { Calculator, Home, FileText, Settings, LogOut, Users, Building2 } from "lucide-react"
 import { NavLink } from "react-router-dom"
 import {
   Sidebar,
@@ -6,12 +6,17 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { usePermissions } from "@/lib/authlibrary"
+import { useAuth } from "@/lib/authlibrary"
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Calculator", url: "/calculator", icon: Calculator },
   { title: "Quotation Management", url: "/quotes", icon: FileText },
   { title: "Team", url: "/team", icon: Users, permission: "canManageUsers" as const },
+]
+
+const superAdminItems = [
+  { title: "Organisations", url: "/organisations", icon: Building2 },
 ]
 
 const settingsItems = [
@@ -21,10 +26,15 @@ const settingsItems = [
 
 export function AppSidebar() {
     const permissions = usePermissions()
+  const { role, organisation } = useAuth()
 
-    const visibleMenuItems = menuItems.filter(
+  const visibleMenuItems = menuItems.filter(
   (item) => !("permission" in item) || permissions[item.permission]
 )
+    const isSuperAdmin = role === "super_admin"
+  const isRootAdmin = role === "admin" && organisation?.isRootOrganisation === true
+  const canViewOrganisations = isSuperAdmin || isRootAdmin
+
   return (
     <Sidebar variant="inset" className="w-64 bg-card rounded-[40px] sticky top-0 h-[calc(100vh-7rem)] overflow-hidden border-0 shadow-sm">
       <SidebarContent className="flex flex-col h-full">
@@ -58,6 +68,33 @@ export function AppSidebar() {
                 )}
               </NavLink>
             ))}
+            {canViewOrganisations && (
+              <nav className="space-y-2 pt-2 border-t border-border/30">
+                {superAdminItems.map((item) => (
+                  <NavLink
+                    key={item.title}
+                    to={item.url}
+                    className={({ isActive }) =>
+                      `relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group ${
+                        isActive
+                          ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                          : "text-foreground/70 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {isActive && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-blue-500" />
+                        )}
+                        <item.icon className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
+                        <span className="text-[13px] font-semibold whitespace-nowrap">{item.title}</span>
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+              </nav>
+            )}
           </nav>
 
         </div>

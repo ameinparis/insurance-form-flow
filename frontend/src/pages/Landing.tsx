@@ -20,7 +20,7 @@ const Landing = () => {
     setIsLoading(true)
 
     try {
-      const response = await fetch("https://njs.exclusivelife.co.bw/api/users/login", {
+      const response = await fetch("http://localhost:5002/api/users/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
