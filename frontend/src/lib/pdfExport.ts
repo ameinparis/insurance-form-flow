@@ -166,28 +166,30 @@ const PDF_EXTRA_STYLES = `
 
   /* Editorial quotation system — shared with the on-screen document */
   .quote-document { font-size: 11px !important; line-height: 1.42 !important; }
-  .quote-masthead { padding: 0 0 6mm !important; }
+  .quote-masthead { padding: 8mm 0 5mm !important; }
   .quote-masthead__top {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
-    align-items: center !important;
+    align-items: start !important;
     gap: 7mm !important;
-    padding-bottom: 4mm !important;
+    padding-bottom: 7mm !important;
   }
   .quote-company-details { grid-column: 1 !important; text-align: left !important; }
   .quote-brand-block { grid-column: 2 !important; justify-content: center !important; }
   .quote-header-summary { grid-column: 3 !important; justify-self: end !important; min-width: 36mm !important; text-align: right !important; }
-  .quote-logo { height: 13mm !important; width: auto !important; }
+  .quote-logo { height: 16mm !important; width: auto !important; }
   .quote-eyebrow, .quote-header-product, .quote-section-heading > span,
   .quote-option-heading > span, .quote-detail-label, .quote-metadata dt {
     font-size: 8px !important;
     letter-spacing: 0.08em !important;
   }
   .quote-company-details { font-size: 8.5px !important; line-height: 1.45 !important; }
-  .quote-title-row { display: block !important; padding-top: 5mm !important; }
-  .quote-document-title { font-size: 19px !important; font-weight: 600 !important; line-height: 1.16 !important; }
+  .quote-title-row { display: block !important; padding-top: 7mm !important; }
+  .quote-document-title { font-size: 25px !important; font-weight: 700 !important; line-height: 1.1 !important; }
+  .quote-client-kicker { margin: 7mm 0 0 !important; font-size: 8px !important; letter-spacing: 0.08em !important; }
   .quote-metadata { min-width: 0 !important; gap: 1.5mm !important; }
   .quote-section { padding: 5mm 0 !important; }
+  .quote-client-section { padding-top: 0 !important; }
   .quote-section-heading { margin-bottom: 3mm !important; }
   .quote-section-heading h2, .quote-section-heading h3 { font-size: 11px !important; font-weight: 600 !important; }
   .quote-details-grid { column-gap: 10mm !important; }

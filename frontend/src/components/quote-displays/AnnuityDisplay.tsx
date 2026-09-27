@@ -137,11 +137,6 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
 
   const personalDetails = (
     <section className="quote-section quote-client-section">
-      {/* Personal & Annuity Details */}
-      <div className="quote-section-heading">
-        <span>01</span>
-        <h2>Client details</h2>
-      </div>
       <div className="quote-details-grid">
         {editing ? (
           <>
