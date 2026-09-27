@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { FileText, ZoomIn, ZoomOut, Maximize, ArrowLeft } from "lucide-react";
+import { Info, ZoomIn, ZoomOut, Maximize, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const ZOOM_LEVELS = [0.75, 0.9, 1, 1.1, 1.25] as const;
@@ -48,30 +48,24 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions }: Docum
   const zoomPercent = Math.round(zoom * 100);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
-      {/* White preview section */}
-      <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 border-x border-border">
-        {/* Document toolbar */}
-        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-white/95 dark:bg-slate-900/95 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60">
-          {/* Left */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => window.history.length > 1 ? window.history.back() : window.location.assign("/")}
-              aria-label="Back"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-xs text-muted-foreground">·</span>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{filename}</span>
-          </div>
+    <div className="quotation-preview-shell h-[calc(100vh-4rem)]">
+      <div className="quotation-preview-toolbar">
+        <div className="quotation-preview-title">
+          <span>Preview</span>
+          <Info className="h-4 w-4" aria-hidden="true" />
+        </div>
 
-          {/* Center */}
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground mr-1">{pageLabel ?? "Document"}</span>
+        <div className="quotation-preview-actions">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="quotation-toolbar-action"
+            onClick={() => window.history.length > 1 ? window.history.back() : window.location.assign("/")}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </Button>
+          <div className="quotation-zoom-controls" aria-label="Document zoom controls">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomOut} disabled={zoom === ZOOM_LEVELS[0]}>
               <ZoomOut className="h-4 w-4" />
             </Button>
@@ -84,26 +78,19 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions }: Docum
               Fit Width
             </Button>
           </div>
-
-          {/* Right */}
-          <div className="flex items-center gap-2">
-            {actions}
-          </div>
+          {actions}
         </div>
+      </div>
 
-        {/* Grey document canvas */}
-        <div className="flex-1 overflow-hidden bg-muted/30 p-2 sm:p-3">
-          <div
-            ref={canvasRef}
-            className="document-workspace h-full overflow-auto rounded-lg p-4 sm:p-5"
-          >
-            <div className="mx-auto w-[95%]" style={{ transform: `scale(${zoom})`, transformOrigin: "top center" }}>
-              <div data-paper className="quote-paper overflow-hidden rounded-[18px] border border-border/70 bg-card">
-                {children}
-              </div>
+      <div ref={canvasRef} className="quotation-preview-canvas">
+        <div className="quotation-paper-stage" style={{ transform: `scale(${zoom})`, transformOrigin: "top center" }}>
+          <div data-paper className="quote-paper overflow-hidden">
+            {children}
+          </div>
+          <p className="quotation-preview-filename" aria-hidden="true">
+            {pageLabel ?? "Document"} · {filename}
+          </p>
             </div>
-          </div>
-        </div>
       </div>
     </div>
   );

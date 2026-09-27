@@ -60,8 +60,9 @@ export const QuoteHeader = ({
       <div className="quote-title-row">
         <p className="quote-eyebrow">Quotation</p>
         <h1 className="quote-document-title">
-          Quotation for {clientName || "Client Name"}
+          {clientName || "Client Name"}
         </h1>
+        <p className="quote-client-kicker">Client details</p>
       </div>
     </header>
   );

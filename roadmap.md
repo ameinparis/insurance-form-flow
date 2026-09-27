@@ -12,3 +12,6 @@
 - [x] Soften and enlarge the continuous viewer with narrow grey gutters.
 - [x] Lighten quotation typography and remove card-heavy document styling.
 - [x] Preserve and verify independent A4 PDF pagination rules.
+- [x] Match the quotation preview shell to the supplied rounded grey viewer reference.
+- [x] Match the quotation masthead and client-name hierarchy to the supplied document reference.
+- [ ] Verify sticky actions, responsive layout, and unchanged A4 export safeguards.
