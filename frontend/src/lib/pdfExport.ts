@@ -192,17 +192,18 @@ const PDF_EXTRA_STYLES = `
   .quote-client-section { padding-top: 0 !important; }
   .quote-section-heading { margin-bottom: 3mm !important; }
   .quote-section-heading h2, .quote-section-heading h3 { font-size: 11px !important; font-weight: 600 !important; }
-  .quote-details-grid { column-gap: 10mm !important; }
+  .quote-details-grid, .quote-client-details-grid, .quote-summary-row { column-gap: 10mm !important; }
+  .quote-client-details-grid, .quote-summary-row { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .quote-summary-row { margin-top: 1mm !important; }
   .quote-detail-item { padding: 2mm 0 !important; grid-template-columns: minmax(29mm, .9fr) minmax(0, 1.1fr) !important; }
   .quote-scenarios-intro { padding-bottom: 3mm !important; }
-  .quote-scenario-wrap { padding: 0 0 4mm !important; }
-  .quote-scenario { padding: 4mm 0 !important; border-right: 0 !important; border-left: 0 !important; border-radius: 0 !important; }
+  .quote-scenario-wrap { padding: 0 0 3mm !important; }
+  .quote-scenario { padding: 3mm 4mm !important; border: 1px solid #aab4c4 !important; border-radius: 3mm !important; }
   .quote-option-heading { padding-bottom: 3mm !important; }
-  .quote-option-section { margin-top: 3mm !important; }
-  .quote-option-section h5, .quote-option-subheading { margin-bottom: 2mm !important; font-size: 10px !important; }
-  .quote-table-wrap { border-right: 0 !important; border-left: 0 !important; border-radius: 0 !important; }
+  .quote-option-section { margin-top: 1.5mm !important; }
+  .quote-option-section h5, .quote-option-subheading { margin-bottom: 1mm !important; font-size: 9px !important; }
   .quote-table { font-size: 9px !important; }
-  .quote-table th, .quote-table td { padding: 2mm 3mm !important; }
+  .quote-table th, .quote-table td { padding: 1.4mm 2.5mm !important; }
   .quote-table-note { margin-top: 1.5mm !important; font-size: 8px !important; }
   .quote-acceptance { margin-top: 6mm !important; padding-top: 5mm !important; }
   .quote-acceptance h3 { margin-bottom: 4mm !important; font-size: 11px !important; }
@@ -235,18 +236,27 @@ const PDF_EXTRA_STYLES = `
   .quote-section-heading { margin-bottom: 1.5mm !important; }
   .quote-detail-label { font-size: 8px !important; letter-spacing: 0 !important; }
   .quote-detail-item { grid-template-columns: auto 1fr !important; padding: 1.3mm 0 !important; }
-  .quote-scenario-wrap { padding: 0 7mm 3mm !important; }
-  .quote-scenario { padding: 2.5mm 2mm !important; border: 1px solid #aab4c4 !important; border-radius: 3mm !important; }
+  .quote-scenario-wrap { padding: 0 0 2.5mm !important; }
+  .quote-scenario { padding: 2.5mm 4mm !important; border: 1px solid #aab4c4 !important; border-radius: 3mm !important; }
   .quote-option-heading { padding-bottom: 0.5mm !important; }
-  .quote-option-section { margin-top: 1mm !important; }
-  .quote-option-section h5, .quote-option-subheading { margin: 1.5mm 0 1mm !important; }
+  .quote-option-section { margin-top: 0.8mm !important; }
+  .quote-option-section h5, .quote-option-subheading { margin: 1mm 0 0.7mm !important; }
   .quote-table-wrap { border: 1px solid #aab4c4 !important; border-radius: 2.5mm !important; }
   .quote-table th { font-size: 7.5px !important; }
-  .quote-table th, .quote-table td { padding: 1.3mm 3mm !important; }
+  .quote-table th, .quote-table td { padding: 1mm 2.5mm !important; }
   .quote-acceptance { margin-top: 3mm !important; padding-top: 3mm !important; }
   .quote-terms { padding-top: 4mm !important; }
   .quote-terms .quote-section-heading h3 { font-size: 11px !important; text-transform: none !important; letter-spacing: 0 !important; }
   .compact-two-page .quote-scenario { padding: 2mm !important; }
+  .quote-page-break-before { break-before: page !important; page-break-before: always !important; }
+  .quote-option-count-1 .quote-fees-section,
+  .quote-option-count-2 .quote-fees-section { break-before: page !important; page-break-before: always !important; }
+  .quote-page-break-before,
+  .quote-option-count-1 .quote-fees-section,
+  .quote-option-count-2 .quote-fees-section { margin-top: 0 !important; }
+  .quote-page-break-before::before,
+  .quote-option-count-1 .quote-fees-section::before,
+  .quote-option-count-2 .quote-fees-section::before { display: none !important; content: none !important; }
 
 `;
 
@@ -408,7 +418,7 @@ export async function exportQuotePdf(
 
   // 5b. 4+ annuity option cards → compact typography/spacing.
   const optionCount = (contentHtml.match(/class="[^"]*scenario-block/g) || []).length;
-  const printMode = optionCount <= 3 ? "compact-two-page" : optionCount <= 5 ? "pdf-compact" : "";
+  const printMode = optionCount <= 4 ? "compact-two-page" : "pdf-compact";
   const compactClass = printMode ? ` ${printMode}` : "";
 
   const buildHtml = (bodyInner: string) => `<!DOCTYPE html>

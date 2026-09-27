@@ -301,6 +301,9 @@
   }
 
   .quote-details-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 3.5rem; }
+  .quote-client-details-grid, .quote-summary-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 3.5rem; }
+  .quote-client-column { min-width: 0; }
+  .quote-summary-row { margin-top: 0.35rem; }
   .quote-detail-item { display: grid; grid-template-columns: minmax(7.5rem, 0.8fr) minmax(0, 1.2fr); gap: 1rem; align-items: baseline; padding: 0.75rem 0; border-bottom: 1px solid hsl(var(--document-rule)); }
   .quote-detail-value { min-width: 0; color: hsl(var(--document-ink)); font-weight: 500; overflow-wrap: anywhere; }
   .quote-detail-value--strong { font-weight: 600; }
@@ -308,14 +311,33 @@
 
   .quote-scenarios-intro { padding-bottom: 1rem; border-top: 1px solid hsl(var(--document-rule)); }
   .quote-scenarios-intro .quote-section-heading { margin-bottom: 0; }
-  .quote-scenario-wrap { padding: 0 4.25rem 1.25rem; background: hsl(var(--document-paper)); }
-  .quote-scenario { padding: 1.25rem 0; border-top: 1px solid hsl(var(--document-rule)); border-bottom: 1px solid hsl(var(--document-rule)); background: hsl(var(--document-paper)); }
+  .quote-scenario-wrap { padding: 0 4.25rem 0.85rem; background: hsl(var(--document-paper)); }
+  .quote-scenario { padding: 1rem; border: 1px solid hsl(var(--document-rule)); border-radius: 0.75rem; background: hsl(var(--document-paper)); }
+  .quote-page-break-before,
+  .quote-option-count-1 .quote-fees-section,
+  .quote-option-count-2 .quote-fees-section {
+    position: relative;
+    margin-top: 2.5rem;
+  }
+  .quote-page-break-before::before,
+  .quote-option-count-1 .quote-fees-section::before,
+  .quote-option-count-2 .quote-fees-section::before {
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    left: 0;
+    height: 2.5rem;
+    border-top: 1px solid hsl(var(--document-rule));
+    border-bottom: 1px solid hsl(var(--document-rule));
+    background: hsl(var(--document-workspace));
+    content: "";
+  }
   .quote-option-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid hsl(var(--document-rule)); }
   .quote-option-heading h4 { margin: 0; color: hsl(var(--document-ink)); font-size: 0.95rem; font-weight: 600; letter-spacing: 0; }
-  .quote-option-section { margin-top: 1.25rem; }
+  .quote-option-section { margin-top: 0.65rem; }
   .quote-option-section h5,
   .quote-option-subheading { margin: 0 0 0.75rem; color: hsl(var(--document-ink)); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0; }
-  .quote-details-grid--compact .quote-detail-item { padding: 0.55rem 0; }
+  .quote-details-grid--compact .quote-detail-item { padding: 0.4rem 0; }
 
   .quote-table-wrap { overflow: hidden; border-top: 1px solid hsl(var(--document-rule)); border-bottom: 1px solid hsl(var(--document-rule)); }
   .quote-table { width: 100%; border-collapse: collapse; color: hsl(var(--document-copy)); font-size: 0.8125rem; text-align: left; }
@@ -350,12 +372,19 @@
     .quote-masthead, .quote-section { padding: 2rem 1.75rem; }
     .quote-client-section { padding-top: 0; }
     .quote-scenario-wrap { padding-right: 1.75rem; padding-left: 1.75rem; }
+    .quote-page-break-before,
+    .quote-option-count-1 .quote-fees-section,
+    .quote-option-count-2 .quote-fees-section { margin-top: 1.25rem; }
+    .quote-page-break-before::before,
+    .quote-option-count-1 .quote-fees-section::before,
+    .quote-option-count-2 .quote-fees-section::before { height: 1.25rem; }
     .quote-masthead__top { grid-template-columns: 1fr auto; gap: 1.25rem; }
     .quote-brand-block { grid-column: 1 / -1; grid-row: 1; justify-content: center; }
     .quote-logo { height: 4rem; }
     .quote-company-details { display: block; grid-column: 1; grid-row: 2; font-size: 0.65rem; }
     .quote-header-summary { grid-column: 2; grid-row: 2; min-width: 8.5rem; }
     .quote-details-grid { grid-template-columns: 1fr; }
+    .quote-client-details-grid, .quote-summary-row { grid-template-columns: 1fr; }
     .quote-title-row { padding-top: 2rem; }
     .quote-document-title { font-size: 2rem; }
     .quote-client-kicker { margin-top: 2rem; }
@@ -398,22 +427,22 @@
   .quote-client-kicker { margin-top: 1.1rem; }
   .quote-title-row { padding-top: 1.75rem; }
   .quote-document-title { font-size: 2.35rem; font-weight: 600; }
-  .quote-section { padding: 0.9rem 4.25rem; }
+  .quote-section { padding: 0.75rem 4.25rem; }
   .quote-section + .quote-section, .quote-scenarios-intro, .quote-fees-section { border-top: 0; }
   .quote-detail-label { text-transform: none; letter-spacing: 0; font-weight: 300; font-size: 0.75rem; }
   .quote-detail-item { grid-template-columns: auto 1fr; padding: 0.45rem 0; border-bottom-color: hsl(var(--document-muted) / 0.55); }
   .quote-detail-value { text-align: right; font-weight: 300; font-size: 0.8rem; }
   .quote-detail-value--strong { font-weight: 600; }
-  .quote-scenario-wrap { padding: 0 6rem 1.25rem; }
-  .quote-scenario { padding: 0.75rem 0.6rem; border: 1px solid hsl(var(--document-muted) / 0.6); border-radius: 0.75rem; background: hsl(var(--document-wash) / 0.5); }
+  .quote-scenario-wrap { padding: 0 4.25rem 0.85rem; }
+  .quote-scenario { padding: 0.8rem 1rem; border: 1px solid hsl(var(--document-muted) / 0.45); border-radius: 0.75rem; background: hsl(var(--document-paper)); }
   .quote-option-heading { padding-bottom: 0.2rem; border-bottom: 0; }
-  .quote-option-heading h4 { font-size: 0.85rem; font-weight: 500; }
-  .quote-option-section { margin-top: 0.4rem; }
-  .quote-option-section h5, .quote-option-subheading { margin: 0.5rem 0 0.35rem; }
+  .quote-option-heading h4 { font-size: 0.82rem; font-weight: 600; }
+  .quote-option-section { margin-top: 0.3rem; }
+  .quote-option-section h5, .quote-option-subheading { margin: 0.4rem 0 0.25rem; }
   .quote-table-wrap { border: 1px solid hsl(var(--document-muted) / 0.6); border-radius: 0.6rem; }
   .quote-table { font-size: 0.75rem; }
-  .quote-table th { background: transparent; color: hsl(var(--document-muted)); font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.7rem; padding: 0.5rem 1rem; }
-  .quote-table td { padding: 0.45rem 1rem; font-weight: 300; }
+  .quote-table th { background: hsl(var(--document-wash)); color: hsl(var(--document-copy)); font-weight: 500; letter-spacing: 0; text-transform: none; font-size: 0.7rem; padding: 0.38rem 0.65rem; }
+  .quote-table td { padding: 0.38rem 0.65rem; font-weight: 300; }
   .quote-table td:not(:first-child) { color: hsl(var(--document-ink)); font-weight: 600; }
   .quote-acceptance { margin-top: 0.9rem; padding-top: 0.9rem; }
   .quote-signature-grid label { text-transform: none; letter-spacing: 0; font-weight: 300; font-size: 0.75rem; }

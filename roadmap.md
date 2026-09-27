@@ -15,3 +15,7 @@
 - [x] Match the quotation preview shell to the supplied rounded grey viewer reference.
 - [x] Match the quotation masthead and client-name hierarchy to the supplied document reference.
 - [x] Verify sticky actions, responsive layout, and unchanged A4 export safeguards.
+- [x] Restore the older compact two-column client details and quotation summary structure.
+- [x] Restore compact, intact annuity option blocks in both preview and PDF.
+- [x] Keep one through four options on the established two-page pagination structure.
+- [x] Verify matching preview/export pagination without changing the masthead or calculations.

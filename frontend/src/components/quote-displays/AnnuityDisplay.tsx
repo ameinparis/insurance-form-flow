@@ -57,7 +57,7 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
   };
 
   const scenarios: Array<any> = Array.isArray(quote?.outputs?.scenarios) ? quote.outputs.scenarios : [];
-  const hasScenarios = scenarios.length > 1;
+  const hasScenarios = scenarios.length > 0;
 
   // Life annuity guarantee-period table (5/10/15/20 years).
   // If the pdf/export layer already pre-fetched them and attached to the quote,
@@ -137,7 +137,7 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
 
   const personalDetails = (
     <section className="quote-section quote-client-section">
-      <div className="quote-details-grid">
+      <div className="quote-client-details-grid">
         {editing ? (
           <>
             {renderClientField("Full Name", "fullName")}
@@ -149,28 +149,34 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
           </>
         ) : (
           <>
-            <div className="quote-detail-item">
-              <span className="quote-detail-label">Date of Birth</span>
-              <span className="quote-detail-value">{clientData?.dateOfBirth || "N/A"}</span>
+            <div className="quote-client-column">
+              <div className="quote-detail-item">
+                <span className="quote-detail-label">Date of Birth</span>
+                <span className="quote-detail-value">{clientData?.dateOfBirth || "N/A"}</span>
+              </div>
+              <div className="quote-detail-item">
+                <span className="quote-detail-label">ID / Passport Number</span>
+                <span className="quote-detail-value">{clientData?.idNumber || "N/A"}</span>
+              </div>
+              <div className="quote-detail-item">
+                <span className="quote-detail-label">Email</span>
+                <span className="quote-detail-value">{clientData?.email || "N/A"}</span>
+              </div>
             </div>
-            <div className="quote-detail-item">
-              <span className="quote-detail-label">Gender</span>
-              <span className="quote-detail-value">{clientData?.gender || "N/A"}</span>
-            </div>
-            <div className="quote-detail-item">
-              <span className="quote-detail-label">ID / Passport Number</span>
-              <span className="quote-detail-value">{clientData?.idNumber || "N/A"}</span>
-            </div>
-            <div className="quote-detail-item">
-              <span className="quote-detail-label">Contact</span>
-              <span className="quote-detail-value">{clientData?.contactNumber || "N/A"}</span>
-            </div>
-            <div className="quote-detail-item">
-              <span className="quote-detail-label">Email</span>
-              <span className="quote-detail-value">{clientData?.email || "N/A"}</span>
+            <div className="quote-client-column">
+              <div className="quote-detail-item">
+                <span className="quote-detail-label">Gender</span>
+                <span className="quote-detail-value">{clientData?.gender || "N/A"}</span>
+              </div>
+              <div className="quote-detail-item">
+                <span className="quote-detail-label">Contact</span>
+                <span className="quote-detail-value">{clientData?.contactNumber || "N/A"}</span>
+              </div>
             </div>
           </>
         )}
+      </div>
+      <div className="quote-summary-row">
         <div className="quote-detail-item">
           <span className="quote-detail-label">Funeral Cover</span>
           <span className="quote-detail-value">{formatCurrency(15000)}</span>
@@ -230,8 +236,11 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
         </div>
       </div>
       {scenarioGroups.map((group, idx) => (
-        <div key={group.signature} className="quote-scenario-wrap">
-          <ScenarioGroupBlock group={group} index={idx} showOptionLabel={scenarioGroups.length > 1} />
+        <div
+          key={group.signature}
+          className={`quote-scenario-wrap ${idx > 0 && idx % 2 === 0 ? "quote-page-break-before" : ""}`}
+        >
+          <ScenarioGroupBlock group={group} index={idx} showOptionLabel />
         </div>
       ))}
     </>
@@ -348,7 +357,7 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
 
 
   return (
-    <div className="quote-document-body">
+    <div className={`quote-document-body quote-option-count-${scenarioGroups.length}`}>
       {personalDetails}
       {scenariosSection}
       {lifeSection}
@@ -498,13 +507,19 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
   const hasLife = selectedPeriods.length > 0;
 
   const preInjected = preInjectedRaw
-    ? preInjectedRaw.filter((p) => selectedPeriods.includes(p.guarantee_period))
+    ? LIFE_ANNUITY_PERIODS.map((period) => {
+        const injected = preInjectedRaw.find((item) => item.guarantee_period === period);
+        return injected ?? {
+          guarantee_period: period,
+          monthly_annuity: knownByPeriod.get(period) ?? null,
+        };
+      })
     : undefined;
 
   const initial: LifePeriodResult[] =
     preInjected && preInjected.length > 0
       ? preInjected
-      : selectedPeriods.map((p) => ({
+      : LIFE_ANNUITY_PERIODS.map((p) => ({
           guarantee_period: p,
           monthly_annuity: knownByPeriod.has(p) ? knownByPeriod.get(p) ?? null : null,
         }));
@@ -531,9 +546,7 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
         guarantee_period: firstKnownPeriod ?? null,
         monthly_annuity: firstKnownAnnuity ?? null,
       });
-      const filtered = results
-        .filter((r) => selectedPeriods.includes(r.guarantee_period))
-        .map((r) =>
+      const filtered = results.map((r) =>
           knownByPeriod.has(r.guarantee_period)
             ? { ...r, monthly_annuity: knownByPeriod.get(r.guarantee_period) ?? null }
             : r
@@ -556,8 +569,9 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
     <article className="scenario-block quote-scenario">
       {showOptionLabel && (
         <div className="quote-option-heading">
-          <span>Option {String(index + 1).padStart(2, "0")}</span>
-          <h4>{inputs.drawdown != null ? `${inputs.drawdown}% Drawdown` : "Annuity option"}</h4>
+          <h4>
+            Option {index + 1} — {inputs.drawdown != null ? `${inputs.drawdown}% Drawdown` : "Annuity option"}
+          </h4>
         </div>
       )}
 
