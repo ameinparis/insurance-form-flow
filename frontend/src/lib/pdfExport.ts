@@ -222,6 +222,32 @@ const PDF_EXTRA_STYLES = `
   .compact-two-page .quote-scenario-wrap { padding-bottom: 2.5mm !important; }
   .compact-two-page .quote-acceptance { margin-top: 3mm !important; padding-top: 3mm !important; }
 
+  /* Reference-matched refinement */
+  .quote-section-heading > span { display: none !important; }
+  .quote-section-heading h2, .quote-section-heading h3, .quote-acceptance h3, .quote-client-kicker,
+  .quote-eyebrow, .quote-option-section h5, .quote-option-subheading {
+    font-size: 8.5px !important; font-weight: 500 !important; letter-spacing: 0.14em !important; text-transform: uppercase !important;
+  }
+  .quote-document-title { font-size: 23px !important; font-weight: 600 !important; }
+  .quote-client-kicker { margin-top: 3mm !important; }
+  .quote-title-row { padding-top: 5mm !important; }
+  .quote-section { padding: 2.5mm 0 !important; }
+  .quote-section-heading { margin-bottom: 1.5mm !important; }
+  .quote-detail-label { font-size: 8px !important; letter-spacing: 0 !important; }
+  .quote-detail-item { grid-template-columns: auto 1fr !important; padding: 1.3mm 0 !important; }
+  .quote-scenario-wrap { padding: 0 7mm 3mm !important; }
+  .quote-scenario { padding: 2.5mm 2mm !important; border: 1px solid #aab4c4 !important; border-radius: 3mm !important; }
+  .quote-option-heading { padding-bottom: 0.5mm !important; }
+  .quote-option-section { margin-top: 1mm !important; }
+  .quote-option-section h5, .quote-option-subheading { margin: 1.5mm 0 1mm !important; }
+  .quote-table-wrap { border: 1px solid #aab4c4 !important; border-radius: 2.5mm !important; }
+  .quote-table th { font-size: 7.5px !important; }
+  .quote-table th, .quote-table td { padding: 1.3mm 3mm !important; }
+  .quote-acceptance { margin-top: 3mm !important; padding-top: 3mm !important; }
+  .quote-terms { padding-top: 4mm !important; }
+  .quote-terms .quote-section-heading h3 { font-size: 11px !important; text-transform: none !important; letter-spacing: 0 !important; }
+  .compact-two-page .quote-scenario { padding: 2mm !important; }
+
 `;
 
 

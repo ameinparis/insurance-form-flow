@@ -385,3 +385,40 @@
   h1 { font-weight: 800; }
   h2 { font-weight: 700; }
 }
+/* Reference-matched quotation refinement (screen + PDF share these) */
+@layer components {
+  .quote-section-heading > span { display: none; }
+  .quote-section-heading h2, .quote-section-heading h3,
+  .quote-acceptance h3, .quote-client-kicker, .quote-eyebrow,
+  .quote-option-section h5, .quote-option-subheading {
+    color: hsl(var(--document-muted)); font-weight: 500; letter-spacing: 0.14em;
+    text-transform: uppercase; font-size: 0.8rem; font-family: inherit;
+  }
+  .quote-section-heading { margin-bottom: 0.5rem; }
+  .quote-client-kicker { margin-top: 1.1rem; }
+  .quote-title-row { padding-top: 1.75rem; }
+  .quote-document-title { font-size: 2.35rem; font-weight: 600; }
+  .quote-section { padding: 0.9rem 4.25rem; }
+  .quote-section + .quote-section, .quote-scenarios-intro, .quote-fees-section { border-top: 0; }
+  .quote-detail-label { text-transform: none; letter-spacing: 0; font-weight: 300; font-size: 0.75rem; }
+  .quote-detail-item { grid-template-columns: auto 1fr; padding: 0.45rem 0; border-bottom-color: hsl(var(--document-muted) / 0.55); }
+  .quote-detail-value { text-align: right; font-weight: 300; font-size: 0.8rem; }
+  .quote-detail-value--strong { font-weight: 600; }
+  .quote-scenario-wrap { padding: 0 6rem 1.25rem; }
+  .quote-scenario { padding: 0.75rem 0.6rem; border: 1px solid hsl(var(--document-muted) / 0.6); border-radius: 0.75rem; background: hsl(var(--document-wash) / 0.5); }
+  .quote-option-heading { padding-bottom: 0.2rem; border-bottom: 0; }
+  .quote-option-heading h4 { font-size: 0.85rem; font-weight: 500; }
+  .quote-option-section { margin-top: 0.4rem; }
+  .quote-option-section h5, .quote-option-subheading { margin: 0.5rem 0 0.35rem; }
+  .quote-table-wrap { border: 1px solid hsl(var(--document-muted) / 0.6); border-radius: 0.6rem; }
+  .quote-table { font-size: 0.75rem; }
+  .quote-table th { background: transparent; color: hsl(var(--document-muted)); font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.7rem; padding: 0.5rem 1rem; }
+  .quote-table td { padding: 0.45rem 1rem; font-weight: 300; }
+  .quote-table td:not(:first-child) { color: hsl(var(--document-ink)); font-weight: 600; }
+  .quote-acceptance { margin-top: 0.9rem; padding-top: 0.9rem; }
+  .quote-signature-grid label { text-transform: none; letter-spacing: 0; font-weight: 300; font-size: 0.75rem; }
+  .quote-terms { border-top: 1px solid hsl(var(--document-ink) / 0.7); }
+  .quote-terms .quote-section-heading { justify-content: center; }
+  .quote-terms .quote-section-heading h3 { text-transform: none; letter-spacing: 0; color: hsl(var(--document-ink)); font-size: 1rem; font-weight: 500; }
+  .quote-terms-copy { font-size: 0.75rem; font-weight: 300; line-height: 1.6; }
+}
