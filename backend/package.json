@@ -45,5 +45,9 @@
     "mongodb": "4.9.1",
     "bson": "4.2.0"
   },
-  "description": ""
+  "description": "",
+  "engines": {
+    "node": "22.x",
+    "npm": "10.9.2"
+  }
 }

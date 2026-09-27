@@ -62,8 +62,8 @@ const io = new Server(httpServer, {
 const connectedUsers = new Map()
 
 const PY_CALC_BASE = (
-  // process.env.PY_CALC_URL || "http://13.247.66.8:5005"
-  process.env.PY_CALC_URL || "http:localhost:5005"
+  process.env.PY_CALC_URL || "http://13.247.66.8:5005"
+  // process.env.PY_CALC_URL || "http:localhost:5005"
 ).replace(/\/+$/, "")
 
 io.use((socket, next) => {
