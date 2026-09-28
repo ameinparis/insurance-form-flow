@@ -175,15 +175,19 @@ const PDF_EXTRA_STYLES = `
     padding-bottom: 7mm !important;
   }
   .quote-company-details { grid-column: 1 !important; text-align: left !important; }
-  .quote-brand-block { grid-column: 2 !important; justify-content: center !important; }
-  .quote-header-summary { grid-column: 3 !important; justify-self: end !important; min-width: 36mm !important; text-align: right !important; }
-  .quote-logo { height: 16mm !important; width: auto !important; }
+  .quote-brand-block { grid-column: 2 !important; justify-content: center !important; justify-self: center !important; }
+  .quote-logo-wrap { min-height: 22mm !important; }
+  .quote-header-summary { grid-column: 3 !important; justify-self: end !important; min-width: 36mm !important; font-size: 9px !important; text-align: right !important; }
+  .quote-logo { height: 22mm !important; width: auto !important; }
   .quote-eyebrow, .quote-header-product, .quote-section-heading > span,
   .quote-option-heading > span, .quote-detail-label, .quote-metadata dt {
-    font-size: 8px !important;
+    font-size: 7.4px !important;
     letter-spacing: 0.08em !important;
   }
-  .quote-company-details { font-size: 8.5px !important; line-height: 1.45 !important; }
+  .quote-company-details { font-size: 7.6px !important; line-height: 1.4 !important; color: #5c6675 !important; }
+  .quote-company-contact { color: #5c6675 !important; }
+  .quote-header-product { margin: 0 0 3mm !important; }
+  .quote-metadata dd { font-size: 9px !important; }
   .quote-title-row { display: block !important; padding-top: 7mm !important; }
   .quote-document-title { font-size: 25px !important; font-weight: 700 !important; line-height: 1.1 !important; }
   .quote-client-kicker { margin: 7mm 0 0 !important; font-size: 8px !important; letter-spacing: 0.08em !important; }
