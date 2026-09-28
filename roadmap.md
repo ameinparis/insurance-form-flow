@@ -19,3 +19,4 @@
 - [x] Restore compact, intact annuity option blocks in both preview and PDF.
 - [x] Keep one through four options on the established two-page pagination structure.
 - [x] Verify matching preview/export pagination without changing the masthead or calculations.
+- [x] Match the quotation preview shell, filename toolbar, and neutral paper layering to the supplied reference.
