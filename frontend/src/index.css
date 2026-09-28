@@ -49,9 +49,11 @@
     --document-paper: 0 0% 100%;
     --document-accent: 199 100% 45%;
     --document-workspace: 216 14% 92%;
-    --preview-shell: 220 12% 96%;
+    --preview-shell: 220 14% 97%;
     --preview-toolbar: 0 0% 100%;
-    --preview-rule: 216 14% 90%;
+    --preview-canvas: 220 14% 96%;
+    --preview-rule: 218 13% 90%;
+    --preview-divider: 220 10% 91%;
 
     --radius: 1rem;
 
@@ -112,9 +114,11 @@
     --document-paper: 0 0% 100%;
     --document-accent: 199 100% 45%;
     --document-workspace: 216 14% 92%;
-    --preview-shell: 220 12% 96%;
+    --preview-shell: 220 14% 97%;
     --preview-toolbar: 0 0% 100%;
-    --preview-rule: 216 14% 90%;
+    --preview-canvas: 220 14% 96%;
+    --preview-rule: 218 13% 90%;
+    --preview-divider: 220 10% 91%;
     
     --sidebar-background: 225 30% 11%;      /* Match card color for consistent sidebar */
     --sidebar-foreground: 210 40% 98%;
@@ -143,7 +147,7 @@
     border: 1px solid hsl(var(--preview-rule));
     border-radius: 1rem;
     background: hsl(var(--preview-shell));
-    box-shadow: 0 1px 2px hsl(var(--document-ink) / 0.025);
+    box-shadow: 0 1px 2px hsl(220 13% 40% / 0.04);
   }
 
   .quotation-preview-toolbar {
@@ -156,7 +160,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 1.5rem;
-    border-bottom: 1px solid hsl(var(--preview-rule));
+    border-bottom: 1px solid hsl(var(--preview-divider));
     background: hsl(var(--preview-toolbar));
     padding: 0.75rem 1.25rem;
   }
@@ -193,7 +197,7 @@
   .quotation-preview-canvas {
     flex: 1;
     overflow: auto;
-    background: hsl(var(--document-workspace));
+    background: hsl(var(--preview-canvas));
     padding: 2rem clamp(1rem, 4vw, 4rem) 3rem;
   }
 
