@@ -165,6 +165,7 @@
     display: flex;
     align-items: center;
     min-width: 0;
+    overflow: hidden;
     gap: 0.55rem;
     color: hsl(var(--foreground));
     font-family: theme(fontFamily.heading);
@@ -172,7 +173,7 @@
     font-weight: 600;
   }
 
-  .quotation-preview-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .quotation-preview-title span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .quotation-preview-back { width: 2rem; height: 2rem; flex: none; border-radius: 999px; color: hsl(var(--muted-foreground)); }
   .quotation-preview-back:hover { background: hsl(var(--muted) / 0.55); color: hsl(var(--foreground)); }
   .quotation-preview-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.55rem; }
@@ -365,7 +366,7 @@
   @media (max-width: 760px) {
     .quotation-preview-shell { border-radius: 0.75rem; }
     .quotation-preview-toolbar { min-height: auto; align-items: center; gap: 0.5rem; padding: 0.65rem 0.75rem; }
-    .quotation-preview-title { max-width: 48%; font-size: 0.75rem; }
+    .quotation-preview-title { width: 8.5rem; max-width: 48%; flex: none; font-size: 0.75rem; }
     .quotation-preview-actions { min-width: 0; flex: 1; flex-wrap: nowrap; justify-content: flex-end; gap: 0.1rem; }
     .quotation-toolbar-action { padding-right: 0.6rem; padding-left: 0.6rem; }
     .quotation-zoom-controls { display: none; }
