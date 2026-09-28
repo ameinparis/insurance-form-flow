@@ -234,7 +234,6 @@ const QuoteDetail = () => {
     <div className="-mx-6 -mb-6 min-h-screen bg-background p-3 sm:p-5">
       <DocumentViewer
         filename={`${quote.quoteId}.pdf`}
-        pageLabel="Document"
         actions={
           <>
             {canEditQuote && !isEditing && (

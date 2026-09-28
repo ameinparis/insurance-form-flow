@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Info, ZoomIn, ZoomOut, Maximize, ArrowLeft } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const ZOOM_LEVELS = [0.75, 0.9, 1, 1.1, 1.25] as const;
@@ -7,12 +7,11 @@ type ZoomLevel = typeof ZOOM_LEVELS[number];
 
 interface DocumentViewerProps {
   filename: string;
-  pageLabel?: string;
   children: React.ReactNode;
   actions?: React.ReactNode;
 }
 
-export const DocumentViewer = ({ filename, pageLabel, children, actions }: DocumentViewerProps) => {
+export const DocumentViewer = ({ filename, children, actions }: DocumentViewerProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState<ZoomLevel>(1);
 
@@ -51,20 +50,19 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions }: Docum
     <div className="quotation-preview-shell h-[calc(100vh-4rem)]">
       <div className="quotation-preview-toolbar">
         <div className="quotation-preview-title">
-          <span>Preview</span>
-          <Info className="h-4 w-4" aria-hidden="true" />
-        </div>
-
-        <div className="quotation-preview-actions">
           <Button
             variant="ghost"
-            size="sm"
-            className="quotation-toolbar-action"
+            size="icon"
+            className="quotation-preview-back"
+            aria-label="Back"
             onClick={() => window.history.length > 1 ? window.history.back() : window.location.assign("/")}
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Back</span>
           </Button>
+          <span>{filename}</span>
+        </div>
+
+        <div className="quotation-preview-actions">
           <div className="quotation-zoom-controls" aria-label="Document zoom controls">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomOut} disabled={zoom === ZOOM_LEVELS[0]}>
               <ZoomOut className="h-4 w-4" />
@@ -87,10 +85,7 @@ export const DocumentViewer = ({ filename, pageLabel, children, actions }: Docum
           <div data-paper className="quote-paper overflow-hidden">
             {children}
           </div>
-          <p className="quotation-preview-filename" aria-hidden="true">
-            {pageLabel ?? "Document"} · {filename}
-          </p>
-            </div>
+        </div>
       </div>
     </div>
   );
