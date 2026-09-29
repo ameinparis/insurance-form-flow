@@ -33,7 +33,7 @@ export type AnnuityScenario = {
   createdAt: string
 }
 
-const STORAGE_KEY = "annuity_scenarios_v1"
+export const ANNUITY_SCENARIOS_STORAGE_KEY = "annuity_scenarios_v1"
 
 const buildAutoLabel = (inputs: AnnuityScenarioInputs, outputs: AnnuityScenarioOutputs) => {
   const dd = Number.isFinite(inputs.drawdown) ? `${inputs.drawdown}% Drawdown` : null
@@ -58,7 +58,7 @@ export const useAnnuityScenarios = () => {
   // Load from sessionStorage on mount
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem(STORAGE_KEY)
+      const raw = sessionStorage.getItem(ANNUITY_SCENARIOS_STORAGE_KEY)
       if (raw) {
         const parsed = JSON.parse(raw) as AnnuityScenario[]
         if (Array.isArray(parsed)) setScenarios(parsed)
@@ -71,7 +71,7 @@ export const useAnnuityScenarios = () => {
   // Persist
   useEffect(() => {
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(scenarios))
+      sessionStorage.setItem(ANNUITY_SCENARIOS_STORAGE_KEY, JSON.stringify(scenarios))
     } catch {
       /* ignore */
     }

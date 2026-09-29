@@ -203,7 +203,7 @@ Insurance will not accept liability for any losses incurred as a result of using
         guaranteePeriod: toNum(guaranteePeriod),
       }
 
-      const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"
+      const apiBase = import.meta.env.VITE_API_BASE_URL || "https://exclusivelife-staging-138e70a865bc.herokuapp.com"
       const { data } = await axios.post(`${apiBase}/api/quotes/calculate-annuity`, payload, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       })
@@ -235,7 +235,7 @@ Insurance will not accept liability for any losses incurred as a result of using
         purchaseAmount: toNum(lifePurchaseAmount),
         guaranteePeriod: toNum(guaranteePeriod)
       }
-const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"
+const apiBase = import.meta.env.VITE_API_BASE_URL || "https://exclusivelife-staging-138e70a865bc.herokuapp.com"
       const { data } = await axios.post(`${apiBase}/api/quotes/calculate-annuity`, payload, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       })
@@ -361,7 +361,7 @@ const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"
       }
 
       // 🔹 Send to the backend
-const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"
+const apiBase = import.meta.env.VITE_API_BASE_URL || "https://exclusivelife-staging-138e70a865bc.herokuapp.com"
       const { data } = await axios.post(
         `${apiBase}/api/new-quotes`,
         payload,

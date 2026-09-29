@@ -1,11 +1,17 @@
-export type AppRole = "super_admin" | "admin" | "advisor"
+export type AppRole = "super_admin" | "admin" | "advisor" | "none"
 
-/** Stored backend role values -> app roles */
+/**
+ * Stored backend role values -> app roles.
+ *
+ * A missing or unrecognised role resolves to "none" (no role) and never to
+ * "advisor": an unknown role must not silently inherit Advisor permissions.
+ */
 export const normalizeRole = (raw?: string | null): AppRole => {
   const value = String(raw || "").toLowerCase().trim()
   if (value === "superuser" || value === "super_admin" || value === "superadmin") return "super_admin"
   if (value === "admin") return "admin"
-  return "advisor"
+  if (value === "user" || value === "advisor") return "advisor"
+  return "none"
 }
 
 /** App role -> value persisted by the API */
@@ -16,6 +22,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   super_admin: "Super Admin",
   admin: "Admin",
   advisor: "Advisor",
+  none: "Signed out",
 }
 
 export const roleLabel = (raw?: string | null) => ROLE_LABELS[normalizeRole(raw)]
@@ -34,6 +41,7 @@ export const permissionsFor = (raw?: string | null): Permissions => {
   const role = normalizeRole(raw)
   const isSuper = role === "super_admin"
   const isAdmin = role === "admin"
+  // role === "none" (missing/unknown role) grants nothing: fail closed.
   return {
     role,
     canManageUsers: isSuper || isAdmin,

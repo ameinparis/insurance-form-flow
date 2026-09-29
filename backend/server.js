@@ -2359,8 +2359,10 @@ app.post("/api/quotes/html-to-pdf", async (req, res) => {
     });
 
     const page = await browser.newPage();
-    // A4 printable area at 96dpi with the margins used below (12mm vertical, 10mm horizontal)
-    const PRINT_WIDTH_PX = Math.round(((210 - 20) / 25.4) * 96);
+    // A4 (210mm) with 12mm margins on every side => 186mm of printable width
+    // (703px @ 96dpi). The page is laid out at exactly that width so no element
+    // is ever wider than the printable area and nothing gets clipped.
+    const PRINT_WIDTH_PX = Math.round(((210 - 24) / 25.4) * 96);
     const PRINT_HEIGHT_PX = Math.round(((297 - 24) / 25.4) * 96);
 
     await page.setViewport({ width: PRINT_WIDTH_PX, height: PRINT_HEIGHT_PX });
@@ -2371,7 +2373,7 @@ app.post("/api/quotes/html-to-pdf", async (req, res) => {
     const pdfOptions = {
       format: "A4",
       printBackground: true,
-      margin: { top: "12mm", bottom: "12mm", left: "10mm", right: "10mm" },
+      margin: { top: "12mm", bottom: "12mm", left: "12mm", right: "12mm" },
     };
 
     let pdfBuffer;

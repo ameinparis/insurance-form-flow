@@ -582,25 +582,25 @@ const ScenarioGroupBlock = ({ group, index, showOptionLabel = true }: ScenarioGr
           Living Annuity
         </h5>
         <div className="quote-details-grid quote-details-grid--compact">
-          <div className="quote-detail-item">
+          <div className="quote-detail-item quote-detail-item--drawdown">
             <span className="quote-detail-label">Drawdown</span>
             <span className="quote-detail-value">{inputs.drawdown ?? "—"}%</span>
           </div>
-          <div className="quote-detail-item">
+          <div className="quote-detail-item quote-detail-item--frequency">
             <span className="quote-detail-label">Frequency</span>
             <span className="quote-detail-value">{inputs.frequency ?? "—"}</span>
           </div>
           {living?.guarantee_period != null && (
-            <div className="quote-detail-item">
+            <div className="quote-detail-item quote-detail-item--guarantee">
               <span className="quote-detail-label">Living Guarantee Period</span>
               <span className="quote-detail-value">{living.guarantee_period} years</span>
             </div>
           )}
-          <div className="quote-detail-item">
+          <div className="quote-detail-item quote-detail-item--payout">
             <span className="quote-detail-label">{livingLabel}</span>
             <span className="quote-detail-value quote-detail-value--strong">{formatCurrency(living?.guaranteed_annuity)}</span>
           </div>
-          <div className="quote-detail-item">
+          <div className="quote-detail-item quote-detail-item--funds">
             <span className="quote-detail-label">Estimated Funds Remaining</span>
             <span className="quote-detail-value">{formatCurrency(living?.funds_remaining)}</span>
           </div>

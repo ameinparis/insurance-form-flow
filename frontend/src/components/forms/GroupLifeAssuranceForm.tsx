@@ -312,7 +312,7 @@ const GroupLifeAssuranceForm = () => {
 
       const token = localStorage.getItem("token")
 
-      const res = await fetch("http://localhost:5002/api/quotes/calculate-assurance", {
+      const res = await fetch("https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/quotes/calculate-assurance", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -392,7 +392,7 @@ const GroupLifeAssuranceForm = () => {
       setIsSavingQuote(true);
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:5002/api/new-quotes", {
+      const res = await fetch("https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/new-quotes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

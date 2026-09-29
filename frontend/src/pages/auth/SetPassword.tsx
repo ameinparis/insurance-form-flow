@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Lock, CheckCircle, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
+import { useAuth } from "@/lib/authlibrary"
 
 const SetPassword = () => {
   const [searchParams] = useSearchParams()
   const token = searchParams.get("token")
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -22,6 +24,7 @@ const SetPassword = () => {
     firstName: string
     lastName: string
     email: string
+    role: string | null
   } | null>(null)
 
   const [isVerifying, setIsVerifying] = useState(true)
@@ -36,7 +39,7 @@ const SetPassword = () => {
     const verifyToken = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5002/api/auth/password-setup/verify?token=${token}`
+          `https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/auth/password-setup/verify?token=${token}`
         )
 
         const data = await res.json()
@@ -51,6 +54,7 @@ const SetPassword = () => {
           firstName: data.user.firstName,
           lastName: data.user.lastName,
           email: data.user.email,
+          role: data.user.role ?? null,
         })
       } catch {
         navigate("/auth/link-expired")
@@ -79,7 +83,7 @@ const SetPassword = () => {
     setIsLoading(true)
 
     try {
-      const response = await fetch("http://localhost:5002/api/auth/set-password", {
+      const response = await fetch("https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/auth/set-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),
@@ -88,7 +92,15 @@ const SetPassword = () => {
       const data = await response.json()
 
       if (response.ok) {
-        localStorage.setItem("token", data.token)
+        // Establish the full authenticated session: the auth context replaces any
+        // previous user's state and resolves the profile (id, role, name, org).
+        login({
+          token: data.token,
+          userId: userInfo?.userId ?? null,
+          role: userInfo?.role ?? null,
+          userName: userInfo ? [userInfo.firstName, userInfo.lastName].filter(Boolean).join(" ") : null,
+          userEmail: userInfo?.email ?? null,
+        })
         toast.success("Welcome to Exclusive Life Quote Management 👋")
         navigate("/dashboard")
       }

@@ -1,8 +1,9 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useEffect, useRef } from "react";
 import { SearchProvider } from "@/lib/searchContext";
 import { BackgroundJobProvider } from "@/contexts/BackgroundJobContext";
 import MultiJobWidget from "@/components/BackgroundJobWidget";
@@ -32,6 +33,29 @@ import AccountPending from "./pages/auth/AccountPending";
 import LinkExpired from "./pages/auth/LinkExpired";
 
 const queryClient = new QueryClient();
+
+/**
+ * Cached query data is user-specific (quotes, clients, audit logs, jobs).
+ * Drop the whole cache whenever the authenticated user changes or signs out so
+ * the next user can never render the previous user's data.
+ */
+const useUserScopedCache = () => {
+  const { token, userId } = useAuth()
+  const queryClient = useQueryClient()
+  const activeUserKey = useRef<string | null>(null)
+
+  useEffect(() => {
+    const nextKey = token ? `${token}` : null
+    if (activeUserKey.current === nextKey) return
+    activeUserKey.current = nextKey
+    queryClient.clear()
+  }, [token, userId, queryClient])
+}
+
+const AuthCacheBoundary = ({ children }: { children: React.ReactNode }) => {
+  useUserScopedCache()
+  return <>{children}</>
+}
 
 const GlobalBackgroundJobWidget = () => {
   const { jobs, removeJob } = useBackgroundJob();
@@ -64,8 +88,9 @@ const OrganisationsRoute = ({ children }: { children: JSX.Element }) => {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <SearchProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthCacheBoundary>
+      <SearchProvider>
       <BackgroundJobProvider>
         <TooltipProvider>
           <Toaster />
@@ -146,6 +171,7 @@ const App = () => (
         </TooltipProvider>
       </BackgroundJobProvider>
     </SearchProvider>
+      </AuthCacheBoundary>
   </QueryClientProvider>
 );
 

@@ -114,7 +114,7 @@ const Settings = () => {
     try {
       const token = localStorage.getItem("token")
 
-      const res = await fetch("http://localhost:5002/api/auth/change-password", {
+      const res = await fetch("https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/auth/change-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

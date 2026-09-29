@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useEffect, useMemo, useCallback, useState } from "react"
+import React, { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react"
 import { AppRole, Permissions, permissionsFor, normalizeRole } from "./permissions"
+import { ANNUITY_SCENARIOS_STORAGE_KEY } from "@/hooks/useAnnuityScenarios"
 
 interface OrganisationInfo {
   _id: string
@@ -33,6 +34,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+/** The only application auth/user keys this app owns. Never a blanket clear(). */
+const AUTH_STORAGE_KEYS = ["token", "userId", "userRole", "userName", "userEmail"] as const
+
 const read = (key: string) => {
   try {
     return localStorage.getItem(key)
@@ -41,8 +45,37 @@ const read = (key: string) => {
   }
 }
 
+const writeAuthKey = (key: (typeof AUTH_STORAGE_KEYS)[number], value?: string | null) => {
+  try {
+    if (value) localStorage.setItem(key, value)
+    else localStorage.removeItem(key)
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+/** Remove every auth/user key this app owns, leaving all other storage intact. */
+const clearAuthStorage = () => {
+  AUTH_STORAGE_KEYS.forEach((key) => {
+    try {
+      localStorage.removeItem(key)
+    } catch {
+      /* storage unavailable */
+    }
+  })
+}
+
+/** Draft annuity scenarios belong to the signed-in user; drop them on logout. */
+const clearUserSessionData = () => {
+  try {
+    sessionStorage.removeItem(ANNUITY_SCENARIOS_STORAGE_KEY)
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // Hydrate synchronously so role guards never render with a stale "advisor" default.
+  // Hydrate synchronously so role guards never render with a stale default.
   const [userId, setUserId] = useState<string | null>(() => read("userId"))
   const [userRole, setUserRole] = useState<string | null>(() => read("userRole"))
   const [token, setToken] = useState<string | null>(() => read("token"))
@@ -50,6 +83,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userEmail, setUserEmail] = useState<string | null>(() => read("userEmail"))
   const [organisation, setOrganisation] = useState<OrganisationInfo | null>(null)
   const [organisationLoading, setOrganisationLoading] = useState<boolean>(false)
+
+  // Guards against out-of-order /api/users/me responses when switching users fast.
+  const profileRequest = useRef(0)
 
   useEffect(() => {
     const sync = () => {
@@ -64,52 +100,84 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => window.removeEventListener("storage", sync)
   }, [])
 
-  const fetchOrganisation = useCallback(async (token: string | null) => {
+  /**
+   * Resolve the authoritative profile for the active token and replace the whole
+   * session with it. Runs on every token change, so the previous user's role,
+   * name and organisation can never survive a login.
+   */
+  useEffect(() => {
     if (!token) {
+      profileRequest.current += 1
       setOrganisation(null)
       setOrganisationLoading(false)
       return
     }
 
+    const requestId = ++profileRequest.current
+    let cancelled = false
     setOrganisationLoading(true)
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002"
+    setOrganisation(null)
 
-    try {
-      const res = await fetch(`${baseUrl}/api/users/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://exclusivelife-staging-138e70a865bc.herokuapp.com"
 
-      if (!res.ok) {
-        setOrganisation(null)
-        setOrganisationLoading(false)
-        return
-      }
-
-      const data = await res.json()
-      if (data.organisation && typeof data.organisation === "object") {
-        setOrganisation({
-          _id: data.organisation._id,
-          name: data.organisation.name,
-          code: data.organisation.code,
-          isRootOrganisation: data.organisation.isRootOrganisation,
-          allowedCalculators: data.organisation.allowedCalculators || [],
-          isActive: data.organisation.isActive !== false,
+    const load = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
         })
-      } else {
-        setOrganisation(null)
-      }
-    } catch (err) {
-      console.error("Failed to fetch organisation:", err)
-      setOrganisation(null)
-    } finally {
-      setOrganisationLoading(false)
-    }
-  }, [])
 
-  useEffect(() => {
-    fetchOrganisation(token)
+        if (cancelled || requestId !== profileRequest.current) return
+        if (!res.ok) {
+          setOrganisation(null)
+          return
+        }
+
+        const data = await res.json()
+        if (cancelled || requestId !== profileRequest.current) return
+
+        const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ").trim()
+
+        if (data._id) {
+          writeAuthKey("userId", data._id)
+          setUserId(data._id)
+        }
+        if (data.role) {
+          writeAuthKey("userRole", data.role)
+          setUserRole(data.role)
+        }
+        if (fullName) {
+          writeAuthKey("userName", fullName)
+          setUserName(fullName)
+        }
+        if (data.email) {
+          writeAuthKey("userEmail", data.email)
+          setUserEmail(data.email)
+        }
+
+        if (data.organisation && typeof data.organisation === "object") {
+          setOrganisation({
+            _id: data.organisation._id,
+            name: data.organisation.name,
+            code: data.organisation.code,
+            isRootOrganisation: data.organisation.isRootOrganisation,
+            allowedCalculators: data.organisation.allowedCalculators || [],
+            isActive: data.organisation.isActive !== false,
+          })
+        } else {
+          setOrganisation(null)
+        }
+      } catch (err) {
+        console.error("Failed to fetch user profile:", err)
+        if (!cancelled && requestId === profileRequest.current) setOrganisation(null)
+      } finally {
+        if (!cancelled && requestId === profileRequest.current) setOrganisationLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
   }, [token])
 
   const login = useCallback(({ token: newToken, userId: newUserId, role, userName: newUserName, userEmail: newUserEmail }: {
@@ -119,47 +187,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     userName?: string | null
     userEmail?: string | null
   }) => {
-    localStorage.setItem("token", newToken)
-    if (newUserId) {
-      localStorage.setItem("userId", newUserId)
-    } else {
-      localStorage.removeItem("userId")
-    }
-    if (role) {
-      localStorage.setItem("userRole", role)
-    } else {
-      localStorage.removeItem("userRole")
-    }
-    if (newUserName) {
-      localStorage.setItem("userName", newUserName)
-    } else {
-      localStorage.removeItem("userName")
-    }
-    if (newUserEmail) {
-      localStorage.setItem("userEmail", newUserEmail)
-    } else {
-      localStorage.removeItem("userEmail")
-    }
+    // A login fully replaces the previous session: no auth key survives, and the
+    // previous user's organisation is dropped until the new profile is resolved.
+    profileRequest.current += 1
+    clearAuthStorage()
+
+    writeAuthKey("token", newToken)
+    writeAuthKey("userId", newUserId)
+    writeAuthKey("userRole", role)
+    writeAuthKey("userName", newUserName)
+    writeAuthKey("userEmail", newUserEmail)
+
     setToken(newToken)
     setUserId(newUserId || null)
     setUserRole(role || null)
     setUserName(newUserName || null)
     setUserEmail(newUserEmail || null)
-    fetchOrganisation(newToken)
-  }, [fetchOrganisation])
+    setOrganisation(null)
+  }, [])
 
   const logout = useCallback(() => {
-    localStorage.removeItem("token")
-    localStorage.removeItem("userId")
-    localStorage.removeItem("userRole")
-    localStorage.removeItem("userName")
-    localStorage.removeItem("userEmail")
+    profileRequest.current += 1
+    clearAuthStorage()
+    clearUserSessionData()
+
     setToken(null)
     setUserId(null)
     setUserRole(null)
     setUserName(null)
     setUserEmail(null)
     setOrganisation(null)
+    setOrganisationLoading(false)
   }, [])
 
   // User management is restricted to Super Admins and admins of the Root Organisation.
@@ -167,6 +225,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const permissions = useMemo(() => {
     const base = permissionsFor(userRole)
     const appRole = normalizeRole(userRole)
+
+    if (appRole === "none") {
+      return { ...base, canManageUsers: false }
+    }
 
     if (appRole === "super_admin") {
       return { ...base, canManageUsers: true }

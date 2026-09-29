@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Shield, ArrowRight, Lock, Mail } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { authApi } from "@/lib/api"
+import { useAuth } from "@/lib/authlibrary"
 import { toast } from "sonner"
 
 const Landing = () => {
@@ -14,13 +15,14 @@ const Landing = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      const response = await fetch("http://localhost:5002/api/users/login", {
+      const response = await fetch("https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/users/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -31,14 +33,16 @@ const Landing = () => {
       const data = await response.json()
 
       if (response.ok) {
-        localStorage.setItem("token", data.token)
-        localStorage.setItem("userId", data.userId)
-        if (data.role) localStorage.setItem("userRole", data.role)
-
+        // Route the session through the auth context so React state and storage
+        // update together and role-based navigation rerenders immediately.
         const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ")
-        localStorage.setItem("userName", fullName)
-        // Store the email used for login
-        localStorage.setItem("userEmail", email)
+        login({
+          token: data.token,
+          userId: data.userId,
+          role: data.role,
+          userName: fullName,
+          userEmail: email,
+        })
 
         toast.success("Welcome to Exclusive Insurance!")
         navigate("/dashboard")

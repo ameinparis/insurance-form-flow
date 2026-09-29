@@ -70,7 +70,7 @@ const QuoteDetail = () => {
 
   const handleSaveNotes = async (medicalUnderwritingNotes: string) => {
     if (!id) return;
-    const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
+    const apiBase = import.meta.env.VITE_API_BASE_URL || "https://exclusivelife-staging-138e70a865bc.herokuapp.com";
     const token = localStorage.getItem("token");
     try {
       const res = await fetch(`${apiBase}/api/new-quotes/${id}/notes`, {

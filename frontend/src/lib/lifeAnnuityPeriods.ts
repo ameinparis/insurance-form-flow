@@ -32,7 +32,7 @@ export async function fetchLifeAnnuityPeriods(
       }
       try {
         const { data } = await axios.post(
-          "http://localhost:5002/api/quotes/calculate-annuity",
+          "https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/quotes/calculate-annuity",
           {
             annuityType: "life",
             age,

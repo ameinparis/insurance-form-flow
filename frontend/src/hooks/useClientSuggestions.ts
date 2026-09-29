@@ -25,7 +25,7 @@ interface QuoteData {
   client?: ClientSuggestion
 }
 
-const API_BASE_URL = "http://localhost:5002"
+const API_BASE_URL = "https://exclusivelife-staging-138e70a865bc.herokuapp.com"
 
 export const useClientSuggestions = () => {
   const [clients, setClients] = useState<ClientSuggestion[]>([])

@@ -188,7 +188,7 @@ const Team = () => {
       if (canPickOrganisation) {
         payload.organisationId = newUser.organisationId
       }
-      await axios.post("http://localhost:5002/api/users/register", payload, {
+      await axios.post("https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/users/register", payload, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member added successfully")
@@ -210,7 +210,7 @@ const Team = () => {
     setEditLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.put(`http://localhost:5002/api/users/${editingUser.id}`, editUser, {
+      await axios.put(`https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/users/${editingUser.id}`, editUser, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member updated successfully")
@@ -243,7 +243,7 @@ const Team = () => {
     setDeleteLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.delete(`http://localhost:5002/api/users/${deletingMember.id}`, {
+      await axios.delete(`https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/users/${deletingMember.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member deleted successfully")
@@ -261,7 +261,7 @@ const Team = () => {
   const handleToggleStatus = async (member: TeamMember) => {
     try {
       const token = localStorage.getItem("token")
-      await axios.put(`http://localhost:5002/api/users/${member.id}`, {
+      await axios.put(`https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/users/${member.id}`, {
         firstName: member.firstName,
         lastName: member.lastName,
         email: member.email,
@@ -282,7 +282,7 @@ const Team = () => {
     try {
       setLoading(true)
       const token = localStorage.getItem("token")
-      const res = await axios.get("http://localhost:5002/api/users", {
+      const res = await axios.get("https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/users", {
         headers: { Authorization: `Bearer ${token}` }
       })
       const pastelColors = [

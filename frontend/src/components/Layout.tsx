@@ -22,8 +22,8 @@ export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { userRole } = useAuth();
-  const userName = localStorage.getItem("userName") || "User";
+  const { userRole, userName: authUserName } = useAuth();
+  const userName = authUserName || "User";
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setGlobalSearchTerm(e.target.value);

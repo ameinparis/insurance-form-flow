@@ -1,19 +1,19 @@
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { useAuth } from "@/lib/authlibrary"
 
 const LogoutHandler = () => {
   const navigate = useNavigate()
+  const { logout } = useAuth()
 
   useEffect(() => {
-    // Clear authentication data
-    localStorage.removeItem("token")
-    localStorage.removeItem("userId")
-    localStorage.removeItem("userRole")
-    
+    // Clears the app's auth/user state (token, userId, userRole, userName,
+    // userEmail) plus this user's session data. No blanket storage clear.
+    logout()
     toast.success("Successfully logged out")
-    navigate("/")
-  }, [navigate])
+    navigate("/", { replace: true })
+  }, [logout, navigate])
 
   return (
     <div className="flex items-center justify-center min-h-screen">

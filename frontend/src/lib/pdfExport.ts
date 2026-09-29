@@ -22,8 +22,19 @@ const buildPdfFilename = (quoteId: string, clientName: string) => {
 };
 
 const PDF_EXTRA_STYLES = `
-  /* A4 with tight margins */
-  @page { size: A4; margin: 12mm 12mm; }
+  /* ---------------------------------------------------------------
+     A4 (210mm) with 12mm page margins leaves a 186mm printable box.
+     The quotation is laid out inside a narrower, centred content column
+     so it can never reach the printable edge:
+
+        page margin   12mm  +  5mm safety  =  17mm each side
+        content width 210 - 2 x 17        =  176mm  (665px @96dpi)
+
+     The column is centred with auto left/right margins, so the left and
+     right margins are always equal. Nothing is scaled, cropped or reflowed.
+     --------------------------------------------------------------- */
+  :root { --pdf-gutter: 5mm; --pdf-content-width: 176mm; }
+  @page { size: A4; margin: 12mm; }
   /* Force light-mode rendering for PDF and match on-screen paper look */
   html, body {
     background: #ffffff !important;
@@ -38,6 +49,145 @@ const PDF_EXTRA_STYLES = `
     font-weight: 300;
     font-size: 11.5px;
     line-height: 1.32;
+  }
+
+  /* ============================================================
+     PRINTABLE-WIDTH CONTAINMENT
+     Everything is measured against the 176mm content column, which
+     is itself 10mm narrower than the 186mm printable box. The right
+     border of every card, table and value therefore always has the
+     full 12mm page margin (plus 5mm of safety) to sit in.
+     ============================================================ */
+  html, body {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  /* border-box everywhere so padding + border stay inside the column */
+  *, *::before, *::after { box-sizing: border-box !important; }
+
+  /* Every element inside the quotation may shrink; this kills the automatic
+     minimum size of grid/flex children that causes right-edge overflow. */
+  .pdf-root, .pdf-root *, .quote-document, .quote-document * {
+    min-width: 0 !important;
+  }
+
+  /* Root wrapper: the screen preview caps it at max-w-5xl (64rem = 1024px),
+     which is far wider than A4. Cap it to the 176mm column and centre it. */
+  .pdf-root,
+  .quote-document,
+  .quote-document-body,
+  body > * {
+    width: 100% !important;
+    max-width: var(--pdf-content-width) !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Sections, cards and blocks: never wider than the column, never content-sized. */
+  .quote-masthead,
+  .quote-masthead__top,
+  .quote-title-row,
+  .quote-section,
+  .quote-client-section,
+  .quote-scenarios-intro,
+  .quote-scenario-wrap,
+  .quote-scenario,
+  .quote-option-heading,
+  .quote-option-section,
+  .quote-table-wrap,
+  .quote-acceptance,
+  .quote-terms,
+  .quote-company-details,
+  .quote-brand-block,
+  .quote-logo-wrap,
+  .quote-header-summary,
+  .quote-signature-grid,
+  .quote-signature-line,
+  .quote-client-column,
+  .pdf-terms {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Two-column grids: exactly two shrinkable columns, 1fr capped at 100% */
+  .quote-details-grid,
+  .quote-details-grid--compact,
+  .quote-client-details-grid,
+  .quote-summary-row,
+  .quote-signature-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  }
+  .quote-details-grid > *,
+  .quote-details-grid--compact > *,
+  .quote-client-details-grid > *,
+  .quote-summary-row > *,
+  .quote-signature-grid > *,
+  .quote-masthead__top > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  /* Three-part masthead: flexible sides around the fixed-size brand block */
+  .quote-masthead__top {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  }
+
+  /* Detail rows: label and value both shrinkable, no fixed pixel minimums */
+  .quote-detail-item {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr) !important;
+  }
+  .quote-detail-label,
+  .quote-detail-value,
+  .quote-metadata dt,
+  .quote-metadata dd {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+
+  /* Long unbroken words must break inside the column. Without this a single
+     token (a long name, an amount, a free-text note) can ink out past the
+     right edge of the page while its block box still measures 176mm. */
+  .pdf-root p, .pdf-root span, .pdf-root li, .pdf-root dd, .pdf-root dt,
+  .pdf-root td, .pdf-root th, .pdf-root label, .pdf-root small,
+  .pdf-root h1, .pdf-root h2, .pdf-root h3, .pdf-root h4, .pdf-root h5,
+  [style*="pre-wrap"] {
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    max-width: 100% !important;
+  }
+
+  /* Tables (including the life guarantee period tables) stay inside 100% */
+  table,
+  thead, tbody, tfoot, tr, th, td,
+  .quote-table,
+  .quote-life-table,
+  .quote-table-wrap {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  table, .quote-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+  th, td { word-break: break-word; overflow-wrap: anywhere; white-space: normal !important; }
+
+  /* Media and long unbroken strings can never widen the page */
+  img, svg, canvas, video { max-width: 100% !important; height: auto !important; }
+  pre, code, .quote-table-value, .quote-table-note {
+    max-width: 100% !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
   }
   /* Compact the rendered quote: shrink every text utility a notch */
   .text-xs { font-size: 10px !important; }
@@ -83,7 +233,13 @@ const PDF_EXTRA_STYLES = `
   .dark\\:ring-slate-800 { border-color: inherit !important; }
   thead { display: table-header-group; }
   /* Prevent horizontal clipping */
-  .overflow-x-auto, .overflow-auto, .overflow-hidden { overflow: visible !important; }
+  .overflow-x-auto, .overflow-auto, .overflow-hidden {
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
   table { width: 100% !important; table-layout: fixed; border-collapse: collapse; }
   th, td { word-break: break-word; overflow-wrap: anywhere; white-space: normal !important; }
   tr { break-inside: avoid; page-break-inside: avoid; }
@@ -199,7 +355,7 @@ const PDF_EXTRA_STYLES = `
   .quote-details-grid, .quote-client-details-grid, .quote-summary-row { column-gap: 10mm !important; }
   .quote-client-details-grid, .quote-summary-row { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .quote-summary-row { margin-top: 1mm !important; }
-  .quote-detail-item { padding: 2mm 0 !important; grid-template-columns: minmax(29mm, .9fr) minmax(0, 1.1fr) !important; }
+  .quote-detail-item { padding: 2mm 0 !important; grid-template-columns: minmax(0, auto) minmax(0, 1fr) !important; }
   .quote-scenarios-intro { padding-bottom: 3mm !important; }
   .quote-scenario-wrap { padding: 0 0 3mm !important; }
   .quote-scenario { padding: 3mm 4mm !important; border: 1px solid #aab4c4 !important; border-radius: 3mm !important; }
@@ -239,7 +395,7 @@ const PDF_EXTRA_STYLES = `
   .quote-section { padding: 2.5mm 0 !important; }
   .quote-section-heading { margin-bottom: 1.5mm !important; }
   .quote-detail-label { font-size: 8px !important; letter-spacing: 0 !important; }
-  .quote-detail-item { grid-template-columns: auto 1fr !important; padding: 1.3mm 0 !important; }
+  .quote-detail-item { grid-template-columns: minmax(0, auto) minmax(0, 1fr) !important; padding: 1.3mm 0 !important; }
   .quote-scenario-wrap { padding: 0 0 2.5mm !important; }
   .quote-scenario { padding: 2.5mm 4mm !important; border: 1px solid #aab4c4 !important; border-radius: 3mm !important; }
   .quote-option-heading { padding-bottom: 0.5mm !important; }
@@ -261,6 +417,83 @@ const PDF_EXTRA_STYLES = `
   .quote-page-break-before::before,
   .quote-option-count-1 .quote-fees-section::before,
   .quote-option-count-2 .quote-fees-section::before { display: none !important; content: none !important; }
+
+  /* ---- Annuity option block: compact 2-column grid, A4-safe ----
+     A4 usable width is 186mm (210mm - 2x12mm margins). Every box below is
+     border-box and capped at 100% so nothing can spill past the right margin. */
+  .quote-scenario-wrap,
+  .quote-scenario,
+  .quote-option-section,
+  .quote-details-grid,
+  .quote-details-grid--compact {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Never split an option across a page break */
+  .quote-scenario-wrap,
+  .quote-scenario,
+  .quote-option-heading,
+  .quote-option-section,
+  .quote-details-grid,
+  .quote-details-grid--compact,
+  .quote-details-grid--compact .quote-detail-item {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Two equal, shrinkable columns with a tight gutter */
+  .quote-details-grid--compact {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: auto !important;
+    column-gap: 4mm !important;
+    row-gap: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Left column: Drawdown / Living Guarantee / Funds Remaining
+     Right column: Frequency / Living Annuity per month
+     Explicit placement keeps each row anchored even when the optional
+     guarantee row is absent. */
+  .quote-details-grid--compact .quote-detail-item--drawdown   { grid-column: 1 !important; grid-row: 1 !important; }
+  .quote-details-grid--compact .quote-detail-item--guarantee  { grid-column: 1 !important; grid-row: 2 !important; }
+  .quote-details-grid--compact .quote-detail-item--funds      { grid-column: 1 !important; grid-row: 3 !important; }
+  .quote-details-grid--compact .quote-detail-item--frequency  { grid-column: 2 !important; grid-row: 1 !important; }
+  .quote-details-grid--compact .quote-detail-item--payout     { grid-column: 2 !important; grid-row: 2 !important; }
+
+  /* Label hugs the left, value takes the rest and right-aligns; both can shrink */
+  .quote-details-grid--compact .quote-detail-item {
+    display: grid !important;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr) !important;
+    align-items: baseline !important;
+    gap: 2mm !important;
+    padding: 1.1mm 0 !important;
+    margin: 0 !important;
+    border-bottom: 0.25mm solid #c3cbd8 !important;
+  }
+  .quote-details-grid--compact .quote-detail-label {
+    min-width: 0 !important;
+    font-size: 7.6px !important;
+    line-height: 1.25 !important;
+    overflow-wrap: anywhere !important;
+  }
+  .quote-details-grid--compact .quote-detail-value {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 8.4px !important;
+    line-height: 1.25 !important;
+    text-align: right !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+  .compact-two-page .quote-details-grid--compact .quote-detail-item { padding: 0.8mm 0 !important; }
+  .compact-two-page .quote-details-grid--compact { column-gap: 3mm !important; }
 
 `;
 
@@ -342,7 +575,7 @@ export async function exportQuotePdf(
   quoteOverride?: QuoteData
 ): Promise<void> {
   const baseUrl = window.location.origin;
-  const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5002";
+  const apiBase = import.meta.env.VITE_API_BASE_URL || "https://exclusivelife-staging-138e70a865bc.herokuapp.com";
 
   // 1. Use the quote already loaded on the page when available, otherwise fetch it.
   const quote = quoteOverride ?? (await fetchQuoteDetails(quoteMongoId, isLegacy));
@@ -387,7 +620,7 @@ export async function exportQuotePdf(
     const escaped = medNotesText.replace(/</g, "&lt;");
     processedDisplayHtml = processedDisplayHtml.replace(
       /<div[^>]*class="[^"]*flex[^"]*items-center[^"]*justify-between[^"]*"[^>]*>\s*(<h3[^>]*>\s*Medical Underwriting\s*<\/h3>)[\s\S]*?<\/div>/i,
-      `$1<p style="font-size: 0.875rem; color: #4b5563; line-height: 1.625; margin: 0.75rem 0 0 0; white-space: pre-wrap;">${escaped}</p>`
+      `$1<p style="font-size: 0.875rem; color: #4b5563; line-height: 1.625; margin: 0.75rem 0 0 0; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word;">${escaped}</p>`
     );
   } else {
     // No notes — remove the entire Medical Underwriting section wrapper

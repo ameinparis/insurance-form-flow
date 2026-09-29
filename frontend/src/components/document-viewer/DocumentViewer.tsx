@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { ZoomIn, ZoomOut, Maximize, ArrowLeft } from "lucide-react";
+import { Info, ZoomIn, ZoomOut, Maximize, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const ZOOM_LEVELS = [0.75, 0.9, 1, 1.1, 1.25] as const;
@@ -11,7 +11,7 @@ interface DocumentViewerProps {
   actions?: React.ReactNode;
 }
 
-export const DocumentViewer = ({ filename, children, actions }: DocumentViewerProps) => {
+export const DocumentViewer = ({ children, actions }: DocumentViewerProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState<ZoomLevel>(1);
 
@@ -50,19 +50,20 @@ export const DocumentViewer = ({ filename, children, actions }: DocumentViewerPr
     <div className="quotation-preview-shell h-[calc(100vh-4rem)]">
       <div className="quotation-preview-toolbar">
         <div className="quotation-preview-title">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="quotation-preview-back"
-            aria-label="Back"
-            onClick={() => window.history.length > 1 ? window.history.back() : window.location.assign("/")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <span>{filename}</span>
+          <span>Preview</span>
+          <Info className="h-4 w-4" aria-hidden="true" />
         </div>
 
         <div className="quotation-preview-actions">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="quotation-toolbar-action"
+            onClick={() => window.history.length > 1 ? window.history.back() : window.location.assign("/")}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </Button>
           <div className="quotation-zoom-controls" aria-label="Document zoom controls">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomOut} disabled={zoom === ZOOM_LEVELS[0]}>
               <ZoomOut className="h-4 w-4" />

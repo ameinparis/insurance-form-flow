@@ -21,7 +21,7 @@ interface AuditLogsResponse {
   skip: number
 }
 
-const API_BASE_URL = 'http://localhost:5002/api'
+const API_BASE_URL = 'https://exclusivelife-staging-138e70a865bc.herokuapp.com/api'
 
 export function useAuditLogs(filter: string) {
   const [logs, setLogs] = useState<AuditLog[]>([])
