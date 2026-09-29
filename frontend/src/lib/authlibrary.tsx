@@ -22,6 +22,8 @@ interface AuthContextType {
   organisationLoading: boolean
   token: string | null
   isLoggedIn: boolean
+  /** Re-fetch the profile (role + organisation + calculators) for the current user. */
+  refreshProfile: () => Promise<void>
   login: (params: {
     token: string
     userId?: string | null
@@ -82,10 +84,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userName, setUserName] = useState<string | null>(() => read("userName"))
   const [userEmail, setUserEmail] = useState<string | null>(() => read("userEmail"))
   const [organisation, setOrganisation] = useState<OrganisationInfo | null>(null)
-  const [organisationLoading, setOrganisationLoading] = useState<boolean>(false)
+  // A restored session counts as "loading" until its profile resolves, otherwise
+  // role/organisation guards would decide on the first paint with no data yet.
+  const [organisationLoading, setOrganisationLoading] = useState<boolean>(() => !!read("token"))
 
   // Guards against out-of-order /api/users/me responses when switching users fast.
   const profileRequest = useRef(0)
+  // Prevents duplicate /api/users/me calls (e.g. focus + visibilitychange firing together).
+  const profileInFlight = useRef(false)
 
   useEffect(() => {
     const sync = () => {
@@ -101,10 +107,84 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   /**
-   * Resolve the authoritative profile for the active token and replace the whole
-   * session with it. Runs on every token change, so the previous user's role,
-   * name and organisation can never survive a login.
+   * Resolve the authoritative profile for the active token and apply it to the
+   * session. Called on every token change, on window focus, and on demand, so
+   * organisation/calculator changes made by an admin are picked up without a
+   * logout/login.
+   *
+   * `showLoading` is only used when the session is being replaced: a background
+   * revalidation keeps the current organisation on screen to avoid flashing an
+   * empty calculator list.
    */
+  const loadProfile = useCallback(async (activeToken: string, showLoading = false) => {
+    if (profileInFlight.current) return
+    profileInFlight.current = true
+
+    const requestId = ++profileRequest.current
+    if (showLoading) {
+      setOrganisationLoading(true)
+      setOrganisation(null)
+    }
+
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://exclusivelife-staging-138e70a865bc.herokuapp.com"
+
+    try {
+      const res = await fetch(`${baseUrl}/api/users/me`, {
+        headers: { Authorization: `Bearer ${activeToken}` },
+      })
+
+      if (requestId !== profileRequest.current) return
+      if (!res.ok) {
+        // Only an auth failure invalidates the cached organisation; a transient
+        // server error must not wipe the member's calculator access.
+        if (res.status === 401 || res.status === 403) setOrganisation(null)
+        return
+      }
+
+      const data = await res.json()
+      if (requestId !== profileRequest.current) return
+
+      const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ").trim()
+
+      if (data._id) {
+        writeAuthKey("userId", data._id)
+        setUserId(data._id)
+      }
+      if (data.role) {
+        writeAuthKey("userRole", data.role)
+        setUserRole(data.role)
+      }
+      if (fullName) {
+        writeAuthKey("userName", fullName)
+        setUserName(fullName)
+      }
+      if (data.email) {
+        writeAuthKey("userEmail", data.email)
+        setUserEmail(data.email)
+      }
+
+      if (data.organisation && typeof data.organisation === "object") {
+        setOrganisation({
+          _id: data.organisation._id,
+          name: data.organisation.name,
+          code: data.organisation.code,
+          isRootOrganisation: data.organisation.isRootOrganisation,
+          allowedCalculators: Array.isArray(data.organisation.allowedCalculators)
+            ? data.organisation.allowedCalculators
+            : [],
+          isActive: data.organisation.isActive !== false,
+        })
+      } else {
+        setOrganisation(null)
+      }
+    } catch (err) {
+      console.error("Failed to fetch user profile:", err)
+    } finally {
+      profileInFlight.current = false
+      if (requestId === profileRequest.current) setOrganisationLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (!token) {
       profileRequest.current += 1
@@ -112,73 +192,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setOrganisationLoading(false)
       return
     }
+    loadProfile(token, true)
+  }, [token, loadProfile])
 
-    const requestId = ++profileRequest.current
-    let cancelled = false
-    setOrganisationLoading(true)
-    setOrganisation(null)
+  // Revalidate on window focus / tab return so calculator assignment changes
+  // made by an admin are applied without a full logout/login.
+  useEffect(() => {
+    if (!token) return
 
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://exclusivelife-staging-138e70a865bc.herokuapp.com"
-
-    const load = async () => {
-      try {
-        const res = await fetch(`${baseUrl}/api/users/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-
-        if (cancelled || requestId !== profileRequest.current) return
-        if (!res.ok) {
-          setOrganisation(null)
-          return
-        }
-
-        const data = await res.json()
-        if (cancelled || requestId !== profileRequest.current) return
-
-        const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ").trim()
-
-        if (data._id) {
-          writeAuthKey("userId", data._id)
-          setUserId(data._id)
-        }
-        if (data.role) {
-          writeAuthKey("userRole", data.role)
-          setUserRole(data.role)
-        }
-        if (fullName) {
-          writeAuthKey("userName", fullName)
-          setUserName(fullName)
-        }
-        if (data.email) {
-          writeAuthKey("userEmail", data.email)
-          setUserEmail(data.email)
-        }
-
-        if (data.organisation && typeof data.organisation === "object") {
-          setOrganisation({
-            _id: data.organisation._id,
-            name: data.organisation.name,
-            code: data.organisation.code,
-            isRootOrganisation: data.organisation.isRootOrganisation,
-            allowedCalculators: data.organisation.allowedCalculators || [],
-            isActive: data.organisation.isActive !== false,
-          })
-        } else {
-          setOrganisation(null)
-        }
-      } catch (err) {
-        console.error("Failed to fetch user profile:", err)
-        if (!cancelled && requestId === profileRequest.current) setOrganisation(null)
-      } finally {
-        if (!cancelled && requestId === profileRequest.current) setOrganisationLoading(false)
-      }
+    const revalidate = () => {
+      if (document.visibilityState === "hidden") return
+      loadProfile(token)
     }
 
-    load()
+    window.addEventListener("focus", revalidate)
+    document.addEventListener("visibilitychange", revalidate)
     return () => {
-      cancelled = true
+      window.removeEventListener("focus", revalidate)
+      document.removeEventListener("visibilitychange", revalidate)
     }
-  }, [token])
+  }, [token, loadProfile])
+
+  const refreshProfile = useCallback(async () => {
+    if (!token) return
+    await loadProfile(token)
+  }, [token, loadProfile])
 
   const login = useCallback(({ token: newToken, userId: newUserId, role, userName: newUserName, userEmail: newUserEmail }: {
     token: string
@@ -253,6 +291,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         organisationLoading,
         token,
         isLoggedIn: !!token,
+        refreshProfile,
         login,
         logout,
       }}

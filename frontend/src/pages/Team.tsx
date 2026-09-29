@@ -91,11 +91,15 @@ const Team = () => {
     lastName: "",
     email: "",
     role: "",
+    organisationId: "",
   })
 
   const selectedOrganisation = organisations.find((o) => o._id === newUser.organisationId) || null
   const selectedIsRoot = selectedOrganisation ? selectedOrganisation.isRootOrganisation : true
   const canAssignAdmin = selectedIsRoot
+
+  const selectedEditOrganisation = organisations.find((o) => o._id === editUser.organisationId) || null
+  const selectedEditIsRoot = selectedEditOrganisation ? selectedEditOrganisation.isRootOrganisation : true
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -124,6 +128,17 @@ const Team = () => {
 
   const handleEditRoleChange = (value: string) => {
     setEditUser((prev) => ({ ...prev, role: value }))
+  }
+
+  const handleEditOrganisationChange = (value: string) => {
+    const org = organisations.find((o) => o._id === value)
+    setEditUser((prev) => {
+      // External organisations can only hold Advisors, so drop a previously chosen Admin role
+      if (org && !org.isRootOrganisation && prev.role === "admin") {
+        return { ...prev, organisationId: value, role: "user" }
+      }
+      return { ...prev, organisationId: value }
+    })
   }
 
   const validateAddUser = () => {
@@ -171,6 +186,14 @@ const Team = () => {
       toast.error("Role is required")
       return false
     }
+    if (canPickOrganisation && !editUser.organisationId) {
+      toast.error("Organisation is required")
+      return false
+    }
+    if (selectedEditOrganisation && !selectedEditIsRoot && editUser.role === "admin") {
+      toast.error("External organisations can only have Advisors")
+      return false
+    }
     return true
   }
 
@@ -210,13 +233,24 @@ const Team = () => {
     setEditLoading(true)
     try {
       const token = localStorage.getItem("token")
-      await axios.put(`https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/users/${editingUser.id}`, editUser, {
+      // organisationId moves the member to another organisation; the backend
+      // resolves the member's calculators from that organisation.
+      const payload: Record<string, unknown> = {
+        firstName: editUser.firstName,
+        lastName: editUser.lastName,
+        email: editUser.email,
+        role: editUser.role,
+      }
+      if (canPickOrganisation && editUser.organisationId) {
+        payload.organisationId = editUser.organisationId
+      }
+      await axios.put(`https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/users/${editingUser.id}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       })
       toast.success("Member updated successfully")
       setShowEditUserModal(false)
       setEditingUser(null)
-      setEditUser({ firstName: "", lastName: "", email: "", role: "" })
+      setEditUser({ firstName: "", lastName: "", email: "", role: "", organisationId: "" })
       fetchUsers()
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.response?.data?.error || "Failed to update member"
@@ -234,6 +268,7 @@ const Team = () => {
       lastName: member.lastName,
       email: member.email,
       role: member.role,
+      organisationId: member.organisationId || "",
     })
     setShowEditUserModal(true)
   }
@@ -332,18 +367,13 @@ const Team = () => {
 
   useEffect(() => {
     fetchUsers()
-    fetchOrganisations()
   }, [])
 
-  // Default the new-user organisation to the Root Organisation for Super Admin and Root Admin
+  // The organisation list can only be fetched once the signed-in user's own
+  // organisation is known, so this must re-run when that permission resolves.
   useEffect(() => {
-    if (!canPickOrganisation) return
-    if (newUser.organisationId) return
-    const rootOrg = organisations.find((o) => o.isRootOrganisation)
-    if (rootOrg) {
-      setNewUser((prev) => ({ ...prev, organisationId: rootOrg._id }))
-    }
-  }, [organisations, canPickOrganisation])
+    fetchOrganisations()
+  }, [canPickOrganisation])
 
    const getRoleBadgeClass = (role: string) => {
     if (role === "superuser") {
@@ -647,6 +677,29 @@ const Team = () => {
                   </SelectContent>
                 </Select>
               </div>
+              {canPickOrganisation && (
+                <div>
+                  <Label>Organisation</Label>
+                  <Select
+                    value={editUser.organisationId}
+                    onValueChange={handleEditOrganisationChange}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder={orgsLoading ? "Loading organisations..." : "Select Organisation"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {organisations.map((org) => (
+                        <SelectItem key={org._id} value={org._id}>
+                          {org.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    The member gets the calculators assigned to this organisation.
+                  </p>
+                </div>
+              )}
               <div className="flex justify-end space-x-2 pt-4">
                 <Button variant="outline" onClick={() => setShowEditUserModal(false)} disabled={editLoading}>Cancel</Button>
                 <Button onClick={handleEditUser} disabled={editLoading}>

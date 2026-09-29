@@ -3,10 +3,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Building2 } from "lucide-react"
+import { Plus, Building2, Pencil } from "lucide-react"
 import { PageLoader } from "@/components/PageLoader"
 import { toast } from "sonner"
 import { organisationsApi, type Organisation } from "@/lib/api"
+import { useAuth } from "@/lib/authlibrary"
 import {
   Dialog,
   DialogContent,
@@ -21,8 +22,15 @@ const AVAILABLE_CALCULATORS = [
   { id: "annuity", label: "Annuity" },
   { id: "funeral", label: "Funeral" },
   { id: "life-assurance", label: "Life Assurance" },
-  { id: "individual-life-cover", label: "Individual Life Cover" },
+  // Must match the backend allowedCalculators enum and the permission keys
+  // used by the calculator page (see Calculate.tsx).
+  { id: "individual-life", label: "Individual Life Cover" },
 ]
+
+const CALCULATOR_LABELS: Record<string, string> = AVAILABLE_CALCULATORS.reduce(
+  (acc, calc) => ({ ...acc, [calc.id]: calc.label }),
+  {} as Record<string, string>
+)
 
 const generateCodeFromName = (name: string): string => {
   const words = name.trim().split(/\s+/).filter(Boolean)
@@ -42,10 +50,18 @@ const generateCodeFromName = (name: string): string => {
 }
 
 const Organisations = () => {
+  const { role } = useAuth()
+  const isSuperAdmin = role === "super_admin"
+
   const [organisations, setOrganisations] = useState<Organisation[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [createLoading, setCreateLoading] = useState(false)
+
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [editLoading, setEditLoading] = useState(false)
+  const [editingOrg, setEditingOrg] = useState<Organisation | null>(null)
+  const [editForm, setEditForm] = useState({ name: "", code: "", allowedCalculators: [] as string[] })
 
   const [newOrg, setNewOrg] = useState({
     name: "",
@@ -168,6 +184,67 @@ const Organisations = () => {
     setSelectedCalculators(["annuity"])
   }
 
+  /**
+   * Root organisation admins may only edit external organisations, never the
+   * root organisation itself (the backend rejects the latter with 403).
+   */
+  const canEditOrg = (org: Organisation) => isSuperAdmin || !org.isRootOrganisation
+
+  const openEditDialog = (org: Organisation) => {
+    setEditingOrg(org)
+    setEditForm({
+      name: org.name,
+      code: org.code,
+      allowedCalculators: Array.isArray(org.allowedCalculators) ? [...org.allowedCalculators] : [],
+    })
+    setShowEditDialog(true)
+  }
+
+  const resetEditForm = () => {
+    setShowEditDialog(false)
+    setEditingOrg(null)
+  }
+
+  const handleEditCalculatorChange = (calcId: string, checked: boolean) => {
+    setEditForm((prev) => ({
+      ...prev,
+      allowedCalculators: checked
+        ? [...prev.allowedCalculators, calcId]
+        : prev.allowedCalculators.filter((c) => c !== calcId),
+    }))
+  }
+
+  const handleSaveOrg = async () => {
+    if (!editingOrg) return
+    const trimmedName = editForm.name.trim()
+    if (!trimmedName) {
+      toast.error("Organisation name is required")
+      return
+    }
+    if (editForm.allowedCalculators.length === 0) {
+      toast.error("Select at least one calculator")
+      return
+    }
+
+    setEditLoading(true)
+    try {
+      const responseData = await organisationsApi.update(editingOrg._id, {
+        name: trimmedName,
+        code: editForm.code.trim().toUpperCase(),
+        allowedCalculators: editForm.allowedCalculators,
+      })
+      const updated = responseData.organisation || responseData
+      setOrganisations((prev) => prev.map((org) => (org._id === updated._id ? updated : org)))
+      toast.success("Organisation updated")
+      resetEditForm()
+      fetchOrganisations()
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update organisation")
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
   const getStatusBadgeClass = (isActive: boolean) => {
     if (isActive) {
       return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-300 dark:border-green-700"
@@ -231,8 +308,11 @@ const Organisations = () => {
                     <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
                       Allowed Calculators
                     </TableHead>
-                    <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs rounded-r-full">
+                    <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs">
                       Status
+                    </TableHead>
+                    <TableHead className="font-normal text-gray-500 dark:text-gray-400 py-3 px-6 text-xs text-right rounded-r-full">
+                      Actions
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -257,17 +337,32 @@ const Organisations = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="py-5 px-6 text-gray-700 dark:text-gray-300 font-normal group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
-                        {Array.isArray((org as any).allowedCalculators) && (org as any).allowedCalculators.length > 0
-                          ? (org as any).allowedCalculators.join(", ")
-                          : "—"}
+                        {Array.isArray(org.allowedCalculators) && org.allowedCalculators.length > 0
+                          ? org.allowedCalculators.map((c) => CALCULATOR_LABELS[c] || c).join(", ")
+                          : "None assigned"}
                       </TableCell>
-                      <TableCell className="py-5 px-6 rounded-r-xl group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
+                      <TableCell className="py-5 px-6 group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
                         <Badge
                           variant="outline"
                           className={`rounded-full px-2 py-1.5 text-xs font-medium border ${getStatusBadgeClass(org.isActive !== false)}`}
                         >
                           {org.isActive !== false ? "Active" : "Inactive"}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="py-5 px-6 text-right rounded-r-xl group-hover:bg-sky-100 dark:group-hover:bg-sky-900/30 transition-colors duration-200">
+                        {canEditOrg(org) ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-transparent"
+                            onClick={() => openEditDialog(org)}
+                            title="Edit Organisation"
+                          >
+                            <Pencil className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -329,6 +424,63 @@ const Organisations = () => {
               </Button>
               <Button onClick={handleCreateOrg} disabled={createLoading}>
                 {createLoading ? "Creating..." : "Create Organisation"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="bg-white dark:bg-slate-900 rounded-3xl max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Organisation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <Label>Organisation Name</Label>
+              <Input
+                name="editName"
+                value={editForm.name}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                className="mt-1"
+                placeholder="Enter organisation name"
+              />
+            </div>
+            <div>
+              <Label>Code</Label>
+              <Input
+                name="editCode"
+                value={editForm.code}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                className="mt-1"
+                placeholder="Organisation code"
+              />
+            </div>
+            <div>
+              <Label>Allowed Calculators</Label>
+              <p className="text-xs text-muted-foreground mt-1 mb-2">
+                Every Advisor in this organisation gets exactly these calculators.
+              </p>
+              <div className="mt-1 space-y-2">
+                {AVAILABLE_CALCULATORS.map((calc) => (
+                  <div key={calc.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`edit-${calc.id}`}
+                      checked={editForm.allowedCalculators.includes(calc.id)}
+                      onCheckedChange={(checked) => handleEditCalculatorChange(calc.id, !!checked)}
+                    />
+                    <Label htmlFor={`edit-${calc.id}`} className="text-sm font-medium">
+                      {calc.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button variant="outline" onClick={resetEditForm} disabled={editLoading}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveOrg} disabled={editLoading}>
+                {editLoading ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </div>
