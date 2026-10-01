@@ -8,13 +8,19 @@ import { LifeDisplay } from "@/components/quote-displays/LifeDisplay";
 import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLifeDisplay";
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 
+/**
+ * PDF generation runs on a dedicated host. Every other API call in the app uses
+ * VITE_API_BASE_URL (the main backend); only the PDF render/download requests
+ * below are pointed at this host. Request paths are unchanged.
+ */
+export const PDF_API_BASE_URL = "https://njs.exclusivelife.co.bw";
+
 const sanitizeFilename = (value: string) =>
   value
     .replace(/\//g, "-")
     .replace(/[^a-zA-Z0-9-_]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
-
 const buildPdfFilename = (quoteId: string, clientName: string) => {
   const safeQuoteId = sanitizeFilename(quoteId);
   const safeClientName = sanitizeFilename(clientName);
@@ -575,7 +581,6 @@ export async function exportQuotePdf(
   quoteOverride?: QuoteData
 ): Promise<void> {
   const baseUrl = window.location.origin;
-  const apiBase = import.meta.env.VITE_API_BASE_URL || "https://exclusivelife-staging-138e70a865bc.herokuapp.com";
 
   // 1. Use the quote already loaded on the page when available, otherwise fetch it.
   const quote = quoteOverride ?? (await fetchQuoteDetails(quoteMongoId, isLegacy));
@@ -675,7 +680,8 @@ export async function exportQuotePdf(
   const rootHtml = `<div class="pdf-root quote-document${compactClass} max-w-5xl mx-auto bg-white">${contentHtml}</div>`;
 
   const requestPdf = async (docHtml: string): Promise<Blob> => {
-    const res = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
+    // PDF host only — path is identical to the main API.
+    const res = await fetch(`${PDF_API_BASE_URL}/api/quotes/html-to-pdf`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ html: docHtml }),

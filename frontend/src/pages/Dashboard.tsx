@@ -10,6 +10,7 @@ import { Download, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/authlibrary"
 import { PdfIcon } from "@/components/PdfIcon"
+import { PDF_API_BASE_URL } from "@/lib/pdfExport"
 import { toTitleCase } from "@/lib/quoteUtils"
 import { StatsCards } from "@/components/dashboard/StatsCards"
 import { PageLoader } from "@/components/PageLoader"
@@ -58,8 +59,8 @@ const Dashboard = () => {
     try {
       const token = localStorage.getItem("token")
       const endpoint = isLegacy
-        ? `${import.meta.env.VITE_API_BASE_URL || "https://exclusivelife-staging-138e70a865bc.herokuapp.com"}/api/quotes/${quoteId}`
-        : `${import.meta.env.VITE_API_BASE_URL || "https://exclusivelife-staging-138e70a865bc.herokuapp.com"}/api/new-quotes/${quoteId}`
+        ? `${import.meta.env.VITE_API_BASE_URL || "https://exclusivelife-production-bdf67ae8700c.herokuapp.com"}/api/quotes/${quoteId}`
+        : `${import.meta.env.VITE_API_BASE_URL || "https://exclusivelife-production-bdf67ae8700c.herokuapp.com"}/api/new-quotes/${quoteId}`
       const res = await fetch(endpoint, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -79,7 +80,8 @@ const Dashboard = () => {
   const handleDownloadPdf = async (e: React.MouseEvent, quoteId: string, id: string, isLegacy: boolean) => {
     e.stopPropagation()
     try {
-      const url = `https://exclusivelife-staging-138e70a865bc.herokuapp.com/api/quotes/${id}/generate-pdf?legacy=${isLegacy}`
+      // PDF downloads use the dedicated PDF host; path unchanged.
+      const url = `${PDF_API_BASE_URL}/api/quotes/${id}/generate-pdf?legacy=${isLegacy}`
       const res = await fetch(url, { method: "GET" })
       if (!res.ok) throw new Error(`PDF generation failed: ${res.status}`)
       const blob = await res.blob()
