@@ -22,6 +22,14 @@ const app = express();
 const PORT = process.env.PORT || 5002;
 const emailTemplate = require("./emails/template");
 
+/* Base URL for links that leave the backend and land on the frontend (password
+   reset and account setup emails). Set APP_URL on Heroku to the live frontend,
+   e.g. https://qmt.exclusivelife.co.bw. Trailing slashes are stripped so the
+   path is always joined with exactly one separator. */
+const LOCAL_APP_URL = "http://localhost:5173";
+const getAppUrl = () => (process.env.APP_URL || LOCAL_APP_URL).replace(/\/+$/, "");
+const appUrl = (path = "") => `${getAppUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+
 
 /* -------------------------- Core middleware -------------------------- */
 app.use(cors({
@@ -112,6 +120,14 @@ io.on("connection", (socket) => {
 
 httpServer.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`)
+  if (!process.env.APP_URL) {
+    console.warn(
+      `[config] APP_URL is not set — password reset and set-password emails will link to ${getAppUrl()}. ` +
+      `Set APP_URL to the live frontend URL (e.g. https://qmt.exclusivelife.co.bw).`
+    )
+  } else {
+    console.log(`Frontend link base: ${getAppUrl()}`)
+  }
 })
 
 
@@ -434,7 +450,7 @@ const sendEmail = async ({ to, subject, templateData, textFallback }) => {
 
 
 const sendWelcomeEmail = async (email, firstName, token) => {
-  const setupUrl = `${process.env.APP_URL || "http://localhost:8080"}/auth/set-password?token=${token}`;
+  const setupUrl = appUrl(`/auth/set-password?token=${token}`);
 
   await sendEmail({
     to: email,
@@ -989,7 +1005,7 @@ app.post("/api/auth/forgot-password", async (req, res) => {
       expiresAt,
     });
 
-    const resetUrl = `${process.env.APP_URL || "http://localhost:8080"}/auth/reset-password?token=${token}`;
+    const resetUrl = appUrl(`/auth/reset-password?token=${token}`);
 
     if (sgMail) {
       await sendEmail({
