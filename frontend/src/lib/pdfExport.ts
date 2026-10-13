@@ -9,11 +9,36 @@ import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLif
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
 import { API_BASE_URL } from "@/lib/api";
 
+const sanitizeFilename = (value: string) =>
+  value
+    .replace(/\//g, "-")
+    .replace(/[^a-zA-Z0-9-_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+const buildPdfFilename = (quoteId: string, clientName: string) => {
+  const safeQuoteId = sanitizeFilename(quoteId);
+  const safeClientName = sanitizeFilename(clientName);
+  return `Quote_${safeQuoteId}_${safeClientName}.pdf`;
+};
+
 const PDF_EXTRA_STYLES = `
+  /* Screen-only affordances (e.g. the "Convert to Policy" button) must never
+     reach the exported document. */
   .no-print { display: none !important; }
 
-  /* A4 with tight margins to help fit into ~2 pages */
-  @page { size: A4; margin: 12mm 12mm; }
+  /* ---------------------------------------------------------------
+     A4 (210mm) with 12mm page margins leaves a 186mm printable box.
+     The quotation is laid out inside a narrower, centred content column
+     so it can never reach the printable edge:
+
+        page margin   12mm  +  5mm safety  =  17mm each side
+        content width 210 - 2 x 17        =  176mm  (665px @96dpi)
+
+     The column is centred with auto left/right margins, so the left and
+     right margins are always equal. Nothing is scaled, cropped or reflowed.
+     --------------------------------------------------------------- */
+  :root { --pdf-gutter: 5mm; --pdf-content-width: 176mm; }
+  @page { size: A4; margin: 12mm; }
   /* Force light-mode rendering for PDF and match on-screen paper look */
   html, body {
     background: #ffffff !important;
@@ -26,31 +51,171 @@ const PDF_EXTRA_STYLES = `
   body {
     font-family: 'Urbanist', 'Open Sans', system-ui, -apple-system, Arial, sans-serif;
     font-weight: 300;
-    font-size: 10.5px;
-    line-height: 1.35;
+    font-size: 11.5px;
+    line-height: 1.32;
+  }
+
+  /* ============================================================
+     PRINTABLE-WIDTH CONTAINMENT
+     Everything is measured against the 176mm content column, which
+     is itself 10mm narrower than the 186mm printable box. The right
+     border of every card, table and value therefore always has the
+     full 12mm page margin (plus 5mm of safety) to sit in.
+     ============================================================ */
+  html, body {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  /* border-box everywhere so padding + border stay inside the column */
+  *, *::before, *::after { box-sizing: border-box !important; }
+
+  /* Every element inside the quotation may shrink; this kills the automatic
+     minimum size of grid/flex children that causes right-edge overflow. */
+  .pdf-root, .pdf-root *, .quote-document, .quote-document * {
+    min-width: 0 !important;
+  }
+
+  /* Root wrapper: the screen preview caps it at max-w-5xl (64rem = 1024px),
+     which is far wider than A4. Cap it to the 176mm column and centre it. */
+  .pdf-root,
+  .quote-document,
+  .quote-document-body,
+  body > * {
+    width: 100% !important;
+    max-width: var(--pdf-content-width) !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Sections, cards and blocks: never wider than the column, never content-sized. */
+  .quote-masthead,
+  .quote-masthead__top,
+  .quote-title-row,
+  .quote-section,
+  .quote-client-section,
+  .quote-scenarios-intro,
+  .quote-scenario-wrap,
+  .quote-scenario,
+  .quote-option-heading,
+  .quote-option-section,
+  .quote-table-wrap,
+  .quote-acceptance,
+  .quote-terms,
+  .quote-company-details,
+  .quote-brand-block,
+  .quote-logo-wrap,
+  .quote-header-summary,
+  .quote-signature-grid,
+  .quote-signature-line,
+  .quote-client-column,
+  .pdf-terms {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Two-column grids: exactly two shrinkable columns, 1fr capped at 100% */
+  .quote-details-grid,
+  .quote-details-grid--compact,
+  .quote-client-details-grid,
+  .quote-summary-row,
+  .quote-signature-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  }
+  .quote-details-grid > *,
+  .quote-details-grid--compact > *,
+  .quote-client-details-grid > *,
+  .quote-summary-row > *,
+  .quote-signature-grid > *,
+  .quote-masthead__top > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  /* Three-part masthead: flexible sides around the fixed-size brand block */
+  .quote-masthead__top {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  }
+
+  /* Detail rows: label and value both shrinkable, no fixed pixel minimums */
+  .quote-detail-item {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr) !important;
+  }
+  .quote-detail-label,
+  .quote-detail-value,
+  .quote-metadata dt,
+  .quote-metadata dd {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+
+  /* Long unbroken words must break inside the column. Without this a single
+     token (a long name, an amount, a free-text note) can ink out past the
+     right edge of the page while its block box still measures 176mm. */
+  .pdf-root p, .pdf-root span, .pdf-root li, .pdf-root dd, .pdf-root dt,
+  .pdf-root td, .pdf-root th, .pdf-root label, .pdf-root small,
+  .pdf-root h1, .pdf-root h2, .pdf-root h3, .pdf-root h4, .pdf-root h5,
+  [style*="pre-wrap"] {
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    max-width: 100% !important;
+  }
+
+  /* Tables (including the life guarantee period tables) stay inside 100% */
+  table,
+  thead, tbody, tfoot, tr, th, td,
+  .quote-table,
+  .quote-life-table,
+  .quote-table-wrap {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  table, .quote-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+  th, td { word-break: break-word; overflow-wrap: anywhere; white-space: normal !important; }
+
+  /* Media and long unbroken strings can never widen the page */
+  img, svg, canvas, video { max-width: 100% !important; height: auto !important; }
+  pre, code, .quote-table-value, .quote-table-note {
+    max-width: 100% !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
   }
   /* Compact the rendered quote: shrink every text utility a notch */
-  .text-xs { font-size: 9px !important; }
-  .text-sm { font-size: 10px !important; }
-  .text-base { font-size: 11px !important; }
-  .text-lg { font-size: 12.5px !important; }
-  .text-xl { font-size: 14px !important; }
-  .text-2xl { font-size: 16px !important; }
+  .text-xs { font-size: 10px !important; }
+  .text-sm { font-size: 11px !important; }
+  .text-base { font-size: 12.5px !important; }
+  .text-lg { font-size: 14px !important; }
+  .text-xl { font-size: 15.5px !important; }
+  .text-2xl { font-size: 17.5px !important; }
   /* Tighten vertical rhythm */
-  .space-y-8 > * + * { margin-top: 0.9rem !important; }
-  .space-y-6 > * + * { margin-top: 0.7rem !important; }
-  .space-y-4 > * + * { margin-top: 0.5rem !important; }
-  .p-8 { padding: 0.9rem !important; }
-  .p-6 { padding: 0.75rem !important; }
-  .py-2 { padding-top: 0.2rem !important; padding-bottom: 0.2rem !important; }
-  .py-3 { padding-top: 0.3rem !important; padding-bottom: 0.3rem !important; }
-  .mt-12 { margin-top: 0.9rem !important; }
-  .mt-8 { margin-top: 0.7rem !important; }
-  .mb-12 { margin-bottom: 0.7rem !important; }
-  .mb-8 { margin-bottom: 0.6rem !important; }
-  .pt-8 { padding-top: 0.6rem !important; }
-  .pb-3 { padding-bottom: 0.3rem !important; }
-  .gap-y-4 { row-gap: 0.25rem !important; }
+  .space-y-8 > * + * { margin-top: 0.8rem !important; }
+  .space-y-6 > * + * { margin-top: 0.6rem !important; }
+  .space-y-4 > * + * { margin-top: 0.45rem !important; }
+  .p-8 { padding: 0.85rem !important; }
+  .p-6 { padding: 0.65rem !important; }
+  .p-5 { padding: 0.6rem !important; }
+  .py-2 { padding-top: 0.18rem !important; padding-bottom: 0.18rem !important; }
+  .py-3 { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
+  .mt-12 { margin-top: 0.85rem !important; }
+  .mt-8 { margin-top: 0.65rem !important; }
+  .mb-12 { margin-bottom: 0.65rem !important; }
+  .mb-8 { margin-bottom: 0.5rem !important; }
+  .pt-8 { padding-top: 0.55rem !important; }
+  .pb-3 { padding-bottom: 0.22rem !important; }
+  .gap-y-4 { row-gap: 0.2rem !important; }
   .gap-x-12 { column-gap: 1.25rem !important; }
   /* Darker, print-safe borders so the print-out never renders faint hairlines */
   .border, .border-t, .border-b, .border-l, .border-r,
@@ -61,7 +226,7 @@ const PDF_EXTRA_STYLES = `
   }
   table, th, td { border-color: #4b5563 !important; }
   hr { border-color: #4b5563 !important; }
-  /* Header logo shouldn't dominate a compact 2-page layout */
+  /* Header logo shouldn't dominate a compact layout */
   header img, .h-20 { height: 3rem !important; }
   /* Neutralize dark-mode variants that ship in the rendered markup */
   .dark\\:bg-slate-900, .dark\\:bg-slate-800, .dark\\:bg-slate-800\\/40,
@@ -70,20 +235,272 @@ const PDF_EXTRA_STYLES = `
   .dark\\:text-white { color: inherit !important; }
   .dark\\:border-gray-700, .dark\\:border-gray-800, .dark\\:border-gray-600,
   .dark\\:ring-slate-800 { border-color: inherit !important; }
-  /* Keep client/customer info block together on page 1 */
-  .grid { break-inside: avoid; page-break-inside: avoid; }
   thead { display: table-header-group; }
   /* Prevent horizontal clipping */
-  .overflow-x-auto, .overflow-auto, .overflow-hidden { overflow: visible !important; }
+  .overflow-x-auto, .overflow-auto, .overflow-hidden {
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
   table { width: 100% !important; table-layout: fixed; border-collapse: collapse; }
   th, td { word-break: break-word; overflow-wrap: anywhere; white-space: normal !important; }
   tr { break-inside: avoid; page-break-inside: avoid; }
-  /* Keep entire tables and scenario option cards intact — never split across pages */
-  table, .scenario-block { break-inside: avoid !important; page-break-inside: avoid !important; }
+  /* Keep tables intact — never split a table across pages */
+  table { break-inside: avoid !important; page-break-inside: avoid !important; }
+
+  /* ---- Unbreakable units ----
+     Chromium ignores break-inside on flex containers, so force block display
+     on every wrapper we need to keep whole. */
+  .scenario-block,
+  .pdf-fees-signature {
+    display: block !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  .scenario-block > *,
+  .pdf-fees-signature > * {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Inner rows may still use flex/grid — that's fine, they're small. */
+
+  /* Terms & Conditions: lowest priority, flows wherever there is room */
+  .pdf-terms {
+    break-before: auto; page-break-before: auto;
+    break-inside: auto; page-break-inside: auto;
+  }
   img { max-width: 100%; height: auto; }
-  /* Justify Terms & Conditions body */
   .pdf-terms p { text-align: justify; text-justify: inter-word; }
+
+  /* ---- Compact mode (4+ annuity options) ---- */
+  .pdf-compact { font-size: 10.8px; line-height: 1.25; }
+  .pdf-compact .text-xs { font-size: 9.5px !important; }
+  .pdf-compact .text-sm { font-size: 10.5px !important; }
+  .pdf-compact .text-base { font-size: 11.5px !important; }
+  .pdf-compact .text-lg { font-size: 12.5px !important; }
+  .pdf-compact .p-8 { padding: 0.55rem !important; }
+  .pdf-compact .p-5 { padding: 0.4rem !important; }
+  .pdf-compact .space-y-8 > * + * { margin-top: 0.45rem !important; }
+  .pdf-compact .space-y-6 > * + * { margin-top: 0.35rem !important; }
+  .pdf-compact .space-y-4 > * + * { margin-top: 0.25rem !important; }
+  .pdf-compact .py-2 { padding-top: 0.08rem !important; padding-bottom: 0.08rem !important; }
+  .pdf-compact .mb-5 { margin-bottom: 0.3rem !important; }
+  .pdf-compact .mb-4 { margin-bottom: 0.22rem !important; }
+  .pdf-compact .mt-12 { margin-top: 0.5rem !important; }
+  .pdf-compact .pt-8 { padding-top: 0.35rem !important; }
+  .pdf-compact th, .pdf-compact td { padding-top: 0.12rem !important; padding-bottom: 0.12rem !important; }
+
+  /* ---- Compact two-page mode (1-3 annuity options) ---- */
+  .compact-two-page { font-size: 10.8px; line-height: 1.25; }
+  .compact-two-page .text-xs { font-size: 9.5px !important; }
+  .compact-two-page .text-sm { font-size: 10.5px !important; }
+  .compact-two-page .text-base { font-size: 11.5px !important; }
+  .compact-two-page .text-lg { font-size: 12.5px !important; }
+  .compact-two-page .p-8 { padding: 0.5rem !important; }
+  .compact-two-page .p-5 { padding: 0.35rem !important; }
+  .compact-two-page .space-y-8 > * + * { margin-top: 0.4rem !important; }
+  .compact-two-page .space-y-6 > * + * { margin-top: 0.3rem !important; }
+  .compact-two-page .space-y-4 > * + * { margin-top: 0.2rem !important; }
+  .compact-two-page .py-2 { padding-top: 0.06rem !important; padding-bottom: 0.06rem !important; }
+  .compact-two-page .py-3 { padding-top: 0.1rem !important; padding-bottom: 0.1rem !important; }
+  .compact-two-page .mb-5 { margin-bottom: 0.22rem !important; }
+  .compact-two-page .mb-4 { margin-bottom: 0.18rem !important; }
+  .compact-two-page .mb-8 { margin-bottom: 0.35rem !important; }
+  .compact-two-page .mb-12 { margin-bottom: 0.4rem !important; }
+  .compact-two-page .mt-8 { margin-top: 0.5rem !important; }
+  .compact-two-page .mt-12 { margin-top: 0.55rem !important; }
+  .compact-two-page .pt-8 { padding-top: 0.3rem !important; }
+  .compact-two-page .pb-3 { padding-bottom: 0.15rem !important; }
+  .compact-two-page .gap-y-4 { row-gap: 0.15rem !important; }
+  .compact-two-page .gap-x-12 { column-gap: 0.9rem !important; }
+  .compact-two-page header img, .compact-two-page .h-20 { height: 2.6rem !important; }
+  .compact-two-page table { border-collapse: collapse; }
+  .compact-two-page th, .compact-two-page td { padding-top: 0.1rem !important; padding-bottom: 0.1rem !important; }
+  .compact-two-page .scenario-block,
+  .compact-two-page .pdf-fees-signature {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Editorial quotation system — shared with the on-screen document */
+  .quote-document { font-size: 11px !important; line-height: 1.42 !important; }
+  .quote-masthead { padding: 8mm 0 5mm !important; }
+  .quote-masthead__top {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    align-items: start !important;
+    gap: 7mm !important;
+    padding-bottom: 7mm !important;
+  }
+  .quote-company-details { grid-column: 1 !important; text-align: left !important; }
+  .quote-brand-block { grid-column: 2 !important; justify-content: center !important; justify-self: center !important; }
+  .quote-logo-wrap { min-height: 22mm !important; }
+  .quote-header-summary { grid-column: 3 !important; justify-self: end !important; min-width: 36mm !important; font-size: 9px !important; text-align: right !important; }
+  .quote-logo { height: 22mm !important; width: auto !important; }
+  .quote-eyebrow, .quote-header-product, .quote-section-heading > span,
+  .quote-option-heading > span, .quote-detail-label, .quote-metadata dt {
+    font-size: 7.4px !important;
+    letter-spacing: 0.08em !important;
+  }
+  .quote-company-details { font-size: 7.6px !important; line-height: 1.4 !important; color: #5c6675 !important; }
+  .quote-company-contact { color: #5c6675 !important; }
+  .quote-header-product { margin: 0 0 3mm !important; }
+  .quote-metadata dd { font-size: 9px !important; }
+  .quote-title-row { display: block !important; padding-top: 7mm !important; }
+  .quote-document-title { font-size: 25px !important; font-weight: 700 !important; line-height: 1.1 !important; }
+  .quote-client-kicker { margin: 7mm 0 0 !important; font-size: 8px !important; letter-spacing: 0.08em !important; }
+  .quote-metadata { min-width: 0 !important; gap: 1.5mm !important; }
+  .quote-section { padding: 5mm 0 !important; }
+  .quote-client-section { padding-top: 0 !important; }
+  .quote-section-heading { margin-bottom: 3mm !important; }
+  .quote-section-heading h2, .quote-section-heading h3 { font-size: 11px !important; font-weight: 600 !important; }
+  .quote-details-grid, .quote-client-details-grid, .quote-summary-row { column-gap: 10mm !important; }
+  .quote-client-details-grid, .quote-summary-row { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .quote-summary-row { margin-top: 1mm !important; }
+  .quote-detail-item { padding: 2mm 0 !important; grid-template-columns: minmax(0, auto) minmax(0, 1fr) !important; }
+  .quote-scenarios-intro { padding-bottom: 3mm !important; }
+  .quote-scenario-wrap { padding: 0 0 3mm !important; }
+  .quote-scenario { padding: 3mm 4mm !important; border: 1px solid #aab4c4 !important; border-radius: 3mm !important; }
+  .quote-option-heading { padding-bottom: 3mm !important; }
+  .quote-option-section { margin-top: 1.5mm !important; }
+  .quote-option-section h5, .quote-option-subheading { margin-bottom: 1mm !important; font-size: 9px !important; }
+  .quote-table { font-size: 9px !important; }
+  .quote-table th, .quote-table td { padding: 1.4mm 2.5mm !important; }
+  .quote-table-note { margin-top: 1.5mm !important; font-size: 8px !important; }
+  .quote-acceptance { margin-top: 6mm !important; padding-top: 5mm !important; }
+  .quote-acceptance h3 { margin-bottom: 4mm !important; font-size: 11px !important; }
+  .quote-signature-grid { gap: 12mm !important; }
+  .quote-signature-line { height: 10mm !important; }
+  .quote-terms { padding: 6mm 0 0 !important; margin-top: 0 !important; }
+  .quote-terms-copy { font-size: 8.5px !important; line-height: 1.5 !important; }
+
+  .compact-two-page .quote-masthead { padding-bottom: 5mm !important; }
+  .compact-two-page .quote-masthead__top { padding-bottom: 3mm !important; }
+  .compact-two-page .quote-title-row { padding-top: 4mm !important; }
+  .compact-two-page .quote-logo { height: 11mm !important; }
+  .compact-two-page .quote-section { padding-top: 3.5mm !important; padding-bottom: 3.5mm !important; }
+  .compact-two-page .quote-section-heading { margin-bottom: 2.5mm !important; }
+  .compact-two-page .quote-detail-item { padding-top: 1.2mm !important; padding-bottom: 1.2mm !important; }
+  .compact-two-page .quote-scenario { padding: 3.5mm !important; }
+  .compact-two-page .quote-scenario-wrap { padding-bottom: 2.5mm !important; }
+  .compact-two-page .quote-acceptance { margin-top: 3mm !important; padding-top: 3mm !important; }
+
+  /* Reference-matched refinement */
+  .quote-section-heading > span { display: none !important; }
+  .quote-section-heading h2, .quote-section-heading h3, .quote-acceptance h3, .quote-client-kicker,
+  .quote-eyebrow, .quote-option-section h5, .quote-option-subheading {
+    font-size: 8.5px !important; font-weight: 500 !important; letter-spacing: 0.14em !important; text-transform: uppercase !important;
+  }
+  .quote-document-title { font-size: 23px !important; font-weight: 600 !important; }
+  .quote-client-kicker { margin-top: 3mm !important; }
+  .quote-title-row { padding-top: 5mm !important; }
+  .quote-section { padding: 2.5mm 0 !important; }
+  .quote-section-heading { margin-bottom: 1.5mm !important; }
+  .quote-detail-label { font-size: 8px !important; letter-spacing: 0 !important; }
+  .quote-detail-item { grid-template-columns: minmax(0, auto) minmax(0, 1fr) !important; padding: 1.3mm 0 !important; }
+  .quote-scenario-wrap { padding: 0 0 2.5mm !important; }
+  .quote-scenario { padding: 2.5mm 4mm !important; border: 1px solid #aab4c4 !important; border-radius: 3mm !important; }
+  .quote-option-heading { padding-bottom: 0.5mm !important; }
+  .quote-option-section { margin-top: 0.8mm !important; }
+  .quote-option-section h5, .quote-option-subheading { margin: 1mm 0 0.7mm !important; }
+  .quote-table-wrap { border: 1px solid #aab4c4 !important; border-radius: 2.5mm !important; }
+  .quote-table th { font-size: 7.5px !important; }
+  .quote-table th, .quote-table td { padding: 1mm 2.5mm !important; }
+  .quote-acceptance { margin-top: 3mm !important; padding-top: 3mm !important; }
+  .quote-terms { padding-top: 4mm !important; }
+  .quote-terms .quote-section-heading h3 { font-size: 11px !important; text-transform: none !important; letter-spacing: 0 !important; }
+  .compact-two-page .quote-scenario { padding: 2mm !important; }
+  .quote-page-break-before { break-before: page !important; page-break-before: always !important; }
+  .quote-option-count-1 .quote-fees-section,
+  .quote-option-count-2 .quote-fees-section { break-before: page !important; page-break-before: always !important; }
+  .quote-page-break-before,
+  .quote-option-count-1 .quote-fees-section,
+  .quote-option-count-2 .quote-fees-section { margin-top: 0 !important; }
+  .quote-page-break-before::before,
+  .quote-option-count-1 .quote-fees-section::before,
+  .quote-option-count-2 .quote-fees-section::before { display: none !important; content: none !important; }
+
+  /* ---- Annuity option block: compact 2-column grid, A4-safe ----
+     A4 usable width is 186mm (210mm - 2x12mm margins). Every box below is
+     border-box and capped at 100% so nothing can spill past the right margin. */
+  .quote-scenario-wrap,
+  .quote-scenario,
+  .quote-option-section,
+  .quote-details-grid,
+  .quote-details-grid--compact {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Never split an option across a page break */
+  .quote-scenario-wrap,
+  .quote-scenario,
+  .quote-option-heading,
+  .quote-option-section,
+  .quote-details-grid,
+  .quote-details-grid--compact,
+  .quote-details-grid--compact .quote-detail-item {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Two equal, shrinkable columns with a tight gutter */
+  .quote-details-grid--compact {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: auto !important;
+    column-gap: 4mm !important;
+    row-gap: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Left column: Drawdown / Living Guarantee / Funds Remaining
+     Right column: Frequency / Living Annuity per month
+     Explicit placement keeps each row anchored even when the optional
+     guarantee row is absent. */
+  .quote-details-grid--compact .quote-detail-item--drawdown   { grid-column: 1 !important; grid-row: 1 !important; }
+  .quote-details-grid--compact .quote-detail-item--guarantee  { grid-column: 1 !important; grid-row: 2 !important; }
+  .quote-details-grid--compact .quote-detail-item--funds      { grid-column: 1 !important; grid-row: 3 !important; }
+  .quote-details-grid--compact .quote-detail-item--frequency  { grid-column: 2 !important; grid-row: 1 !important; }
+  .quote-details-grid--compact .quote-detail-item--payout     { grid-column: 2 !important; grid-row: 2 !important; }
+
+  /* Label hugs the left, value takes the rest and right-aligns; both can shrink */
+  .quote-details-grid--compact .quote-detail-item {
+    display: grid !important;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr) !important;
+    align-items: baseline !important;
+    gap: 2mm !important;
+    padding: 1.1mm 0 !important;
+    margin: 0 !important;
+    border-bottom: 0.25mm solid #c3cbd8 !important;
+  }
+  .quote-details-grid--compact .quote-detail-label {
+    min-width: 0 !important;
+    font-size: 7.6px !important;
+    line-height: 1.25 !important;
+    overflow-wrap: anywhere !important;
+  }
+  .quote-details-grid--compact .quote-detail-value {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 8.4px !important;
+    line-height: 1.25 !important;
+    text-align: right !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+  .compact-two-page .quote-details-grid--compact .quote-detail-item { padding: 0.8mm 0 !important; }
+  .compact-two-page .quote-details-grid--compact { column-gap: 3mm !important; }
+
 `;
+
 
 /**
  * Collect every stylesheet the running app currently has loaded so the PDF
@@ -162,7 +579,6 @@ export async function exportQuotePdf(
   quoteOverride?: QuoteData
 ): Promise<void> {
   const baseUrl = window.location.origin;
-  const apiBase = API_BASE_URL;
 
   // 1. Use the quote already loaded on the page when available, otherwise fetch it.
   const quote = quoteOverride ?? (await fetchQuoteDetails(quoteMongoId, isLegacy));
@@ -207,7 +623,7 @@ export async function exportQuotePdf(
     const escaped = medNotesText.replace(/</g, "&lt;");
     processedDisplayHtml = processedDisplayHtml.replace(
       /<div[^>]*class="[^"]*flex[^"]*items-center[^"]*justify-between[^"]*"[^>]*>\s*(<h3[^>]*>\s*Medical Underwriting\s*<\/h3>)[\s\S]*?<\/div>/i,
-      `$1<p style="font-size: 0.875rem; color: #4b5563; line-height: 1.625; margin: 0.75rem 0 0 0; white-space: pre-wrap;">${escaped}</p>`
+      `$1<p style="font-size: 0.875rem; color: #4b5563; line-height: 1.625; margin: 0.75rem 0 0 0; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word;">${escaped}</p>`
     );
   } else {
     // No notes — remove the entire Medical Underwriting section wrapper
@@ -220,25 +636,32 @@ export async function exportQuotePdf(
   // 4c. Render terms & conditions if present
   const termsText = quote.termsAndConditions || quote.disclaimerText;
   const termsHtml = termsText
-    ? `<div class="pdf-terms" style="border-top: 1px solid #4b5563; padding: 1rem; margin-top: 1rem;">
-        <h3 style="font-size: 12.5px; font-weight: 600; text-align: center; margin: 0 0 0.5rem 0;">Terms &amp; Conditions</h3>
-        <p style="font-size: 10px; color: #1f2937; line-height: 1.45; text-align: justify; text-justify: inter-word; margin: 0;">${termsText}</p>
-      </div>`
+    ? `<section class="quote-section quote-terms pdf-terms">
+        <div class="quote-section-heading"><span>Legal</span><h3>Terms &amp; Conditions</h3></div>
+        <p class="quote-terms-copy">${termsText}</p>
+      </section>`
     : "";
 
   // 5. Fix relative image URLs. Embed the logo so the PDF server never waits on localhost/preview assets.
-  const logoDataUrl = await assetToDataUrl("/exclusive.png");
+  const logoDataUrl = await assetToDataUrl("/exclusive2.png");
   let contentHtml = (headerHtml + processedDisplayHtml + termsHtml).replace(
     /src="\/([^"]+)"/g,
     `src="${baseUrl}/$1"`
   );
   if (logoDataUrl) {
-    contentHtml = contentHtml.replace(/src="[^"]*\/exclusive\.png"/g, `src="${logoDataUrl}"`);
+    contentHtml = contentHtml.replace(/src="[^"]*\/exclusive2\.png"/g, `src="${logoDataUrl}"`);
   }
 
   const appStyles = await collectAppStyles();
 
-  const html = `<!DOCTYPE html>
+  const appStylesTag = `<style>${appStyles}</style>`;
+
+  // 5b. 4+ annuity option cards → compact typography/spacing.
+  const optionCount = (contentHtml.match(/class="[^"]*scenario-block/g) || []).length;
+  const printMode = optionCount <= 4 ? "compact-two-page" : "pdf-compact";
+  const compactClass = printMode ? ` ${printMode}` : "";
+
+  const buildHtml = (bodyInner: string) => `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -246,30 +669,39 @@ export async function exportQuotePdf(
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&family=Wix+Madefor+Display:wght@400..800&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
-    <style>${appStyles}</style>
+    ${appStylesTag}
     <style>${PDF_EXTRA_STYLES}</style>
   </head>
-  <body><div class="max-w-5xl mx-auto bg-white">${contentHtml}</div></body>
+  <body style="position: relative;">${bodyInner}</body>
 </html>`;
 
-  // 6. Send to html-to-pdf endpoint
-  const response = await fetch(`${apiBase}/api/quotes/html-to-pdf`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ html }),
-  });
+  const rootHtml = `<div class="pdf-root quote-document${compactClass} max-w-5xl mx-auto bg-white">${contentHtml}</div>`;
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
-    throw new Error(`PDF generation failed: ${response.status} ${text}`);
-  }
+  const requestPdf = async (docHtml: string): Promise<Blob> => {
+    // PDF host only — path is identical to the main API.
+    const res = await fetch(`${API_BASE_URL}/api/quotes/html-to-pdf`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html: docHtml }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`PDF generation failed: ${res.status} ${text}`);
+    }
+    return res.blob();
+  };
+
+  // 6. Generate PDF without running header or page numbers.
+  const blob = await requestPdf(buildHtml(rootHtml));
 
   // 7. Download the blob
-  const blob = await response.blob();
   const url = URL.createObjectURL(blob);
+
+  const pdfFilename = buildPdfFilename(quote.quoteId, clientInfo.fullName);
+
   const a = document.createElement("a");
   a.href = url;
-  a.download = `quote-${quoteId}.pdf`;
+  a.download = pdfFilename;
   document.body.appendChild(a);
   a.click();
   a.remove();

@@ -1,5 +1,3 @@
-import { getProductDisplayName } from "@/lib/quoteUtils";
-
 interface QuoteHeaderProps {
   quoteId: string;
   clientName: string;
@@ -15,56 +13,57 @@ export const QuoteHeader = ({
   clientName,
   productType,
   date,
-  clientEmail,
-  clientContact,
-  clientId
 }: QuoteHeaderProps) => {
   return (
-    <div className="bg-white dark:bg-slate-900 p-8 print:p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header row with logo and company info */}
-        <div className="flex justify-between items-start mb-8">
-          {/* Logo */}
-          <div>
+    <header className="quote-masthead">
+      <div className="quote-masthead__top">
+        <div className="quote-company-details">
+          <p>Plot 54368, CBD, I-Towers</p>
+          <p>3rd Floor, Unit 3A · Gaborone</p>
+          <p>P. O. Box 404268</p>
+          <p className="quote-company-contact">Tel 392 0000 · Fax 392 0001</p>
+        </div>
+
+        <div className="quote-brand-block">
+          <div className="quote-logo-wrap">
             <img
-              src="/exclusive.png"
+              src="/exclusive2.png"
               alt="Exclusive Life Insurance"
-              className="h-20 object-contain"
-              onError={(e) => {
-                e.currentTarget.src = "/exclusive2.png";
-              }}
+              className="quote-logo"
             />
           </div>
+        </div>
 
-          {/* Company Info */}
-          <div className="text-right text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-            <p>Plot 54368, CBD, I-towers</p>
-            <p>3rd Floor, unit 3A</p>
-            <p>P. O. Box 404268</p>
-            <p>Gaborone</p>
-            <br />
-            <p>Tel: 392 0000 | Fax: 392 0001</p>
-            <br />
-            <div className="">
-              <span className="text-gray-600 dark:text-gray-400">Quote   </span>
-              <span className="font-semibold text-gray-800 dark:text-gray-100">#{quoteId}</span>
+        <div className="quote-header-summary">
+          <p className="quote-header-product">{productType || "Insurance quotation"}</p>
+          <dl className="quote-metadata">
+            <div>
+              <dt>Quote No.</dt>
+              <dd>{quoteId}</dd>
             </div>
             {date && (
-              <div className="">
-                <span className="text-gray-600 dark:text-gray-400">Date:  </span>
-                <span className="font-semibold text-gray-800 dark:text-gray-100">
-                  {new Date(date).toLocaleDateString()}
-                </span>
+              <div>
+                <dt>Date</dt>
+                <dd>
+                  {new Date(date).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </dd>
               </div>
             )}
-            {/* <br />
-                 <span className="font-semibold text-gray-800 dark:text-gray-100">
-                {getProductDisplayName(productType)}
-
-              </span> */}
-          </div>
+          </dl>
         </div>
       </div>
-    </div>
+
+      <div className="quote-title-row">
+        <p className="quote-eyebrow">Quotation for</p>
+        <h1 className="quote-document-title">
+          {clientName || "Client Name"}
+        </h1>
+        <p className="quote-client-kicker">Client details</p>
+      </div>
+    </header>
   );
 };
