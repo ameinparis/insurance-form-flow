@@ -7,7 +7,13 @@ import { FuneralDisplay } from "@/components/quote-displays/FuneralDisplay";
 import { LifeDisplay } from "@/components/quote-displays/LifeDisplay";
 import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLifeDisplay";
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
-import { API_BASE_URL } from "@/lib/api";
+
+/**
+ * PDF generation runs on a dedicated host. Every other API call in the app uses
+ * VITE_API_BASE_URL (the main backend); only the PDF render/download requests
+ * below are pointed at this host. Request paths are unchanged.
+ */
+export const PDF_API_BASE_URL = "https://njs.exclusivelife.co.bw";
 
 const sanitizeFilename = (value: string) =>
   value
@@ -679,7 +685,7 @@ export async function exportQuotePdf(
 
   const requestPdf = async (docHtml: string): Promise<Blob> => {
     // PDF host only — path is identical to the main API.
-    const res = await fetch(`${API_BASE_URL}/api/quotes/html-to-pdf`, {
+    const res = await fetch(`${PDF_API_BASE_URL}/api/quotes/html-to-pdf`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ html: docHtml }),

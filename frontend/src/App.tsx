@@ -18,6 +18,8 @@ import ClientDetail from "./pages/ClientDetail";
 import Claims from "./pages/Claims";
 import Conversions from "./pages/Conversions";
 import Administration from "./pages/Administration";
+import Team from "./pages/Team";
+import Organisations from "./pages/Organisations";
 import CalculateForm from "./pages/CalculateForm";
 import FormRouter from "./components/FormRouter";
 import Results from "./pages/Results";
@@ -36,8 +38,31 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import AccountPending from "./pages/auth/AccountPending";
 import LinkExpired from "./pages/auth/LinkExpired";
+import { useAuth } from "@/lib/authlibrary";
 
 const queryClient = new QueryClient();
+
+/**
+ * Organisation management is restricted to super admins and admins of the Root
+ * Organisation. Access is only decided once the organisation has finished
+ * loading, so an external org admin is never let through on a first paint.
+ */
+const OrganisationsRoute = ({ children }: { children: JSX.Element }) => {
+  const { role, organisation, organisationLoading } = useAuth();
+
+  if (organisationLoading) {
+    return null;
+  }
+
+  const isSuperAdmin = role === "super_admin";
+  const isRootAdmin = role === "admin" && organisation?.isRootOrganisation === true;
+
+  if (!isSuperAdmin && !isRootAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
 
 const GlobalBackgroundJobWidget = () => {
   const { jobs, removeJob } = useBackgroundJob();
@@ -159,7 +184,20 @@ const App = () => (
                   </RoleGuard>
                 </Layout>
               } />
-              <Route path="/team" element={<Navigate to="/administration" replace />} />
+              <Route path="/team" element={
+                <Layout>
+                  <RoleGuard require="canManageUsers">
+                    <Team />
+                  </RoleGuard>
+                </Layout>
+              } />
+              <Route path="/organisations" element={
+                <Layout>
+                  <OrganisationsRoute>
+                    <Organisations />
+                  </OrganisationsRoute>
+                </Layout>
+              } />
               <Route path="/logout" element={<LogoutHandler />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

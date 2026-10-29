@@ -9,6 +9,7 @@ interface OverviewStatsProps {
     activePolicies: number
   }
   loading: boolean
+  includeInternalStats?: boolean
 }
 
 const cardBase =
@@ -50,7 +51,7 @@ export const OverviewStats = ({ stats, loading }: OverviewStatsProps) => {
       badge: "bg-orange-500/15 text-orange-500 dark:text-orange-400",
       to: "/clients",
     },
-  ]
+  ].filter((card) => includeInternalStats !== false || card.title !== "Active Clients" && card.title !== "Active Policies")
 
   if (loading) {
     return (

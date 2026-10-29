@@ -21,6 +21,14 @@ const app = express();
 const PORT = process.env.PORT || 5002;
 const emailTemplate = require("./emails/template");
 
+/* Base URL for links that leave the backend and land on the frontend (password
+   reset and account setup emails). Set APP_URL on Heroku to the live frontend,
+   e.g. https://qmt.exclusivelife.co.bw. Trailing slashes are stripped so the
+   path is always joined with exactly one separator. */
+const LOCAL_APP_URL = "http://localhost:8080";
+const getAppUrl = () => (process.env.APP_URL || LOCAL_APP_URL).replace(/\/+$/, "");
+const appUrl = (path = "") => `${getAppUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+
 
 /* -------------------------- Core middleware -------------------------- */
 app.use(cors({
@@ -110,12 +118,74 @@ io.on("connection", (socket) => {
 
 httpServer.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`)
+  if (!process.env.APP_URL) {
+    console.warn(
+      `[config] APP_URL is not set — password reset and set-password emails will link to ${getAppUrl()}. ` +
+      `Set APP_URL to the live frontend URL (e.g. https://qmt.exclusivelife.co.bw).`
+    )
+  } else {
+    console.log(`Frontend link base: ${getAppUrl()}`)
+  }
 })
 
 
 
 
 /* ------------------------------- Models ------------------------------ */
+// Organisation Schema
+//
+// An organisation groups users and determines which calculators they may use.
+// Exactly one organisation is flagged as the Root Organisation; only the Root
+// Organisation (and platform superusers) may hold "admin" users.
+const organisationSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+
+  code: {
+    type: String,
+    required: true,
+    unique: true,
+    uppercase: true,
+    trim: true
+  },
+
+  parentOrganisationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Organisation",
+    default: null
+  },
+
+  isRootOrganisation: {
+    type: Boolean,
+    default: false
+  },
+
+  // Calculators members of this organisation are allowed to run.
+  allowedCalculators: {
+    type: [String],
+    enum: ["annuity", "funeral", "life-assurance", "individual-life"],
+    default: []
+  },
+
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }
+}, { timestamps: true });
+
+const Organisation = mongoose.model(
+  "Organisation",
+  organisationSchema
+);
+
 // Users Schema
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
@@ -128,7 +198,10 @@ const userSchema = new mongoose.Schema({
     enum: ["pending", "active", "suspended"],
     default: "pending"
   },
-  pendingExpiresAt: { type: Date, index: true }
+  pendingExpiresAt: { type: Date, index: true },
+  // Set when this user is assigned to an organisation. Null for superusers,
+  // who are not scoped to any single organisation.
+  organisationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organisation", index: true }
 }, { timestamps: true });
 
 userSchema.index({ pendingExpiresAt: 1 }, { expireAfterSeconds: 0 });
@@ -156,7 +229,7 @@ tokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // Auto-delete e
 const Token = mongoose.model("Token", tokenSchema);
 
 // Old schema (keep for compatibility)
-const quoteSchema = new mongoose.Schema({
+ const quoteSchema = new mongoose.Schema({
   fullName: String,
   dateOfBirth: String,
   idNumber: String,
@@ -176,6 +249,7 @@ const quoteSchema = new mongoose.Schema({
   guaranteedStartAge: Number,
   monthlyLifeAnnuity: Number,
   annualLifeAnnuity: Number,
+  organisationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organisation", index: true }
 }, { timestamps: true });
 const Quote = mongoose.model("Quotations", quoteSchema);
 
@@ -196,6 +270,7 @@ const newQuoteSchema = new mongoose.Schema({
 
   quoteId: { type: String, index: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  organisationId: { type: mongoose.Schema.Types.ObjectId, ref: "Organisation", index: true },
   termsAndConditions: { type: String },
   medicalUnderwritingNotes: { type: String, default: "" },
 
@@ -233,7 +308,8 @@ const auditLogSchema = new mongoose.Schema({
       "QUOTE_DELETED",
       "USER_UPDATED",
       "PASSWORD_CHANGED",
-      "PASSWORD_RESET"
+      "PASSWORD_RESET",
+      "ORGANISATION_CREATED",
     ],
     required: true
   },
@@ -268,6 +344,87 @@ const authenticateToken = (req, _res, next) => {
     req.user = payload; // { userId, role }
     next();
   });
+};
+
+/* Calculator access control middleware */
+const requireCalculatorAccess = (calculatorKey) => {
+  return async (req, res, next) => {
+    try {
+      const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+      if (!authUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      const requesterRole = String(authUser.role || "").toLowerCase();
+
+      // Superuser: global access to all calculators
+      if (requesterRole === "superuser") {
+        return next();
+      }
+
+      // Admin and user: must have organisation
+      if (!authUser.organisationId) {
+        return res.status(400).json({ message: "User is not assigned to an organisation" });
+      }
+
+      // Load organisation and check allowedCalculators
+      const org = await Organisation.findById(authUser.organisationId).select("allowedCalculators").lean();
+      if (!org) {
+        return res.status(404).json({ message: "Organisation not found" });
+      }
+
+      const allowed = org.allowedCalculators || [];
+      if (!allowed.includes(calculatorKey)) {
+        return res.status(403).json({ message: `Calculator '${calculatorKey}' not available for this organisation` });
+      }
+
+      next();
+    } catch (e) {
+      console.error("Calculator access check error:", e);
+      res.status(500).json({ message: "Failed to verify calculator access" });
+    }
+  };
+};
+
+/**
+ * Checks whether the authenticated user may access internal workflows
+ * (policies, conversions, clients). Only superusers and root-organisation
+ * members may access these endpoints. External organisation users are denied.
+ * Returns { allowed: true, org } on success, or sends an error response.
+ */
+const requireRootOrgAccess = async (req, res) => {
+  try {
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      res.status(401).json({ message: "User not found" });
+      return undefined;
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+
+    // Superuser: global access to internal workflows
+    if (requesterRole === "superuser") {
+      return { allowed: true, org: null };
+    }
+
+    // Must belong to an organisation
+    if (!authUser.organisationId) {
+      res.status(403).json({ message: "Forbidden: internal workflows require organisation membership" });
+      return undefined;
+    }
+
+    const org = await Organisation.findById(authUser.organisationId).select("isRootOrganisation").lean();
+    if (!org || !org.isRootOrganisation) {
+      res.status(403).json({ message: "Forbidden: internal workflows are restricted to root organisation members" });
+      return undefined;
+    }
+
+    return { allowed: true, org };
+  } catch (e) {
+    console.error("Root org access check error:", e);
+    res.status(500).json({ message: "Failed to verify organisation access" });
+    return undefined;
+  }
 };
 
 /* ---------------------------- Audit Log Helper --------------------------- */
@@ -306,7 +463,7 @@ if (process.env.SENDGRID_API_KEY) {
   console.warn('SENDGRID_API_KEY not set. Email functionality disabled.');
 }
 
-const sendEmail = async ({ to, subject, templateData, textFallback }) => {
+const sendEmail = async ({ to, subject, templateData, textFallback, tracking = true }) => {
   if (!sgMail) return;
 
   const fromEmail =
@@ -315,7 +472,7 @@ const sendEmail = async ({ to, subject, templateData, textFallback }) => {
   try {
     const html = emailTemplate(templateData);
 
-    await sgMail.send({
+    const sendOptions = {
       to,
       from: {
         email: fromEmail,
@@ -324,7 +481,18 @@ const sendEmail = async ({ to, subject, templateData, textFallback }) => {
       subject,
       html,
       text: textFallback || "",
-    });
+    };
+
+    // Per-message tracking settings: disable click/open tracking when requested
+    // (e.g. for password-setup links so SendGrid does not rewrite the URL)
+    if (!tracking) {
+      sendOptions.tracking_settings = {
+        click_tracking: { enable: false },
+        open_tracking: { enable: false },
+      };
+    }
+
+    await sgMail.send(sendOptions);
   } catch (err) {
     console.error("SendGrid email failed:", err?.response?.body || err);
     // IMPORTANT: do NOT throw
@@ -334,11 +502,12 @@ const sendEmail = async ({ to, subject, templateData, textFallback }) => {
 
 
 const sendWelcomeEmail = async (email, firstName, token) => {
-  const setupUrl = `${process.env.APP_URL || "http://localhost:8080"}/auth/set-password?token=${token}`;
+  const setupUrl = appUrl(`/auth/set-password?token=${token}`);
 
   await sendEmail({
     to: email,
     subject: "Welcome to Exclusive Life – Complete Your Account Setup",
+    tracking: false,
     templateData: {
       greeting: `Hello ${firstName},`,
       message: `
@@ -374,15 +543,38 @@ const sendPasswordChangedEmail = async (email, firstName) => {
 };
 
 
-/** Create user (admin creates from Team screen) */
+/** Create user (superuser or root organisation admin creates users from Team screen) */
 app.post("/api/users/register", authenticateToken, async (req, res) => {
   try {
-    const requesterRole = String(req.user?.role || "").toLowerCase()
-    if (requesterRole !== "superuser" && requesterRole !== "admin") {
-      return res.status(403).json({ message: "Forbidden: admin or superuser only" });
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
     }
 
-    let { email, firstName, lastName, role } = req.body;
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const isSuperuser = requesterRole === "superuser";
+    const isAdmin = requesterRole === "admin";
+
+    if (!isSuperuser && !isAdmin) {
+      return res.status(403).json({ message: "Forbidden: superuser or root organisation admin only" });
+    }
+
+    // Identify the requester's organisation for org admins (Root Admin gate)
+    let requesterOrg = null;
+    if (!isSuperuser) {
+      if (!authUser.organisationId) {
+        return res.status(400).json({ message: "Admin is not assigned to an organisation" });
+      }
+      requesterOrg = await Organisation.findById(authUser.organisationId).select("_id isRootOrganisation").lean();
+      if (!requesterOrg) {
+        return res.status(404).json({ message: "Organisation not found" });
+      }
+      if (!requesterOrg.isRootOrganisation) {
+        return res.status(403).json({ message: "Forbidden: external organisation users cannot create users" });
+      }
+    }
+
+    let { email, firstName, lastName, role, organisationId } = req.body;
 
     // Basic required fields
     if (!email || !firstName || !lastName) {
@@ -395,10 +587,34 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
     lastName = String(lastName).trim();
 
     // Role validation
-    const allowedRoles = ["user", "superuser", "admin"];
-    role = allowedRoles.includes(String(role || "").toLowerCase())
-      ? String(role).toLowerCase()
-      : "user";
+    const allowedRoles = ["user", "admin"];
+    const rawRole = String(role || "").toLowerCase();
+    if (rawRole === "superuser") {
+      return res.status(403).json({ message: "Forbidden: cannot create super admin" });
+    }
+    role = allowedRoles.includes(rawRole) ? rawRole : "user";
+
+    // Organisation assignment logic
+    let finalOrganisationId = null;
+
+    // Superuser: must target an organisation explicitly
+    // Root Admin: may target any organisation, defaults to the root organisation
+    const requestedOrganisationId = organisationId || (isSuperuser ? null : requesterOrg._id);
+    if (!requestedOrganisationId) {
+      return res.status(400).json({ message: "organisationId is required when creating admin or user as superuser" });
+    }
+
+    const targetOrg = await Organisation.findById(requestedOrganisationId).select("_id isRootOrganisation").lean();
+    if (!targetOrg) {
+      return res.status(400).json({ message: "Invalid organisationId" });
+    }
+
+    // Only the Root Organisation may hold admin users
+    if (role === "admin" && !targetOrg.isRootOrganisation) {
+      return res.status(403).json({ message: "Forbidden: external organisations can only have Advisors (role: user)" });
+    }
+
+    finalOrganisationId = targetOrg._id;
 
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: "User already exists" });
@@ -417,7 +633,8 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
       password: hash,
       role,
       status: "pending",
-      pendingExpiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
+      pendingExpiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+      organisationId: finalOrganisationId,
     });
 
     // Generate token for password setup
@@ -451,7 +668,7 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
       userName: req.user.name,
       action: "USER_CREATED",
       details: `New user ${email} created with role ${role}`,
-      metadata: { newUserId: user._id, newUserEmail: email, newUserRole: role },
+      metadata: { newUserId: user._id, newUserEmail: email, newUserRole: role, organisationId: finalOrganisationId?.toString() },
       req
     });
 
@@ -464,7 +681,8 @@ app.post("/api/users/register", authenticateToken, async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
-        status: user.status
+        status: user.status,
+        organisationId: user.organisationId
       }
     });
   } catch (e) {
@@ -595,7 +813,7 @@ app.post("/api/auth/forgot-password", async (req, res) => {
       expiresAt,
     });
 
-    const resetUrl = `${process.env.APP_URL || "http://localhost:8080"}/auth/reset-password?token=${token}`;
+    const resetUrl = appUrl(`/auth/reset-password?token=${token}`);
 
     if (sgMail) {
       await sendEmail({
@@ -759,20 +977,223 @@ app.post("/api/users/login", async (req, res) => {
   }
 });
 
-/** Me */
-// app.get("/api/users/me", authenticateToken, async (req, res) => {
-//   try {
-//     const user = await User.findById(req.user.userId).select("-password");
-//     if (!user) return res.status(404).json({ message: "User not found" });
-//     res.json(user);
-//   } catch (e) {
-//     console.error("Me error:", e);
-//     res.status(500).json({ message: "Error fetching user" });
-//   }
-// });
+/** Me — returns the authenticated user with their organisation context */
+app.get("/api/users/me", authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId)
+      .select("-password")
+      .populate("organisationId", "name code isRootOrganisation allowedCalculators isActive")
+      .lean();
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const organisation = user.organisationId || null;
+    res.json({
+      ...user,
+      organisation: organisation
+        ? {
+            _id: organisation._id,
+            name: organisation.name,
+            code: organisation.code,
+            isRootOrganisation: organisation.isRootOrganisation,
+            allowedCalculators: organisation.allowedCalculators || [],
+            isActive: organisation.isActive,
+          }
+        : null,
+    });
+  } catch (e) {
+    console.error("Me error:", e);
+    res.status(500).json({ message: "Error fetching user" });
+  }
+});
+
+/**
+ * GET /api/organisations
+ * List all organisations (superusers see all; admins see all).
+ * External (non-root) admins are filtered by their own organisation context.
+ */
+app.get("/api/organisations", authenticateToken, async (_req, res) => {
+  try {
+    const requesterRole = String(_req.user?.role || "").toLowerCase();
+    if (requesterRole !== "superuser" && requesterRole !== "admin") {
+      return res.status(403).json({ message: "Forbidden: admin or superuser only" });
+    }
+    const orgs = await Organisation.find().sort({ createdAt: -1 }).lean();
+    res.json(orgs);
+  } catch (e) {
+    console.error("List organisations error:", e);
+    res.status(500).json({ message: "Failed to fetch organisations" });
+  }
+});
+
+/**
+ * POST /api/organisations
+ * Create a new organisation. Superusers create freely; admins may only create
+ * external organisations scoped to their own root organisation.
+ */
+app.post("/api/organisations", authenticateToken, async (req, res) => {
+  try {
+    const requesterRole = String(req.user?.role || "").toLowerCase();
+    if (requesterRole !== "superuser" && requesterRole !== "admin") {
+      return res.status(403).json({ message: "Forbidden: admin or superuser only" });
+    }
+
+    const { name, code, allowedCalculators } = req.body || {};
+
+    if (!name || !code) {
+      return res.status(400).json({ message: "name and code are required" });
+    }
+
+    const normalizedCode = String(code).toUpperCase().trim();
+
+    // Validate allowedCalculators
+    const allowedCalculatorsEnum = ["annuity", "funeral", "life-assurance", "individual-life"];
+    const calculators = Array.isArray(allowedCalculators) ? allowedCalculators : [];
+    const invalid = calculators.find((c) => !allowedCalculatorsEnum.includes(String(c)));
+    if (invalid) {
+      return res.status(400).json({
+        message: `Invalid calculator "${invalid}". Must be one of: ${allowedCalculatorsEnum.join(", ")}`,
+      });
+    }
+
+    // Check for duplicate code
+    const existing = await Organisation.findOne({ code: normalizedCode });
+    if (existing) {
+      return res.status(400).json({ message: "An organisation with this code already exists" });
+    }
+
+    const orgData = {
+      name: String(name).trim(),
+      code: normalizedCode,
+      allowedCalculators: calculators,
+      createdBy: req.user.userId,
+    };
+
+    // Root organisation logic: only superusers can create root organisations
+    if (requesterRole === "superuser") {
+      if (req.body?.isRootOrganisation === true) {
+        orgData.isRootOrganisation = true;
+        orgData.parentOrganisationId = null;
+      } else {
+        orgData.isRootOrganisation = false;
+        orgData.parentOrganisationId = req.body?.parentOrganisationId || null;
+      }
+    } else {
+      // Admin: external organisation under their root
+      const adminUser = await User.findById(req.user.userId).lean();
+      const adminOrg = adminUser?.organisationId;
+      if (!adminOrg) {
+        return res.status(400).json({ message: "Admin must belong to an organisation to create child organisations" });
+      }
+      const rootOrg = await Organisation.findById(adminOrg).lean();
+      if (!rootOrg?.isRootOrganisation) {
+        return res.status(400).json({ message: "Admin must belong to a root organisation" });
+      }
+      orgData.isRootOrganisation = false;
+      orgData.parentOrganisationId = adminOrg;
+    }
+
+    const org = await Organisation.create(orgData);
+
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "ORGANISATION_CREATED",
+      details: `Organisation ${org.name} (${org.code}) created`,
+      metadata: { orgId: org._id, orgName: org.name, orgCode: org.code },
+      req,
+    });
+
+    res.status(201).json(org);
+  } catch (e) {
+    console.error("Create organisation error:", e);
+    if (e.code === 11000) {
+      return res.status(400).json({ message: "An organisation with this code already exists" });
+    }
+    res.status(500).json({ message: "Failed to create organisation" });
+  }
+});
+
+/**
+ * PUT /api/organisations/:id
+ * Update an existing organisation. Superusers update any; root-org admins
+ * update external (non-root) organisations only.
+ */
+app.put("/api/organisations/:id", authenticateToken, async (req, res) => {
+  try {
+    const requesterRole = String(req.user?.role || "").toLowerCase();
+    if (requesterRole !== "superuser" && requesterRole !== "admin") {
+      return res.status(403).json({ message: "Forbidden: admin or superuser only" });
+    }
+
+    const org = await Organisation.findById(req.params.id);
+    if (!org) return res.status(404).json({ message: "Organisation not found" });
+
+    // Root-organisation admins may only manage non-root organisations
+    if (requesterRole !== "superuser" && org.isRootOrganisation === true) {
+      return res.status(403).json({ message: "Forbidden: cannot modify the root organisation" });
+    }
+
+    const { name, code, allowedCalculators, isActive, isRootOrganisation } = req.body || {};
+
+    if (name !== undefined) {
+      const trimmed = String(name).trim();
+      if (!trimmed) return res.status(400).json({ message: "name cannot be empty" });
+      org.name = trimmed;
+    }
+
+    if (code !== undefined) {
+      const normalizedCode = String(code).toUpperCase().trim();
+      if (!normalizedCode) return res.status(400).json({ message: "code cannot be empty" });
+      // Check for duplicate code (excluding current org)
+      const existing = await Organisation.findOne({ code: normalizedCode, _id: { $ne: org._id } });
+      if (existing) return res.status(400).json({ message: "An organisation with this code already exists" });
+      org.code = normalizedCode;
+    }
+
+    if (allowedCalculators !== undefined) {
+      const allowedCalculatorsEnum = ["annuity", "funeral", "life-assurance", "individual-life"];
+      const calculators = Array.isArray(allowedCalculators) ? allowedCalculators : [];
+      const invalid = calculators.find((c) => !allowedCalculatorsEnum.includes(String(c)));
+      if (invalid) {
+        return res.status(400).json({
+          message: `Invalid calculator "${invalid}". Must be one of: ${allowedCalculatorsEnum.join(", ")}`,
+        });
+      }
+      org.allowedCalculators = calculators;
+    }
+
+    if (isActive !== undefined) org.isActive = Boolean(isActive);
+
+    // Only superusers can change root status
+    if (requesterRole === "superuser" && isRootOrganisation !== undefined) {
+      org.isRootOrganisation = Boolean(isRootOrganisation);
+    }
+
+    const updated = await org.save();
+
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "ORGANISATION_CREATED",
+      details: `Organisation ${org.name} (${org.code}) updated`,
+      metadata: { orgId: org._id, updates: { name, code, allowedCalculators, isActive, isRootOrganisation } },
+      req,
+    });
+
+    res.json(updated);
+  } catch (e) {
+    console.error("Update organisation error:", e);
+    if (e.code === 11000) {
+      return res.status(400).json({ message: "An organisation with this code already exists" });
+    }
+    res.status(500).json({ message: "Failed to update organisation" });
+  }
+});
 
 /** Annuity calculator proxy → Python */
-app.post("/api/annuity", async (req, res) => {
+app.post("/api/annuity", authenticateToken, requireCalculatorAccess("annuity"), async (req, res) => {
   try {
     const PY_URL = `${PY_CALC_BASE}/annuity/calculate`;
     const { data } = await axios.post(PY_URL, req.body);
@@ -786,6 +1207,23 @@ app.post("/api/annuity", async (req, res) => {
 /** Create quote (formerly /api/save-quote) */
 app.post("/api/quotes", authenticateToken, async (req, res) => {
   try {
+    // Fetch authenticated user to determine organisation visibility
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+
+    if (requesterRole === "superuser") {
+      return res.status(403).json({ message: "Super Admin must create quotations within an organisation workspace" });
+    }
+
+    const organisationId = authUser.organisationId;
+    if (!organisationId) {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
     const now = new Date();
     const yy = String(now.getFullYear()).slice(-2);
 
@@ -801,6 +1239,7 @@ app.post("/api/quotes", authenticateToken, async (req, res) => {
       quoteId,
       createdBy: req.user.userId,
       createdByName: req.body.createdByName,
+      organisationId,
     });
 
     // Log quote saved
@@ -830,7 +1269,21 @@ app.post("/api/save-quote", authenticateToken, async (req, res) => {
 /** List quotes */
 app.get("/api/quotes", authenticateToken, async (_req, res) => {
   try {
-    const quotes = await Quote.find()
+    const authUser = await User.findById(_req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const query = requesterRole === "superuser"
+      ? {}
+      : { organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    const quotes = await Quote.find(query)
       .sort({ createdAt: -1 })
       .populate("createdBy", "firstName lastName email");
     res.json(quotes);
@@ -843,7 +1296,21 @@ app.get("/api/quotes", authenticateToken, async (_req, res) => {
 /** Get quote by id */
 app.get("/api/quotes/:id", authenticateToken, async (req, res) => {
   try {
-    const q = await Quote.findById(req.params.id);
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const query = requesterRole === "superuser"
+      ? { _id: req.params.id }
+      : { _id: req.params.id, organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    const q = await Quote.findOne(query);
     if (!q) return res.status(404).json({ message: "Quote not found" });
     res.json(q);
   } catch (e) {
@@ -855,7 +1322,21 @@ app.get("/api/quotes/:id", authenticateToken, async (req, res) => {
 /** Delete quote by id */
 app.delete("/api/quotes/:id", authenticateToken, async (req, res) => {
   try {
-    const q = await Quote.findByIdAndDelete(req.params.id);
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const query = requesterRole === "superuser"
+      ? { _id: req.params.id }
+      : { _id: req.params.id, organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    const q = await Quote.findOneAndDelete(query);
     if (!q) return res.status(404).json({ message: "Quote not found" });
 
     // Log quote deletion
@@ -882,7 +1363,7 @@ app.delete("/api/quotes/:id", authenticateToken, async (req, res) => {
 /** ----------------- NEW QUOTES (scalable design) ----------------- */
 
 /** Annuity calculator proxy → Python */
-app.post("/api/quotes/calculate-annuity", async (req, res) => {
+app.post("/api/quotes/calculate-annuity", authenticateToken, requireCalculatorAccess("annuity"), async (req, res) => {
   try {
     const PY_URL = `${PY_CALC_BASE}/annuity/calculate`;
     const { data } = await axios.post(PY_URL, req.body);
@@ -907,7 +1388,7 @@ app.post("/api/quotes/calculate-annuity", async (req, res) => {
 
 /** Funeral calculator proxy → Python */
 
-app.post("/api/quotes/calculate-funeral", authenticateToken, upload.single("file"), async (req, res) => {
+app.post("/api/quotes/calculate-funeral", authenticateToken, requireCalculatorAccess("funeral"), upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "Missing file" });
 
@@ -1012,7 +1493,7 @@ app.post("/api/quotes/funeral/start", authenticateToken, upload.single("file"), 
 
 
 /** ---------------- FUNERAL JOB STATUS CHECK ---------------- */
-app.get("/api/quotes/funeral/status/:jobId", (req, res) => {
+app.get("/api/quotes/funeral/status/:jobId", authenticateToken, (req, res) => {
   const job = jobs[req.params.jobId];
   if (!job) return res.status(404).json({ message: "Job not found" });
 
@@ -1183,7 +1664,7 @@ setInterval(processFuneralJobs, 1000);
 
 
 /** Life Assurance calculator proxy → Python */
-app.post("/api/quotes/calculate-assurance", async (req, res) => {
+app.post("/api/quotes/calculate-assurance", authenticateToken, requireCalculatorAccess("life-assurance"), async (req, res) => {
   try {
     const PY_URL = `${PY_CALC_BASE}/assurance/calculate`;
     const { data } = await axios.post(PY_URL, req.body);
@@ -1211,7 +1692,7 @@ app.post("/api/quotes/calculate-assurance", async (req, res) => {
 
 
 /** Individual Life Cover calculator proxy → Python (Excel sheet) */
-app.post("/api/quotes/calculate-individual-life", authenticateToken, async (req, res) => {
+app.post("/api/quotes/calculate-individual-life", authenticateToken, requireCalculatorAccess("individual-life"), async (req, res) => {
   try {
 
     const PY_URL = `${PY_CALC_BASE}/individual/calculate`;
@@ -1254,6 +1735,24 @@ app.post("/api/quotes/calculate-individual-life", authenticateToken, async (req,
 // Create a new quote
 app.post("/api/new-quotes", authenticateToken, async (req, res) => {
   try {
+    // Fetch authenticated user from MongoDB to get their organisationId
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+
+    if (requesterRole === "superuser") {
+      return res.status(403).json({ message: "Super Admin must create quotations within an organisation workspace" });
+    }
+
+    // Admin or user - must have organisationId
+    const organisationId = authUser.organisationId;
+    if (!organisationId) {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
     const now = new Date();
     const yy = String(now.getFullYear()).slice(-2);
     const START_NUMBER = 140;
@@ -1285,11 +1784,12 @@ app.post("/api/new-quotes", authenticateToken, async (req, res) => {
       }
     }
 
-    // ✅ Step 3: Save the quote
+    // ✅ Step 3: Save the quote (ignore any organisationId from frontend)
     const quote = await Quotes.create({
       ...req.body,
       quoteId,
       createdBy: req.user.userId,
+      organisationId,
     });
 
     // Log quote saved
@@ -1299,7 +1799,7 @@ app.post("/api/new-quotes", authenticateToken, async (req, res) => {
       userName: req.user.name,
       action: "QUOTE_SAVED",
       details: `${productType} quote saved with ID ${quoteId}`,
-      metadata: { quoteId, productType, client },
+      metadata: { quoteId, productType, client, organisationId: organisationId?.toString() },
       req
     });
 
@@ -1315,6 +1815,12 @@ app.get("/api/new-quotes", authenticateToken, async (req, res) => {
   try {
     console.log("➡️ GET /api/new-quotes started");
 
+    // Fetch authenticated user to determine organisation visibility
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
     const limit = Math.min(
       Math.max(parseInt(req.query.limit) || 50, 1),
       100
@@ -1325,10 +1831,20 @@ app.get("/api/new-quotes", authenticateToken, async (req, res) => {
       0
     );
 
+    // Build query based on role
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const query = requesterRole === "superuser"
+      ? {}
+      : { organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
     // STEP 1: Fetch quotes only
     const queryStart = Date.now();
 
-    let quotes = await Quotes.find()
+    let quotes = await Quotes.find(query)
       .select("-inputs -outputs -termsAndConditions -medicalUnderwritingNotes")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -1367,10 +1883,27 @@ app.get("/api/new-quotes/:id", authenticateToken, async (req, res) => {
   try {
     console.log(`➡️ GET /api/new-quotes/${req.params.id} started`);
 
+    // Fetch authenticated user to determine organisation visibility
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+
+    // Superuser: global access; others: org-scoped
+    const query = requesterRole === "superuser"
+      ? { _id: req.params.id }
+      : { _id: req.params.id, organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
     // Measure MongoDB retrieval
     const dbStart = Date.now();
 
-    const q = await Quotes.findById(req.params.id);
+    const q = await Quotes.findOne(query);
 
     const dbTime = Date.now() - dbStart;
 
@@ -1405,9 +1938,24 @@ app.get("/api/new-quotes/:id", authenticateToken, async (req, res) => {
 // Update notes (e.g., medical underwriting) on a quote
 app.patch("/api/new-quotes/:id/notes", authenticateToken, async (req, res) => {
   try {
+    // Fetch authenticated user to determine organisation visibility
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const query = requesterRole === "superuser"
+      ? { _id: req.params.id }
+      : { _id: req.params.id, organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
     const { medicalUnderwritingNotes } = req.body;
-    const q = await Quotes.findByIdAndUpdate(
-      req.params.id,
+    const q = await Quotes.findOneAndUpdate(
+      query,
       { $set: { medicalUnderwritingNotes: medicalUnderwritingNotes ?? "" } },
       { new: true }
     );
@@ -1419,10 +1967,77 @@ app.patch("/api/new-quotes/:id/notes", authenticateToken, async (req, res) => {
   }
 });
 
+/** Patch client details / terms on a quote (Exclusive Annuity only) */
+app.patch("/api/new-quotes/:id/client", authenticateToken, async (req, res) => {
+  try {
+    const authUser = await User.findById(req.user.userId).select("role organisationId productType").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const query = requesterRole === "superuser"
+      ? { _id: req.params.id }
+      : { _id: req.params.id, organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    const quote = await Quotes.findOne(query).lean();
+    if (!quote) return res.status(404).json({ message: "Quote not found" });
+
+    // Only annuity quotes support client editing
+    if (quote.productType !== "Exclusive Annuity" && quote.productType !== "annuity") {
+      return res.status(403).json({ message: "Client editing is only supported for annuity quotes" });
+    }
+
+    const { client, termsAndConditions } = req.body || {};
+    const update = {};
+
+    if (client) {
+      if (client.fullName !== undefined) update["client.fullName"] = client.fullName;
+      if (client.dateOfBirth !== undefined) update["client.dateOfBirth"] = client.dateOfBirth;
+      if (client.gender !== undefined) update["client.gender"] = client.gender;
+      if (client.idNumber !== undefined) update["client.idNumber"] = client.idNumber;
+      if (client.contactNumber !== undefined) update["client.contactNumber"] = client.contactNumber;
+      if (client.email !== undefined) update["client.email"] = client.email;
+    }
+
+    if (termsAndConditions !== undefined) update["termsAndConditions"] = termsAndConditions;
+
+    const updated = await Quotes.findOneAndUpdate(
+      query,
+      { $set: update },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ message: "Quote not found" });
+    res.json({ quote: updated });
+  } catch (e) {
+    console.error("Update quote client error:", e);
+    res.status(500).json({ message: "Failed to update quote client" });
+  }
+});
+
 // Delete new quote
 app.delete("/api/new-quotes/:id", authenticateToken, async (req, res) => {
   try {
-    const q = await Quotes.findByIdAndDelete(req.params.id);
+    // Fetch authenticated user to determine organisation visibility
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const query = requesterRole === "superuser"
+      ? { _id: req.params.id }
+      : { _id: req.params.id, organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    const q = await Quotes.findOneAndDelete(query);
     if (!q) return res.status(404).json({ message: "New Quote not found" });
 
     // Log quote deletion
@@ -1609,12 +2224,27 @@ async function renderQuoteHTML(quote) {
   `;
 }
 
-app.get("/api/quotes/:id/generate-pdf", async (req, res) => {
+app.get("/api/quotes/:id/generate-pdf", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const isLegacy = req.query.legacy === "true";
 
   try {
-    const quote = await getQuoteById(id, isLegacy);
+    const authUser = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!authUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const requesterRole = String(authUser.role || "").toLowerCase();
+    const query = requesterRole === "superuser"
+      ? { _id: id }
+      : { _id: id, organisationId: authUser.organisationId };
+
+    if (!query.organisationId && requesterRole !== "superuser") {
+      return res.status(400).json({ message: "User is not assigned to an organisation" });
+    }
+
+    const isLegacyQuote = isLegacy ? Quote : Quotes;
+    const quote = await isLegacyQuote.findOne(query).lean();
     if (!quote) {
       return res.status(404).json({ error: "Quote not found" });
     }
@@ -1656,7 +2286,7 @@ app.get("/api/quotes/:id/generate-pdf", async (req, res) => {
   }
 });
 
-app.post("/api/quotes/html-to-pdf", async (req, res) => {
+app.post("/api/quotes/html-to-pdf", authenticateToken, async (req, res) => {
   try {
     const { html } = req.body;
     if (!html) return res.status(400).json({ error: "Missing HTML content" });
@@ -1947,6 +2577,9 @@ app.patch("/api/notifications/draft/:draftId", authenticateToken, async (req, re
 // Upsert a conversion (create draft, autosave, submit, approve, reject...)
 app.put("/api/conversions/:id", authenticateToken, async (req, res) => {
   try {
+    const access = await requireRootOrgAccess(req, res);
+    if (!access) return;
+
     const payload = { ...req.body, id: req.params.id };
     delete payload._id;
     const saved = await Conversion.findOneAndUpdate(
@@ -2003,6 +2636,9 @@ app.patch("/api/conversions/:id/submit", authenticateToken, async (req, res) => 
 
 app.delete("/api/conversions/:id", authenticateToken, async (req, res) => {
   try {
+    const access = await requireRootOrgAccess(req, res);
+    if (!access) return;
+
     await Conversion.deleteOne({ id: req.params.id });
     res.json({ message: "Conversion deleted", id: req.params.id });
   } catch (e) {
@@ -2070,6 +2706,9 @@ const policyError = (res, e, fallback = "Policy operation failed") =>
 // POST /api/policies — Create policy in DRAFT status from quote
 app.post("/api/policies", authenticateToken, async (req, res) => {
   try {
+    const access = await requireRootOrgAccess(req, res);
+    if (!access) return;
+
     const { quoteId, productType, form, step, optionLabel, premium, clientId } = req.body || {};
     const actor = await resolvedPolicyActor(req);
     const now = new Date();
@@ -2121,6 +2760,9 @@ app.get("/api/policy-records/:id", authenticateToken, async (req, res) => {
 // PATCH /api/policies/:id — Edit policy (only if DRAFT/RETURNED and user is creator)
 app.patch("/api/policies/:id", authenticateToken, async (req, res) => {
   try {
+    const access = await requireRootOrgAccess(req, res);
+    if (!access) return;
+
     const policy = await Policy.findOne({ id: req.params.id }).lean();
     if (!policy) return res.status(404).json({ message: "Policy not found" });
     if (policy.status !== "DRAFT" && policy.status !== "RETURNED") return res.status(400).json({ message: "Only DRAFT or RETURNED policies can be edited" });
@@ -2145,6 +2787,9 @@ app.patch("/api/policies/:id", authenticateToken, async (req, res) => {
 // PATCH /api/policies/:id/submit — Change status DRAFT/RETURNED → PENDING_APPROVAL
 app.patch("/api/policies/:id/submit", authenticateToken, async (req, res) => {
   try {
+    const access = await requireRootOrgAccess(req, res);
+    if (!access) return;
+
     const policy = await Policy.findOne({ id: req.params.id }).lean();
     if (!policy) return res.status(404).json({ message: "Policy not found" });
     if (policy.status !== "DRAFT" && policy.status !== "RETURNED") return res.status(400).json({ message: "Only DRAFT or RETURNED policies can be submitted" });
@@ -2201,6 +2846,9 @@ app.patch("/api/policies/:id/submit", authenticateToken, async (req, res) => {
 app.patch("/api/policies/:id/reassign", authenticateToken, async (req, res) => {
   try {
     if (!(await resolveReviewer(req))) return res.status(403).json({ message: "Only reviewers can reassign conversions" });
+    const access = await requireRootOrgAccess(req, res);
+    if (!access) return;
+
     const policy = await Policy.findOne({ id: req.params.id }).lean();
     if (!policy) return res.status(404).json({ message: "Policy not found" });
     if (policy.status !== "PENDING_APPROVAL") return res.status(400).json({ message: "Only pending conversions can be reassigned" });
@@ -2239,6 +2887,9 @@ app.patch("/api/policies/:id/reassign", authenticateToken, async (req, res) => {
 app.patch("/api/policies/:id/approve", authenticateToken, async (req, res) => {
   try {
     if (!(await resolveReviewer(req))) return res.status(403).json({ message: "Only admins can approve policies" });
+    const access = await requireRootOrgAccess(req, res);
+    if (!access) return;
+
     const policy = await Policy.findOne({ id: req.params.id }).lean();
     if (!policy) return res.status(404).json({ message: "Policy not found" });
     if (policy.status !== "PENDING_APPROVAL") return res.status(400).json({ message: "Only PENDING_APPROVAL policies can be approved" });
@@ -2289,6 +2940,9 @@ app.patch("/api/policies/:id/approve", authenticateToken, async (req, res) => {
 app.patch("/api/policies/:id/return", authenticateToken, async (req, res) => {
   try {
     if (!(await resolveReviewer(req))) return res.status(403).json({ message: "Only admins can return policies" });
+    const access = await requireRootOrgAccess(req, res);
+    if (!access) return;
+
     const policy = await Policy.findOne({ id: req.params.id }).lean();
     if (!policy) return res.status(404).json({ message: "Policy not found" });
     if (policy.status !== "PENDING_APPROVAL") return res.status(400).json({ message: "Only PENDING_APPROVAL policies can be returned" });
@@ -2316,6 +2970,9 @@ app.patch("/api/policies/:id/return", authenticateToken, async (req, res) => {
 // GET /api/policies/pipeline — Shared conversion workspace, scoped by role.
 app.get("/api/policies/pipeline", authenticateToken, async (req, res) => {
   try {
+    const access = await requireRootOrgAccess(req, res);
+    if (!access) return;
+
     const uid = String(req.user.userId);
     const role = await resolveUserRole(req);
     const isSuper = role === "superuser" || role === "super_admin" || role === "superadmin";
@@ -2359,6 +3016,9 @@ app.get("/api/dashboard/stats", authenticateToken, async (_req, res) => {
 // GET /api/clients/:id/policies — Fetch approved/active policies for a client
 app.get("/api/clients/:id/policies", authenticateToken, async (req, res) => {
   try {
+    const access = await requireRootOrgAccess(req, res);
+    if (!access) return;
+
     const clientId = req.params.id;
     const items = await Policy.find({ clientId, status: { $in: ["APPROVED", "ACTIVE"] } }).sort({ approvedAt: -1 }).lean();
     res.json(items.map(({ _id, __v, ...rest }) => rest));
@@ -2371,6 +3031,9 @@ app.get("/api/clients/:id/policies", authenticateToken, async (req, res) => {
 // GET /api/clients — Fetch all clients
 app.get("/api/clients", authenticateToken, async (_req, res) => {
   try {
+    const access = await requireRootOrgAccess(_req, res);
+    if (!access) return;
+
     const clients = await Client.find().sort({ createdAt: -1 }).lean();
     res.json(clients);
   } catch (e) {
@@ -2382,6 +3045,9 @@ app.get("/api/clients", authenticateToken, async (_req, res) => {
 // GET /api/clients/:id — Fetch a single client
 app.get("/api/clients/:id", authenticateToken, async (req, res) => {
   try {
+    const access = await requireRootOrgAccess(req, res);
+    if (!access) return;
+
     const client = await Client.findById(req.params.id).lean();
     if (!client) return res.status(404).json({ message: "Client not found" });
     res.json(client);

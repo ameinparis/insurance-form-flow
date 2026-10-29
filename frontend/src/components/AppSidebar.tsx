@@ -10,7 +10,7 @@ import {
   Users,
   ClipboardList,
   BadgeCheck,
-  ShieldCheck,
+  Building2,
   ChevronDown,
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
@@ -18,7 +18,7 @@ import {
   Sidebar,
   SidebarContent,
 } from "@/components/ui/sidebar"
-import { usePermissions } from "@/lib/authlibrary"
+import { usePermissions, useAuth } from "@/lib/authlibrary"
 
 const quotationItems = [
   { title: "New Quote", url: "/calculator", icon: FilePlus2 },
@@ -26,15 +26,14 @@ const quotationItems = [
 ]
 
 const menuItems = [
-  { title: "Conversions", url: "/conversions", icon: BadgeCheck, permission: null },
-  { title: "Clients", url: "/clients", icon: Users, permission: null },
-  { title: "Claims", url: "/claims", icon: ClipboardList, permission: null },
-  {
-    title: "Administration",
-    url: "/administration",
-    icon: ShieldCheck,
-    permission: "canManageUsers" as const,
-  },
+  { title: "Team", url: "/team", icon: Users, permission: "canManageUsers" as const },
+  { title: "Conversions", url: "/conversions", icon: BadgeCheck, permission: "canManageUsers" as const },
+  { title: "Clients", url: "/clients", icon: Users, permission: "canManageUsers" as const },
+  { title: "Claims", url: "/claims", icon: ClipboardList, permission: "canManageUsers" as const },
+]
+
+const superAdminItems = [
+  { title: "Organisations", url: "/organisations", icon: Building2 },
 ]
 
 const settingsItems = [
@@ -51,9 +50,15 @@ const idleLink =
 export function AppSidebar() {
   const { pathname } = useLocation()
   const permissions = usePermissions()
+  const { role, organisation } = useAuth()
   const visibleMenuItems = menuItems.filter(
     (item) => !item.permission || permissions[item.permission],
   )
+
+  // Organisations is restricted to super admins and admins of the Root Organisation.
+  const isSuperAdmin = role === "super_admin"
+  const isRootAdmin = role === "admin" && organisation?.isRootOrganisation === true
+  const canViewOrganisations = isSuperAdmin || isRootAdmin
 
   const quotationsActive = quotationItems.some((i) => pathname.startsWith(i.url))
   const [quotationsOpen, setQuotationsOpen] = useState(quotationsActive)
@@ -143,6 +148,29 @@ export function AppSidebar() {
                 )}
               </NavLink>
             ))}
+            {canViewOrganisations && (
+              <nav className="space-y-2 pt-2 border-t border-border/30">
+                {superAdminItems.map((item) => (
+                  <NavLink
+                    key={item.title}
+                    to={item.url}
+                    className={({ isActive }) =>
+                      `${baseLink} ${isActive ? activeLink : idleLink}`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {isActive && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-blue-500" />
+                        )}
+                        <item.icon className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
+                        <span className="text-[13px] font-semibold whitespace-nowrap">{item.title}</span>
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+              </nav>
+            )}
           </nav>
         </div>
 

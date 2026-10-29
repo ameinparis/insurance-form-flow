@@ -50,8 +50,10 @@ const Dashboard = () => {
   const loading = isLoading && recentQuotes.length === 0
   const [convertOpen, setConvertOpen] = useState(false)
   const [deleteQuoteId, setDeleteQuoteId] = useState<string | null>(null)
-  const { userRole } = useAuth()
+  const { userRole, organisation } = useAuth()
   const maxDisplayQuotes = 15
+
+  const isRootOrgUser = organisation?.isRootOrganisation === true || userRole === "superuser"
 
   // Helper function to get badge color based on quote type
   const getQuoteTypeBadgeClass = (type: string) => {
@@ -133,14 +135,16 @@ const Dashboard = () => {
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Plan, prioritize, and accomplish your work with ease.</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setConvertOpen(true)}
-              className="px-5 py-2.5 rounded-full font-bold text-sm bg-transparent border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95"
-            >
-              <Repeat2 className="h-4 w-4 mr-2" />
-              Convert Quote to Policy
-            </Button>
+            {isRootOrgUser && (
+              <Button
+                variant="outline"
+                onClick={() => setConvertOpen(true)}
+                className="px-5 py-2.5 rounded-full font-bold text-sm bg-transparent border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95"
+              >
+                <Repeat2 className="h-4 w-4 mr-2" />
+                Convert Quote to Policy
+              </Button>
+            )}
             <Button
               onClick={() => navigate("/calculator")}
               className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold text-sm shadow-sm transition-all active:scale-95"
@@ -160,6 +164,7 @@ const Dashboard = () => {
             activeClients: stats?.activeClients ?? 0,
             activePolicies: stats?.activePolicies ?? 0,
           }}
+          includeInternalStats={isRootOrgUser}
           loading={statsLoading || loading}
         />
 

@@ -2,18 +2,19 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Download, Loader2 } from "lucide-react";
+import { Download, Loader2, Pencil, Save, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { QuoteHeader } from "@/components/QuoteHeader";
 import { AnnuityDisplay } from "@/components/quote-displays/AnnuityDisplay";
 import { FuneralDisplay } from "@/components/quote-displays/FuneralDisplay";
 import { LifeDisplay } from "@/components/quote-displays/LifeDisplay";
 import { IndividualLifeDisplay } from "@/components/quote-displays/IndividualLifeDisplay";
 import { GenericDisplay } from "@/components/quote-displays/GenericDisplay";
-import { fetchQuoteDetails, getClientInfo, formatDate, QuoteData } from "@/lib/quoteUtils";
+import { fetchQuoteDetails, getClientInfo, QuoteData, updateQuoteClient } from "@/lib/quoteUtils";
 import { exportQuotePdf } from "@/lib/pdfExport";
 import { useToast } from "@/hooks/use-toast";
 import { API_BASE_URL } from "@/lib/api";
+import { DocumentViewer } from "@/components/document-viewer/DocumentViewer";
 
 const QuoteDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +26,18 @@ const QuoteDetail = () => {
   const [loading, setLoading] = useState(true);
   const [downloadStarted, setDownloadStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fullName: "",
+    dateOfBirth: "",
+    gender: "",
+    idNumber: "",
+    contactNumber: "",
+    email: "",
+    termsAndConditions: "",
+  });
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const loadQuote = async () => {
@@ -95,6 +108,74 @@ const QuoteDetail = () => {
       window.setTimeout(() => setDownloadStarted(false), 1200);
     }
   };
+
+  const isLegacy = searchParams.get("legacy") === "true";
+  const canEditQuote = !isLegacy && quote?.productType === "Exclusive Annuity";
+
+  const openEditDialog = () => {
+    if (!quote) return;
+    setEditForm({
+      fullName: quote.client?.fullName || quote.fullName || "",
+      dateOfBirth: quote.client?.dateOfBirth || quote.dateOfBirth || "",
+      gender: quote.client?.gender || "",
+      idNumber: quote.client?.idNumber || quote.idNumber || "",
+      contactNumber: quote.client?.contactNumber || quote.contactNumber || "",
+      email: quote.client?.email || quote.email || "",
+      termsAndConditions: quote.termsAndConditions || quote.disclaimerText || "",
+    });
+    setEditErrors({});
+    setIsEditing(true);
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditErrors({});
+  };
+
+  const handleEditSave = async () => {
+    if (!id || editSaving) return;
+
+    const required: Array<[keyof typeof editForm, string]> = [
+      ["fullName", "Full name"],
+      ["dateOfBirth", "Date of birth"],
+      ["idNumber", "ID number"],
+      ["contactNumber", "Contact number"],
+      ["email", "Email"],
+    ];
+    const errors: Record<string, string> = {};
+    for (const [field, label] of required) {
+      if (!editForm[field].trim()) errors[field] = `${label} is required`;
+    }
+    setEditErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    setEditSaving(true);
+    try {
+      const updated = await updateQuoteClient(id, {
+        client: {
+          fullName: editForm.fullName.trim(),
+          dateOfBirth: editForm.dateOfBirth,
+          gender: editForm.gender,
+          idNumber: editForm.idNumber.trim(),
+          contactNumber: editForm.contactNumber.trim(),
+          email: editForm.email.trim(),
+        },
+        termsAndConditions: editForm.termsAndConditions,
+      });
+      setQuote(updated);
+      setIsEditing(false);
+      toast({ title: "Quote updated", description: "Client details have been saved." });
+    } catch (err: any) {
+      console.error("Edit quote failed:", err);
+      toast({
+        title: "Save failed",
+        description: err?.message || "Failed to update the quote. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setEditSaving(false);
+    }
+  };
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -130,7 +211,14 @@ const QuoteDetail = () => {
     switch (productType) {
       case "Exclusive Annuity":
       case "annuity":
-        return <AnnuityDisplay quote={quote} />;
+        return (
+          <AnnuityDisplay
+            quote={quote}
+            isEditing={isEditing}
+            editForm={editForm}
+            onFieldChange={(field, value) => setEditForm((f) => ({ ...f, [field]: value }))}
+          />
+        );
       case "Exclusive Funeral":
       case "funeral":
         return <FuneralDisplay quote={quote} />;
@@ -144,35 +232,57 @@ const QuoteDetail = () => {
   };
 
   return (
-    <div className="-m-6 min-h-screen bg-card">
-      {/* Sticky Action Bar */}
-      <div className="sticky  z-30 bg-card">
-        <div className="max-w-5xl mx-auto flex justify-between items-center px-6 py-12">
-          <Button
-            variant="outline"
-            onClick={() => navigate(-1)}
-            className="rounded-full border-2 border-[#009fe3] text-[#009fe3] hover:bg-[#009fe3]/10 px-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <Button
-            onClick={handleDownloadPdf}
-            disabled={downloadStarted}
-            className="rounded-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-900 disabled:opacity-100 text-white px-6 min-w-[148px] focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            {downloadStarted ? "Downloading" : "Download PDF"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Paper Document */}
-      <div className="max-w-5xl mx-auto px-6 pb-12">
-        <div
-          className="bg-white dark:bg-slate-900 shadow-lg rounded-2xl overflow-hidden ring-1 ring-gray-200/80 dark:ring-slate-800"
-          id="quote-pdf"
-        >
+    <div className="-mx-6 -mb-6 min-h-screen bg-background p-3 sm:p-5">
+      <DocumentViewer
+        filename={`${quote.quoteId}.pdf`}
+        actions={
+          <>
+            {canEditQuote && !isEditing && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="quotation-toolbar-action"
+                onClick={openEditDialog}
+              >
+                <Pencil className="h-4 w-4" />
+                <span>Edit</span>
+              </Button>
+            )}
+            {canEditQuote && isEditing && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={cancelEdit}
+                  disabled={editSaving}
+                  className="quotation-toolbar-action"
+                >
+                  <X className="h-3.5 w-3.5 mr-1.5" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleEditSave}
+                  disabled={editSaving}
+                  className="quotation-toolbar-action quotation-toolbar-action--primary"
+                >
+                  <Save className="h-3.5 w-3.5 mr-1.5" />
+                  {editSaving ? "Saving" : "Save Changes"}
+                </Button>
+              </>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="quotation-toolbar-action"
+              onClick={handleDownloadPdf}
+              disabled={downloadStarted}
+            >
+              {downloadStarted ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              <span>{downloadStarted ? "Preparing…" : "PDF"}</span>
+            </Button>
+          </>
+        }
+      >
+        <div id="quote-pdf" className="quote-document">
           <QuoteHeader
             quoteId={quote.quoteId}
             clientName={clientInfo.fullName}
@@ -182,22 +292,30 @@ const QuoteDetail = () => {
             clientContact={clientInfo.contactNumber}
             clientId={clientInfo.idNumber}
           />
-
           {renderProductDisplay()}
-
           {(quote.termsAndConditions || quote.disclaimerText) && (
-            <div className="border-t border-border p-8 bg-card">
-              <h3 className="text-xl font-semibold text-center mb-4 text-foreground">Terms & Conditions</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+          <section className="quote-section quote-terms pdf-terms">
+            <div className="quote-section-heading">
+              <span>Legal</span>
+              <h3>Terms &amp; Conditions</h3>
+            </div>
+            {isEditing ? (
+              <Textarea
+                value={editForm.termsAndConditions}
+                onChange={(e) => setEditForm((f) => ({ ...f, termsAndConditions: e.target.value }))}
+                className="min-h-[120px] bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800"
+              />
+            ) : (
+              <p className="quote-terms-copy">
                 {quote.termsAndConditions || quote.disclaimerText}
               </p>
-            </div>
+            )}
+          </section>
           )}
         </div>
-      </div>
+      </DocumentViewer>
     </div>
   );
-
 };
 
 export default QuoteDetail;
