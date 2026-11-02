@@ -15,7 +15,7 @@ interface OverviewStatsProps {
 const cardBase =
   "rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm"
 
-export const OverviewStats = ({ stats, loading }: OverviewStatsProps) => {
+export const OverviewStats = ({ stats, loading, includeInternalStats = true }: OverviewStatsProps) => {
   const navigate = useNavigate()
 
   const cards = [
