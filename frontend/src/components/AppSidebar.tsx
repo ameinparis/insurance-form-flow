@@ -10,6 +10,7 @@ import {
   Users,
   ClipboardList,
   BadgeCheck,
+  ShieldCheck,
   Building2,
   ChevronDown,
 } from "lucide-react"
@@ -34,6 +35,7 @@ const menuItems = [
 
 const superAdminItems = [
   { title: "Organisations", url: "/organisations", icon: Building2 },
+  { title: "Administration", url: "/administration", icon: ShieldCheck },
 ]
 
 const settingsItems = [

@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Navigate } from "react-router-dom"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Users, Percent, Landmark } from "lucide-react"
 import Team from "./Team"
@@ -8,8 +9,15 @@ import { useAuth } from "@/lib/authlibrary"
 import { roleLabel } from "@/lib/permissions"
 
 const Administration = () => {
-  const { userRole, permissions } = useAuth()
+  const { role, permissions, organisation } = useAuth()
   const [tab, setTab] = useState("users")
+
+  // Internal-only: super admins and root-organisation admins only
+  const isSuperAdmin = role === "super_admin"
+  const isRootAdmin = role === "admin" && organisation?.isRootOrganisation === true
+  if (!isSuperAdmin && !isRootAdmin) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   return (
     <div className="-m-6">
@@ -22,7 +30,7 @@ const Administration = () => {
             </p>
           </div>
           <span className="rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300">
-            {roleLabel(userRole)}
+            {roleLabel(role)}
           </span>
         </div>
 

@@ -2709,7 +2709,7 @@ app.post("/api/policies", authenticateToken, async (req, res) => {
     const access = await requireRootOrgAccess(req, res);
     if (!access) return;
 
-    const { quoteId, productType, form, step, optionLabel, premium, clientId } = req.body || {};
+    const { quoteId, productType, form, step, optionLabel, premium, clientId, annuitySelection } = req.body || {};
     const actor = await resolvedPolicyActor(req);
     const now = new Date();
     const id = `POL-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -2727,6 +2727,7 @@ app.post("/api/policies", authenticateToken, async (req, res) => {
       optionLabel: optionLabel || null,
       premium: premium || null,
       clientId: clientId || null,
+      annuitySelection: annuitySelection || null,
     });
     res.status(201).json(cleanPolicy(policy.toObject()));
   } catch (e) {
@@ -2770,7 +2771,7 @@ app.patch("/api/policies/:id", authenticateToken, async (req, res) => {
     if (policy.createdBy && String(policy.createdBy) !== String(actor.id)) {
       return res.status(403).json({ message: "Only the creator can edit this policy" });
     }
-    const allowed = ["form", "step", "optionLabel", "premium", "productType", "clientId"];
+    const allowed = ["form", "step", "optionLabel", "premium", "productType", "clientId", "annuitySelection"];
     const update = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) update[key] = req.body[key];

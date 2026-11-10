@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Search } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -15,11 +16,13 @@ import { toTitleCase } from "@/lib/quoteUtils"
 interface ConvertQuote {
   id: string
   quoteId?: string
+  _id?: string
   type?: string
   clientName?: string
   fullName?: string
   schemeName?: string
   createdAt: string
+  isLegacy?: boolean
 }
 
 interface ConvertQuoteDialogProps {
@@ -30,6 +33,7 @@ interface ConvertQuoteDialogProps {
 
 export const ConvertQuoteDialog = ({ open, onOpenChange, quotes }: ConvertQuoteDialogProps) => {
   const [term, setTerm] = useState("")
+  const navigate = useNavigate()
 
   const results = useMemo(() => {
     const q = term.trim().toLowerCase()
@@ -78,9 +82,19 @@ export const ConvertQuoteDialog = ({ open, onOpenChange, quotes }: ConvertQuoteD
               {results.map((quote) => (
                 <button
                   key={quote.id}
-                  onClick={() =>
-                    toast.info("Policy conversion isn't wired up yet — coming soon.")
-                  }
+                  onClick={() => {
+                    onOpenChange(false)
+                    navigate("/policies/convert", {
+                      state: {
+                        quoteId: quote._id || quote.id,
+                        quoteNumber: quote.quoteId,
+                        productType: quote.type,
+                        premium: quote.premium,
+                        fullName: toTitleCase(quote.clientName || quote.fullName || quote.schemeName || "Unnamed"),
+                        isLegacy: quote.isLegacy,
+                      },
+                    })
+                  }}
                   className="w-full flex items-center justify-between gap-4 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
                 >
                   <div className="min-w-0">

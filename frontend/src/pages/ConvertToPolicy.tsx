@@ -15,7 +15,7 @@ import {
 import { DatePicker } from "@/components/ui/date-picker"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
-import { toTitleCase } from "@/lib/quoteUtils"
+import { toTitleCase, formatCurrency, fetchQuoteDetails } from "@/lib/quoteUtils"
 import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
 import { DocumentChecklist, POLICY_DOCUMENTS, parseDoc } from "@/components/policy/DocumentChecklist"
 
@@ -26,7 +26,7 @@ import { useAuth } from "@/lib/authlibrary"
 import { useSocket } from "@/hooks/useSocket"
 import { AssignApproverDialog } from "@/components/policy/AssignApproverDialog"
 
-const STEPS = [
+const STEPS: string[] = [
   "Policyholder Details",
   "Policy Details",
   "Premium and Policy Fees",
@@ -36,7 +36,7 @@ const STEPS = [
   "Review",
 ]
 
-const LAST_STEP = 6
+const LAST_STEP = STEPS.length - 1
 
 const RELATIONSHIPS = ["Spouse", "Child", "Parent", "Sibling", "Other"]
 
@@ -152,6 +152,13 @@ const ConvertToPolicy = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const prefill = (location.state as ConvertState) || {}
+
+  const steps: string[] = [
+    ...(prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity" ? ["Life Annuity Guarantee Selection"] : []),
+    ...STEPS,
+  ]
+
+  const lastStep = steps.length - 1
   const { drafts, createPolicy, updatePolicy, submitPolicy, refresh } = usePolicyDrafts()
   const { addNotification } = useNotifications()
   const { userId, userName } = useAuth()
@@ -167,7 +174,15 @@ const ConvertToPolicy = () => {
   const [assignOpen, setAssignOpen] = useState(false)
   const [draftId, setDraftId] = useState<string | undefined>(prefill.draftId)
   const [currentStep, setCurrentStep] = useState<number>(prefill.step ?? 0)
-
+  const [lifeGuaranteeSelectionOpen, setLifeGuaranteeSelectionOpen] = useState(false)
+  const [lifeGuaranteePeriod, setLifeGuaranteePeriod] = useState<number | null>(null)
+  const [lifeAnnuityAmount, setLifeAnnuityAmount] = useState<number | null>(null)
+  const [livingOptionId, setLivingOptionId] = useState<string | null>(null)
+  const [livingDrawdownRate, setLivingDrawdownRate] = useState<number | null>(null)
+  const [livingAnnuityAmt, setLivingAnnuityAmt] = useState<number | null>(null)
+  const [guaranteePeriods, setGuaranteePeriods] = useState<Array<{ period: number; monthlyAnnuity: number | null }>>([])
+  const isLegacy = prefill.isLegacy === true
+  const quoteNumber = prefill.quoteNumber || ""
   // An approved conversion is already a client policy — it can no longer be edited.
   useEffect(() => {
     if (!draftId) return
@@ -251,6 +266,14 @@ const ConvertToPolicy = () => {
     optionLabel: prefill.optionLabel,
     quoteId: prefill.quoteId,
     premium: prefill.premium,
+    annuitySelection: livingOptionId ? {
+      quoteId: prefill.quoteId || "",
+      livingOptionId,
+      livingDrawdownRate: livingDrawdownRate ?? null,
+      livingAnnuityAmount: livingAnnuityAmt ?? null,
+      lifeGuaranteePeriod: lifeGuaranteePeriod ?? null,
+      lifeAnnuityAmount: lifeAnnuityAmount ?? null,
+    } : null,
   })
 
   /**
@@ -406,24 +429,121 @@ const ConvertToPolicy = () => {
 
 
   const stepSubtitle =
-    currentStep === 0
+    currentStep === 0 && (prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity")
+      ? "Select the Life Annuity guarantee period"
+      : currentStep === 0
+      ? "Confirm the policyholder details"
+      : currentStep === 1 && (prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity")
       ? "Confirm the policyholder details"
       : currentStep === 1
       ? "Confirm the policy details"
+      : currentStep === 2 && (prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity")
+      ? "Confirm the premium and policy fees"
       : currentStep === 2
       ? "Confirm the premium and policy fees"
+      : currentStep === 3 && (prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity")
+      ? "Add beneficiaries"
       : currentStep === 3
       ? "Add beneficiaries"
+      : currentStep === 4 && (prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity")
+      ? "Upload the supporting documents"
       : currentStep === 4
       ? "Upload the supporting documents"
-      : "Set up the investment portfolio (optional)"
+      : currentStep === 5 && (prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity")
+      ? "Set up the investment portfolio (optional)"
+      : currentStep === 5
+      ? "Set up the investment portfolio (optional)"
+      : "Review"
+
+  // Show Life Annuity Guarantee Selection as Step 1 when a specific
+  // Living Annuity option was chosen (from AnnuityDisplay Convert to Policy).
+  // Dashboard-initiated conversions (no optionLabel) skip this step.
+  useEffect(() => {
+    if (prefill.productType !== "Exclusive Annuity" && prefill.productType !== "annuity") return
+    if (!prefill.optionLabel) return
+    if (lifeGuaranteePeriod) return
+
+    const fetchAndSelect = async () => {
+      try {
+        const data = await fetchQuoteDetails(prefill.quoteId, isLegacy)
+        const scenarios = data?.outputs?.scenarios ?? []
+        if (!scenarios.length) return
+
+        // Parse drawdown from optionLabel like "Option 1 — 5% Drawdown"
+        const drawdownMatch = prefill.optionLabel.match(/—\s*(\d+(?:\.\d+)?)%\s*Drawdown/)
+        const drawdown = drawdownMatch ? Number(drawdownMatch[1]) : null
+
+        // Find scenario groups matching this drawdown rate
+        const roundish = (v: any) => {
+          const n = Number(v)
+          return Number.isFinite(n) ? Math.round(n * 100) / 100 : v ?? null
+        }
+
+        const groups = new Map<string, any[]>()
+        for (const sc of scenarios) {
+          const i = sc?.inputs || {}
+          const sig = JSON.stringify({
+            drawdown: roundish(i.drawdown),
+            frequency: (i.frequency ?? "").toString().toLowerCase(),
+            age: roundish(i.guaranteedStartAge),
+            purchase: roundish(i.purchaseAmount),
+            lifePurchase: roundish(i.lifePurchaseAmount ?? i.purchaseAmount),
+          })
+          const existing = groups.get(sig)
+          if (existing) existing.scenarios.push(sc)
+          else groups.set(sig, { signature: sig, scenarios: [sc] })
+        }
+
+        let matchedGroup: any = null
+        for (const [sig, group] of groups) {
+          const rep = group.scenarios[0]
+          const i = rep?.inputs || {}
+          const sigDrawdown = roundish(i.drawdown)
+          if (drawdown !== null && sigDrawdown === drawdown) {
+            matchedGroup = group
+            break
+          }
+        }
+
+        if (matchedGroup) {
+          setLivingOptionId(matchedGroup.signature)
+          const rep = matchedGroup.scenarios[0]
+          const living = rep?.outputs?.living || {}
+          setLivingDrawdownRate(rep?.inputs?.drawdown ?? null)
+          setLivingAnnuityAmt(living?.guaranteed_annuity ?? null)
+
+          // Collect unique guarantee periods with valid amounts from this group
+          const periodsMap = new Map<number, number | null>()
+          for (const sc of matchedGroup.scenarios) {
+            const gp = sc?.outputs?.life?.guarantee_period
+            const ma = sc?.outputs?.life?.monthly_annuity
+            if (typeof gp === "number") {
+              const existing = periodsMap.get(gp)
+              if (existing === undefined || (ma != null && existing === null)) {
+                periodsMap.set(gp, ma)
+              }
+            }
+          }
+          const periods = Array.from(periodsMap.entries())
+            .map(([period, monthlyAnnuity]) => ({ period, monthlyAnnuity }))
+            .sort((a, b) => a.period - b.period)
+          setGuaranteePeriods(periods)
+          setLifeGuaranteeSelectionOpen(true)
+        }
+      } catch (e) {
+        console.error("Failed to load annuity options:", e)
+      }
+    }
+
+    fetchAndSelect()
+  }, [prefill.productType, prefill.optionLabel, lifeGuaranteePeriod])
 
   return (
     <div className="space-y-6">
       {/* Stepper */}
       <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-card px-6 py-4">
         <div className="flex items-center gap-3 overflow-x-auto">
-          {STEPS.map((step, i) => {
+          {steps.map((step, i) => {
             const done = i < currentStep
             const active = i === currentStep
             return (
@@ -450,7 +570,7 @@ const ConvertToPolicy = () => {
                     {step}
                   </span>
                 </div>
-                {i < STEPS.length - 1 && (
+                {i < steps.length - 1 && (
                   <span className="h-px w-10 bg-gray-200 dark:bg-slate-700" />
                 )}
               </div>
@@ -499,7 +619,62 @@ const ConvertToPolicy = () => {
           {prefill.optionLabel ? ` (${prefill.optionLabel})` : ""}.
         </p>
 
-        {currentStep === 0 ? (
+        {currentStep === 0 && (prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity") ? (
+          <div className="space-y-6">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-2">Living Annuity Option</h2>
+              <div className="flex items-start gap-4 p-4 border rounded-xl bg-gray-50 dark:bg-slate-800/50">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Drawdown Rate</p>
+                  <p className="font-semibold">
+                    {livingDrawdownRate != null ? `${livingDrawdownRate}%` : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Monthly Income</p>
+                  <p className="font-semibold">
+                    {livingAnnuityAmt != null ? formatCurrency(livingAnnuityAmt) : "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-2">Choose Life Annuity Guarantee Period</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {guaranteePeriods.map(({ period, monthlyAnnuity }) => {
+                  const hasValidAmount = monthlyAnnuity != null
+                  return (
+                    <button
+                      key={period}
+                      type="button"
+                      disabled={!hasValidAmount}
+                      onClick={() => {
+                        setLifeGuaranteePeriod(period)
+                        setLifeAnnuityAmount(monthlyAnnuity)
+                      }}
+                      className={`flex flex-col items-center justify-center gap-2 p-4 border rounded-xl ${
+                        lifeGuaranteePeriod === period
+                          ? "bg-[#009fe3] text-white border-[#009fe3]"
+                          : !hasValidAmount
+                          ? "bg-gray-100 dark:bg-slate-800/50 text-gray-400 border-gray-200 dark:border-slate-700"
+                          : "bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600"
+                      }`}
+                    >
+                      <span className="text-sm font-medium">{period}-Year Guarantee</span>
+                      <span className="text-xs text-muted-foreground">
+                        {hasValidAmount ? formatCurrency(monthlyAnnuity) : "—"}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Select the Life Annuity guarantee period for this Living Annuity option.
+              </p>
+            </div>
+          </div>
+        ) : currentStep === 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
@@ -884,6 +1059,44 @@ const ConvertToPolicy = () => {
               <ReviewItem label="Transition Date" value={form.transitionDate} />
             </ReviewSection>
 
+            {livingOptionId && (
+              <ReviewSection title="Annuity Selection" onEdit={() => setLifeGuaranteeSelectionOpen(true)}>
+                <ReviewItem label="Source Quotation" value={prefill.quoteId} />
+                <ReviewItem
+                  label="Living Annuity Drawdown"
+                  value={
+                    livingDrawdownRate != null
+                      ? `${livingDrawdownRate}%`
+                      : "—"
+                  }
+                />
+                <ReviewItem
+                  label="Living Annuity Income"
+                  value={
+                    livingAnnuityAmt != null
+                      ? formatCurrency(livingAnnuityAmt)
+                      : "—"
+                  }
+                />
+                <ReviewItem
+                  label="Life Annuity Guarantee Period"
+                  value={
+                    lifeGuaranteePeriod != null
+                      ? `${lifeGuaranteePeriod} years`
+                      : "—"
+                  }
+                />
+                <ReviewItem
+                  label="Life Annuity Income"
+                  value={
+                    lifeAnnuityAmount != null
+                      ? `${formatCurrency(lifeAnnuityAmount)} / month`
+                      : "—"
+                  }
+                />
+              </ReviewSection>
+            )}
+
             <ReviewSection title="Premium and Policy Fees" onEdit={() => setCurrentStep(2)}>
               <ReviewItem label="Investment Amount Premium" value={investment ? `BWP ${fmt(investment)}` : ""} />
               <ReviewItem label="Purchase Premium" value={`BWP ${fmt(purchasePremium)}`} />
@@ -1022,7 +1235,7 @@ const ConvertToPolicy = () => {
                 Skip this step
               </Button>
             )}
-            {currentStep === LAST_STEP ? (
+            {currentStep === lastStep ? (
               <Button
                 onClick={() => {
                   if (!form.fullName.trim()) {
@@ -1038,7 +1251,7 @@ const ConvertToPolicy = () => {
             ) : (
               <Button
                 disabled={currentStep === 3 && !beneficiaryTotalValid}
-                onClick={() => setCurrentStep((s) => Math.min(s + 1, LAST_STEP))}
+                onClick={() => setCurrentStep((s) => Math.min(s + 1, lastStep))}
                 className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white"
               >
                 Continue

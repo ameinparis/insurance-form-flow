@@ -248,7 +248,7 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
             index={idx}
             showOptionLabel
             clientData={clientData}
-            quoteId={quote?.quoteId}
+            quoteId={quote?._id}
             productType={quote?.productType || quote?.type}
             quoteInputs={inputData}
           />

@@ -23,6 +23,15 @@ export interface ReviewEntry {
 
 export type DraftStatus = "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "ACTIVE" | "RETURNED" | "draft" | "pending_approval" | "approved" | "returned" | "rejected"
 
+export interface AnnuitySelection {
+  quoteId: string
+  livingOptionId: string
+  livingDrawdownRate: number | null
+  livingAnnuityAmount: number | null
+  lifeGuaranteePeriod: number | null
+  lifeAnnuityAmount: number | null
+}
+
 export interface PolicyDraft {
   id: string
   step: number
@@ -57,6 +66,7 @@ export interface PolicyDraft {
   clientId?: string | null
   createdBy?: string | null
   returnReason?: string | null
+  annuitySelection?: AnnuitySelection
 }
 
 const STORAGE_KEY = "policy_drafts_v1"
@@ -145,6 +155,7 @@ const persist = (draft: PolicyDraft) => {
         premium: draft.premium,
         productType: draft.productType,
         clientId: draft.clientId,
+        annuitySelection: draft.annuitySelection || null,
       }),
     })
       .then((res) => setSyncFailed(!res.ok))
@@ -415,6 +426,7 @@ export const usePolicyDrafts = () => {
     optionLabel?: string | null
     premium?: number | null
     clientId?: string | null
+    annuitySelection?: AnnuitySelection | null
   }): Promise<PolicyDraft> => {
     const res = await fetch(`${API_BASE_URL}/policies`, {
       method: "POST",
