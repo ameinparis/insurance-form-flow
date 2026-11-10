@@ -159,6 +159,7 @@ const ConvertToPolicy = () => {
   ]
 
   const lastStep = steps.length - 1
+  const stepIdx = (name: string) => steps.indexOf(name)
   const { drafts, createPolicy, updatePolicy, submitPolicy, refresh } = usePolicyDrafts()
   const { addNotification } = useNotifications()
   const { userId, userName } = useAuth()
@@ -428,32 +429,17 @@ const ConvertToPolicy = () => {
   const documentsValid = true
 
 
-  const stepSubtitle =
-    currentStep === 0 && (prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity")
-      ? "Select the Life Annuity guarantee period"
-      : currentStep === 0
-      ? "Confirm the policyholder details"
-      : currentStep === 1 && (prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity")
-      ? "Confirm the policyholder details"
-      : currentStep === 1
-      ? "Confirm the policy details"
-      : currentStep === 2 && (prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity")
-      ? "Confirm the premium and policy fees"
-      : currentStep === 2
-      ? "Confirm the premium and policy fees"
-      : currentStep === 3 && (prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity")
-      ? "Add beneficiaries"
-      : currentStep === 3
-      ? "Add beneficiaries"
-      : currentStep === 4 && (prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity")
-      ? "Upload the supporting documents"
-      : currentStep === 4
-      ? "Upload the supporting documents"
-      : currentStep === 5 && (prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity")
-      ? "Set up the investment portfolio (optional)"
-      : currentStep === 5
-      ? "Set up the investment portfolio (optional)"
-      : "Review"
+  const SUBTITLES: Record<string, string> = {
+    "Life Annuity Guarantee Selection": "Select the Life Annuity guarantee period",
+    "Policyholder Details": "Confirm the policyholder details",
+    "Policy Details": "Confirm the policy details",
+    "Premium and Policy Fees": "Confirm the premium and policy fees",
+    "Beneficiaries": "Add beneficiaries",
+    "Documents": "Upload the supporting documents",
+    "Investment Portfolio Setup": "Set up the investment portfolio (optional)",
+    "Review": "Review",
+  }
+  const stepSubtitle = SUBTITLES[steps[currentStep]] ?? "Review"
 
   // Show Life Annuity Guarantee Selection as Step 1 when a specific
   // Living Annuity option was chosen (from AnnuityDisplay Convert to Policy).
@@ -694,7 +680,7 @@ const ConvertToPolicy = () => {
               </p>
             </div>
           </div>
-        ) : currentStep === 0 ? (
+        ) : currentStep === stepIdx("Policyholder Details") ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
@@ -745,7 +731,7 @@ const ConvertToPolicy = () => {
               <Input id="address" value={form.address} onChange={set("address")} placeholder="Plot 123, Gaborone" className="h-11 rounded-xl" />
             </div>
           </div>
-        ) : currentStep === 1 ? (
+        ) : currentStep === stepIdx("Policy Details") ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
             <div className="space-y-2">
               <Label htmlFor="policyNumber">Policy Number</Label>
@@ -772,7 +758,7 @@ const ConvertToPolicy = () => {
               />
             </div>
           </div>
-        ) : currentStep === 2 ? (
+        ) : currentStep === stepIdx("Premium and Policy Fees") ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
             <div className="space-y-2">
               <Label htmlFor="investmentAmount">Investment Amount Premium</Label>
@@ -839,7 +825,7 @@ const ConvertToPolicy = () => {
               <Input id="funeralPremium" readOnly value={fmt(FUNERAL_PREMIUM)} className="h-11 rounded-xl bg-muted/50" />
             </div>
           </div>
-        ) : currentStep === 3 ? (
+        ) : currentStep === stepIdx("Beneficiaries") ? (
           <div className="space-y-4">
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-4">
@@ -987,11 +973,11 @@ const ConvertToPolicy = () => {
           </div>
           </div>
 
-        ) : currentStep === 4 ? (
+        ) : currentStep === stepIdx("Documents") ? (
           <div className="space-y-4">
             <DocumentChecklist documents={documents} onChange={setDocument} />
           </div>
-        ) : currentStep === 5 ? (
+        ) : currentStep === stepIdx("Investment Portfolio Setup") ? (
           <div className="space-y-6">
             <div className="rounded-xl border border-dashed border-gray-300 dark:border-slate-600 px-4 py-3 text-sm text-red-500">
               This step is optional. You can skip it and set up the investment portfolio later.
@@ -1060,9 +1046,9 @@ const ConvertToPolicy = () => {
               )}
             </div>
           </div>
-        ) : currentStep === 6 ? (
+        ) : currentStep === stepIdx("Review") ? (
           <div className="space-y-5">
-            <ReviewSection title="Policyholder Details" onEdit={() => setCurrentStep(0)}>
+            <ReviewSection title="Policyholder Details" onEdit={() => setCurrentStep(stepIdx("Policyholder Details"))}>
               <ReviewItem label="Full Name" value={form.fullName} />
               <ReviewItem label="ID / Passport Number" value={form.idNumber} />
               <ReviewItem label="Date of Birth" value={form.dateOfBirth} />
@@ -1072,7 +1058,7 @@ const ConvertToPolicy = () => {
               <ReviewItem label="Address" value={form.address} full />
             </ReviewSection>
 
-            <ReviewSection title="Policy Details" onEdit={() => setCurrentStep(1)}>
+            <ReviewSection title="Policy Details" onEdit={() => setCurrentStep(stepIdx("Policy Details"))}>
               <ReviewItem label="Policy Number" value={form.policyNumber} />
               <ReviewItem label="Product" value={form.productName} />
               <ReviewItem label="Policy Start Date" value={form.policyStartDate} />
@@ -1117,7 +1103,7 @@ const ConvertToPolicy = () => {
               </ReviewSection>
             )}
 
-            <ReviewSection title="Premium and Policy Fees" onEdit={() => setCurrentStep(2)}>
+            <ReviewSection title="Premium and Policy Fees" onEdit={() => setCurrentStep(stepIdx("Premium and Policy Fees"))}>
               <ReviewItem label="Investment Amount Premium" value={investment ? `BWP ${fmt(investment)}` : ""} />
               <ReviewItem label="Purchase Premium" value={`BWP ${fmt(purchasePremium)}`} />
               <ReviewItem
@@ -1135,7 +1121,7 @@ const ConvertToPolicy = () => {
 
             <ReviewSection
               title="Beneficiaries"
-              onEdit={() => setCurrentStep(3)}
+              onEdit={() => setCurrentStep(stepIdx("Beneficiaries"))}
               badge={`Total: ${Math.round(beneficiaryTotal * 100) / 100}%`}
               badgeTone={beneficiaryTotalValid ? "success" : "warning"}
             >
@@ -1165,7 +1151,7 @@ const ConvertToPolicy = () => {
 
             <ReviewSection
               title="Documents"
-              onEdit={() => setCurrentStep(4)}
+              onEdit={() => setCurrentStep(stepIdx("Documents"))}
               badge={`${POLICY_DOCUMENTS.filter((d) => documents[d.key]).length} of ${POLICY_DOCUMENTS.length} uploaded`}
               badgeTone="success"
             >
@@ -1192,7 +1178,7 @@ const ConvertToPolicy = () => {
 
             <ReviewSection
               title="Investment Portfolio Setup"
-              onEdit={() => setCurrentStep(5)}
+              onEdit={() => setCurrentStep(stepIdx("Investment Portfolio Setup"))}
               badge={form.portfolioSkipped === "yes" ? "Skipped" : `Total: ${allocationTotal}%`}
               badgeTone={form.portfolioSkipped === "yes" ? "muted" : allocationTotal === 100 ? "success" : "warning"}
             >
@@ -1238,7 +1224,7 @@ const ConvertToPolicy = () => {
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
-            {currentStep === 5 && (
+            {currentStep === stepIdx("Investment Portfolio Setup") && (
               <Button
                 variant="ghost"
                 onClick={() =>
@@ -1270,7 +1256,7 @@ const ConvertToPolicy = () => {
               </Button>
             ) : (
               <Button
-                disabled={currentStep === 3 && !beneficiaryTotalValid}
+                disabled={currentStep === stepIdx("Beneficiaries") && !beneficiaryTotalValid}
                 onClick={() => setCurrentStep((s) => Math.min(s + 1, lastStep))}
                 className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white"
               >
