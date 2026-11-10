@@ -29,6 +29,7 @@ import { AssignApproverDialog } from "@/components/policy/AssignApproverDialog"
 const STEPS: string[] = [
   "Policyholder Details",
   "Policy Details",
+  "Salary Details & Income Configuration",
   "Premium and Policy Fees",
   "Beneficiaries",
   "Documents",
@@ -433,6 +434,7 @@ const ConvertToPolicy = () => {
     "Life Annuity Guarantee Selection": "Select the Life Annuity guarantee period",
     "Policyholder Details": "Confirm the policyholder details",
     "Policy Details": "Confirm the policy details",
+    "Salary Details & Income Configuration": "Confirm the salary and income details",
     "Premium and Policy Fees": "Confirm the premium and policy fees",
     "Beneficiaries": "Add beneficiaries",
     "Documents": "Upload the supporting documents",
@@ -736,6 +738,13 @@ const ConvertToPolicy = () => {
                 value={form.transitionDate}
                 onChange={(v) => setForm((prev) => ({ ...prev, transitionDate: v }))}
               />
+            </div>
+          </div>
+        ) : currentStep === stepIdx("Salary Details & Income Configuration") ? (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold">Salary Details &amp; Income Configuration</h2>
+            <div className="rounded-xl border border-dashed border-gray-300 dark:border-slate-600 px-4 py-6 text-sm text-muted-foreground">
+              Salary and income fields will be added to this step.
             </div>
           </div>
         ) : currentStep === stepIdx("Premium and Policy Fees") ? (
