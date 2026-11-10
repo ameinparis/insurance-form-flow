@@ -527,63 +527,43 @@ const ConvertToPolicy = () => {
   return (
     <div className="space-y-6">
       {/* Stepper */}
-      <nav aria-label="Policy conversion progress" className="rounded-2xl border border-border bg-card px-4 py-5 sm:px-6">
-        <div className="xl:hidden" aria-live="polite" aria-atomic="true">
-          <div className="flex items-center gap-3">
-            <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-              {currentStep + 1}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-muted-foreground">Step {currentStep + 1} of {steps.length}</p>
-              <p className="mt-1 break-words text-sm font-semibold leading-5 text-foreground">{steps[currentStep]}</p>
-            </div>
-          </div>
-          <div aria-hidden="true" className="mt-4 flex gap-1.5">
-            {steps.map((step, i) => (
-              <span key={step} className={`h-1.5 min-w-0 flex-1 rounded-full ${i <= currentStep ? "bg-primary" : "bg-muted"}`} />
-            ))}
-          </div>
-        </div>
-        <ol className="hidden auto-cols-fr grid-flow-col xl:grid">
+      <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-card px-6 py-4">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           {steps.map((step, i) => {
             const done = i < currentStep
             const active = i === currentStep
             return (
-              <li key={step} aria-current={active ? "step" : undefined} className="relative min-w-0 px-2 text-center">
-                {i < steps.length - 1 && (
-                  <span aria-hidden="true" className={`absolute left-[calc(50%+1.5rem)] right-[calc(-50%+1.5rem)] top-[1.125rem] h-px ${done ? "bg-primary/40" : "bg-border"}`} />
-                )}
-                <div className="relative flex flex-col items-center gap-3">
+              <div key={step} className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2">
                   <span
-                    aria-hidden="true"
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-semibold ${
+                    className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
                       done
-                        ? "border-primary/30 bg-primary/10 text-primary"
+                        ? "bg-emerald-500 text-white"
                         : active
-                        ? "border-primary bg-primary text-primary-foreground ring-4 ring-primary/10"
-                        : "border-border bg-muted text-muted-foreground"
+                        ? "bg-[#009fe3] text-white"
+                        : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
                     }`}
                   >
-                    {done ? <Check className="h-4 w-4" strokeWidth={2.5} /> : i + 1}
+                    {done ? <Check className="h-3 w-3" /> : i + 1}
                   </span>
-                  <span className="sr-only">Step {i + 1} of {steps.length}: {done ? "Completed" : active ? "Current" : "Upcoming"}. </span>
                   <span
-                    className={`w-full break-words text-xs leading-5 ${
+                    className={`text-xs font-semibold whitespace-nowrap ${
                       active
-                        ? "font-semibold text-foreground"
-                        : done
-                        ? "font-medium text-primary"
-                        : "font-medium text-muted-foreground"
+                        ? "text-foreground"
+                        : "text-gray-400 dark:text-slate-500"
                     }`}
                   >
                     {step}
                   </span>
                 </div>
-              </li>
+                {i < steps.length - 1 && (
+                  <span className="h-px w-10 bg-gray-200 dark:bg-slate-700" />
+                )}
+              </div>
             )
           })}
-        </ol>
-      </nav>
+        </div>
+      </div>
 
       {/* Form card */}
       <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-card p-6 md:p-8">
