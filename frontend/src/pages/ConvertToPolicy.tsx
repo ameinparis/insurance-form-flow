@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { ArrowLeft, Check, CloudUpload, CheckCircle2, Trash2, Plus } from "lucide-react"
+import { ArrowLeft, Check, CloudUpload, CheckCircle2, Trash2, Plus, Wallet } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -182,6 +182,7 @@ const ConvertToPolicy = () => {
   const [livingOptionId, setLivingOptionId] = useState<string | null>(null)
   const [livingDrawdownRate, setLivingDrawdownRate] = useState<number | null>(null)
   const [livingAnnuityAmt, setLivingAnnuityAmt] = useState<number | null>(null)
+  const [livingFrequency, setLivingFrequency] = useState<string | null>(null)
   const [guaranteePeriods, setGuaranteePeriods] = useState<Array<{ period: number; monthlyAnnuity: number | null }>>([])
   const isLegacy = prefill.isLegacy === true
   const quoteNumber = prefill.quoteNumber || ""
@@ -509,6 +510,7 @@ const ConvertToPolicy = () => {
           const living = rep?.outputs?.living || {}
           setLivingDrawdownRate(rep?.inputs?.drawdown ?? null)
           setLivingAnnuityAmt(living?.guaranteed_annuity ?? null)
+          setLivingFrequency(rep?.inputs?.frequency ? String(rep.inputs.frequency) : null)
 
           // Collect unique guarantee periods with valid amounts from this group
           const periodsMap = new Map<number, number | null>()
@@ -750,12 +752,62 @@ const ConvertToPolicy = () => {
             </div>
           </div>
         ) : currentStep === stepIdx("Salary Details & Income Configuration") ? (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Salary Details &amp; Income Configuration</h2>
-            <div className="rounded-xl border border-dashed border-gray-300 dark:border-slate-600 px-4 py-6 text-sm text-muted-foreground">
-              Salary and income fields will be added to this step.
-            </div>
-          </div>
+          (() => {
+            // Read-only financial summary — no transactions are posted here.
+            const optMatch = prefill.optionLabel?.match(/(\d+(?:\.\d+)?)%\s*Drawdown/i)
+            const rawRate = livingDrawdownRate ?? (optMatch ? Number(optMatch[1]) : null)
+            const rate = rawRate != null && Number.isFinite(Number(rawRate)) ? Number(rawRate) : null
+            const isAnnual = (livingFrequency ?? "").toLowerCase().startsWith("annual")
+            const upfront = commissionOn ? upfrontCommission : 0
+            const netPurchase = investment - purchasePremium - upfront
+            const expectedMonthly = rate != null ? (investment * (rate / 100)) / 12 : null
+            let salary: number | null
+            if (isAnnual) {
+              salary = livingAnnuityAmt != null ? Number(livingAnnuityAmt) : rate != null ? investment * (rate / 100) : null
+            } else if (livingAnnuityAmt != null && expectedMonthly != null && Math.abs(Number(livingAnnuityAmt) - expectedMonthly) < 1) {
+              salary = Number(livingAnnuityAmt)
+            } else {
+              salary = expectedMonthly
+            }
+            const netInvestment = netPurchase - (salary ?? 0)
+            const money = (n: number) => `BWP ${fmt(n)}`
+            const less = (n: number) => `BWP (${fmt(n)})`
+            const Row = ({ label, value, strong }: { label: string; value: string; strong?: boolean }) => (
+              <div className="flex items-baseline justify-between gap-4 py-2.5">
+                <span className={strong ? "text-base font-semibold text-foreground" : "text-sm text-muted-foreground"}>{label}</span>
+                <span className={`tabular-nums text-right ${strong ? "text-base font-bold text-foreground" : "text-sm text-foreground"}`}>{value}</span>
+              </div>
+            )
+            return (
+              <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-card p-5 sm:p-7">
+                <div className="flex items-start justify-between gap-4 border-b border-gray-200 dark:border-slate-700 pb-5">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">Salary Details &amp; Income Configuration</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">Calculated from the selected quotation — read only</p>
+                  </div>
+                  <Wallet className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="pt-3">
+                  <Row label="Investment Amount" value={money(investment)} />
+                  <Row label="Less: Purchase Premium" value={less(purchasePremium)} />
+                  <Row label="Less: Upfront Commission" value={less(upfront)} />
+                </div>
+                <div className="mt-2 border-t border-gray-200 dark:border-slate-700 pt-3">
+                  <Row label="Net Purchase Amount" value={money(netPurchase)} strong />
+                  <Row label="Drawdown Rate" value={rate != null ? `${rate}%` : "—"} />
+                  <Row label="Income Frequency" value={livingFrequency ? (isAnnual ? "Annual" : "Monthly") : "—"} />
+                  <Row label={isAnnual ? "Less: First Annual Salary" : "Less: First Month Salary"} value={salary != null ? less(salary) : "—"} />
+                </div>
+                <div className="mt-2 flex items-end justify-between gap-4 border-t border-gray-200 dark:border-slate-700 pt-5">
+                  <div>
+                    <p className="text-base font-semibold text-foreground">Net Investment Amount</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">After initial salary provision</p>
+                  </div>
+                  <p className="text-xl sm:text-2xl font-bold tabular-nums text-foreground">{money(netInvestment)}</p>
+                </div>
+              </div>
+            )
+          })()
         ) : currentStep === stepIdx("Premium and Policy Fees") ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
             <div className="space-y-2">
