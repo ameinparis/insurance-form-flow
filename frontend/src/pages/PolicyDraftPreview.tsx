@@ -69,7 +69,7 @@ const SECTIONS: { title: string; step: number; fields: Field[] }[] = [
     title: "Premiums",
     step: 2,
     fields: [
-      { key: "investmentAmount", label: "Investment Amount Premium" },
+      { key: "investmentAmount", label: "Investment Amount" },
       { key: "purchasePremium", label: "Purchase Premium" },
       { key: "upfrontCommission", label: "Upfront Commission" },
       { key: "administrationFee", label: "Administration Fee" },

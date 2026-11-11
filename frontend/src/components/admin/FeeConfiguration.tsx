@@ -7,9 +7,9 @@ import { toast } from "sonner"
 import { useFeeConfig, DEFAULT_FEE_CONFIG, FeeConfig } from "@/hooks/useFeeConfig"
 
 const FIELDS: { key: keyof FeeConfig; label: string; hint: string; suffix: string; step: string }[] = [
-  { key: "purchasePremiumPct", label: "Purchase Premium", hint: "% of Investment Amount Premium", suffix: "%", step: "0.001" },
-  { key: "upfrontCommissionPct", label: "Upfront Commission", hint: "% of Investment Amount Premium (optional per policy)", suffix: "%", step: "0.001" },
-  { key: "administrationFeePct", label: "Administration Fee", hint: "% of Investment Amount Premium", suffix: "%", step: "0.001" },
+  { key: "purchasePremiumPct", label: "Purchase Premium", hint: "% of Investment Amount", suffix: "%", step: "0.001" },
+  { key: "upfrontCommissionPct", label: "Upfront Commission", hint: "% of Investment Amount (optional per policy)", suffix: "%", step: "0.001" },
+  { key: "administrationFeePct", label: "Administration Fee", hint: "% of Investment Amount", suffix: "%", step: "0.001" },
   { key: "ongoingAdvisoryMaxPct", label: "Ongoing Advisory Fee (max)", hint: "Upper limit advisors may capture", suffix: "%", step: "0.001" },
   { key: "switchFee", label: "Switch Fee", hint: "Fixed amount", suffix: "BWP", step: "1" },
   { key: "funeralPremium", label: "Funeral Premium", hint: "Fixed amount", suffix: "BWP", step: "1" },

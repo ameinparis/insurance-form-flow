@@ -246,7 +246,7 @@ const ConvertToPolicy = () => {
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }))
 
-  // Derived premium & fee values (all based on the Investment Amount Premium)
+  // Derived premium & fee values (all based on the Investment Amount)
   const investment = Number(String(form.investmentAmount).replace(/[^0-9.]/g, "")) || 0
   const fmt = (n: number) =>
     n.toLocaleString("en-BW", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -256,7 +256,7 @@ const ConvertToPolicy = () => {
   const SWITCH_FEE = feeConfig.switchFee
   const FUNERAL_PREMIUM = feeConfig.funeralPremium
   const commissionOn = form.upfrontCommissionEnabled === "yes"
-  // Ongoing Advisory Fee — optional, configured percentage of the Investment Amount Premium
+  // Ongoing Advisory Fee — optional, configured percentage of the Investment Amount
   const advisoryOn = form.ongoingAdvisoryEnabled === "yes"
   const advisoryPct = feeConfig.ongoingAdvisoryMaxPct
   const ongoingAdvisoryFeeAmount = advisoryOn ? investment * (advisoryPct / 100) : 0
@@ -759,9 +759,9 @@ const ConvertToPolicy = () => {
         ) : currentStep === stepIdx("Premium and Policy Fees") ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
             <div className="space-y-2">
-              <Label htmlFor="investmentAmount">Investment Amount Premium</Label>
-              <Input id="investmentAmount" inputMode="decimal" value={form.investmentAmount} onChange={set("investmentAmount")} placeholder="0.00" className="h-11 rounded-xl" />
-              <p className="text-xs text-muted-foreground">Purchase premium from the quote.</p>
+              <Label htmlFor="investmentAmount">Investment Amount</Label>
+              <Input id="investmentAmount" inputMode="decimal" value={form.investmentAmount} readOnly placeholder="0.00" className="h-11 rounded-xl bg-muted/50" />
+              <p className="text-xs text-muted-foreground">Investment amount from the quote.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="purchasePremium">Purchase Premium</Label>
@@ -1102,7 +1102,7 @@ const ConvertToPolicy = () => {
             )}
 
             <ReviewSection title="Premium and Policy Fees" onEdit={() => setCurrentStep(stepIdx("Premium and Policy Fees"))}>
-              <ReviewItem label="Investment Amount Premium" value={investment ? `BWP ${fmt(investment)}` : ""} />
+              <ReviewItem label="Investment Amount" value={investment ? `BWP ${fmt(investment)}` : ""} />
               <ReviewItem label="Purchase Premium" value={`BWP ${fmt(purchasePremium)}`} />
               <ReviewItem
                 label="Upfront Commission"

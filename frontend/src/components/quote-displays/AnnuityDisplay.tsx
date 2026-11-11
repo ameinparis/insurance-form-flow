@@ -185,7 +185,7 @@ export const AnnuityDisplay = ({ quote, isEditing, editForm, onFieldChange }: An
           <span className="quote-detail-value">{formatCurrency(15000)}</span>
         </div>
         <div className="quote-detail-item">
-          <span className="quote-detail-label">Purchase Premium</span>
+          <span className="quote-detail-label">Investment Amount</span>
           <span className="quote-detail-value quote-detail-value--strong">{formatCurrency(inputData?.purchaseAmount)}</span>
         </div>
         {!hasScenarios && (
@@ -609,10 +609,12 @@ const ScenarioGroupBlock = ({
         quoteId,
         premium: living?.guaranteed_annuity,
         investmentAmount:
-          inputs.purchaseAmount ??
-          inputs.singlePurchasePremium ??
-          inputs.lifePurchaseAmount ??
-          quoteInputs?.purchaseAmount,
+          quoteInputs?.purchaseAmount ??
+          quoteInputs?.singlePurchasePremium ??
+          quoteInputs?.lifePurchaseAmount ??
+          inputs?.purchaseAmount ??
+          inputs?.singlePurchasePremium ??
+          inputs?.lifePurchaseAmount,
         purchasePremium:
           inputs.purchaseAmount ??
           inputs.singlePurchasePremium ??

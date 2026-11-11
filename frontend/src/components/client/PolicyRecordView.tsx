@@ -20,7 +20,7 @@ const SECTIONS: { title: string; fields: { key: string; label: string }[] }[] = 
   {
     title: "Premiums",
     fields: [
-      { key: "investmentAmount", label: "Investment Amount Premium" },
+      { key: "investmentAmount", label: "Investment Amount" },
       { key: "purchasePremium", label: "Purchase Premium" },
       { key: "upfrontCommission", label: "Upfront Commission" },
       { key: "administrationFee", label: "Administration Fee" },
