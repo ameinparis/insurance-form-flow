@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { Fragment, useCallback, useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { ArrowLeft, Check, CloudUpload, CheckCircle2, Trash2, Plus } from "lucide-react"
 import { toast } from "sonner"
@@ -545,10 +545,10 @@ const ConvertToPolicy = () => {
             const done = i < currentStep
             const active = i === currentStep
             return (
-              <div key={step} className="flex shrink-0 items-center gap-2">
+              <Fragment key={step}>
                 <div
                   ref={active ? activeStepRef : undefined}
-                  className="flex items-center gap-2"
+                  className="flex shrink-0 items-center gap-2"
                 >
                   <span
                     className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
@@ -568,9 +568,9 @@ const ConvertToPolicy = () => {
                   )}
                 </div>
                 {i < steps.length - 1 && (
-                  <span className="h-px w-8 bg-gray-200 dark:bg-slate-700" />
+                  <span className="h-px min-w-6 flex-1 bg-gray-200 dark:bg-slate-700" />
                 )}
-              </div>
+              </Fragment>
             )
           })}
         </div>
