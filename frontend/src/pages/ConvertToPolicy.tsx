@@ -228,6 +228,16 @@ const ConvertToPolicy = () => {
   // one-at-a-time write chain shared by autosave and submit.
   const draftIdRef = useRef<string | undefined>(prefill.draftId)
   const saveChain = useRef<Promise<unknown>>(Promise.resolve())
+  // Keeps the active step's inline label in view when the stepper scrolls sideways.
+  const activeStepRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    activeStepRef.current?.scrollIntoView({
+      block: "nearest",
+      inline: "center",
+      behavior: "smooth",
+    })
+  }, [currentStep])
 
   const { config: feeConfig } = useFeeConfig()
   const configuredFunds = useFundOptions()
@@ -530,13 +540,16 @@ const ConvertToPolicy = () => {
     <div className="space-y-6">
       {/* Stepper */}
       <div className="rounded-2xl border border-gray-200 dark:border-slate-700 bg-card px-6 py-4">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
           {steps.map((step, i) => {
             const done = i < currentStep
             const active = i === currentStep
             return (
-              <div key={step} className="flex items-center gap-3 shrink-0">
-                <div className="flex items-center gap-2">
+              <div key={step} className="flex shrink-0 items-center gap-2">
+                <div
+                  ref={active ? activeStepRef : undefined}
+                  className="flex items-center gap-2"
+                >
                   <span
                     className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
                       done
@@ -548,18 +561,14 @@ const ConvertToPolicy = () => {
                   >
                     {done ? <Check className="h-3 w-3" /> : i + 1}
                   </span>
-                  <span
-                    className={`text-xs font-semibold whitespace-nowrap ${
-                      active
-                        ? "text-foreground"
-                        : "text-gray-400 dark:text-slate-500"
-                    }`}
-                  >
-                    {step}
-                  </span>
+                  {active && (
+                    <span className="text-xs font-semibold whitespace-nowrap text-foreground">
+                      {step}
+                    </span>
+                  )}
                 </div>
                 {i < steps.length - 1 && (
-                  <span className="h-px w-10 bg-gray-200 dark:bg-slate-700" />
+                  <span className="h-px w-8 bg-gray-200 dark:bg-slate-700" />
                 )}
               </div>
             )
