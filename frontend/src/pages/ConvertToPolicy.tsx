@@ -29,11 +29,11 @@ import { AssignApproverDialog } from "@/components/policy/AssignApproverDialog"
 const STEPS: string[] = [
   "Policyholder Details",
   "Policy Details",
-  "Salary Details & Income Configuration",
   "Premium and Policy Fees",
+  "Salary Details & Income Configuration",
+  "Investment Portfolio Setup",
   "Beneficiaries",
   "Documents",
-  "Investment Portfolio Setup",
   "Review",
 ]
 
