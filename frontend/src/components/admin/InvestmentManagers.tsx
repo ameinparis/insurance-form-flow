@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { AssetManagerForm, FundForm } from "./AssetManagerForms"
-import { RISK_LEVELS, saveFund, type AssetManager, type Fund, type RiskLevel, type Status } from "./assetManagerModel"
+import { saveFund, type AssetManager, type Fund, type RiskLevel, type Status } from "./assetManagerModel"
 
 const riskClasses: Record<RiskLevel, string> = {
   "Low": "investment-risk-low", "Low–Moderate": "investment-risk-low-moderate", "Moderate": "investment-risk-moderate", "Moderate–High": "investment-risk-moderate-high", "High": "investment-risk-high",
