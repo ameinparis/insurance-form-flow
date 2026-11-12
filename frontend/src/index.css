@@ -55,6 +55,12 @@
     --preview-rule: 218 13% 90%;
     --preview-divider: 220 10% 91%;
 
+    --investment-low: 158 52% 32%;
+    --investment-low-moderate: 183 65% 32%;
+    --investment-moderate: 38 80% 34%;
+    --investment-moderate-high: 23 74% 39%;
+    --investment-high: 350 63% 43%;
+
     --radius: 1rem;
 
     /* Sidebar - Clean white with blue accents */
@@ -119,6 +125,11 @@
     --preview-canvas: 220 14% 96%;
     --preview-rule: 218 13% 90%;
     --preview-divider: 220 10% 91%;
+    --investment-low: 158 55% 65%;
+    --investment-low-moderate: 183 55% 65%;
+    --investment-moderate: 38 80% 65%;
+    --investment-moderate-high: 23 85% 68%;
+    --investment-high: 350 78% 73%;
     
     --sidebar-background: 225 30% 11%;      /* Match card color for consistent sidebar */
     --sidebar-foreground: 210 40% 98%;
@@ -135,6 +146,13 @@
 }
 
 @layer components {
+  .investment-risk { color: hsl(var(--investment-risk)); background: hsl(var(--investment-risk) / 0.09); border-color: hsl(var(--investment-risk) / 0.18); }
+  .investment-risk-low { --investment-risk: var(--investment-low); }
+  .investment-risk-low-moderate { --investment-risk: var(--investment-low-moderate); }
+  .investment-risk-moderate { --investment-risk: var(--investment-moderate); }
+  .investment-risk-moderate-high { --investment-risk: var(--investment-moderate-high); }
+  .investment-risk-high { --investment-risk: var(--investment-high); }
+
   .document-workspace {
     background: hsl(var(--document-workspace));
   }
