@@ -6,7 +6,7 @@ const { join } = require("node:path")
 const compiled = ts.transpileModule(readFileSync(join(__dirname, "policyReview.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText
 const model = { exports: {} }
 new Function("exports", "module", compiled)(model.exports, model)
-const { readPolicyReview, buildPortfolioReview, readSavedPortfolio, readApprovalReview, readSubmittedPortfolio, readDraftInvestment, retainFundManager } = model.exports
+const { readPolicyReview, buildPortfolioReview, readSavedPortfolio, readApprovalReview, readSubmittedPortfolio, readDraftInvestment, retainFundManager, splitFundRow } = model.exports
 
 test("Submission round-trip preserves all preview values, including net investment and allocations", () => {
   const snapshot = { version: 1, sections: [
@@ -85,4 +85,8 @@ test("Client policy and approval portfolio readers return the exact same submitt
   assert.deepEqual(readSubmittedPortfolio(form), readApprovalReview(form).sections[0])
   assert.equal(readSubmittedPortfolio(form).rows[0].value, "30% — BWP 584,250.00")
   assert.equal(JSON.stringify(form), before)
+})
+test("Fund details show the submitted allocation and amount exactly as saved", () => {
+  assert.deepEqual(splitFundRow("30% — BWP 584,250.00"), { percent: "30%", amount: "BWP 584,250.00" })
+  assert.deepEqual(splitFundRow("70% — Amount not recorded"), { percent: "70%", amount: "Amount not recorded" })
 })

@@ -32,3 +32,9 @@
 - [x] Verify interface flows with sample data, light/dark layouts and frontend checks.
 
 Scope: frontend only; no persistent storage, APIs, investment calculations or changes to other administration tabs or the policy wizard. Editing workspace starts at the same revision as backup-main; no commit, push or deployment.
+## Interactive Policy Record & Investment Funding
+- [x] Stage 1: clickable policy sections and per-fund details
+- [ ] Stage 2: Root Organisation funding permissions (awaiting your go-ahead)
+- [ ] Stage 3: Funding backend (inspect evidence storage first)
+- [ ] Stage 4: Investment Funding section
+- [ ] Stage 5: Tests and verification

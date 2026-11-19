@@ -1,8 +1,10 @@
-import { FileText } from "lucide-react"
+import { useState, type ReactNode } from "react"
+import { ChevronRight, FileText } from "lucide-react"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { POLICY_DOCUMENTS } from "@/components/policy/DocumentChecklist"
 import type { ClientPolicy } from "@/hooks/useClients"
-import { readSubmittedPortfolio } from "@/components/policy/policyReview"
+import { readSubmittedPortfolio, splitFundRow, type ReviewRow } from "@/components/policy/policyReview"
 import { PolicyReviewContent } from "@/components/policy/PolicyReviewContent"
 
 /**
@@ -37,9 +39,40 @@ const SECTIONS: { title: string; fields: { key: string; label: string }[] }[] = 
 const card =
   "rounded-[1.75rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-7"
 
+const clickable =
+  "cursor-pointer transition hover:border-[#009fe3]/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009fe3]"
+
+const Detail = ({ label, value }: { label: string; value?: ReactNode }) => (
+  <div className="py-2.5 border-b border-slate-100 dark:border-slate-700/60">
+    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</p>
+    <div className="text-sm font-semibold text-slate-900 dark:text-white mt-1 break-words">
+      {value || <span className="text-slate-400 italic font-normal">—</span>}
+    </div>
+  </div>
+)
+
+const ViewHint = () => (
+  <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+    View details <ChevronRight className="h-3.5 w-3.5" />
+  </span>
+)
+
+/** Keyboard/mouse props that turn an existing card into an opener without changing its look. */
+const opener = (open: () => void) => ({
+  role: "button" as const,
+  tabIndex: 0,
+  onClick: open,
+  onKeyDown: (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open() }
+  },
+})
+
+type Panel = { kind: "section"; title: string } | { kind: "portfolio" } | { kind: "documents" } | { kind: "fund"; row: ReviewRow }
+
 export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
   const form = policy.form || {}
   const portfolio = readSubmittedPortfolio(form)
+  const [panel, setPanel] = useState<Panel | null>(null)
 
 
   const beneficiaries: Record<string, string>[] = (() => {
@@ -63,10 +96,11 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {SECTIONS.map((section) => (
-        <div key={section.title} className={card}>
-          <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white mb-5">
-            {section.title}
-          </h3>
+        <div key={section.title} className={`${card} ${clickable}`} {...opener(() => setPanel({ kind: "section", title: section.title }))}>
+          <div className="flex items-center justify-between gap-4 mb-5">
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">{section.title}</h3>
+            <ViewHint />
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
             {section.fields.map((field) => (
               <div key={field.key} className="py-2.5 border-b border-slate-100 dark:border-slate-700/60">
@@ -136,25 +170,50 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
       </div>
 
       {/* Submitted portfolio: never resolve historical funds through the live catalogue. */}
-      <div className={`lg:col-span-2 ${card}`} data-client-portfolio>
+      <div className={`lg:col-span-2 ${card} ${clickable}`} data-client-portfolio {...opener(() => setPanel({ kind: "portfolio" }))}>
         <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
           <h3 className="text-xl font-bold text-foreground">Investment Portfolio</h3>
-          {portfolio?.badge && <Badge variant="secondary">{portfolio.badge}</Badge>}
+          <div className="flex items-center gap-3">
+            {portfolio?.badge && <Badge variant="secondary">{portfolio.badge}</Badge>}
+            <ViewHint />
+          </div>
         </div>
         {portfolio ? <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-          <PolicyReviewContent section={portfolio} />
+          <PolicyReviewContent section={{ ...portfolio, rows: undefined, emptyText: portfolio.rows ? undefined : portfolio.emptyText }} />
+          {portfolio.rows && <div className="space-y-2 sm:col-span-2">
+            {portfolio.rows.map((row, index) => (
+              <button
+                key={index}
+                type="button"
+                data-fund-row
+                onClick={(e) => { e.stopPropagation(); setPanel({ kind: "fund", row }) }}
+                onKeyDown={(e) => e.stopPropagation()}
+                className="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left transition hover:border-[#009fe3]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009fe3]"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block break-words text-sm font-medium">{row.name}</span>
+                  {row.detail && <span className="block break-words text-xs text-muted-foreground">{row.detail}</span>}
+                </span>
+                <span className="flex items-center gap-2 text-sm font-semibold">
+                  {row.value}<ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </span>
+              </button>
+            ))}
+            {portfolio.rows.length === 0 && <p className="text-sm text-muted-foreground">{portfolio.emptyText}</p>}
+          </div>}
         </div> : <p className="text-sm text-muted-foreground">No saved investment portfolio details available.</p>}
       </div>
 
-      <div className={`lg:col-span-2 ${card}`}>
+      <div className={`lg:col-span-2 ${card} ${clickable}`} {...opener(() => setPanel({ kind: "documents" }))}>
         <div className="flex items-center justify-between gap-4 mb-5">
           <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Documents</h3>
+          <div className="flex items-center gap-3"><ViewHint />
           <Badge
             variant="outline"
             className="rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wide whitespace-nowrap border-slate-300 text-slate-500 dark:text-slate-400"
           >
             {POLICY_DOCUMENTS.filter((d) => documents[d.key]).length} of {POLICY_DOCUMENTS.length} on file
-          </Badge>
+          </Badge></div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {POLICY_DOCUMENTS.map((d) => {
@@ -180,6 +239,67 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
           })}
         </div>
       </div>
+
+      <Sheet open={!!panel} onOpenChange={(open) => !open && setPanel(null)}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          {panel?.kind === "section" && (() => {
+            const section = SECTIONS.find((s) => s.title === panel.title)!
+            return <>
+              <SheetHeader><SheetTitle>{section.title}</SheetTitle><SheetDescription>As approved for this policy.</SheetDescription></SheetHeader>
+              <div className="mt-4">{section.fields.map((f) => <Detail key={f.key} label={f.label} value={form[f.key]} />)}</div>
+            </>
+          })()}
+          {panel?.kind === "portfolio" && <>
+            <SheetHeader><SheetTitle>Investment Portfolio</SheetTitle><SheetDescription>Approved allocations as submitted. Select a fund for its details.</SheetDescription></SheetHeader>
+            <div className="mt-4">
+              {portfolio?.fields?.map((f) => <Detail key={f.label} label={f.label} value={f.value} />)}
+              <div className="mt-4 space-y-2">
+                {portfolio?.rows?.map((row, i) => (
+                  <button key={i} type="button" onClick={() => setPanel({ kind: "fund", row })}
+                    className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left hover:border-[#009fe3]/60">
+                    <span className="min-w-0"><span className="block text-sm font-medium">{row.name}</span>
+                      {row.detail && <span className="block text-xs text-muted-foreground">{row.detail}</span>}</span>
+                    <span className="flex items-center gap-2 text-sm font-semibold">{row.value}<ChevronRight className="h-4 w-4" /></span>
+                  </button>
+                ))}
+                {!portfolio && <p className="text-sm text-muted-foreground">No saved investment portfolio details available.</p>}
+              </div>
+            </div>
+          </>}
+          {panel?.kind === "fund" && (() => {
+            const { percent, amount } = splitFundRow(panel.row.value)
+            return <div data-policy-fund-details>
+              <SheetHeader><SheetTitle>{panel.row.name}</SheetTitle><SheetDescription>{panel.row.detail || "Asset manager not recorded"}</SheetDescription></SheetHeader>
+              <div className="mt-4">
+                <Detail label="Fund" value={panel.row.name} />
+                <Detail label="Asset Manager" value={panel.row.detail} />
+                <Detail label="Approved Allocation" value={percent} />
+                <Detail label="Approved Allocation Amount" value={amount} />
+                <Detail label="Funding Status" value={<Badge variant="outline">Not yet recorded</Badge>} />
+                <Detail label="Units Purchased" value="No" />
+              </div>
+              <div className="mt-6 space-y-2">
+                {["Unit Holdings", "Applicable Unit Price", "Portfolio Valuation", "Performance History", "Growth Chart"].map((t) => (
+                  <div key={t} className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border px-4 py-3">
+                    <span className="text-sm font-medium">{t}</span>
+                    <span className="text-xs text-muted-foreground">Available after investment activation</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          })()}
+          {panel?.kind === "documents" && <>
+            <SheetHeader><SheetTitle>Documents</SheetTitle><SheetDescription>Documents submitted with this policy.</SheetDescription></SheetHeader>
+            <div className="mt-4">
+              {POLICY_DOCUMENTS.map((d) => {
+                let name = ""
+                try { name = documents[d.key] ? JSON.parse(documents[d.key]).name || "On file" : "" } catch { name = documents[d.key] ? "On file" : "" }
+                return <Detail key={d.key} label={d.label} value={name || (d.conditional ? "Not required" : "Missing")} />
+              })}
+            </div>
+          </>}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

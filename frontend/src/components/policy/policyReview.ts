@@ -104,3 +104,8 @@ export function readPolicyReview(value?: string): PolicyReviewSnapshot | null {
     return snapshot
   } catch { return null }
 }
+/** Split a submitted fund row value ("30% — BWP 584,250.00") into its saved parts; never recalculates. */
+export function splitFundRow(value?: string): { percent: string; amount: string } {
+  const [percent = "", ...rest] = String(value || "").split(" — ")
+  return { percent: percent.trim(), amount: rest.join(" — ").trim() }
+}
