@@ -1,69 +1,45 @@
-# Fund Details and unit-price history
+# Interactive Client Policy Record + Investment Funding
 
-## What the inspection found
+## What exists today (inspected)
+- Approved policies show in Client Details through a read-only `PolicyRecordView` (Policy Details, Premiums, Investment Portfolio, Documents cards). Portfolio data comes from the submitted snapshot (`readSubmittedPortfolio`), never the live catalogue.
+- Policies endpoints: create/patch/submit/reassign/approve/return, pipeline, `GET /api/clients/:id/policies`. No funding, receipt or unit-holding data exists.
+- Roles: only Super Admin (`superuser`), Admin (`admin`), Advisor (`user`) in both the backend user model and `permissions.ts`. **There is no Finance role yet.**
+- Backend already has multer (memory storage), an audit-log helper and a route-test harness; the fund valuation module shows the pattern for Decimal128 + append-only history.
 
-- The checked-out development branch is `backup-main`; no production deployment is proposed.
-- The current Investment Managers page already calls the existing application API for manager and fund create/edit operations. It is no longer the earlier React-only prototype, despite an outdated “Interface Preview” label and project guidance describing that phase.
-- The backend already stores `AssetManager` and `AssetManagerFund` records in MongoDB. Funds have stable IDs and an asset-manager reference, plus name, code, type, risk and status.
-- There is no unit-price model, valuation history, correction endpoint or fund-details endpoint yet.
-- Administration already allows Super Admins and root-organisation Admins. However, the shared backend organisation guard also allows root-organisation Advisors: the new valuation endpoints need an explicit administrator check as well as the existing organisation check. Existing unrelated permissions will not be changed.
-- The backend has an audit-log helper and a standalone route-handler test harness. The frontend already has suitable dialogs, tables, date controls and a line-chart library.
+## Stage 1 — Clickable sections (UI only, no backend)
+- Keep current card design; make each card (Policy Details, Premiums, Portfolio, Documents) open a full-detail panel (side sheet) with every saved field from the submitted policy.
+- Each fund row in Investment Portfolio opens a **Policy Fund Details** view: fund name, asset manager, approved %, approved BWP amount (exactly as submitted), funding status, "Units purchased: No".
+- Placeholder sections for Unit Holdings, Applicable Unit Price, Valuation, Performance and Growth Chart, labelled "Available after investment activation".
+- Nothing recalculated; values come only from the submitted snapshot.
 
-## Smallest proposed changes
+## Stage 2 — Finance role and permissions
+- Add a `finance` role value (label "Finance") to the user model enum and `permissions.ts`, assignable by Super Admin (and Admin, if you want). New permission `canConfirmFunding`: Finance and Super Admin.
+- Advisors and Admins: read-only on funding. Backend enforces this server-side; the UI only hides buttons.
 
-### 1. Dedicated Fund Details view
+## Stage 3 — Investment Funding backend
+- New module `backend/policyFunding.cjs` (registered like fund valuations), collection `PolicyFunding` linked by policy ID:
+  - receipts: amount (Decimal128, 2 dp), receipt date (calendar date, separate from entry time), bank reference, evidence file, notes, recordedBy + timestamp, status Recorded → Confirmed.
+  - confirmation by a different user from the recorder (four-eyes); corrections need a reason and keep append-only history.
+  - Unique bank reference per policy to prevent duplicates.
+- Endpoints: `GET /api/policies/:id/funding`, `POST .../funding/receipts` (multipart evidence), `PATCH .../receipts/:receiptId/confirm`, `PATCH .../receipts/:receiptId` (correction), `GET .../evidence`.
+- Only approved policies accept receipts. Every action written to the audit log.
+- Funding status derived for display: Awaiting funds / Partially funded / Funded (confirmed total vs. approved net investment) — display only, does not touch the policy.
+- Confirmation never purchases units, activates investments or edits the policy/allocations.
 
-Open a Fund Details view from an existing fund card within Administration → Investment Managers, with a back action to that manager’s fund list. Keep existing manager/fund create and edit forms.
+## Stage 4 — Investment Funding section in the UI
+- New card directly below Investment Portfolio: status badge, expected vs. confirmed amount, receipts table, evidence links, audit trail.
+- Finance/Super Admin see Record Receipt and Confirm buttons; Advisors see read-only.
+- Fund Details view reads the funding status from here.
 
-Display:
-- Fund name, code, Asset Manager, type, risk and status.
-- Latest recorded unit price in BWP and its valuation date, chosen by valuation date rather than recording time.
-- Historical valuations in a date-ordered table and line chart.
-- Record Unit Price and Correct Valuation dialogs for authorised administrators.
-- Audit history with recorder/corrector identity, timestamp, previous and replacement values, correction reason and optional source/notes.
+## Stage 5 — Tests and verification
+- Backend tests: role guards (advisor/admin blocked), approved-only, duplicate reference, self-confirm blocked, correction requires reason, no policy/allocation mutation.
+- Browser check with sample data for each role; build passes.
+- Still needs your development MongoDB: evidence storage size limits and live authenticated readback.
 
-Use the current application styling and authenticated session. Include loading, empty, save-in-progress, duplicate-date and error states. Do not fabricate initial prices.
+## Out of scope
+Unit purchases, investment activation, valuation of holdings, changes to approvals, calculations, net investment or allocations. No commit/push/deploy without approval; backup-main only.
 
-### 2. Prices linked to existing funds
-
-Add a small valuation collection linked to the existing fund ID—not a second fund catalogue. Each fund/date pair has one valuation record, with an append-only revision history.
-
-- Store valuation dates as calendar dates to avoid timezone shifts.
-- Store BWP unit prices with decimal-safe precision rather than rounding them to currency-display cents.
-- Enforce one record per fund and valuation date with a compound unique database index; reject duplicates, including simultaneous submissions.
-- A correction changes the price/source/notes on that valuation only after a non-empty reason is provided; its date and fund identity remain fixed.
-- Preserve the original value and every correction in the same record’s revision history, including server-derived actor identity and timestamps.
-- Use an atomic version-checked correction so simultaneous edits cannot erase another administrator’s correction.
-- Never delete valuation history or cascade-delete it when profiles are removed; retain historical identifiers and recorded fund/manager identity.
-
-### 3. Extend the existing API, not the workflow
-
-Add only fund-scoped read, record and correction operations, reusing the existing authentication and organisation checks plus the explicit administrator restriction. Verify the requested fund belongs to the requested manager.
-
-Write price and its revision history together; optionally also mirror the event to the existing general audit log. The per-valuation history is authoritative even if the general audit logger fails.
-
-Keep unit-price data out of policy conversion and approval payloads. Recording or correcting a price must not purchase units, change allocations, activate a policy or recalculate submitted figures.
-
-## Technical changes
-
-- Add focused administration Fund Details and valuation dialog components, and a small valuation request hook/model.
-- Add a “View Details” action to the existing fund cards; avoid a broader administration redesign.
-- Add a valuation schema and narrowly scoped handlers alongside the existing asset-manager/fund API. Preserve all current fund IDs and records.
-- Add the unique fund/date index before allowing valuation writes; no backfill or alteration of existing policy records.
-- Reuse the existing chart dependency and design tokens; no new chart library or authentication service.
-- Update the outdated prototype-only project guidance for this explicitly requested persistent administration extension, while keeping it isolated from policy calculations.
-
-## Verification
-
-- Test that two funds with matching names remain independent.
-- Test duplicate fund/date rejection, valid calendar dates, positive finite decimal prices and required correction reasons.
-- Test unauthorised roles, external-organisation access and mismatched fund/manager IDs.
-- Test preservation of original valuations and every revision, server-generated actor/timestamps, concurrent correction protection and latest-by-valuation-date behaviour.
-- Browser-check opening an existing fund, recording a price, retrieving it again, viewing history/chart, correcting it with a reason and reading the audit trail on desktop/mobile.
-- Run applicable frontend and backend tests and check preview build results; confirm no policy calculation or approval changes.
-
-## Boundaries and verification limitation
-
-This proposal does not modify production, migrate to a different storage service, change existing policy records or broaden administrator access. No application implementation has been written yet.
-
-Live authenticated API/database access has not been verified in this workspace. Mocked route tests can verify handler behaviour, but persistent end-to-end recording and the database unique index must also be checked against the development backend before claiming the feature fully verified.
+## Decisions to confirm
+1. Add a new Finance role (proposed) vs. reuse Admin.
+2. Evidence storage: in MongoDB (simple, 5 MB limit per file proposed) vs. existing file storage if you have one.
+3. Require a second person to confirm a receipt (proposed) or allow the recorder to confirm.
