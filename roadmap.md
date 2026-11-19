@@ -1,5 +1,13 @@
 # Policy approval preview parity
 
+## Fund Details and Unit Price History
+
+- [x] Implement fund-scoped valuation storage with six-decimal precision, unique valuation dates and append-only correction revisions.
+- [x] Add simple Fund Details profile, latest valuation, history/chart and administrator recording/correction actions.
+- [x] Prevent permanent deletion of funds/managers with valuation history or policy relationships; use Active/Inactive.
+- [x] Test permissions, precision, history integrity and sample UI flows; document development MongoDB verification requirements.
+- [ ] Verify live development MongoDB Decimal128 roundtrip, unique index/concurrent writes, persisted correction history and deletion guards. Blocker: no live development database/session access available in this workspace.
+
 - [x] Sweep portfolio selection, draft resume, review entry points, client policy display and policy storage operations; 12 tests and sample browser flows pass. No settled records were written.
 - [x] Restore investment portfolio visibility for saved policies without a complete review snapshot; nine regression checks and sample advisor submission/reviewer readback pass, including absent and empty portfolio snapshots. Live policy readback remains unverified because authenticated API access is unavailable.
 - [x] Share final-review display data between the wizard and approval preview.

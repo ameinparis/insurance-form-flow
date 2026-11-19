@@ -1267,6 +1267,12 @@ app.put("/api/organisations/:id", authenticateToken, requireRootOrgAccess, async
   }
 });
 
+const { registerFundValuations } = require("./fundValuations.cjs");
+const { protectFundDeletion, protectManagerDeletion } = registerFundValuations({
+  app, mongoose, authenticateToken, requireRootOrgAccess, User, AssetManager, AssetManagerFund,
+  getPolicy: () => Policy,
+});
+
 /* -------------------------- Asset Managers -------------------------- */
 
 /**
@@ -1393,7 +1399,7 @@ app.put("/api/asset-managers/:id", authenticateToken, async (req, res) => {
  * DELETE /api/asset-managers/:id
  * Delete an asset manager. Superusers and root-organisation admins only.
  */
-app.delete("/api/asset-managers/:id", authenticateToken, async (req, res) => {
+app.delete("/api/asset-managers/:id", authenticateToken, protectManagerDeletion, async (req, res) => {
   const access = await requireRootOrgAccess(req, res);
   if (!access) return;
 
@@ -1564,7 +1570,7 @@ app.put("/api/asset-managers/:managerId/funds/:fundId", authenticateToken, async
  * DELETE /api/asset-managers/:managerId/funds/:fundId
  * Delete a fund.
  */
-app.delete("/api/asset-managers/:managerId/funds/:fundId", authenticateToken, async (req, res) => {
+app.delete("/api/asset-managers/:managerId/funds/:fundId", authenticateToken, protectFundDeletion, async (req, res) => {
   const access = await requireRootOrgAccess(req, res);
   if (!access) return;
 

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { AssetManagerForm, FundForm } from "./AssetManagerForms"
 import { useInvestmentManagers } from "@/hooks/useInvestmentManagers"
+import { FundDetails } from "./FundDetails"
 import { type AssetManager, type Fund, type RiskLevel, type Status, saveFund } from "./assetManagerModel"
 
 const riskClasses: Record<RiskLevel, string> = {
@@ -24,6 +25,7 @@ function RiskBadge({ risk }: { risk: RiskLevel }) {
 export const InvestmentManagers = () => {
   const { managers, loading, createManager, updateManager, removeManager, createFund, updateFund, fetchFunds } = useInvestmentManagers()
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedFundId, setSelectedFundId] = useState<string | null>(null)
   const [managerDialog, setManagerDialog] = useState<{ manager?: AssetManager } | null>(null)
   const [fundDialog, setFundDialog] = useState<{ fund?: Fund } | null>(null)
   const [query, setQuery] = useState("")
@@ -70,7 +72,7 @@ export const InvestmentManagers = () => {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this asset manager and all its funds?")) return
+    if (!confirm("Delete this asset manager? Managers with valuation history or policy relationships must be made Inactive instead.")) return
     try {
       await removeManager(id)
       if (selectedId === id) setSelectedId(null)
@@ -81,9 +83,10 @@ export const InvestmentManagers = () => {
   }
 
   const handleFundSave = async (fund: Fund) => {
+    if (!selectedId) return
     try {
       if (fund.id) {
-        await updateFund(selectedId!, fund.id, {
+        await updateFund(selectedId, fund.id, {
           name: fund.name,
           type: fund.type,
           code: fund.code,
@@ -93,7 +96,7 @@ export const InvestmentManagers = () => {
         })
         toast.success("Fund updated")
       } else {
-        await createFund(selectedId!, {
+        await createFund(selectedId, {
           name: fund.name,
           type: fund.type,
           code: fund.code,
@@ -126,12 +129,10 @@ export const InvestmentManagers = () => {
     )
   }
 
+  if (selectedId && selectedFundId) return <FundDetails managerId={selectedId} fundId={selectedFundId} onBack={() => setSelectedFundId(null)} />
+
   return (
     <div className="min-w-0 space-y-6 pt-6">
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span className="rounded-md border border-border bg-muted/40 px-2 py-1 font-medium">Interface Preview</span>
-        <span>Changes are saved to the server.</span>
-      </div>
 
       {selected ? <>
         <Button variant="ghost" size="sm" onClick={() => { setSelectedId(null); setFundDialog(null) }} className="-ml-3 text-muted-foreground"><ArrowLeft />Asset Managers</Button>
@@ -152,6 +153,7 @@ export const InvestmentManagers = () => {
             <div className="mt-4 flex flex-wrap gap-2"><RiskBadge risk={fund.risk} /><StatusBadge status={fund.status} /></div>
             {fund.description && <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{fund.description}</p>}
             {fund.code && <p className="mt-4 break-words border-t border-border pt-3 text-xs text-muted-foreground">Fund Code <span className="ml-2 font-medium text-foreground">{fund.code}</span></p>}
+            <Button variant="ghost" size="sm" className="mt-4" aria-label={`View ${fund.name} details`} onClick={() => setSelectedFundId(fund.id)}>View Details<ArrowUpRight /></Button>
           </article>)}</div>}
       </> : <>
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="text-2xl font-semibold tracking-normal">Asset Managers</h3><p className="mt-1 text-sm text-muted-foreground">{managers.length} {managers.length === 1 ? "manager" : "managers"} · {managers.reduce((sum, manager) => sum + manager.funds.length, 0)} funds</p></div><Button className={`${primaryAction} self-start`} onClick={() => setManagerDialog({})}><Plus />Add Asset Manager</Button></header>
