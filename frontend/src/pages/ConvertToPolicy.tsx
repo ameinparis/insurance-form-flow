@@ -27,7 +27,7 @@ import { useSocket } from "@/hooks/useSocket"
 import { AssignApproverDialog } from "@/components/policy/AssignApproverDialog"
 import type { Fund } from "@/components/admin/assetManagerModel"
 import { PolicyReviewContent } from "@/components/policy/PolicyReviewContent"
-import { type PolicyReviewSnapshot } from "@/components/policy/policyReview"
+import { buildPortfolioReview, type PolicyReviewSnapshot } from "@/components/policy/policyReview"
 
 const STEPS: string[] = [
   "Policyholder Details",
@@ -317,6 +317,7 @@ const ConvertToPolicy = () => {
       netInvestment: netInvestment.toFixed(2),
       selectedFunds: JSON.stringify(selectedFunds),
       reviewSnapshot: JSON.stringify(buildReviewSnapshot()),
+      portfolioReviewSnapshot: JSON.stringify({ version: 1, sections: [buildPortfolioSnapshot()] }),
     },
     productType: prefill.productType,
     optionLabel: prefill.optionLabel,
@@ -517,6 +518,10 @@ const ConvertToPolicy = () => {
 
   // Capture only the existing Review display, using its already-calculated values.
   // Store inside the existing Mixed form so the current save/submit workflow carries it unchanged.
+  const buildPortfolioSnapshot = () => buildPortfolioReview({
+    funds: selectedFunds, allocations, netInvestment,
+    riskProfile: form.riskProfile, notes: form.portfolioNotes, skipped: form.portfolioSkipped === "yes",
+  })
   const buildReviewSnapshot = (): PolicyReviewSnapshot => ({
     version: 1,
     sections: [
@@ -556,15 +561,7 @@ const ConvertToPolicy = () => {
         rows: beneficiaries.map((b: Record<string, string>) => ({ name: b.name || "—", detail: [b.relationship, b.benefitOption].filter(Boolean).join(" • ") || "—", value: `${Number(String(b.allocation ?? "0").replace(/[^0-9.]/g, "")) || 0}%` })), emptyText: "None added" },
       { title: "Documents", badge: `${POLICY_DOCUMENTS.filter((d) => documents[d.key]).length} of ${POLICY_DOCUMENTS.length} uploaded`, badgeTone: "success",
         documents: POLICY_DOCUMENTS.map((d) => ({ key: d.key, label: d.label, name: parseDoc(documents[d.key])?.name || "Optional", uploaded: !!documents[d.key] })) },
-      { title: "Investment Portfolio Setup", badge: form.portfolioSkipped === "yes" ? "Skipped" : `Total: ${allocationTotal}%`,
-        badgeTone: form.portfolioSkipped === "yes" ? "muted" : allocationTotal === 100 ? "success" : "warning",
-        ...(form.portfolioSkipped === "yes" ? { emptyText: "This step was skipped and can be completed later." } : {
-          fields: [{ label: "Risk Profile", value: form.riskProfile }, { label: "Notes", value: form.portfolioNotes }],
-          rows: selectedFunds.map((fund) => ({ name: fund.name, detail: fund.assetManagerName,
-            value: `${Number(allocations[fund.id] ?? 0)}% — ${formatCurrency(netInvestment * Number(allocations[fund.id] ?? 0) / 100)}` })),
-          emptyText: "No fund allocations captured",
-        }),
-      },
+      buildPortfolioSnapshot(),
     ],
   })
 

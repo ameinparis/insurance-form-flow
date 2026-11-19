@@ -1,5 +1,6 @@
 # Policy approval preview parity
 
+- [x] Restore investment portfolio visibility for saved policies without a complete review snapshot; nine regression checks and sample advisor submission/reviewer readback pass, including absent and empty portfolio snapshots. Live policy readback remains unverified because authenticated API access is unavailable.
 - [x] Share final-review display data between the wizard and approval preview.
 - [x] Preserve submitted figures, selected funds and document details in the existing saved form.
 - [x] Check all nine steps and submission/readback parity with sample API responses; frontend and regression tests pass. Hosted authenticated readback remains unverified because no managed session is available.

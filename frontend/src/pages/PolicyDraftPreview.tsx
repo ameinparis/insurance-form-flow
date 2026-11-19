@@ -40,7 +40,7 @@ import { useSocket } from "@/hooks/useSocket"
 import { formatDate } from "@/lib/quoteUtils"
 
 import { PolicyReviewContent } from "@/components/policy/PolicyReviewContent"
-import { readPolicyReview } from "@/components/policy/policyReview"
+import { readApprovalReview, readSavedPortfolio } from "@/components/policy/policyReview"
 
 type Field = { key: string; label: string }
 
@@ -201,7 +201,8 @@ const PolicyDraftPreview = () => {
     }
   })()
 
-  const submittedReview = readPolicyReview(form.reviewSnapshot)
+  const submittedReview = readApprovalReview(form)
+  const legacyPortfolio = submittedReview ? null : readSavedPortfolio(form)
 
   const continueEditing = () =>
     navigate("/policies/convert", {
@@ -537,6 +538,15 @@ const PolicyDraftPreview = () => {
           </div>
         </div>
 
+        {legacyPortfolio && <section className="lg:col-span-2 rounded-2xl border border-border bg-muted/30 p-5 md:p-6" data-policy-portfolio>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold">{legacyPortfolio.title}</h3>
+            <Badge variant="secondary">{legacyPortfolio.badge}</Badge>
+          </div>
+          <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
+            <PolicyReviewContent section={legacyPortfolio} />
+          </div>
+        </section>}
         </>}
 
         {(draft.reviewHistory?.length || 0) > 0 && (
