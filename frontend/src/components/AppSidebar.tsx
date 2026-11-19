@@ -28,9 +28,9 @@ const quotationItems = [
 
 const menuItems = [
   { title: "Team", url: "/team", icon: Users, permission: "canManageUsers" as const },
-  { title: "Conversions", url: "/conversions", icon: BadgeCheck, permission: "canManageUsers" as const },
-  { title: "Clients", url: "/clients", icon: Users, permission: "canManageUsers" as const },
-  { title: "Claims", url: "/claims", icon: ClipboardList, permission: "canManageUsers" as const },
+  { title: "Conversions", url: "/conversions", icon: BadgeCheck, permission: null },
+  { title: "Clients", url: "/clients", icon: Users, permission: null },
+  { title: "Claims", url: "/claims", icon: ClipboardList, permission: null },
 ]
 
 const superAdminItems = [
@@ -53,12 +53,18 @@ export function AppSidebar() {
   const { pathname } = useLocation()
   const permissions = usePermissions()
   const { role, organisation } = useAuth()
-  const visibleMenuItems = menuItems.filter(
-    (item) => !item.permission || permissions[item.permission],
-  )
 
-  // Organisations is restricted to super admins and admins of the Root Organisation.
+  // Organisation-scoped items: visible to Super Admins (any organisation) and
+  // Root Organisation admins
   const isSuperAdmin = role === "super_admin"
+  const isRootOrgUser = organisation?.isRootOrganisation === true
+
+  const visibleMenuItems = menuItems.filter((item) => {
+    if (item.title === "Conversions" || item.title === "Clients" || item.title === "Claims") {
+      return isSuperAdmin || isRootOrgUser
+    }
+    return !item.permission || permissions[item.permission]
+  })
   const isRootAdmin = role === "admin" && organisation?.isRootOrganisation === true
   const canViewOrganisations = isSuperAdmin || isRootAdmin
 

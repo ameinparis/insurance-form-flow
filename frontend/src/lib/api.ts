@@ -3,6 +3,9 @@ export const API_ORIGIN =
 
 export const API_BASE_URL = `${API_ORIGIN}/api`
 
+// Staging backend URL — used for Living Annuities calculator endpoints only
+export const STAGING_API_BASE_URL = "https://exclusivelife-staging-138e70a865bc.herokuapp.com"
+
 const BASE_URL = API_BASE_URL
 
 export interface Quote {

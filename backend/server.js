@@ -186,6 +186,81 @@ const Organisation = mongoose.model(
   organisationSchema
 );
 
+// Asset Manager schema
+const assetManagerSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  description: {
+    type: String,
+    default: "",
+    trim: true
+  },
+  status: {
+    type: String,
+    enum: ["Active", "Inactive"],
+    default: "Active"
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }
+}, { timestamps: true });
+
+// Unique index on name (case-insensitive)
+assetManagerSchema.index({ name: 1 }, { unique: true, collation: { locale: "en", strength: 2 } });
+
+const AssetManager = mongoose.model("AssetManager", assetManagerSchema);
+
+// Asset Manager Fund schema
+const assetManagerFundSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  type: {
+    type: String,
+    required: true,
+    enum: ["Money Market", "Prudential", "Balanced", "Equity", "Fixed Income / Bond", "Other"]
+  },
+  code: {
+    type: String,
+    default: "",
+    trim: true
+  },
+  risk: {
+    type: String,
+    required: true,
+    enum: ["Low", "Low–Moderate", "Moderate", "Moderate–High", "High"],
+    default: "Low"
+  },
+  description: {
+    type: String,
+    default: "",
+    trim: true
+  },
+  status: {
+    type: String,
+    enum: ["Active", "Inactive"],
+    default: "Active"
+  },
+  assetManagerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "AssetManager",
+    required: true,
+    index: true
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }
+}, { timestamps: true });
+
+const AssetManagerFund = mongoose.model("AssetManagerFund", assetManagerFundSchema);
+
 // Users Schema
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
@@ -1119,7 +1194,7 @@ app.post("/api/organisations", authenticateToken, async (req, res) => {
  * Update an existing organisation. Superusers update any; root-org admins
  * update external (non-root) organisations only.
  */
-app.put("/api/organisations/:id", authenticateToken, async (req, res) => {
+app.put("/api/organisations/:id", authenticateToken, requireRootOrgAccess, async (req, res) => {
   try {
     const requesterRole = String(req.user?.role || "").toLowerCase();
     if (requesterRole !== "superuser" && requesterRole !== "admin") {
@@ -1189,6 +1264,334 @@ app.put("/api/organisations/:id", authenticateToken, async (req, res) => {
       return res.status(400).json({ message: "An organisation with this code already exists" });
     }
     res.status(500).json({ message: "Failed to update organisation" });
+  }
+});
+
+/* -------------------------- Asset Managers -------------------------- */
+
+/**
+ * GET /api/asset-managers
+ * List all asset managers. Superusers and root-organisation admins only.
+ */
+app.get("/api/asset-managers", authenticateToken, async (req, res) => {
+  const access = await requireRootOrgAccess(req, res);
+  if (!access) return;
+
+  try {
+    const managers = await AssetManager.find().sort({ createdAt: -1 }).lean();
+    res.json(managers);
+  } catch (e) {
+    console.error("List asset managers error:", e);
+    res.status(500).json({ message: "Failed to fetch asset managers" });
+  }
+});
+
+/**
+ * POST /api/asset-managers
+ * Create a new asset manager. Superusers and root-organisation admins only.
+ */
+app.post("/api/asset-managers", authenticateToken, async (req, res) => {
+  const access = await requireRootOrgAccess(req, res);
+  if (!access) return;
+
+  try {
+    const { name, description, status } = req.body || {};
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: "Asset manager name is required" });
+    }
+
+    // Check for duplicate name (case-insensitive)
+    const existing = await AssetManager.findOne({
+      name: new RegExp(`^${name.trim()}$`, "i")
+    });
+    if (existing) {
+      return res.status(400).json({ message: "An asset manager with this name already exists" });
+    }
+
+    const manager = await AssetManager.create({
+      name: name.trim(),
+      description: (description || "").trim(),
+      status: status || "Active",
+      createdBy: req.user.userId,
+    });
+
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "ASSET_MANAGER_CREATED",
+      details: `Asset manager ${manager.name} created`,
+      metadata: { managerId: manager._id, managerName: manager.name },
+      req,
+    });
+
+    res.status(201).json(manager);
+  } catch (e) {
+    console.error("Create asset manager error:", e);
+    if (e.code === 11000) {
+      return res.status(400).json({ message: "An asset manager with this name already exists" });
+    }
+    res.status(500).json({ message: "Failed to create asset manager" });
+  }
+});
+
+/**
+ * Validate MongoDB ObjectId from route param.
+ * Returns true if valid, false if invalid (and sends 400 response).
+ */
+const validateObjectId = (req, res, paramName = "id") => {
+  if (!mongoose.Types.ObjectId.isValid(req.params[paramName])) {
+    res.status(400).json({ message: "Invalid ID format" });
+    return false;
+  }
+  return true;
+};
+
+/**
+ * PUT /api/asset-managers/:id
+ * Update an existing asset manager. Superusers and root-organisation admins only.
+ */
+app.put("/api/asset-managers/:id", authenticateToken, async (req, res) => {
+  const access = await requireRootOrgAccess(req, res);
+  if (!access) return;
+
+  if (!validateObjectId(req, res)) return;
+
+  try {
+    const { name, description, status } = req.body || {};
+
+    const manager = await AssetManager.findById(req.params.id);
+    if (!manager) return res.status(404).json({ message: "Asset manager not found" });
+
+    if (name !== undefined) {
+      const trimmed = name.trim();
+      if (!trimmed) return res.status(400).json({ message: "name cannot be empty" });
+      const existing = await AssetManager.findOne({
+        _id: { $ne: req.params.id },
+        name: new RegExp(`^${trimmed}$`, "i")
+      });
+      if (existing) return res.status(400).json({ message: "An asset manager with this name already exists" });
+      manager.name = trimmed;
+    }
+
+    if (description !== undefined) manager.description = description.trim();
+    if (status !== undefined) manager.status = status;
+
+    const updated = await manager.save();
+    res.json(updated);
+  } catch (e) {
+    console.error("Update asset manager error:", e);
+    if (e.code === 11000) {
+      return res.status(400).json({ message: "An asset manager with this name already exists" });
+    }
+    res.status(500).json({ message: "Failed to update asset manager" });
+  }
+});
+
+/**
+ * DELETE /api/asset-managers/:id
+ * Delete an asset manager. Superusers and root-organisation admins only.
+ */
+app.delete("/api/asset-managers/:id", authenticateToken, async (req, res) => {
+  const access = await requireRootOrgAccess(req, res);
+  if (!access) return;
+
+  if (!validateObjectId(req, res)) return;
+
+  try {
+    const manager = await AssetManager.findByIdAndDelete(req.params.id);
+    if (!manager) return res.status(404).json({ message: "Asset manager not found" });
+
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "ASSET_MANAGER_DELETED",
+      details: `Asset manager ${manager.name} deleted`,
+      metadata: { managerId: manager._id, managerName: manager.name },
+      req,
+    });
+
+    res.json({ message: "Asset manager deleted" });
+  } catch (e) {
+    console.error("Delete asset manager error:", e);
+    res.status(500).json({ message: "Failed to delete asset manager" });
+  }
+});
+
+/* -------------------------- Asset Manager Funds -------------------------- */
+
+/**
+ * GET /api/asset-managers/:managerId/funds
+ * List all funds for a specific asset manager.
+ */
+app.get("/api/asset-managers/:managerId/funds", authenticateToken, async (req, res) => {
+  const access = await requireRootOrgAccess(req, res);
+  if (!access) return;
+
+  if (!validateObjectId(req, res, "managerId")) return;
+
+  try {
+    const funds = await AssetManagerFund.find({ assetManagerId: req.params.managerId }).sort({ createdAt: -1 }).lean();
+    res.json(funds);
+  } catch (e) {
+    console.error("List funds error:", e);
+    res.status(500).json({ message: "Failed to fetch funds" });
+  }
+});
+
+/**
+ * GET /api/asset-managers/funds
+ * List all funds with their asset manager names.
+ * Requires superuser or root-organisation admin.
+ */
+app.get("/api/asset-managers/funds", authenticateToken, async (req, res) => {
+  const access = await requireRootOrgAccess(req, res);
+  if (!access) return;
+
+  try {
+    const funds = await AssetManagerFund.find()
+      .populate("assetManagerId", "name")
+      .sort({ createdAt: -1 })
+      .lean();
+    res.json(funds);
+  } catch (e) {
+    console.error("List all funds error:", e);
+    res.status(500).json({ message: "Failed to fetch funds" });
+  }
+});
+
+/**
+ * POST /api/asset-managers/:managerId/funds
+ * Create a new fund under an asset manager.
+ */
+app.post("/api/asset-managers/:managerId/funds", authenticateToken, async (req, res) => {
+  const access = await requireRootOrgAccess(req, res);
+  if (!access) return;
+
+  if (!validateObjectId(req, res, "managerId")) return;
+
+  try {
+    const { name, type, code, risk, description, status } = req.body || {};
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: "Fund name is required" });
+    }
+
+    // Verify the asset manager exists
+    const manager = await AssetManager.findById(req.params.managerId);
+    if (!manager) return res.status(404).json({ message: "Asset manager not found" });
+
+    // Check for duplicate fund name (case-insensitive, trimmed) under this manager
+    const trimmedName = name.trim();
+    const existingFund = await AssetManagerFund.findOne({
+      assetManagerId: req.params.managerId,
+      name: { $regex: new RegExp(`^${trimmedName}$`, "i") }
+    });
+    if (existingFund) {
+      return res.status(400).json({ message: "A fund with this name already exists" });
+    }
+
+    const fund = await AssetManagerFund.create({
+      name: name.trim(),
+      type: type || "Money Market",
+      code: (code || "").trim(),
+      risk: risk || "Low",
+      description: (description || "").trim(),
+      status: status || "Active",
+      assetManagerId: req.params.managerId,
+      createdBy: req.user.userId,
+    });
+
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "FUND_CREATED",
+      details: `Fund ${fund.name} created under asset manager ${manager.name}`,
+      metadata: { fundId: fund._id, fundName: fund.name, assetManagerId: req.params.managerId },
+      req,
+    });
+
+    res.status(201).json(fund);
+  } catch (e) {
+    console.error("Create fund error:", e);
+    res.status(500).json({ message: "Failed to create fund" });
+  }
+});
+
+/**
+ * PUT /api/asset-managers/:managerId/funds/:fundId
+ * Update an existing fund.
+ */
+app.put("/api/asset-managers/:managerId/funds/:fundId", authenticateToken, async (req, res) => {
+  const access = await requireRootOrgAccess(req, res);
+  if (!access) return;
+
+  if (!validateObjectId(req, res, "managerId")) return;
+  if (!validateObjectId({ params: { id: req.params.fundId } }, res, "id")) return;
+
+  try {
+    const { name, type, code, risk, description, status } = req.body || {};
+
+    const fund = await AssetManagerFund.findOne({
+      _id: req.params.fundId,
+      assetManagerId: req.params.managerId
+    });
+    if (!fund) return res.status(404).json({ message: "Fund not found" });
+
+    if (name !== undefined) {
+      const trimmed = name.trim();
+      if (!trimmed) return res.status(400).json({ message: "name cannot be empty" });
+      fund.name = trimmed;
+    }
+    if (type !== undefined) fund.type = type;
+    if (code !== undefined) fund.code = code.trim();
+    if (risk !== undefined) fund.risk = risk;
+    if (description !== undefined) fund.description = description.trim();
+    if (status !== undefined) fund.status = status;
+
+    const updated = await fund.save();
+    res.json(updated);
+  } catch (e) {
+    console.error("Update fund error:", e);
+    res.status(500).json({ message: "Failed to update fund" });
+  }
+});
+
+/**
+ * DELETE /api/asset-managers/:managerId/funds/:fundId
+ * Delete a fund.
+ */
+app.delete("/api/asset-managers/:managerId/funds/:fundId", authenticateToken, async (req, res) => {
+  const access = await requireRootOrgAccess(req, res);
+  if (!access) return;
+
+  if (!validateObjectId(req, res, "managerId")) return;
+  if (!validateObjectId({ params: { id: req.params.fundId } }, res, "id")) return;
+
+  try {
+    const fund = await AssetManagerFund.findOneAndDelete({
+      _id: req.params.fundId,
+      assetManagerId: req.params.managerId
+    });
+    if (!fund) return res.status(404).json({ message: "Fund not found" });
+
+    await logAudit({
+      userId: req.user.userId,
+      userEmail: req.user.email,
+      userName: req.user.name,
+      action: "FUND_DELETED",
+      details: `Fund ${fund.name} deleted`,
+      metadata: { fundId: fund._id, fundName: fund.name, assetManagerId: req.params.managerId },
+      req,
+    });
+
+    res.json({ message: "Fund deleted" });
+  } catch (e) {
+    console.error("Delete fund error:", e);
+    res.status(500).json({ message: "Failed to delete fund" });
   }
 });
 

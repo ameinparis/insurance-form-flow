@@ -1,10 +1,11 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ArrowLeft, ArrowUpRight, Building2, Check, Circle, Layers3, Pencil, Plus, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { AssetManagerForm, FundForm } from "./AssetManagerForms"
-import { saveFund, type AssetManager, type Fund, type RiskLevel, type Status } from "./assetManagerModel"
+import { useInvestmentManagers } from "@/hooks/useInvestmentManagers"
+import { type AssetManager, type Fund, type RiskLevel, type Status, saveFund } from "./assetManagerModel"
 
 const riskClasses: Record<RiskLevel, string> = {
   "Low": "investment-risk-low", "Low–Moderate": "investment-risk-low-moderate", "Moderate": "investment-risk-moderate", "Moderate–High": "investment-risk-moderate-high", "High": "investment-risk-high",
@@ -21,28 +22,115 @@ function RiskBadge({ risk }: { risk: RiskLevel }) {
 }
 
 export const InvestmentManagers = () => {
-  const [managers, setManagers] = useState<AssetManager[]>([])
+  const { managers, loading, createManager, updateManager, removeManager, createFund, updateFund, fetchFunds } = useInvestmentManagers()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [managerDialog, setManagerDialog] = useState<{ manager?: AssetManager } | null>(null)
   const [fundDialog, setFundDialog] = useState<{ fund?: Fund } | null>(null)
   const [query, setQuery] = useState("")
+  const [fundsByManagerId, setFundsByManagerId] = useState<Record<string, Fund[]>>({})
   const selected = managers.find((manager) => manager.id === selectedId)
   const filtered = managers.filter((manager) => manager.name.toLowerCase().includes(query.trim().toLowerCase()))
   const primaryAction = "bg-primary text-primary-foreground hover:bg-primary/90"
 
-  const handleManagerSave = (manager: AssetManager) => {
-    setManagers((previous) => previous.some((item) => item.id === manager.id)
-      ? previous.map((item) => item.id === manager.id ? manager : item)
-      : [...previous, manager])
-    setManagerDialog(null)
-    toast.success("Asset manager updated for this session")
+  useEffect(() => {
+    if (selectedId) {
+      fetchFunds(selectedId).then(funds => {
+        setFundsByManagerId(prev => ({ ...prev, [selectedId]: funds }))
+      })
+    } else {
+      setFundsByManagerId({})
+    }
+  }, [selectedId, fetchFunds])
+
+  const selectedWithFunds = selected && fundsByManagerId[selected.id]
+    ? { ...selected, funds: fundsByManagerId[selected.id] }
+    : selected
+
+  const handleManagerSave = async (manager: AssetManager) => {
+    try {
+      if (manager.id) {
+        await updateManager(manager.id, {
+          name: manager.name,
+          description: manager.description,
+          status: manager.status,
+        })
+        toast.success("Asset manager updated")
+      } else {
+        await createManager({
+          name: manager.name,
+          description: manager.description,
+          status: manager.status,
+        })
+        toast.success("Asset manager created")
+      }
+      setManagerDialog(null)
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save asset manager")
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this asset manager and all its funds?")) return
+    try {
+      await removeManager(id)
+      if (selectedId === id) setSelectedId(null)
+      toast.success("Asset manager deleted")
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete asset manager")
+    }
+  }
+
+  const handleFundSave = async (fund: Fund) => {
+    try {
+      if (fund.id) {
+        await updateFund(selectedId!, fund.id, {
+          name: fund.name,
+          type: fund.type,
+          code: fund.code,
+          risk: fund.risk,
+          description: fund.description,
+          status: fund.status,
+        })
+        toast.success("Fund updated")
+      } else {
+        await createFund(selectedId!, {
+          name: fund.name,
+          type: fund.type,
+          code: fund.code,
+          risk: fund.risk,
+          description: fund.description,
+          status: fund.status,
+        })
+        toast.success("Fund created")
+      }
+      setFundDialog(null)
+      // Refresh funds for the selected manager
+      if (selectedId) {
+        fetchFunds(selectedId).then(funds => {
+          setFundsByManagerId(prev => ({ ...prev, [selectedId]: funds }))
+        })
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save fund")
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-w-0 space-y-6 pt-6">
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+          <p className="text-sm text-muted-foreground">Loading asset managers…</p>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="min-w-0 space-y-6 pt-6">
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <span className="rounded-md border border-border bg-muted/40 px-2 py-1 font-medium">Interface Preview</span>
-        <span>Changes are temporary and reset when you leave this tab.</span>
+        <span>Changes are saved to the server.</span>
       </div>
 
       {selected ? <>
@@ -50,13 +138,16 @@ export const InvestmentManagers = () => {
         <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-primary"><Building2 className="h-6 w-6" /></div>
-            <div className="min-w-0 space-y-2"><h3 className="break-words text-2xl font-semibold tracking-normal">{selected.name}</h3><div className="flex flex-wrap items-center gap-3"><StatusBadge status={selected.status} /><span className="text-sm text-muted-foreground">{selected.funds.length} {selected.funds.length === 1 ? "fund" : "funds"}</span></div>{selected.description && <p className="max-w-2xl whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{selected.description}</p>}</div>
+            <div className="min-w-0 space-y-2"><h3 className="break-words text-2xl font-semibold tracking-normal">{selectedWithFunds?.name}</h3><div className="flex flex-wrap items-center gap-3"><StatusBadge status={selectedWithFunds?.status} /><span className="text-sm text-muted-foreground">{selectedWithFunds?.funds.length} {selectedWithFunds?.funds.length === 1 ? "fund" : "funds"}</span></div>{selectedWithFunds?.description && <p className="max-w-2xl whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{selectedWithFunds.description}</p>}</div>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => setManagerDialog({ manager: selected })}><Pencil />Edit Profile</Button>
+          <div className="flex items-end gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setManagerDialog({ manager: selected })}><Pencil />Edit Profile</Button>
+            <Button variant="destructive" size="sm" onClick={() => handleDelete(selected.id)}>Delete</Button>
+          </div>
         </header>
-        <div className="flex items-center justify-between gap-3"><h4 className="text-lg font-semibold tracking-normal">Funds <span className="ml-1 text-sm font-normal text-muted-foreground">({selected.funds.length})</span></h4><Button size="sm" className={primaryAction} onClick={() => setFundDialog({})}><Plus />Add Fund</Button></div>
-        {selected.funds.length === 0 ? <div className="flex flex-col items-center gap-3 border-y border-dashed border-border py-14 text-center"><Layers3 className="h-8 w-8 text-muted-foreground" /><h4 className="text-base font-semibold tracking-normal">No funds yet</h4><Button variant="secondary" size="sm" onClick={() => setFundDialog({})}><Plus />Add Fund</Button></div>
-          : <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">{selected.funds.map((fund) => <article key={fund.id} className="min-w-0 rounded-lg border border-border bg-card p-5">
+        <div className="flex items-center justify-between gap-3"><h4 className="text-lg font-semibold tracking-normal">Funds <span className="ml-1 text-sm font-normal text-muted-foreground">({selectedWithFunds?.funds.length})</span></h4><Button size="sm" className={primaryAction} onClick={() => setFundDialog({})}><Plus />Add Fund</Button></div>
+        {selectedWithFunds?.funds.length === 0 ? <div className="flex flex-col items-center gap-3 border-y border-dashed border-border py-14 text-center"><Layers3 className="h-8 w-8 text-muted-foreground" /><h4 className="text-base font-semibold tracking-normal">No funds yet</h4><Button variant="secondary" size="sm" onClick={() => setFundDialog({})}><Plus />Add Fund</Button></div>
+          : <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">{selectedWithFunds.funds.map((fund) => <article key={fund.id} className="min-w-0 rounded-lg border border-border bg-card p-5">
             <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h5 className="break-words text-base font-semibold tracking-normal">{fund.name}</h5><p className="mt-1 text-sm text-muted-foreground">{fund.type}</p></div><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" title={`Edit ${fund.name}`} aria-label={`Edit ${fund.name}`} onClick={() => setFundDialog({ fund })}><Pencil /></Button></div>
             <div className="mt-4 flex flex-wrap gap-2"><RiskBadge risk={fund.risk} /><StatusBadge status={fund.status} /></div>
             {fund.description && <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{fund.description}</p>}
@@ -75,7 +166,7 @@ export const InvestmentManagers = () => {
           </article>)}</div>}
       </>}
       {managerDialog && <AssetManagerForm manager={managerDialog.manager} onSave={handleManagerSave} onClose={() => setManagerDialog(null)} />}
-      {fundDialog && selected && <FundForm managerName={selected.name} fund={fundDialog.fund} onSave={(fund) => { setManagers((previous) => saveFund(previous, selected.id, fund)); setFundDialog(null); toast.success("Fund updated for this session") }} onClose={() => setFundDialog(null)} />}
+      {fundDialog && selected && <FundForm managerName={selected.name} fund={fundDialog.fund} onSave={handleFundSave} onClose={() => setFundDialog(null)} />}
     </div>
   )
 }

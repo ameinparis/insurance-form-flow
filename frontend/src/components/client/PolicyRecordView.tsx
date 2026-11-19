@@ -2,6 +2,10 @@ import { FileText } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { POLICY_DOCUMENTS } from "@/components/policy/DocumentChecklist"
 import type { ClientPolicy } from "@/hooks/useClients"
+import { useInvestmentManagers } from "@/hooks/useInvestmentManagers"
+import { formatCurrency } from "@/lib/quoteUtils"
+import type { Fund } from "@/components/admin/assetManagerModel"
+import { useState, useEffect } from "react"
 
 /**
  * Read-only presentation of an approved policy inside the Client context.
@@ -21,6 +25,7 @@ const SECTIONS: { title: string; fields: { key: string; label: string }[] }[] = 
     title: "Premiums",
     fields: [
       { key: "investmentAmount", label: "Investment Amount" },
+      { key: "netInvestment", label: "Net Investment Amount" },
       { key: "purchasePremium", label: "Purchase Premium" },
       { key: "upfrontCommission", label: "Upfront Commission" },
       { key: "administrationFee", label: "Administration Fee" },
@@ -34,13 +39,53 @@ const SECTIONS: { title: string; fields: { key: string; label: string }[] }[] = 
 const card =
   "rounded-[1.75rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-7"
 
-export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
+export const PolicyRecordView = ({ policy, allFunds = [] }: { policy: ClientPolicy; allFunds?: Array<{ id: string; name: string; assetManagerName: string }> }) => {
+  const { fetchAllFunds } = useInvestmentManagers()
+  const [funds, setFunds] = useState<Array<{ id: string; name: string; assetManagerName: string }>>(allFunds)
+
   const form = policy.form || {}
+
+  useEffect(() => {
+    fetchAllFunds().then(setFunds).catch(() => setFunds([]))
+  }, [fetchAllFunds])
+
 
   const beneficiaries: Record<string, string>[] = (() => {
     try {
       const parsed = form.beneficiaries ? JSON.parse(form.beneficiaries) : []
       return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  })()
+
+  const netInvestment = Number(String(form.netInvestment).replace(/[^0-9.]/g, "")) || 0
+
+  const fundAllocations: Array<{
+    id: string
+    name: string
+    assetManagerName: string
+    allocationPercent: number
+    allocatedAmount: number
+  }> = (() => {
+    try {
+      const raw = form.portfolioAllocations
+      if (!raw) return []
+      const parsed = JSON.parse(raw)
+      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+        return Object.entries(parsed).map(([fundId, pct]) => {
+          const fund = funds.find((f) => f.id === fundId)
+          const allocationPercent = Number(pct) || 0
+          return {
+            id: fundId,
+            name: fund?.name || "Unknown Fund",
+            assetManagerName: fund?.assetManagerName || "Unknown Manager",
+            allocationPercent,
+            allocatedAmount: netInvestment * (allocationPercent / 100),
+          }
+        })
+      }
+      return []
     } catch {
       return []
     }
@@ -54,6 +99,8 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
       return {}
     }
   })()
+
+  const totalAllocationPercent = fundAllocations.reduce((sum, f) => sum + f.allocationPercent, 0)
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -124,13 +171,91 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
                     {[b.relationship, b.benefitOption].filter(Boolean).join(" · ") || "—"}
                   </p>
                 </div>
-                <span className="text-sm font-bold text-slate-900 dark:text-white">
-                  {Number(String(b.allocation ?? "0").replace(/[^0-9.]/g, "")) || 0}%
-                </span>
               </div>
             ))
           )}
         </div>
+      </div>
+
+      {/* Investment Portfolio */}
+      <div className={`lg:col-span-2 ${card}`}>
+        <div className="flex items-center justify-between gap-4 mb-5">
+          <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Investment Portfolio
+          </h3>
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+            {fundAllocations.length} {fundAllocations.length === 1 ? "fund" : "funds"}
+          </span>
+        </div>
+        {fundAllocations.length === 0 ? (
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/30 p-10 text-center">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              No investment portfolio configured.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Net Investment Amount
+                </span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">
+                  {netInvestment > 0 ? formatCurrency(netInvestment) : "—"}
+                </span>
+              </div>
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/30 p-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-24 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    Total Allocated
+                  </span>
+                  <div className="flex-1 h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full bg-blue-600 rounded-full transition-all duration-300`}
+                      style={{ width: `${Math.min(totalAllocationPercent, 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {totalAllocationPercent}%
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="text-xs text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700/50">
+                    <th className="px-4 py-3 text-left">Fund</th>
+                    <th className="px-4 py-3 text-left">Asset Manager</th>
+                    <th className="px-4 py-3 text-right">Allocation %</th>
+                    <th className="px-4 py-3 text-right">Allocated Amount (BWP)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y border-slate-200 dark:border-slate-700/50">
+                  {fundAllocations.map((f) => (
+                    <tr key={f.id} className="text-sm">
+                      <td className="px-4 py-3">
+                        <div className="font-medium">{f.name}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          {f.assetManagerName}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">{f.assetManagerName}</td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="font-medium">{f.allocationPercent}%</span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="font-medium">
+                          {netInvestment > 0 ? formatCurrency(f.allocatedAmount) : "—"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       <div className={`lg:col-span-2 ${card}`}>

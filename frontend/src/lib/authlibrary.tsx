@@ -253,9 +253,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const base = permissionsFor(userRole)
     const appRole = normalizeRole(userRole)
 
-    if (appRole === "none") {
-      return { ...base, canManageUsers: false }
-    }
+   if (!userRole || !String(userRole).trim()) {
+  return { ...base, canManageUsers: false }
+}
 
     if (appRole === "super_admin") {
       return { ...base, canManageUsers: true }

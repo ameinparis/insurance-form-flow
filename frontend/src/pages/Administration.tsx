@@ -59,7 +59,7 @@ const Administration = () => {
       <div className="px-6 pb-6">
         <Tabs value={tab} onValueChange={setTab}>
           <TabsContent value="users" className="mt-0">
-            <Team embedded />
+            <Team />
           </TabsContent>
           {permissions.canConfigureFees && (
             <TabsContent value="fees" className="mt-0">

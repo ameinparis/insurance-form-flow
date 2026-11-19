@@ -22,7 +22,7 @@ import { getSavedQuoteId, waitForQuoteReady } from "@/lib/quoteUtils"
 import { useAnnuityScenarios } from "@/hooks/useAnnuityScenarios"
 import AnnuityScenarioDrawer, { ScenarioDrawerTrigger } from "./AnnuityScenarioDrawer"
 import { Plus } from "lucide-react"
-import { API_BASE_URL } from "@/lib/api"
+import { API_BASE_URL, STAGING_API_BASE_URL } from "@/lib/api"
 
 const GeneratingOverlay = () => (
   <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
@@ -205,7 +205,11 @@ Insurance will not accept liability for any losses incurred as a result of using
         guaranteePeriod: toNum(guaranteePeriod),
       }
 
-      const { data } = await axios.post(`${API_BASE_URL}/quotes/calculate-annuity`, payload)
+      const { data } = await axios.post(`${STAGING_API_BASE_URL}/api/quotes/calculate-annuity`, payload, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
       const res = data.output
 
       setLivingResult(res)
@@ -234,7 +238,11 @@ Insurance will not accept liability for any losses incurred as a result of using
         purchaseAmount: toNum(lifePurchaseAmount),
         guaranteePeriod: toNum(guaranteePeriod)
       }
-      const { data } = await axios.post(`${API_BASE_URL}/quotes/calculate-annuity`, payload)
+      const { data } = await axios.post(`${STAGING_API_BASE_URL}/api/quotes/calculate-annuity`, payload, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
       const res = data.output
 
       setLifeResult(res)

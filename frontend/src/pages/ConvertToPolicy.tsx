@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { ArrowLeft, Check, CloudUpload, CheckCircle2, Trash2, Plus, Wallet } from "lucide-react"
+import { ArrowLeft, Check, CloudUpload, CheckCircle2, Trash2, Plus, Wallet, X } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,11 +20,12 @@ import { usePolicyDrafts } from "@/hooks/usePolicyDrafts"
 import { DocumentChecklist, POLICY_DOCUMENTS, parseDoc } from "@/components/policy/DocumentChecklist"
 
 import { useFeeConfig } from "@/hooks/useFeeConfig"
-import { useFundOptions } from "@/hooks/useInvestmentManagers"
+import { useFundOptions, useInvestmentManagers } from "@/hooks/useInvestmentManagers"
 import { useNotifications } from "@/hooks/useNotifications"
 import { useAuth } from "@/lib/authlibrary"
 import { useSocket } from "@/hooks/useSocket"
 import { AssignApproverDialog } from "@/components/policy/AssignApproverDialog"
+import type { Fund } from "@/components/admin/assetManagerModel"
 
 const STEPS: string[] = [
   "Policyholder Details",
@@ -52,6 +53,25 @@ const FUNDS = [
   "Local Equity Fund",
   "Global Equity Fund",
 ]
+
+const RISK_LEVELS = ["Low", "Low–Moderate", "Moderate", "Moderate–High", "High"] as const
+type RiskLevel = typeof RISK_LEVELS[number]
+const riskClasses: Record<RiskLevel, string> = {
+  "Low": "investment-risk-low",
+  "Low–Moderate": "investment-risk-low-moderate",
+  "Moderate": "investment-risk-moderate",
+  "Moderate–High": "investment-risk-moderate-high",
+  "High": "investment-risk-high",
+}
+
+function RiskBadge({ risk }: { risk: RiskLevel }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium ${riskClasses[risk]}`}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      {risk}
+    </span>
+  )
+}
 
 const COUNTRIES = [
   "Botswana",
@@ -90,6 +110,8 @@ interface ConvertState {
   investmentAmount?: number | string
   purchasePremium?: number | string
   funeralPremium?: number | string
+  isLegacy?: boolean
+  quoteNumber?: string
 }
 
 const todayISO = () => new Date().toISOString().slice(0, 10)
@@ -155,12 +177,17 @@ const ConvertToPolicy = () => {
   const prefill = (location.state as ConvertState) || {}
 
   const steps: string[] = [
-    ...(prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity" ? ["Life Annuity Guarantee Selection"] : []),
+    ...(prefill.productType === "Exclusive Annuity" || prefill.productType === "annuity"
+      ? ["Life Annuity Guarantee Selection"]
+      : []),
     ...STEPS,
   ]
 
   const lastStep = steps.length - 1
-  const stepIdx = (name: string) => steps.indexOf(name)
+  const stepIdx = (name: string) => {
+    const idx = steps.indexOf(name)
+    return idx === -1 ? 0 : idx
+  }
   const { drafts, createPolicy, updatePolicy, submitPolicy, refresh } = usePolicyDrafts()
   const { addNotification } = useNotifications()
   const { userId, userName } = useAuth()
@@ -184,6 +211,10 @@ const ConvertToPolicy = () => {
   const [livingAnnuityAmt, setLivingAnnuityAmt] = useState<number | null>(null)
   const [livingFrequency, setLivingFrequency] = useState<string | null>(null)
   const [guaranteePeriods, setGuaranteePeriods] = useState<Array<{ period: number; monthlyAnnuity: number | null }>>([])
+  const [selectedManagerId, setSelectedManagerId] = useState<string | null>(null)
+  const [selectedFundId, setSelectedFundId] = useState<string | null>(null)
+  const [availableFunds, setAvailableFunds] = useState<Fund[]>([])
+  const [selectedFunds, setSelectedFunds] = useState<Fund[]>([])
   const isLegacy = prefill.isLegacy === true
   const quoteNumber = prefill.quoteNumber || ""
   // An approved conversion is already a client policy — it can no longer be edited.
@@ -210,8 +241,9 @@ const ConvertToPolicy = () => {
     policyStartDate: prefill.form?.policyStartDate || todayISO(),
     transitionDate: prefill.form?.transitionDate || todayISO(),
     investmentAmount:
-      prefill.form?.investmentAmount ||
-      asString(prefill.investmentAmount ?? prefill.purchasePremium),
+        prefill.form?.netInvestment ||
+        prefill.form?.investmentAmount ||
+        asString(prefill.investmentAmount ?? prefill.purchasePremium),
     upfrontCommissionEnabled: prefill.form?.upfrontCommissionEnabled || "no",
     ongoingAdvisoryEnabled: prefill.form?.ongoingAdvisoryEnabled || "no",
     portfolioSkipped: prefill.form?.portfolioSkipped || "no",
@@ -242,6 +274,7 @@ const ConvertToPolicy = () => {
 
   const { config: feeConfig } = useFeeConfig()
   const configuredFunds = useFundOptions()
+  const { managers, fetchFunds } = useInvestmentManagers()
   const fundOptions = configuredFunds.length ? configuredFunds : FUNDS
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -274,6 +307,7 @@ const ConvertToPolicy = () => {
       funeralPremium: FUNERAL_PREMIUM.toFixed(2),
       ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
       ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
+      netInvestment: netInvestment.toFixed(2),
     },
     productType: prefill.productType,
     optionLabel: prefill.optionLabel,
@@ -287,6 +321,18 @@ const ConvertToPolicy = () => {
       lifeGuaranteePeriod: lifeGuaranteePeriod ?? null,
       lifeAnnuityAmount: lifeAnnuityAmount ?? null,
     } : null,
+    fundAllocations: (() => {
+      try {
+        return Object.entries(
+          form.portfolioAllocations ? JSON.parse(form.portfolioAllocations) : {}
+        ).map(([fundId, pct]) => ({
+          fundId,
+          allocationPercent: Number(pct),
+        }))
+      } catch {
+        return []
+      }
+    })(),
   })
 
   /**
@@ -355,6 +401,26 @@ const ConvertToPolicy = () => {
     (sum, v) => sum + (Number(String(v).replace(/[^0-9.]/g, "")) || 0),
     0
   )
+  const netInvestment = (() => {
+    const purchasePremium = investment * (feeConfig.purchasePremiumPct / 100)
+    const upfront = form.upfrontCommissionEnabled === "yes" ? upfrontCommission : 0
+    const netPurchase = investment - purchasePremium - upfront
+    const rawRate = livingDrawdownRate
+    const rate = rawRate != null && Number.isFinite(Number(rawRate)) ? Number(rawRate) : null
+    const isAnnual = (livingFrequency ?? "").toLowerCase().startsWith("annual")
+    const expectedMonthly = rate != null ? (investment * (rate / 100)) / 12 : null
+    let salary: number | null
+    if (isAnnual) {
+      salary = livingAnnuityAmt != null ? Number(livingAnnuityAmt) : rate != null ? investment * (rate / 100) : null
+    } else if (livingAnnuityAmt != null && expectedMonthly != null && Math.abs(Number(livingAnnuityAmt) - expectedMonthly) < 1) {
+      salary = Number(livingAnnuityAmt)
+    } else {
+      salary = expectedMonthly
+    }
+    return netPurchase - (salary ?? 0)
+  })()
+  const totalAllocatedAmount = netInvestment * (allocationTotal / 100)
+  const remainingAmount = netInvestment - totalAllocatedAmount
 
   const beneficiaries = (() => {
     try {
@@ -449,7 +515,7 @@ const ConvertToPolicy = () => {
     "Premium and Policy Fees": "Confirm the premium and policy fees",
     "Beneficiaries": "Add beneficiaries",
     "Documents": "Upload the supporting documents",
-    "Investment Portfolio Setup": "Set up the investment portfolio (optional)",
+    "Investment Portfolio Setup": "Set up the investment portfolio",
     "Review": "Review",
   }
   const stepSubtitle = SUBTITLES[steps[currentStep]] ?? "Review"
@@ -478,7 +544,7 @@ const ConvertToPolicy = () => {
           return Number.isFinite(n) ? Math.round(n * 100) / 100 : v ?? null
         }
 
-        const groups = new Map<string, any[]>()
+       const groups = new Map<string, { signature: string; scenarios: any[] }>()
         for (const sc of scenarios) {
           const i = sc?.inputs || {}
           const sig = JSON.stringify({
@@ -537,6 +603,52 @@ const ConvertToPolicy = () => {
 
     fetchAndSelect()
   }, [prefill.productType, prefill.optionLabel, lifeGuaranteePeriod])
+
+  // Fetch available funds when an asset manager is selected
+  useEffect(() => {
+    if (!selectedManagerId) {
+      setAvailableFunds([])
+      return
+    }
+    fetchFunds(selectedManagerId).then((funds) => {
+      setAvailableFunds(funds.filter((f) => f.status === "Active"))
+    })
+  }, [selectedManagerId, fetchFunds])
+
+  // Handle adding a fund to the portfolio
+  const handleAddFund = (fund: Fund) => {
+    if (selectedFunds.some((f) => f.id === fund.id)) {
+      toast.error("This fund is already added")
+      return
+    }
+    setSelectedFunds([...selectedFunds, fund])
+    // Initialize allocation for this fund
+    setForm((prev) => {
+      let current: Record<string, string> = {}
+      try {
+        current = prev.portfolioAllocations ? JSON.parse(prev.portfolioAllocations) : {}
+      } catch {
+        current = {}
+      }
+      return { ...prev, portfolioAllocations: JSON.stringify(current), portfolioSkipped: "no" }
+    })
+  }
+
+  // Handle removing a fund from the portfolio
+  const handleRemoveFund = (fundId: string) => {
+    setSelectedFunds((prev) => prev.filter((f) => f.id !== fundId))
+    setForm((prev) => {
+      let current: Record<string, string> = {}
+      try {
+        current = prev.portfolioAllocations ? JSON.parse(prev.portfolioAllocations) : {}
+      } catch {
+        current = {}
+      }
+      const next = { ...current }
+      delete next[fundId]
+      return { ...prev, portfolioAllocations: JSON.stringify(next), portfolioSkipped: "no" }
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -812,8 +924,8 @@ const ConvertToPolicy = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
             <div className="space-y-2">
               <Label htmlFor="investmentAmount">Investment Amount</Label>
-              <Input id="investmentAmount" inputMode="decimal" value={form.investmentAmount} readOnly placeholder="0.00" className="h-11 rounded-xl bg-muted/50" />
-              <p className="text-xs text-muted-foreground">Investment amount from the quote.</p>
+              <Input id="investmentAmount" inputMode="decimal" value={netInvestment > 0 ? fmt(netInvestment) : (form.investmentAmount || "")} readOnly placeholder="0.00" className="h-11 rounded-xl bg-muted/50" />
+              <p className="text-xs text-muted-foreground">Net investment amount used for portfolio allocation.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="purchasePremium">Purchase Premium</Label>
@@ -1029,72 +1141,204 @@ const ConvertToPolicy = () => {
           </div>
         ) : currentStep === stepIdx("Investment Portfolio Setup") ? (
           <div className="space-y-6">
-            <div className="rounded-xl border border-dashed border-gray-300 dark:border-slate-600 px-4 py-3 text-sm text-red-500">
-              This step is optional. You can skip it and set up the investment portfolio later.
+            {/* Investment Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="rounded-lg border border-gray-200 dark:border-slate-700 bg-card p-4">
+                <h3 className="text-sm font-semibold text-muted-foreground">Net Investment Amount</h3>
+                <p className="text-2xl font-bold">
+                  {netInvestment > 0 ? formatCurrency(netInvestment) : "—"}
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-200 dark:border-slate-700 bg-card p-4">
+                <h3 className="text-sm font-semibold text-muted-foreground">Total Allocated</h3>
+                <p className="text-2xl font-bold">
+                  {netInvestment > 0 ? formatCurrency(totalAllocatedAmount) : "—"}
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-200 dark:border-slate-700 bg-card p-4">
+                <h3 className="text-sm font-semibold text-muted-foreground">Total Allocation</h3>
+                <p className={`text-2xl font-bold ${allocationTotal === 100 ? "text-emerald-600" : allocationTotal > 100 ? "text-red-500" : "text-muted-foreground"}`}>
+                  {allocationTotal}%
+                </p>
+              </div>
             </div>
 
+            {/* Asset Manager & Fund Selection */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
               <div className="space-y-2">
-                <Label htmlFor="riskProfile">Risk Profile</Label>
+                <Label htmlFor="assetManager">Asset Manager</Label>
                 <Select
-                  value={form.riskProfile}
-                  onValueChange={(v) =>
-                    setForm((prev) => ({ ...prev, riskProfile: v, portfolioSkipped: "no" }))
-                  }
+                  value={selectedManagerId || ""}
+                  onValueChange={(v) => setSelectedManagerId(v)}
                 >
-                  <SelectTrigger id="riskProfile" className="h-11 rounded-xl">
-                    <SelectValue placeholder="Select a risk profile" />
+                  <SelectTrigger id="assetManager" className="h-11 rounded-xl">
+                    <SelectValue placeholder="Select an asset manager" />
                   </SelectTrigger>
                   <SelectContent>
-                    {RISK_PROFILES.map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {r}
+                    {managers.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="portfolioNotes">Notes</Label>
-                <Input
-                  id="portfolioNotes"
-                  value={form.portfolioNotes}
-                  onChange={set("portfolioNotes")}
-                  placeholder="Any portfolio instructions"
-                  className="h-11 rounded-xl"
-                />
+                <Label htmlFor="fund">Fund</Label>
+                <Select
+                  value={selectedFundId || ""}
+                  onValueChange={(v) => setSelectedFundId(v)}
+                  disabled={!selectedManagerId || availableFunds.length === 0}
+                >
+                  <SelectTrigger id="fund" className="h-11 rounded-xl">
+                    <SelectValue placeholder={selectedManagerId ? "Select a fund" : "Select an asset manager first"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableFunds.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>
+                        {f.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
+            <Button
+              onClick={() => {
+                if (!selectedManagerId || !selectedFundId) return
+                const fund = availableFunds.find((f) => f.id === selectedFundId)
+                if (!fund) return
+                if (selectedFunds.some((f) => f.id === fund.id)) {
+                  toast.error("This fund is already added")
+                  return
+                }
+                setSelectedFunds([...selectedFunds, fund])
+                // Initialize allocation for this fund
+                setForm((prev) => {
+                  let current: Record<string, string> = {}
+                  try {
+                    current = prev.portfolioAllocations ? JSON.parse(prev.portfolioAllocations) : {}
+                  } catch {
+                    current = {}
+                  }
+                  return { ...prev, portfolioAllocations: JSON.stringify(current), portfolioSkipped: "no" }
+                })
+              }}
+              disabled={!selectedManagerId || !selectedFundId || selectedFunds.some((f) => f.id === selectedFundId)}
+              className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />Add Fund
+            </Button>
+
+            {/* Fund Allocation Table */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>Fund Allocation (%)</Label>
-                <span
-                  className={`text-xs font-semibold ${
-                    allocationTotal > 100 ? "text-red-500" : "text-muted-foreground"
-                  }`}
-                >
+                <Label>Selected Funds & Allocation</Label>
+                <span className="text-xs font-semibold text-muted-foreground">
                   Total: {allocationTotal}%
                 </span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                {fundOptions.map((fund) => (
-                  <div key={fund} className="flex items-center gap-3">
-                    <span className="flex-1 text-sm">{fund}</span>
-                    <Input
-                      inputMode="decimal"
-                      value={allocations[fund] ?? ""}
-                      onChange={(e) => setAllocation(fund, e.target.value)}
-                      placeholder="0"
-                      className="h-11 w-24 rounded-xl text-right"
-                    />
-                  </div>
-                ))}
-              </div>
-              {allocationTotal > 100 && (
-                <p className="text-xs text-red-500">Allocation cannot exceed 100%.</p>
+              {selectedFunds.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-800/30 p-6 text-center">
+                  <p className="text-sm text-muted-foreground">No funds selected yet.</p>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-gray-200 dark:border-slate-700 bg-card p-4">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-2 text-xs font-semibold text-muted-foreground">Fund Name</th>
+                        <th className="px-4 py-2 text-xs font-semibold text-muted-foreground">Asset Manager</th>
+                        <th className="px-4 py-2 text-xs font-semibold text-muted-foreground text-right">Risk</th>
+                        <th className="px-4 py-2 text-xs font-semibold text-muted-foreground text-right">Allocation (%)</th>
+                        <th className="px-4 py-2 text-xs font-semibold text-muted-foreground text-right">Amount (BWP)</th>
+                        <th className="px-4 py-2 text-xs font-semibold text-muted-foreground text-right">Remove</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedFunds.map((fund) => {
+                        const pct = Number(allocations[fund.id] ?? 0)
+                        const allocatedAmount = netInvestment * pct / 100
+                        return (
+                          <tr key={fund.id} className="border-b border-gray-100 dark:border-slate-600">
+                            <td className="px-4 py-3">
+                              <div className="font-medium">{fund.name}</div>
+                              <div className="text-xs text-muted-foreground">{fund.type}</div>
+                            </td>
+                            <td className="px-4 py-3 text-sm">{fund.assetManagerName}</td>
+                            <td className="px-4 py-3 text-sm text-right">
+                              <RiskBadge risk={fund.risk as RiskLevel} />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <Input
+                                inputMode="decimal"
+                                value={allocations[fund.id] ?? ""}
+                                onChange={(e) => setAllocation(fund.id, e.target.value)}
+                                placeholder="0"
+                                className="h-10 w-20 rounded-xl text-right"
+                              />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {netInvestment > 0 ? formatCurrency(allocatedAmount) : "—"}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveFund(fund.id)}
+                              >
+                                <X className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
+
+            {/* Visual Allocation Breakdown */}
+            <div className="rounded-lg border border-gray-200 dark:border-slate-700 bg-card p-4">
+              <h3 className="text-sm font-semibold mb-4">Allocation Breakdown</h3>
+              <div className="space-y-3">
+                {selectedFunds.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No funds allocated yet.</p>
+                ) : (
+                  selectedFunds.map((fund) => {
+                    const pct = Number(allocations[fund.id] ?? 0)
+                    const allocatedAmount = netInvestment * pct / 100
+                    return (
+                      <div key={fund.id} className="space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm">{fund.name}</span>
+                          <span className="text-xs font-semibold text-right">{pct}% — {formatCurrency(allocatedAmount)}</span>
+                        </div>
+                        <div className="h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all duration-300"
+                            style={{ width: `${Math.min(pct, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Validation Messages */}
+            {selectedFunds.length === 0 && (
+              <p className="text-xs text-red-500">Please select at least one fund.</p>
+            )}
+            {allocationTotal > 0 && allocationTotal !== 100 && (
+              <p className="text-xs text-red-500">Total allocation must equal exactly 100%.</p>
+            )}
+            {allocationTotal > 100 && (
+              <p className="text-xs text-red-500">Allocation cannot exceed 100%.</p>
+            )}
           </div>
         ) : currentStep === stepIdx("Review") ? (
           <div className="space-y-5">
@@ -1155,6 +1399,7 @@ const ConvertToPolicy = () => {
 
             <ReviewSection title="Premium and Policy Fees" onEdit={() => setCurrentStep(stepIdx("Premium and Policy Fees"))}>
               <ReviewItem label="Investment Amount" value={investment ? `BWP ${fmt(investment)}` : ""} />
+              <ReviewItem label="Net Investment Amount" value={netInvestment ? `BWP ${fmt(netInvestment)}` : ""} />
               <ReviewItem label="Purchase Premium" value={`BWP ${fmt(purchasePremium)}`} />
               <ReviewItem
                 label="Upfront Commission"
@@ -1238,23 +1483,32 @@ const ConvertToPolicy = () => {
                 </p>
               ) : (
                 <>
-                  <ReviewItem label="Risk Profile" value={form.riskProfile} />
-                  <ReviewItem label="Notes" value={form.portfolioNotes} />
-                  <div className="md:col-span-2 space-y-2">
-                    {Object.keys(allocations).length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No fund allocations captured</p>
-                    ) : (
-                      Object.entries(allocations).map(([fund, pct]) => (
+                <ReviewItem label="Risk Profile" value={form.riskProfile} />
+                <ReviewItem label="Notes" value={form.portfolioNotes} />
+                <div className="md:col-span-2 space-y-2">
+                  {selectedFunds.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No fund allocations captured</p>
+                  ) : (
+                    selectedFunds.map((fund) => {
+                      const pct = Number(allocations[fund.id] ?? 0)
+                      const allocatedAmount = netInvestment * pct / 100
+                      return (
                         <div
-                          key={fund}
+                          key={fund.id}
                           className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-card px-4 py-2.5"
                         >
-                          <span className="text-sm">{fund}</span>
-                          <span className="text-sm font-semibold">{pct}%</span>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{fund.name}</p>
+                            <p className="text-xs text-muted-foreground">{fund.assetManagerName}</p>
+                          </div>
+                          <span className="text-sm font-semibold">
+                            {pct}% — {formatCurrency(allocatedAmount)}
+                          </span>
                         </div>
-                      ))
-                    )}
-                  </div>
+                      )
+                    })
+                  )}
+                </div>
                 </>
               )}
             </ReviewSection>
@@ -1274,23 +1528,6 @@ const ConvertToPolicy = () => {
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
-            {currentStep === stepIdx("Investment Portfolio Setup") && (
-              <Button
-                variant="ghost"
-                onClick={() =>
-                  setForm((prev) => ({
-                    ...prev,
-                    portfolioSkipped: "yes",
-                    riskProfile: "",
-                    portfolioAllocations: "",
-                    portfolioNotes: "",
-                  }))
-                }
-                className="rounded-full px-6"
-              >
-                Skip this step
-              </Button>
-            )}
             {currentStep === lastStep ? (
               <Button
                 onClick={() => {
@@ -1306,7 +1543,10 @@ const ConvertToPolicy = () => {
               </Button>
             ) : (
               <Button
-                disabled={currentStep === stepIdx("Beneficiaries") && !beneficiaryTotalValid}
+                disabled={
+                  (currentStep === stepIdx("Beneficiaries") && !beneficiaryTotalValid) ||
+                  (currentStep === stepIdx("Investment Portfolio Setup") && allocationTotal !== 100)
+                }
                 onClick={() => setCurrentStep((s) => Math.min(s + 1, lastStep))}
                 className="rounded-full px-8 bg-slate-900 hover:bg-slate-800 text-white"
               >

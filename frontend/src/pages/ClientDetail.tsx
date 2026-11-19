@@ -1,9 +1,10 @@
-import { useMemo } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useClient } from "@/hooks/useClients"
+import { useInvestmentManagers } from "@/hooks/useInvestmentManagers"
 import PolicyRecordView from "@/components/client/PolicyRecordView"
 import { formatCurrency, formatDate } from "@/lib/quoteUtils"
 
@@ -15,6 +16,12 @@ const ClientDetail = () => {
   const { id, policyId } = useParams()
   const navigate = useNavigate()
   const { client, policies, loading, error } = useClient(id)
+  const { fetchAllFunds } = useInvestmentManagers()
+  const [allFunds, setAllFunds] = useState<Array<{ id: string; name: string; assetManagerName: string }>>([])
+
+  useEffect(() => {
+    fetchAllFunds().then(setAllFunds).catch(() => setAllFunds([]))
+  }, [fetchAllFunds])
 
   const selected = useMemo(() => {
     if (policyId) return policies.find((p) => p.id === policyId) || null
@@ -156,7 +163,7 @@ const ClientDetail = () => {
         )}
 
         {/* Single policy, or an explicitly selected one */}
-        {selected && <PolicyRecordView policy={selected} />}
+        {selected && <PolicyRecordView policy={selected} allFunds={allFunds} />}
 
         {policyId && !selected && policies.length > 0 && (
           <div className="rounded-[1.75rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-10 text-center">

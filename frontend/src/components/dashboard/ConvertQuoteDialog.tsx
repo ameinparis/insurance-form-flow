@@ -23,6 +23,7 @@ interface ConvertQuote {
   schemeName?: string
   createdAt: string
   isLegacy?: boolean
+  premium?: number
 }
 
 interface ConvertQuoteDialogProps {

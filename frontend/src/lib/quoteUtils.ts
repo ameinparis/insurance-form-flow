@@ -6,13 +6,14 @@ export interface QuoteData {
   quoteId: string;
   productType?: string;
   type?: string; // legacy field
-  client?: {
-    fullName?: string;
-    dateOfBirth?: string;
-    idNumber?: string;
-    contactNumber?: string;
-    email?: string;
-  };
+client?: {
+  fullName?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  idNumber?: string;
+  contactNumber?: string;
+  email?: string;
+};
   // Legacy fields (common)
   fullName?: string;
   email?: string;

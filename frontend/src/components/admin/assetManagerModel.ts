@@ -12,6 +12,7 @@ export interface Fund {
   risk: RiskLevel
   description: string
   status: Status
+  assetManagerName?: string
 }
 
 export interface AssetManager {
@@ -20,6 +21,8 @@ export interface AssetManager {
   description: string
   status: Status
   funds: Fund[]
+  createdAt?: string
+  updatedAt?: string
 }
 
 export const saveFund = (managers: AssetManager[], managerId: string, fund: Fund): AssetManager[] =>

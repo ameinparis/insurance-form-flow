@@ -15,6 +15,7 @@ import { OverviewStats } from "@/components/dashboard/OverviewStats"
 import { RecentActivity } from "@/components/dashboard/RecentActivity"
 import { ConvertQuoteDialog } from "@/components/dashboard/ConvertQuoteDialog"
 import { PageLoader } from "@/components/PageLoader"
+import { API_BASE_URL } from "@/lib/api"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +30,7 @@ import {
 
 const fetchDashboardStats = async () => {
   const token = localStorage.getItem("token");
-  const res = await fetch(`${apiBase()}/api/dashboard/stats`, {
+  const res = await fetch(`${API_BASE_URL}/dashboard/stats`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to fetch dashboard stats");

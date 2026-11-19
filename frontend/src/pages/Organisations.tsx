@@ -158,7 +158,7 @@ const Organisations = () => {
         isRootOrganisation: false,
       })
 
-      const created = responseData.organisation || responseData
+      const created = responseData
 
       setOrganisations((prev) => {
         const filtered = prev.filter((org) => !org._id.startsWith("temp_"))
@@ -233,7 +233,7 @@ const Organisations = () => {
         code: editForm.code.trim().toUpperCase(),
         allowedCalculators: editForm.allowedCalculators,
       })
-      const updated = responseData.organisation || responseData
+      const updated = responseData
       setOrganisations((prev) => prev.map((org) => (org._id === updated._id ? updated : org)))
       toast.success("Organisation updated")
       resetEditForm()

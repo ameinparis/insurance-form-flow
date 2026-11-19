@@ -30,7 +30,7 @@ export function AssetManagerForm({ manager, onSave, onClose }: {
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (!name.trim()) { setError("Asset Manager Name is required."); return }
-    onSave({ id: manager?.id ?? crypto.randomUUID(), name: toTitleCase(name.trim()), description: description.trim(), status, funds: manager?.funds ?? [] })
+    onSave({ id: manager?.id ?? undefined, name: toTitleCase(name.trim()), description: description.trim(), status, funds: manager?.funds ?? [] })
   }
   return <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
     <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto rounded-lg bg-card sm:max-w-lg">
@@ -61,7 +61,7 @@ export function FundForm({ managerName, fund, onSave, onClose }: {
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (!name.trim()) { setError("Fund Name is required."); return }
-    onSave({ id: fund?.id ?? crypto.randomUUID(), name: toTitleCase(name.trim()), type, code: code.trim(), risk, description: description.trim(), status })
+    onSave({ id: fund?.id ?? undefined, name: toTitleCase(name.trim()), type, code: code.trim(), risk, description: description.trim(), status })
   }
   return <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
     <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto rounded-lg bg-card sm:max-w-xl">
