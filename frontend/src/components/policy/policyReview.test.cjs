@@ -6,7 +6,7 @@ const { join } = require("node:path")
 const compiled = ts.transpileModule(readFileSync(join(__dirname, "policyReview.ts"), "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText
 const model = { exports: {} }
 new Function("exports", "module", compiled)(model.exports, model)
-const { readPolicyReview, buildPortfolioReview, readSavedPortfolio, readApprovalReview } = model.exports
+const { readPolicyReview, buildPortfolioReview, readSavedPortfolio, readApprovalReview, readSubmittedPortfolio, readDraftInvestment, retainFundManager } = model.exports
 
 test("Submission round-trip preserves all preview values, including net investment and allocations", () => {
   const snapshot = { version: 1, sections: [
@@ -68,4 +68,21 @@ test("Malformed saved funds do not crash legacy approval", () => {
   for (const selectedFunds of ["bad json", "null", "[null]", '[{"name":"Missing ID"}]']) {
     assert.equal(readSavedPortfolio({ ...savedForm, selectedFunds }), null)
   }
+})
+test("Draft reopening restores the original investment rather than deducting fees from saved net investment", () => {
+  assert.equal(readDraftInvestment(savedForm), "2000000")
+  assert.equal(readDraftInvestment({ netInvestment: "1947500.00" }), "1947500.00")
+})
+test("Selecting a manager-specific fund retains the manager name for submitted reviews", () => {
+  assert.deepEqual(retainFundManager({ id: "money", name: "Money Market Fund" }, "Submitted Manager A"),
+    { id: "money", name: "Money Market Fund", assetManagerName: "Submitted Manager A" })
+  assert.equal(retainFundManager(funds[0], "Renamed Manager").assetManagerName, "Submitted Manager A")
+})
+test("Client policy and approval portfolio readers return the exact same submitted section", () => {
+  const portfolio = buildPortfolioReview({ funds, allocations: { money: "30", prudential: "70" }, netInvestment: 1947500 })
+  const form = { ...savedForm, netInvestment: "9999999", reviewSnapshot: JSON.stringify({ version: 1, sections: [portfolio] }) }
+  const before = JSON.stringify(form)
+  assert.deepEqual(readSubmittedPortfolio(form), readApprovalReview(form).sections[0])
+  assert.equal(readSubmittedPortfolio(form).rows[0].value, "30% — BWP 584,250.00")
+  assert.equal(JSON.stringify(form), before)
 })

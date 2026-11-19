@@ -27,7 +27,7 @@ import { useSocket } from "@/hooks/useSocket"
 import { AssignApproverDialog } from "@/components/policy/AssignApproverDialog"
 import type { Fund } from "@/components/admin/assetManagerModel"
 import { PolicyReviewContent } from "@/components/policy/PolicyReviewContent"
-import { buildPortfolioReview, type PolicyReviewSnapshot } from "@/components/policy/policyReview"
+import { buildPortfolioReview, readDraftInvestment, retainFundManager, type PolicyReviewSnapshot } from "@/components/policy/policyReview"
 
 const STEPS: string[] = [
   "Policyholder Details",
@@ -248,8 +248,7 @@ const ConvertToPolicy = () => {
     policyStartDate: prefill.form?.policyStartDate || todayISO(),
     transitionDate: prefill.form?.transitionDate || todayISO(),
     investmentAmount:
-        prefill.form?.netInvestment ||
-        prefill.form?.investmentAmount ||
+        readDraftInvestment(prefill.form) ||
         asString(prefill.investmentAmount ?? prefill.purchasePremium),
     upfrontCommissionEnabled: prefill.form?.upfrontCommissionEnabled || "no",
     ongoingAdvisoryEnabled: prefill.form?.ongoingAdvisoryEnabled || "no",
@@ -671,9 +670,10 @@ const ConvertToPolicy = () => {
       return
     }
     fetchFunds(selectedManagerId).then((funds) => {
-      setAvailableFunds(funds.filter((f) => f.status === "Active"))
+      setAvailableFunds(funds.filter((f) => f.status === "Active").map((fund) =>
+        retainFundManager(fund, managers.find((manager) => manager.id === selectedManagerId)?.name)))
     })
-  }, [selectedManagerId, fetchFunds])
+  }, [selectedManagerId, fetchFunds, managers])
 
   // Handle adding a fund to the portfolio
   const handleAddFund = (fund: Fund) => {

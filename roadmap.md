@@ -1,9 +1,21 @@
 # Policy approval preview parity
 
+- [x] Sweep portfolio selection, draft resume, review entry points, client policy display and policy storage operations; 12 tests and sample browser flows pass. No settled records were written.
 - [x] Restore investment portfolio visibility for saved policies without a complete review snapshot; nine regression checks and sample advisor submission/reviewer readback pass, including absent and empty portfolio snapshots. Live policy readback remains unverified because authenticated API access is unavailable.
 - [x] Share final-review display data between the wizard and approval preview.
 - [x] Preserve submitted figures, selected funds and document details in the existing saved form.
 - [x] Check all nine steps and submission/readback parity with sample API responses; frontend and regression tests pass. Hosted authenticated readback remains unverified because no managed session is available.
+
+## Portfolio flow audit
+
+- Wizard selection: fixed manager name loss for manager-specific fund responses.
+- Draft reopen (Conversions and preview Edit/Resubmit): fixed investment input restoring the already-deducted net value; original gross input now takes precedence without changing formulas.
+- Step 9, queued autosave, final save before submit and approval preview: read code and ran sample submission/readback; saved snapshots and allocations remain intact.
+- Conversions tabs, notification View Policy and Dashboard Recent Activity: read navigation code; all open the same policy review screen. Notification approval/return actions preserve the policy form.
+- Client details and explicit client policy page: removed current-catalogue lookups; browser-tested saved portfolio readback and no mutation of the sample settled record.
+- Policy create/edit/submit/readback/pipeline/reassign/approve/return/client-policy handlers: read code; the Mixed form is stored/returned unchanged, status actions do not recalculate allocations. Unused top-level fundAllocations is not accepted, but authoritative allocations and snapshots are stored inside form.
+- Background calculation job context and socket/notification hooks: read code; no fund allocation calculation or storage. No matching portfolio path found in email sources.
+- Live authenticated policy and database readback remain unverified; checks used sample responses. Permissions, settings, financial formulas and settled records were not modified.
 
 # Investment Managers interface
 

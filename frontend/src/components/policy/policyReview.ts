@@ -13,6 +13,16 @@ export interface PolicyReviewSection {
 }
 export interface PolicyReviewSnapshot { version: 1; sections: PolicyReviewSection[] }
 
+/** Resume the original investment input, not its already-deducted net output. */
+export function readDraftInvestment(form?: Record<string, string>): string | undefined {
+  return form?.investmentAmount || form?.netInvestment || undefined
+}
+
+/** Funds fetched under a manager must retain that manager when saved for review. */
+export function retainFundManager<T extends { assetManagerName?: string }>(fund: T, managerName?: string): T {
+  return { ...fund, assetManagerName: fund.assetManagerName || managerName || "" }
+}
+
 /** Capture the same net-based portfolio display once, alongside the existing policy form. */
 export function buildPortfolioReview({ funds, allocations, netInvestment, riskProfile, notes, skipped }: {
   funds: Array<{ id: string; name: string; assetManagerName?: string }>
@@ -74,6 +84,11 @@ export function readApprovalReview(form: Record<string, string>): PolicyReviewSn
   return { ...review, sections: portfolio
     ? review.sections.map((section) => section === portfolio ? savedPortfolio : section)
     : [...review.sections, savedPortfolio] }
+}
+
+export function readSubmittedPortfolio(form: Record<string, string>): PolicyReviewSection | null {
+  const review = readApprovalReview(form)
+  return review?.sections.find((section) => section.title === "Investment Portfolio Setup") || readSavedPortfolio(form)
 }
 
 /** Submitted display values are authoritative; never derive amounts using current fees or fund data. */
