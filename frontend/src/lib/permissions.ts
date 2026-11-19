@@ -28,6 +28,8 @@ export interface Permissions {
   canManageInvestments: boolean
   canApprove: boolean
   canApproveOwn: boolean
+  /** Investment funding management; resolved with the organisation in AuthContext. */
+  canManageFunding: boolean
 }
 
 export const permissionsFor = (raw?: string | null): Permissions => {
@@ -42,6 +44,7 @@ export const permissionsFor = (raw?: string | null): Permissions => {
     canManageInvestments: isSuper || isAdmin,
     canApprove: isSuper || isAdmin,
     canApproveOwn: isSuper,
+    canManageFunding: false,
   }
 }
 
@@ -80,4 +83,11 @@ export const canApproveConversion = (
   if (p.canApproveOwn) return true
   if (!initiatedBy) return true
   return String(initiatedBy) !== String(currentUserId || "")
+}
+
+/** Mirrors backend/fundingAccess.cjs: Super Admin anywhere, Admin only in the Root Organisation. */
+export const canManageFundingFor = (raw: string | null | undefined, isRootOrganisation: boolean | undefined): boolean => {
+  if (!raw || !String(raw).trim()) return false
+  const role = normalizeRole(raw)
+  return role === "super_admin" || (role === "admin" && isRootOrganisation === true)
 }

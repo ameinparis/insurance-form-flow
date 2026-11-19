@@ -275,8 +275,8 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
                 <Detail label="Asset Manager" value={panel.row.detail} />
                 <Detail label="Approved Allocation" value={percent} />
                 <Detail label="Approved Allocation Amount" value={amount} />
-                <Detail label="Funding Status" value={<Badge variant="outline">Not yet recorded</Badge>} />
-                <Detail label="Units Purchased" value="No" />
+                <Detail label="Funding Status" value={"Not yet available"} />
+                <Detail label="Units Purchased" value="Not yet available" />
               </div>
               <div className="mt-6 space-y-2">
                 {["Unit Holdings", "Applicable Unit Price", "Portfolio Valuation", "Performance History", "Growth Chart"].map((t) => (

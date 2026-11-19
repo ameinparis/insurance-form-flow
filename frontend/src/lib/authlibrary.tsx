@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useCallback, useRef, useState } from "react"
-import { AppRole, Permissions, permissionsFor, normalizeRole } from "./permissions"
+import { AppRole, Permissions, permissionsFor, normalizeRole, canManageFundingFor } from "./permissions"
 
 interface OrganisationInfo {
   _id: string
@@ -258,13 +258,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 }
 
     if (appRole === "super_admin") {
-      return { ...base, canManageUsers: true }
+      return { ...base, canManageUsers: true, canManageFunding: true }
     }
 
     const isRootAdmin = appRole === "admin" && organisation?.isRootOrganisation === true
     const resolved = organisationLoading && !isRootAdmin ? false : isRootAdmin
+    // UI hint only; the backend re-checks every funding action.
+    const funding = !organisationLoading && canManageFundingFor(userRole, organisation?.isRootOrganisation)
 
-    return { ...base, canManageUsers: resolved }
+    return { ...base, canManageUsers: resolved, canManageFunding: funding }
   }, [userRole, organisation, organisationLoading])
 
   return (

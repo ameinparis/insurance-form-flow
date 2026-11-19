@@ -1273,6 +1273,26 @@ const { protectFundDeletion, protectManagerDeletion } = registerFundValuations({
   getPolicy: () => Policy,
 });
 
+/* ------------------- Investment Funding authorisation ------------------- */
+// Stage 2: guard prepared for funding endpoints (Stage 3). Grants funding only;
+// does not change requireRootOrgAccess, approvals or fund management.
+const { canManageFunding, createFundingGuard } = require("./fundingAccess.cjs");
+// eslint-disable-next-line no-unused-vars
+const { requireFundingManager } = createFundingGuard({ User, Organisation });
+
+/** GET /api/funding/access — read-only: tells the UI whether the signed-in user may manage funding. */
+app.get("/api/funding/access", authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("role organisationId").lean();
+    if (!user) return res.status(401).json({ message: "User not found" });
+    const org = user.organisationId ? await Organisation.findById(user.organisationId).select("isRootOrganisation").lean() : null;
+    res.json({ canManageFunding: canManageFunding(user.role, org?.isRootOrganisation === true) });
+  } catch (e) {
+    console.error("Funding access lookup error:", e);
+    res.status(500).json({ message: "Failed to verify funding access" });
+  }
+});
+
 /* -------------------------- Asset Managers -------------------------- */
 
 /**
