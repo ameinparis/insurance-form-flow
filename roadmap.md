@@ -1,3 +1,9 @@
+# Policy approval preview parity
+
+- [x] Share final-review display data between the wizard and approval preview.
+- [x] Preserve submitted figures, selected funds and document details in the existing saved form.
+- [x] Check all nine steps and submission/readback parity with sample API responses; frontend and regression tests pass. Hosted authenticated readback remains unverified because no managed session is available.
+
 # Investment Managers interface
 
 - [x] Build asset manager profile cards and create/edit forms.

@@ -39,6 +39,9 @@ import { POLICY_DOCUMENTS, parseDoc } from "@/components/policy/DocumentChecklis
 import { useSocket } from "@/hooks/useSocket"
 import { formatDate } from "@/lib/quoteUtils"
 
+import { PolicyReviewContent } from "@/components/policy/PolicyReviewContent"
+import { readPolicyReview } from "@/components/policy/policyReview"
+
 type Field = { key: string; label: string }
 
 const SECTIONS: { title: string; step: number; fields: Field[] }[] = [
@@ -70,6 +73,7 @@ const SECTIONS: { title: string; step: number; fields: Field[] }[] = [
     step: 2,
     fields: [
       { key: "investmentAmount", label: "Investment Amount" },
+      { key: "netInvestment", label: "Net Investment Amount" },
       { key: "purchasePremium", label: "Purchase Premium" },
       { key: "upfrontCommission", label: "Upfront Commission" },
       { key: "administrationFee", label: "Administration Fee" },
@@ -196,6 +200,8 @@ const PolicyDraftPreview = () => {
       return {}
     }
   })()
+
+  const submittedReview = readPolicyReview(form.reviewSnapshot)
 
   const continueEditing = () =>
     navigate("/policies/convert", {
@@ -332,6 +338,21 @@ const PolicyDraftPreview = () => {
       </div>
 
       <div className="px-6 py-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {submittedReview ? <div className="space-y-5 lg:col-span-2" data-policy-review>
+          {submittedReview.sections.map((section) => <section key={section.title} className="rounded-2xl border border-border bg-muted/30 p-5 md:p-6">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold tracking-normal">{section.title}</h3>
+              {section.badge && <Badge variant="secondary">{section.badge}</Badge>}
+              {canEdit && <Button variant="ghost" size="sm" onClick={continueEditing}>Edit in wizard</Button>}
+            </div>
+            <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
+              <PolicyReviewContent section={section} onDocument={(key, label) => {
+                const stored = parseDoc(documents[key])
+                if (stored) setPreviewDoc({ label, ...stored })
+              }} />
+            </div>
+          </section>)}
+        </div> : <>
         {SECTIONS.map((section, i) => {
           const isEditing = editing === i
           return (
@@ -515,6 +536,8 @@ const PolicyDraftPreview = () => {
             })}
           </div>
         </div>
+
+        </>}
 
         {(draft.reviewHistory?.length || 0) > 0 && (
           <div className="lg:col-span-2 rounded-[1.75rem] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-7">

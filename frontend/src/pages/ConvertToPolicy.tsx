@@ -26,6 +26,8 @@ import { useAuth } from "@/lib/authlibrary"
 import { useSocket } from "@/hooks/useSocket"
 import { AssignApproverDialog } from "@/components/policy/AssignApproverDialog"
 import type { Fund } from "@/components/admin/assetManagerModel"
+import { PolicyReviewContent } from "@/components/policy/PolicyReviewContent"
+import { type PolicyReviewSnapshot } from "@/components/policy/policyReview"
 
 const STEPS: string[] = [
   "Policyholder Details",
@@ -214,7 +216,12 @@ const ConvertToPolicy = () => {
   const [selectedManagerId, setSelectedManagerId] = useState<string | null>(null)
   const [selectedFundId, setSelectedFundId] = useState<string | null>(null)
   const [availableFunds, setAvailableFunds] = useState<Fund[]>([])
-  const [selectedFunds, setSelectedFunds] = useState<Fund[]>([])
+  const [selectedFunds, setSelectedFunds] = useState<Fund[]>(() => {
+    try {
+      const stored = JSON.parse(prefill.form?.selectedFunds || "[]")
+      return Array.isArray(stored) ? stored : []
+    } catch { return [] }
+  })
   const isLegacy = prefill.isLegacy === true
   const quoteNumber = prefill.quoteNumber || ""
   // An approved conversion is already a client policy — it can no longer be edited.
@@ -308,6 +315,8 @@ const ConvertToPolicy = () => {
       ongoingAdvisoryFee: advisoryOn ? ongoingAdvisoryFeeAmount.toFixed(2) : "",
       ongoingAdvisoryFeeAmount: ongoingAdvisoryFeeAmount.toFixed(2),
       netInvestment: netInvestment.toFixed(2),
+      selectedFunds: JSON.stringify(selectedFunds),
+      reviewSnapshot: JSON.stringify(buildReviewSnapshot()),
     },
     productType: prefill.productType,
     optionLabel: prefill.optionLabel,
@@ -375,7 +384,7 @@ const ConvertToPolicy = () => {
     }, 700)
     return () => clearTimeout(timer.current)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, currentStep])
+  }, [form, currentStep, selectedFunds, livingOptionId, livingDrawdownRate, livingAnnuityAmt, lifeGuaranteePeriod, lifeAnnuityAmount, feeConfig])
 
 
   const allocations: Record<string, string> = (() => {
@@ -505,6 +514,60 @@ const ConvertToPolicy = () => {
     })
   }
   const documentsValid = true
+
+  // Capture only the existing Review display, using its already-calculated values.
+  // Store inside the existing Mixed form so the current save/submit workflow carries it unchanged.
+  const buildReviewSnapshot = (): PolicyReviewSnapshot => ({
+    version: 1,
+    sections: [
+      { title: "Policyholder Details", fields: [
+        { label: "Full Name", value: form.fullName },
+        { label: "ID / Passport Number", value: form.idNumber },
+        { label: "Date of Birth", value: form.dateOfBirth },
+        { label: "Email", value: form.email },
+        { label: "Contact Number", value: form.contactNumber },
+        { label: "Country of Origin", value: form.countryOfOrigin },
+        { label: "Address", value: form.address, full: true },
+      ] },
+      { title: "Policy Details", fields: [
+        { label: "Policy Number", value: form.policyNumber },
+        { label: "Product", value: form.productName },
+        { label: "Policy Start Date", value: form.policyStartDate },
+        { label: "Transition Date", value: form.transitionDate },
+      ] },
+      ...(livingOptionId ? [{ title: "Annuity Selection", fields: [
+        { label: "Source Quotation", value: prefill.quoteId || "—" },
+        { label: "Living Annuity Drawdown", value: livingDrawdownRate != null ? `${livingDrawdownRate}%` : "—" },
+        { label: "Living Annuity Income", value: livingAnnuityAmt != null ? formatCurrency(livingAnnuityAmt) : "—" },
+        { label: "Life Annuity Guarantee Period", value: lifeGuaranteePeriod != null ? `${lifeGuaranteePeriod} years` : "—" },
+        { label: "Life Annuity Income", value: lifeAnnuityAmount != null ? `${formatCurrency(lifeAnnuityAmount)} / month` : "—" },
+      ] }] : []),
+      { title: "Premium and Policy Fees", fields: [
+        { label: "Investment Amount", value: investment ? `BWP ${fmt(investment)}` : "—" },
+        { label: "Net Investment Amount", value: netInvestment ? `BWP ${fmt(netInvestment)}` : "—" },
+        { label: "Purchase Premium", value: `BWP ${fmt(purchasePremium)}` },
+        { label: "Upfront Commission", value: commissionOn ? `BWP ${fmt(upfrontCommission)}` : "Not applied" },
+        { label: "Administration Fee", value: `BWP ${fmt(administrationFee)}` },
+        { label: "Ongoing Advisory Fee", value: advisoryOn ? `BWP ${fmt(ongoingAdvisoryFeeAmount)}` : "Not applied" },
+        { label: "Switch Fee", value: `BWP ${fmt(SWITCH_FEE)}` },
+        { label: "Funeral Premium", value: `BWP ${fmt(FUNERAL_PREMIUM)}` },
+      ] },
+      { title: "Beneficiaries", badge: `Total: ${Math.round(beneficiaryTotal * 100) / 100}%`, badgeTone: beneficiaryTotalValid ? "success" : "warning",
+        rows: beneficiaries.map((b: Record<string, string>) => ({ name: b.name || "—", detail: [b.relationship, b.benefitOption].filter(Boolean).join(" • ") || "—", value: `${Number(String(b.allocation ?? "0").replace(/[^0-9.]/g, "")) || 0}%` })), emptyText: "None added" },
+      { title: "Documents", badge: `${POLICY_DOCUMENTS.filter((d) => documents[d.key]).length} of ${POLICY_DOCUMENTS.length} uploaded`, badgeTone: "success",
+        documents: POLICY_DOCUMENTS.map((d) => ({ key: d.key, label: d.label, name: parseDoc(documents[d.key])?.name || "Optional", uploaded: !!documents[d.key] })) },
+      { title: "Investment Portfolio Setup", badge: form.portfolioSkipped === "yes" ? "Skipped" : `Total: ${allocationTotal}%`,
+        badgeTone: form.portfolioSkipped === "yes" ? "muted" : allocationTotal === 100 ? "success" : "warning",
+        ...(form.portfolioSkipped === "yes" ? { emptyText: "This step was skipped and can be completed later." } : {
+          fields: [{ label: "Risk Profile", value: form.riskProfile }, { label: "Notes", value: form.portfolioNotes }],
+          rows: selectedFunds.map((fund) => ({ name: fund.name, detail: fund.assetManagerName,
+            value: `${Number(allocations[fund.id] ?? 0)}% — ${formatCurrency(netInvestment * Number(allocations[fund.id] ?? 0) / 100)}` })),
+          emptyText: "No fund allocations captured",
+        }),
+      },
+    ],
+  })
+
 
 
   const SUBTITLES: Record<string, string> = {
@@ -1341,177 +1404,14 @@ const ConvertToPolicy = () => {
             )}
           </div>
         ) : currentStep === stepIdx("Review") ? (
-          <div className="space-y-5">
-            <ReviewSection title="Policyholder Details" onEdit={() => setCurrentStep(stepIdx("Policyholder Details"))}>
-              <ReviewItem label="Full Name" value={form.fullName} />
-              <ReviewItem label="ID / Passport Number" value={form.idNumber} />
-              <ReviewItem label="Date of Birth" value={form.dateOfBirth} />
-              <ReviewItem label="Email" value={form.email} />
-              <ReviewItem label="Contact Number" value={form.contactNumber} />
-              <ReviewItem label="Country of Origin" value={form.countryOfOrigin} />
-              <ReviewItem label="Address" value={form.address} full />
-            </ReviewSection>
-
-            <ReviewSection title="Policy Details" onEdit={() => setCurrentStep(stepIdx("Policy Details"))}>
-              <ReviewItem label="Policy Number" value={form.policyNumber} />
-              <ReviewItem label="Product" value={form.productName} />
-              <ReviewItem label="Policy Start Date" value={form.policyStartDate} />
-              <ReviewItem label="Transition Date" value={form.transitionDate} />
-            </ReviewSection>
-
-            {livingOptionId && (
-              <ReviewSection title="Annuity Selection" onEdit={() => setLifeGuaranteeSelectionOpen(true)}>
-                <ReviewItem label="Source Quotation" value={prefill.quoteId} />
-                <ReviewItem
-                  label="Living Annuity Drawdown"
-                  value={
-                    livingDrawdownRate != null
-                      ? `${livingDrawdownRate}%`
-                      : "—"
-                  }
-                />
-                <ReviewItem
-                  label="Living Annuity Income"
-                  value={
-                    livingAnnuityAmt != null
-                      ? formatCurrency(livingAnnuityAmt)
-                      : "—"
-                  }
-                />
-                <ReviewItem
-                  label="Life Annuity Guarantee Period"
-                  value={
-                    lifeGuaranteePeriod != null
-                      ? `${lifeGuaranteePeriod} years`
-                      : "—"
-                  }
-                />
-                <ReviewItem
-                  label="Life Annuity Income"
-                  value={
-                    lifeAnnuityAmount != null
-                      ? `${formatCurrency(lifeAnnuityAmount)} / month`
-                      : "—"
-                  }
-                />
+          <div className="space-y-5" data-policy-review>
+            {buildReviewSnapshot().sections.map((section) => (
+              <ReviewSection key={section.title} title={section.title}
+                onEdit={() => section.title === "Annuity Selection" ? setLifeGuaranteeSelectionOpen(true) : setCurrentStep(stepIdx(section.editStep || section.title))}
+                badge={section.badge} badgeTone={section.badgeTone}>
+                <PolicyReviewContent section={section} />
               </ReviewSection>
-            )}
-
-            <ReviewSection title="Premium and Policy Fees" onEdit={() => setCurrentStep(stepIdx("Premium and Policy Fees"))}>
-              <ReviewItem label="Investment Amount" value={investment ? `BWP ${fmt(investment)}` : ""} />
-              <ReviewItem label="Net Investment Amount" value={netInvestment ? `BWP ${fmt(netInvestment)}` : ""} />
-              <ReviewItem label="Purchase Premium" value={`BWP ${fmt(purchasePremium)}`} />
-              <ReviewItem
-                label="Upfront Commission"
-                value={commissionOn ? `BWP ${fmt(upfrontCommission)}` : "Not applied"}
-              />
-              <ReviewItem label="Administration Fee" value={`BWP ${fmt(administrationFee)}`} />
-              <ReviewItem
-                label="Ongoing Advisory Fee"
-                value={advisoryOn ? `BWP ${fmt(ongoingAdvisoryFeeAmount)}` : "Not applied"}
-              />
-              <ReviewItem label="Switch Fee" value={`BWP ${fmt(SWITCH_FEE)}`} />
-              <ReviewItem label="Funeral Premium" value={`BWP ${fmt(FUNERAL_PREMIUM)}`} />
-            </ReviewSection>
-
-            <ReviewSection
-              title="Beneficiaries"
-              onEdit={() => setCurrentStep(stepIdx("Beneficiaries"))}
-              badge={`Total: ${Math.round(beneficiaryTotal * 100) / 100}%`}
-              badgeTone={beneficiaryTotalValid ? "success" : "warning"}
-            >
-              <div className="md:col-span-2 space-y-2">
-                {beneficiaries.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">None added</p>
-                ) : (
-                  beneficiaries.map((b: Record<string, string>, i: number) => (
-                    <div
-                      key={i}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-card px-4 py-3"
-                    >
-                      <div>
-                        <p className="text-sm font-medium">{b.name || "—"}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {[b.relationship, b.benefitOption].filter(Boolean).join(" • ") || "—"}
-                        </p>
-                      </div>
-                      <span className="text-sm font-semibold">
-                        {Number(String(b.allocation ?? "0").replace(/[^0-9.]/g, "")) || 0}%
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </ReviewSection>
-
-            <ReviewSection
-              title="Documents"
-              onEdit={() => setCurrentStep(stepIdx("Documents"))}
-              badge={`${POLICY_DOCUMENTS.filter((d) => documents[d.key]).length} of ${POLICY_DOCUMENTS.length} uploaded`}
-              badgeTone="success"
-            >
-              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-2">
-                {POLICY_DOCUMENTS.map((d) => (
-                  <div
-                    key={d.key}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-card px-4 py-2.5"
-                  >
-                    <span className="text-sm">{d.label}</span>
-                    <span
-                      className={`truncate max-w-[50%] text-xs font-medium ${
-                        documents[d.key]
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      {parseDoc(documents[d.key])?.name || "Optional"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </ReviewSection>
-
-            <ReviewSection
-              title="Investment Portfolio Setup"
-              onEdit={() => setCurrentStep(stepIdx("Investment Portfolio Setup"))}
-              badge={form.portfolioSkipped === "yes" ? "Skipped" : `Total: ${allocationTotal}%`}
-              badgeTone={form.portfolioSkipped === "yes" ? "muted" : allocationTotal === 100 ? "success" : "warning"}
-            >
-              {form.portfolioSkipped === "yes" ? (
-                <p className="md:col-span-2 text-sm text-muted-foreground">
-                  This step was skipped and can be completed later.
-                </p>
-              ) : (
-                <>
-                <ReviewItem label="Risk Profile" value={form.riskProfile} />
-                <ReviewItem label="Notes" value={form.portfolioNotes} />
-                <div className="md:col-span-2 space-y-2">
-                  {selectedFunds.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No fund allocations captured</p>
-                  ) : (
-                    selectedFunds.map((fund) => {
-                      const pct = Number(allocations[fund.id] ?? 0)
-                      const allocatedAmount = netInvestment * pct / 100
-                      return (
-                        <div
-                          key={fund.id}
-                          className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-card px-4 py-2.5"
-                        >
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{fund.name}</p>
-                            <p className="text-xs text-muted-foreground">{fund.assetManagerName}</p>
-                          </div>
-                          <span className="text-sm font-semibold">
-                            {pct}% — {formatCurrency(allocatedAmount)}
-                          </span>
-                        </div>
-                      )
-                    })
-                  )}
-                </div>
-                </>
-              )}
-            </ReviewSection>
+            ))}
           </div>
         ) : null}
 
