@@ -21,12 +21,12 @@
 ## Stage 3 — Investment Funding backend
 - New module `backend/policyFunding.cjs` (registered like fund valuations), collection `PolicyFunding` linked by policy ID:
   - receipts: amount (Decimal128, 2 dp), receipt date (calendar date, separate from entry time), bank reference, evidence file, notes, recordedBy + timestamp, status Recorded → Confirmed.
-  - Workflow: Root Admin records receipt → Root Admin confirms → confirmation and audit details stored → policy marked "Ready for activation" (display flag only). Corrections need a reason and keep append-only history.
+  - Workflow: Root Admin records receipt → Root Admin (may be the same person) confirms as a separate action, each with its own audit record (user + timestamp) → confirmation and audit details stored → policy marked "Ready for activation" (display flag only). Corrections need a reason and keep append-only history.
 - Investment Activation (separate future stage) will be gated on confirmed funding and use the approved allocations plus pinned recorded unit prices; confirming funds never triggers it.
   - Unique bank reference per policy to prevent duplicates.
 - Endpoints: `GET /api/policies/:id/funding`, `POST .../funding/receipts` (multipart evidence), `PATCH .../receipts/:receiptId/confirm`, `PATCH .../receipts/:receiptId` (correction), `GET .../evidence`.
 - Only approved policies accept receipts. Every action written to the audit log; full funding audit history readable only by Root Admins and Super Admins.
-- Funding status derived for display: Awaiting funds / Partially funded / Funded (confirmed total vs. approved net investment) — display only, does not touch the policy.
+- Funding status derived for display: Awaiting funds / Partially funded / Funded (confirmed total vs. approved Gross Investment Amount / contractual amount payable; Net Investment Amount stays unchanged for later unit purchases) — display only, does not touch the policy.
 - Confirmation never purchases units, activates investments or edits the policy/allocations.
 
 ## Stage 4 — Investment Funding section in the UI
@@ -42,6 +42,11 @@
 ## Out of scope
 Unit purchases, investment activation, valuation of holdings, changes to approvals, calculations, net investment or allocations. No commit/push/deploy without approval; backup-main only.
 
-## Decisions to confirm
-1. Evidence storage: in MongoDB (simple, 5 MB limit per file proposed) vs. existing file storage if you have one.
-2. May the same Root Admin both record and confirm a receipt (per your workflow, proposed), or should confirmation require a different Root Admin?
+## Final decisions
+- Reconciliation against Gross Investment Amount, never Net.
+- Same Root Admin may record and confirm; separate audited actions.
+- Evidence storage: inspect existing document storage first in Stage 3; reuse only if secure and private, otherwise recommend an alternative before building.
+- Roles unchanged: Super Admin, Admin, Advisor.
+
+## Now: Stage 1 only
+Implement clickable sections and fund details, then stop and report changes and verification before Stage 2. backup-main only; no push/deploy.
