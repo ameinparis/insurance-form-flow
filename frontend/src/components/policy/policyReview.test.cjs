@@ -90,3 +90,17 @@ test("Fund details show the submitted allocation and amount exactly as saved", (
   assert.deepEqual(splitFundRow("30% — BWP 584,250.00"), { percent: "30%", amount: "BWP 584,250.00" })
   assert.deepEqual(splitFundRow("70% — Amount not recorded"), { percent: "70%", amount: "Amount not recorded" })
 })
+
+const { readFundingAmounts } = model.exports
+test("Funding shows the submitted gross when deductions reconcile to the submitted net", () => {
+  assert.deepEqual(readFundingAmounts({ investmentAmount: "2000000", purchasePremium: "40000.00", upfrontCommission: "", netInvestment: "1947500.00" }),
+    { gross: 2000000, net: 1947500, grossFlag: null })
+})
+test("Funding flags a missing gross instead of substituting net", () => {
+  const r = readFundingAmounts({ netInvestment: "1947500.00" })
+  assert.equal(r.gross, null); assert.equal(r.net, 1947500); assert.match(r.grossFlag, /not reliably available/)
+})
+test("Funding flags a gross that does not reconcile (equal to net or deductions exceed it)", () => {
+  assert.match(readFundingAmounts({ investmentAmount: "1947500.00", netInvestment: "1947500.00" }).grossFlag, /requires review/)
+  assert.match(readFundingAmounts({ investmentAmount: "2000000", purchasePremium: "100000", netInvestment: "1947500" }).grossFlag, /requires review/)
+})

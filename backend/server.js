@@ -385,6 +385,7 @@ const auditLogSchema = new mongoose.Schema({
       "PASSWORD_CHANGED",
       "PASSWORD_RESET",
       "ORGANISATION_CREATED",
+      "FUNDS_CONFIRMED",
     ],
     required: true
   },
@@ -1277,8 +1278,12 @@ const { protectFundDeletion, protectManagerDeletion } = registerFundValuations({
 // Stage 2: guard prepared for funding endpoints (Stage 3). Grants funding only;
 // does not change requireRootOrgAccess, approvals or fund management.
 const { canManageFunding, createFundingGuard } = require("./fundingAccess.cjs");
-// eslint-disable-next-line no-unused-vars
-const { requireFundingManager } = createFundingGuard({ User, Organisation });
+// Stage 3: one-time Funds Received confirmation (writes only PolicyFunding + audit log).
+const { registerFundingConfirmation } = require("./fundingConfirmation.cjs");
+registerFundingConfirmation({
+  app, mongoose, authenticateToken, User, Organisation, requireRootOrgAccess,
+  getPolicy: () => Policy, logAudit,
+});
 
 /** GET /api/funding/access — read-only: tells the UI whether the signed-in user may manage funding. */
 app.get("/api/funding/access", authenticateToken, async (req, res) => {

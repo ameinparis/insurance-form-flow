@@ -6,6 +6,8 @@ import { POLICY_DOCUMENTS } from "@/components/policy/DocumentChecklist"
 import type { ClientPolicy } from "@/hooks/useClients"
 import { readSubmittedPortfolio, splitFundRow, type ReviewRow } from "@/components/policy/policyReview"
 import { PolicyReviewContent } from "@/components/policy/PolicyReviewContent"
+import { InvestmentFundingCard } from "@/components/client/InvestmentFundingCard"
+import { usePolicyFunding } from "@/hooks/usePolicyFunding"
 
 /**
  * Read-only presentation of an approved policy inside the Client context.
@@ -73,6 +75,8 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
   const form = policy.form || {}
   const portfolio = readSubmittedPortfolio(form)
   const [panel, setPanel] = useState<Panel | null>(null)
+  const funding = usePolicyFunding(policy.id)
+  const fundingLabel = funding.data?.status === "confirmed" ? "Funds Confirmed" : funding.data ? "Awaiting funds confirmation" : "Not yet available"
 
 
   const beneficiaries: Record<string, string>[] = (() => {
@@ -204,6 +208,8 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
         </div> : <p className="text-sm text-muted-foreground">No saved investment portfolio details available.</p>}
       </div>
 
+      <InvestmentFundingCard form={form} funding={funding} className={`lg:col-span-2 ${card}`} />
+
       <div className={`lg:col-span-2 ${card} ${clickable}`} {...opener(() => setPanel({ kind: "documents" }))}>
         <div className="flex items-center justify-between gap-4 mb-5">
           <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Documents</h3>
@@ -275,7 +281,7 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
                 <Detail label="Asset Manager" value={panel.row.detail} />
                 <Detail label="Approved Allocation" value={percent} />
                 <Detail label="Approved Allocation Amount" value={amount} />
-                <Detail label="Funding Status" value={"Not yet available"} />
+                <Detail label="Funding Status" value={fundingLabel} />
                 <Detail label="Units Purchased" value="Not yet available" />
               </div>
               <div className="mt-6 space-y-2">

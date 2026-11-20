@@ -109,3 +109,26 @@ export function splitFundRow(value?: string): { percent: string; amount: string 
   const [percent = "", ...rest] = String(value || "").split(" — ")
   return { percent: percent.trim(), amount: rest.join(" — ").trim() }
 }
+
+export interface FundingAmounts { gross: number | null; net: number | null; grossFlag: string | null }
+const toAmount = (v?: string) => {
+  if (v == null || String(v).trim() === "") return null
+  const n = Number(String(v).replace(/[^0-9.-]/g, ""))
+  return Number.isFinite(n) ? n : null
+}
+/**
+ * Gross/net for funding confirmation, read only from the submitted policy form.
+ * investmentAmount is the quote's purchase amount that the wizard deducts fees and
+ * first salary from; it is trusted only when the saved deductions reconcile to the
+ * saved net. Otherwise it is flagged — never derived from net or recalculated.
+ */
+export function readFundingAmounts(form?: Record<string, string>): FundingAmounts {
+  const net = toAmount(form?.netInvestment)
+  const gross = toAmount(form?.investmentAmount)
+  const premium = toAmount(form?.purchasePremium) ?? 0
+  const commission = toAmount(form?.upfrontCommission) ?? 0
+  const review = "Gross Investment Amount requires review"
+  if (gross == null || gross <= 0) return { gross: null, net, grossFlag: "Gross Investment Amount not reliably available — please verify" }
+  if (net == null || gross <= net || gross - premium - commission < net - 0.01) return { gross: null, net, grossFlag: review }
+  return { gross, net, grossFlag: null }
+}

@@ -36,6 +36,10 @@ Scope: frontend only; no persistent storage, APIs, investment calculations or ch
 - [x] Stage 1: clickable policy sections and per-fund details
 - [x] Stage 2: Root Organisation funding permissions
 - [x] Stage 2 revision: separate policy-scoped investment viewing/request permissions and administrator transaction authority; regression-test existing access without adding controls or workflows. Live development account checks remain unavailable; later-stage routes must wire the prepared guards before use.
-- [ ] Stage 3: Funding backend (inspect evidence storage first)
+- [x] Stage 3 (simplified): one-time Funds Received confirmation + Investment Funding card
+- [x] Stage 3: trace investmentAmount as gross; flag when saved deductions don't reconcile
+- [x] Stage 3: funding record extensible (status/revision/history) for a future reversal, which hasn't been built
+- [ ] Verify against development MongoDB: PolicyFunding unique index, concurrent duplicate confirm returns 409, FUNDS_CONFIRMED audit entries persist (blocker: no live dev database/session access)
+- [ ] Review: annuity quotes with separate living + life purchase amounts — confirm which one is the gross payable (blocker: business confirmation)
 - [ ] Stage 4: Investment Funding section
 - [ ] Stage 5: Tests and verification
