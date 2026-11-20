@@ -91,3 +91,24 @@ export const canManageFundingFor = (raw: string | null | undefined, isRootOrgani
   const role = normalizeRole(raw)
   return role === "super_admin" || (role === "admin" && isRootOrganisation === true)
 }
+
+/** Policy-scoped UI hints only; policy access must come from an authorised server read.
+ * Separate from quotation, policy approval, fund administration and funding permissions.
+ */
+export const investmentPermissionsFor = (
+  raw: string | null | undefined,
+  isRootOrganisation: boolean | undefined,
+  hasPolicyAccess: boolean,
+) => {
+  const value = String(raw || "").toLowerCase().trim()
+  const recognised = ["superuser", "super_admin", "superadmin", "admin", "user"].includes(value)
+  const role = normalizeRole(raw)
+  const scoped = recognised && (role === "super_admin" || hasPolicyAccess === true)
+  const administrator = canManageFundingFor(raw, isRootOrganisation)
+  return {
+    canViewInvestments: scoped,
+    canSubmitInvestmentRequests: scoped && (role === "super_admin" || role === "advisor" || (role === "admin" && isRootOrganisation === true)),
+    canAuthoriseInvestmentTransactions: scoped && administrator,
+    canExecuteInvestmentTransactions: scoped && administrator,
+  }
+}

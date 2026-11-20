@@ -35,6 +35,7 @@ Scope: frontend only; no persistent storage, APIs, investment calculations or ch
 ## Interactive Policy Record & Investment Funding
 - [x] Stage 1: clickable policy sections and per-fund details
 - [x] Stage 2: Root Organisation funding permissions
+- [x] Stage 2 revision: separate policy-scoped investment viewing/request permissions and administrator transaction authority; regression-test existing access without adding controls or workflows. Live development account checks remain unavailable; later-stage routes must wire the prepared guards before use.
 - [ ] Stage 3: Funding backend (inspect evidence storage first)
 - [ ] Stage 4: Investment Funding section
 - [ ] Stage 5: Tests and verification
