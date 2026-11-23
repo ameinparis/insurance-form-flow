@@ -49,7 +49,7 @@ Scope: frontend only; no persistent storage, APIs, investment calculations or ch
 - [x] Phase 1 Excel inspection: uploaded XLSB confirms D17 = 3.0798 and C17 = E17/D17; decimal preview reproduces 442,642.38 displayed units. All 74 regression/reference tests pass; no live purchase writes.
 - [x] Unit precision decision: retain high-precision actual holdings for storage/calculations; two decimals are display-only, never issued-unit rounding.
 - [ ] Phase 1 exit gate: verify real approved inputs/funding/recorded valuation in development MongoDB. Blocker: live development database verification; retain high-precision holdings in the later purchase implementation.
-- [ ] Reconcile monthly methodology: administration cash/unit mismatch (C20/E20), positive deduction units (C25), market-adjustment timing and entered return credits. Blocker: verified Prudential statement or administrator-approved correction/reference; do not silently fix the workbook or implement these monthly rules.
+- [ ] Deferred by user: monthly fees, deductions and performance. Excel remains a calculation-understanding reference, not authority for inconsistent entries. Blocker: verified calculation rules; no verified Prudential statement is currently available. Focus on initial purchase validation, without treating monthly reconciliation as its prerequisite.
 - [ ] Phase 2: explicit, permission-checked initial Prudential purchase and immutable holdings. Blocker: Phase 1 validation and approval.
 - [ ] Phase 3: policy-specific valuation history and chart. Blocker: verified purchase flow and approval.
 - [ ] Phase 4: Excel-validated monthly performance. Blocker: confirmed monthly methodology and approval.
