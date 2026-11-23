@@ -43,3 +43,10 @@ Scope: frontend only; no persistent storage, APIs, investment calculations or ch
 - [ ] Review: annuity quotes with separate living + life purchase amounts — confirm which one is the gross payable (blocker: business confirmation)
 - [ ] Stage 4: Investment Funding section
 - [ ] Stage 5: Tests and verification
+
+## Prudential activation and valuation — proposed, not implemented
+- [x] Inspect existing valuations, approved allocations, funding, permissions and policy fund panel; existing 58 regression tests pass.
+- [ ] Phase 1: verify the exact Excel purchase formula/precision and approved activation inputs. Blockers: investment workbook upload and plan approval.
+- [ ] Phase 2: explicit, permission-checked initial Prudential purchase and immutable holdings. Blocker: Phase 1 validation and approval.
+- [ ] Phase 3: policy-specific valuation history and chart. Blocker: verified purchase flow and approval.
+- [ ] Phase 4: Excel-validated monthly performance. Blocker: confirmed monthly methodology and approval.
