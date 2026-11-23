@@ -27,3 +27,17 @@ test("rounds half-up and brackets negatives", () => {
   assert.equal(formatUnits("442642.3793752841"), "442,642.38")
   assert.equal(formatMoney("-12.345"), "(BWP 12.35)")
 })
+const { latestClosingBalance } = m.exports
+const adj = (o) => ({ fundId: "f1", valuationDate: "2026-04-01", newUnitPrice: "2.2", adjustment: "-35.5", newClosingBalance: "964.50", ...o })
+test("market adjustment row: blank units, signed movement, stored balance", () => {
+  const rows = buildStatement([p()], "f1", [adj()])
+  assert.equal(rows[1].description, "Market Price Adjustment")
+  assert.equal(rows[1].units, null)
+  assert.equal(formatMoney(rows[1].marketValue), "(BWP 35.50)")
+  assert.equal(latestClosingBalance(rows), "964.50")
+})
+test("adjustments interleave chronologically and other funds excluded", () => {
+  const rows = buildStatement([p()], "f1", [adj({ valuationDate: "2026-06-01", newClosingBalance: "9" }), adj(), adj({ fundId: "f2" })])
+  assert.deepEqual(rows.map((r) => r.date), ["2026-03-01", "2026-04-01", "2026-06-01"])
+  assert.equal(latestClosingBalance(rows), "9")
+})

@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import Calculate from "./pages/Calculate";
 import Clients from "./pages/Clients";
 import ClientDetail from "./pages/ClientDetail";
+import PortfolioTracking from "./pages/PortfolioTracking";
 
 import Claims from "./pages/Claims";
 import Conversions from "./pages/Conversions";
@@ -162,6 +163,11 @@ const App = () => (
               <Route path="/clients/:id/policies/:policyId" element={
                 <Layout>
                   <ClientDetail />
+                </Layout>
+              } />
+              <Route path="/clients/:id/policies/:policyId/funds/:fundId" element={
+                <Layout>
+                  <PortfolioTracking />
                 </Layout>
               } />
 

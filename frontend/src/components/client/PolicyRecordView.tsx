@@ -1,29 +1,19 @@
 import { useState, type ReactNode } from "react"
+import { useNavigate, useParams } from "react-router-dom"
 import { ChevronRight, FileText } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { POLICY_DOCUMENTS } from "@/components/policy/DocumentChecklist"
 import type { ClientPolicy } from "@/hooks/useClients"
-import { readSubmittedPortfolio, splitFundRow, type ReviewRow } from "@/components/policy/policyReview"
+import { readSubmittedPortfolio, type ReviewRow } from "@/components/policy/policyReview"
 import { PolicyReviewContent } from "@/components/policy/PolicyReviewContent"
 import { InvestmentFundingCard } from "@/components/client/InvestmentFundingCard"
 import { usePolicyFunding } from "@/hooks/usePolicyFunding"
-import { PurchasePreviewSection, Row as PurchaseRow, bwp, groupUnits, dmy } from "@/components/client/PurchasePreviewSection"
-import { useUnitPurchases } from "@/hooks/useUnitPurchases"
-import { InvestmentStatementSection } from "@/components/client/InvestmentStatementSection"
-import { useAuth } from "@/lib/authlibrary"
 
 /**
  * Read-only presentation of an approved policy inside the Client context.
  * Deliberately carries no conversion/reviewer controls or metadata.
  */
-/** Two-decimal display of full-precision units by string rounding (half-up); never fed back into calculations. */
-const unitsDisplay = (u: string) => {
-  const [i, d = ""] = u.split(".")
-  const cents = BigInt(i + (d + "00").slice(0, 2)) + (Number(d[2] || "0") >= 5 ? 1n : 0n)
-  const t = cents.toString().padStart(3, "0")
-  return `${t.slice(0, -2)}.${t.slice(-2)}`
-}
 const SECTIONS: { title: string; fields: { key: string; label: string }[] }[] = [
   {
     title: "Policy Details",
@@ -80,15 +70,19 @@ const opener = (open: () => void) => ({
   },
 })
 
-type Panel = { kind: "section"; title: string } | { kind: "portfolio" } | { kind: "documents" } | { kind: "fund"; row: ReviewRow }
+type Panel = { kind: "section"; title: string } | { kind: "portfolio" } | { kind: "documents" }
 
 export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
   const form = policy.form || {}
   const portfolio = readSubmittedPortfolio(form)
   const [panel, setPanel] = useState<Panel | null>(null)
   const funding = usePolicyFunding(policy.id)
-  const purchases = useUnitPurchases(policy.id)
-  const { permissions } = useAuth()
+  const navigate = useNavigate()
+  const { id: routeClientId } = useParams()
+  const openFund = (row: ReviewRow) => {
+    const fid = fundIdFor(row)
+    if (fid) navigate(`/clients/${routeClientId || policy.clientId}/policies/${policy.id}/funds/${fid}`)
+  }
   const fundIdFor = (row: ReviewRow): string | null => {
     try {
       const list = JSON.parse(String(form.selectedFunds || "[]"))
@@ -96,7 +90,6 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
       return hits.length === 1 && hits[0].id ? String(hits[0].id) : null
     } catch { return null }
   }
-  const fundingLabel = funding.data?.status === "confirmed" ? "Funds Confirmed" : funding.data ? "Awaiting funds confirmation" : "Not yet available"
 
 
   const beneficiaries: Record<string, string>[] = (() => {
@@ -210,7 +203,8 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
                 key={index}
                 type="button"
                 data-fund-row
-                onClick={(e) => { e.stopPropagation(); setPanel({ kind: "fund", row }) }}
+                onClick={(e) => { e.stopPropagation(); openFund(row) }}
+                disabled={!fundIdFor(row)}
                 onKeyDown={(e) => e.stopPropagation()}
                 className="flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left transition hover:border-[#009fe3]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#009fe3]"
               >
@@ -281,7 +275,7 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
               {portfolio?.fields?.map((f) => <Detail key={f.label} label={f.label} value={f.value} />)}
               <div className="mt-4 space-y-2">
                 {portfolio?.rows?.map((row, i) => (
-                  <button key={i} type="button" onClick={() => setPanel({ kind: "fund", row })}
+                  <button key={i} type="button" onClick={() => openFund(row)} disabled={!fundIdFor(row)}
                     className="flex w-full items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left hover:border-[#009fe3]/60">
                     <span className="min-w-0"><span className="block text-sm font-medium">{row.name}</span>
                       {row.detail && <span className="block text-xs text-muted-foreground">{row.detail}</span>}</span>
@@ -292,45 +286,6 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
               </div>
             </div>
           </>}
-          {panel?.kind === "fund" && (() => {
-            const { percent, amount } = splitFundRow(panel.row.value)
-            const fid = fundIdFor(panel.row)
-            const bought = fid ? purchases.data.find((p) => p.fundId === fid) : undefined
-            return <div data-policy-fund-details>
-              <SheetHeader><SheetTitle>{panel.row.name}</SheetTitle><SheetDescription>{panel.row.detail || "Asset manager not recorded"}</SheetDescription></SheetHeader>
-              <div className="mt-4">
-                <Detail label="Fund" value={panel.row.name} />
-                <Detail label="Asset Manager" value={panel.row.detail} />
-                <Detail label="Approved Allocation" value={percent} />
-                <Detail label="Approved Allocation Amount" value={amount} />
-                <Detail label="Funding Status" value={fundingLabel} />
-                {!bought && <Detail label="Units Purchased" value="Not yet available" />}
-              </div>
-              {bought && <div data-initial-purchase className="mt-6 rounded-xl border border-border p-4">
-                <p className="text-sm font-semibold mb-2">Initial Unit Purchase</p>
-                <PurchaseRow label="Purchase Status" value="Purchased" />
-                <PurchaseRow label="Purchase Date" value={dmy(bought.purchaseDate)} />
-                <PurchaseRow label="Investment Amount" value={bwp(bought.investmentAmount)} />
-                <PurchaseRow label="Initial Unit Price" value={`BWP ${bought.unitPrice}`} />
-                <PurchaseRow label="Units Purchased" value={groupUnits(unitsDisplay(bought.units))} />
-                <PurchaseRow label="Unit Holdings" value={groupUnits(unitsDisplay(bought.units))} />
-                <PurchaseRow label="Initial Closing Balance" value={bwp(bought.closingBalance)} />
-                <PurchaseRow label="Authorised By" value={bought.authorisedBy?.name || "—"} />
-                <PurchaseRow label="Confirmation Date" value={new Date(bought.confirmedAt).toLocaleString()} />
-              </div>}
-              {!bought && permissions?.canManageFunding && funding.data?.status === "confirmed" && ["APPROVED", "ACTIVE"].includes(String(policy.status).toUpperCase()) &&
-                <PurchasePreviewSection key={panel.row.name} policyId={policy.id} fundId={fid} onConfirm={purchases.confirm} />}
-              <InvestmentStatementSection purchases={purchases.data} fundId={fid} />
-              <div className="mt-6 space-y-2">
-                {(bought ? ["Portfolio Valuation", "Performance History", "Growth Chart"] : ["Unit Holdings", "Applicable Unit Price", "Portfolio Valuation", "Performance History", "Growth Chart"]).map((t) => (
-                  <div key={t} className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border px-4 py-3">
-                    <span className="text-sm font-medium">{t}</span>
-                    <span className="text-xs text-muted-foreground">Available after investment activation</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          })()}
           {panel?.kind === "documents" && <>
             <SheetHeader><SheetTitle>Documents</SheetTitle><SheetDescription>Documents submitted with this policy.</SheetDescription></SheetHeader>
             <div className="mt-4">

@@ -17,16 +17,24 @@ export interface StatementEntry {
 
 export interface StoredPurchase { fundId: string; purchaseDate: string; investmentAmount: string; unitPrice: string; units: string; closingBalance: string }
 
-export function buildStatement(purchases: StoredPurchase[], fundId: string | undefined): StatementEntry[] {
+export interface StoredMarketAdjustment { fundId: string; valuationDate: string; newUnitPrice: string; adjustment: string; newClosingBalance: string; sequence?: number }
+
+/** Rows from stored records only. Market Price Adjustment rows leave Number of Units blank (Excel convention). */
+export function buildStatement(purchases: StoredPurchase[], fundId: string | undefined, adjustments: StoredMarketAdjustment[] = []): StatementEntry[] {
   if (!fundId) return []
-  return purchases
-    .filter((p) => p.fundId === fundId)
-    .map((p) => ({ type: "INITIAL_PURCHASE" as const, date: p.purchaseDate, description: STATEMENT_DESCRIPTIONS.INITIAL_PURCHASE,
-      units: p.units, unitPrice: p.unitPrice, marketValue: p.investmentAmount, closingBalance: p.closingBalance }))
-    .map((e, i) => ({ e, i }))
+  const rows: StatementEntry[] = [
+    ...purchases.filter((p) => p.fundId === fundId).map((p) => ({ type: "INITIAL_PURCHASE" as const, date: p.purchaseDate, description: STATEMENT_DESCRIPTIONS.INITIAL_PURCHASE,
+      units: p.units, unitPrice: p.unitPrice, marketValue: p.investmentAmount, closingBalance: p.closingBalance })),
+    ...adjustments.filter((a) => a.fundId === fundId).map((a) => ({ type: "MARKET_PRICE_ADJUSTMENT" as const, date: a.valuationDate,
+      description: STATEMENT_DESCRIPTIONS.MARKET_PRICE_ADJUSTMENT, units: null, unitPrice: a.newUnitPrice, marketValue: a.adjustment, closingBalance: a.newClosingBalance })),
+  ]
+  return rows.map((e, i) => ({ e, i }))
     .sort((a, b) => (a.e.date < b.e.date ? -1 : a.e.date > b.e.date ? 1 : a.i - b.i))
     .map(({ e }) => e)
 }
+
+/** Latest stored closing balance (last row), never recomputed. */
+export const latestClosingBalance = (rows: StatementEntry[]) => (rows.length ? rows[rows.length - 1].closingBalance : null)
 
 /** Half-up rounding on a decimal string, without floating point. */
 export function roundDecimal(value: string, places: number): string {

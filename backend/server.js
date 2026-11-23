@@ -1290,9 +1290,14 @@ require("./purchasePreview.cjs").registerPurchasePreview({
   getPolicy: () => Policy, PolicyFunding, AssetManagerFund, Valuation: FundValuation,
 });
 // Phase 2: immutable initial unit purchases (writes only PolicyUnitPurchase + audit log).
-require("./unitPurchase.cjs").registerUnitPurchases({
+const { PolicyUnitPurchase } = require("./unitPurchase.cjs").registerUnitPurchases({
   app, mongoose, authenticateToken, User, Organisation, requireRootOrgAccess,
   getPolicy: () => Policy, PolicyFunding, AssetManagerFund, Valuation: FundValuation, logAudit,
+});
+// Phase 3B: immutable market price adjustments (writes only PolicyMarketAdjustment + audit log).
+require("./marketAdjustment.cjs").registerMarketAdjustments({
+  app, mongoose, authenticateToken, User, Organisation, requireRootOrgAccess,
+  getPolicy: () => Policy, PolicyFunding, PolicyUnitPurchase, Valuation: FundValuation, logAudit,
 });
 
 /** GET /api/funding/access — read-only: tells the UI whether the signed-in user may manage funding. */

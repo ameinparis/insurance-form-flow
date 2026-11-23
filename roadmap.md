@@ -52,6 +52,8 @@ Scope: frontend only; no persistent storage, APIs, investment calculations or ch
 - [ ] Deferred by user: monthly fees, deductions and performance. Excel remains a calculation-understanding reference, not authority for inconsistent entries. Blocker: verified calculation rules; no verified Prudential statement is currently available. Focus on initial purchase validation, without treating monthly reconciliation as its prerequisite.
 - [ ] Phase 2: explicit, permission-checked initial Prudential purchase and immutable holdings. Blocker: Phase 1 validation and approval.
 - [ ] Phase 3: policy-specific valuation history and chart. Blocker: verified purchase flow and approval.
+- [x] Phase 3B: Portfolio Tracking page + Market Price Adjustment (blank units on adjustment rows).
+- [ ] Phase 3B staging check: real Active policy, confirm an adjustment, refresh. Blocker: user review on staging.
 - [ ] Phase 4: Excel-validated monthly performance. Blocker: confirmed monthly methodology and approval.
 
 ## Initial Unit Purchase Preview (read-only)
