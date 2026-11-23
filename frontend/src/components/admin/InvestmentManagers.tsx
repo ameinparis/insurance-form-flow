@@ -93,6 +93,7 @@ export const InvestmentManagers = () => {
           risk: fund.risk,
           description: fund.description,
           status: fund.status,
+          monthlyAdminFeePct: fund.monthlyAdminFeePct ?? "",
         })
         toast.success("Fund updated")
       } else {
@@ -103,6 +104,7 @@ export const InvestmentManagers = () => {
           risk: fund.risk,
           description: fund.description,
           status: fund.status,
+          monthlyAdminFeePct: fund.monthlyAdminFeePct ?? "",
         })
         toast.success("Fund created")
       }

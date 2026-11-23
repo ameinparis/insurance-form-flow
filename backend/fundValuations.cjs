@@ -120,6 +120,8 @@ function registerFundValuations({ app, mongoose, authenticateToken, requireRootO
     if (Purchase && await Purchase.exists({ fundId: { $in: fundIds.map(String) } })) return true;
     const Adjustment = mongoose.models.PolicyMarketAdjustment;
     if (Adjustment && await Adjustment.exists({ fundId: { $in: fundIds.map(String) } })) return true;
+    const Batch = mongoose.models.PolicyMonthlyBatch;
+    if (Batch && await Batch.exists({ fundId: { $in: fundIds.map(String) } })) return true;
     const ids = new Set(fundIds.map(String));
     const policies = await getPolicy().find({}).select("form fundAllocations").lean();
     return policies.some((policy) => {

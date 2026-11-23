@@ -11,7 +11,8 @@ import { useAuth } from "@/lib/authlibrary"
 import { readSubmittedPortfolio, splitFundRow } from "@/components/policy/policyReview"
 import { PurchasePreviewSection } from "@/components/client/PurchasePreviewSection"
 import { InvestmentStatementSection } from "@/components/client/InvestmentStatementSection"
-import { MarketAdjustmentSection } from "@/components/client/MarketAdjustmentSection"
+import { MonthlyProcessingSection } from "@/components/client/MonthlyProcessingSection"
+import { useMonthlyProcessing } from "@/hooks/useMonthlyProcessing"
 import { buildStatement, formatDate, formatMoney, formatPrice, formatUnits, latestClosingBalance } from "@/lib/investmentStatement"
 
 const card = "rounded-[1.75rem] bg-card border border-border shadow-sm p-6"
@@ -31,6 +32,7 @@ const PortfolioTracking = () => {
   const funding = usePolicyFunding(policyId)
   const purchases = useUnitPurchases(policyId)
   const adjustments = useMarketAdjustments(policyId)
+  const monthly = useMonthlyProcessing(policyId)
   const { permissions } = useAuth()
   const back = () => navigate(`/clients/${id}/policies/${policyId}`)
 
@@ -50,7 +52,7 @@ const PortfolioTracking = () => {
   </div>
 
   const bought = purchases.data.find((p) => p.fundId === fundId)
-  const rows = buildStatement(purchases.data, fundId, adjustments.data)
+  const rows = buildStatement(purchases.data, fundId, adjustments.data, monthly.data)
   const latest = latestClosingBalance(rows)
   const canManage = !!permissions?.canManageFunding
   const eligible = funding.data?.status === "confirmed" && ["APPROVED", "ACTIVE"].includes(String(policy.status).toUpperCase())
@@ -80,8 +82,8 @@ const PortfolioTracking = () => {
         </div>
       </div>
       {!bought && canManage && eligible && <div className={card}><PurchasePreviewSection policyId={policyId} fundId={fundId} onConfirm={purchases.confirm} /></div>}
-      {bought && canManage && eligible && <MarketAdjustmentSection fundId={fundId} preview={adjustments.preview} confirm={adjustments.confirm} />}
-      <div className={card}><InvestmentStatementSection purchases={purchases.data} fundId={fundId} adjustments={adjustments.data} /></div>
+      {bought && canManage && eligible && <MonthlyProcessingSection fundId={fundId} preview={monthly.preview} confirm={monthly.confirm} />}
+      <div className={card}><InvestmentStatementSection purchases={purchases.data} fundId={fundId} adjustments={adjustments.data} batches={monthly.data} /></div>
     </div>
   )
 }

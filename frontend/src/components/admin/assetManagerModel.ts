@@ -11,6 +11,7 @@ export interface Fund {
   code: string
   risk: RiskLevel
   description: string
+  monthlyAdminFeePct?: string
   status: Status
   assetManagerName?: string
 }

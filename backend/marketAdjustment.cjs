@@ -145,7 +145,9 @@ function registerMarketAdjustments({ app, mongoose, authenticateToken, PolicyUni
     toDecimal: (v) => mongoose.Types.Decimal128.fromString(String(v)) });
   app.get("/api/policies/:policyId/market-adjustments", authenticateToken, h.list);
   app.get("/api/policies/:policyId/funds/:fundId/market-adjustment-preview", authenticateToken, h.preview);
-  app.post("/api/policies/:policyId/funds/:fundId/market-adjustments", authenticateToken, h.confirm);
+  // Phase 3C: standalone confirmation replaced by monthly processing; legacy rows stay readable.
+  app.post("/api/policies/:policyId/funds/:fundId/market-adjustments", authenticateToken, (req, res) =>
+    res.status(410).json({ code: "USE_MONTHLY_PROCESSING", message: "Standalone market adjustments are retired. Use monthly processing." }));
   return { PolicyMarketAdjustment };
 }
 

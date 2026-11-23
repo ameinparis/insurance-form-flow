@@ -247,6 +247,11 @@ const assetManagerFundSchema = new mongoose.Schema({
     enum: ["Active", "Inactive"],
     default: "Active"
   },
+  // Monthly administration fee % (decimal string, up to 6 dp); empty = not configured.
+  monthlyAdminFeePct: {
+    type: String,
+    default: ""
+  },
   assetManagerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "AssetManager",
@@ -1299,6 +1304,11 @@ require("./marketAdjustment.cjs").registerMarketAdjustments({
   app, mongoose, authenticateToken, User, Organisation, requireRootOrgAccess,
   getPolicy: () => Policy, PolicyFunding, PolicyUnitPurchase, Valuation: FundValuation, logAudit,
 });
+// Phase 3C: atomic monthly batches (writes only PolicyMonthlyBatch + audit log).
+require("./monthlyProcessing.cjs").registerMonthlyProcessing({
+  app, mongoose, authenticateToken, User, Organisation, requireRootOrgAccess,
+  getPolicy: () => Policy, PolicyFunding, PolicyUnitPurchase, AssetManagerFund, Valuation: FundValuation, logAudit,
+});
 
 /** GET /api/funding/access — read-only: tells the UI whether the signed-in user may manage funding. */
 app.get("/api/funding/access", authenticateToken, async (req, res) => {
@@ -1512,6 +1522,14 @@ app.get("/api/asset-managers/funds", authenticateToken, async (req, res) => {
  * POST /api/asset-managers/:managerId/funds
  * Create a new fund under an asset manager.
  */
+// Validates a monthly admin fee % as an exact decimal string (0–100, max 6 dp).
+const parseAdminFeePct = (v) => {
+  if (v === undefined) return { skip: true };
+  const s = String(v ?? "").trim();
+  if (s === "") return { value: "" };
+  if (!/^\d{1,3}(\.\d{1,6})?$/.test(s) || Number(s) > 100) return { error: "Monthly administration fee must be between 0 and 100 with up to 6 decimals" };
+  return { value: s };
+};
 app.post("/api/asset-managers/:managerId/funds", authenticateToken, async (req, res) => {
   const access = await requireRootOrgAccess(req, res);
   if (!access) return;
@@ -1520,6 +1538,8 @@ app.post("/api/asset-managers/:managerId/funds", authenticateToken, async (req, 
 
   try {
     const { name, type, code, risk, description, status } = req.body || {};
+    const fee = parseAdminFeePct(req.body?.monthlyAdminFeePct);
+    if (fee.error) return res.status(400).json({ message: fee.error });
 
     if (!name || !name.trim()) {
       return res.status(400).json({ message: "Fund name is required" });
@@ -1546,6 +1566,7 @@ app.post("/api/asset-managers/:managerId/funds", authenticateToken, async (req, 
       risk: risk || "Low",
       description: (description || "").trim(),
       status: status || "Active",
+      monthlyAdminFeePct: fee.skip ? "" : fee.value,
       assetManagerId: req.params.managerId,
       createdBy: req.user.userId,
     });
@@ -1556,7 +1577,7 @@ app.post("/api/asset-managers/:managerId/funds", authenticateToken, async (req, 
       userName: req.user.name,
       action: "FUND_CREATED",
       details: `Fund ${fund.name} created under asset manager ${manager.name}`,
-      metadata: { fundId: fund._id, fundName: fund.name, assetManagerId: req.params.managerId },
+      metadata: { fundId: fund._id, fundName: fund.name, assetManagerId: req.params.managerId, monthlyAdminFeePct: fund.monthlyAdminFeePct },
       req,
     });
 
@@ -1597,8 +1618,20 @@ app.put("/api/asset-managers/:managerId/funds/:fundId", authenticateToken, async
     if (risk !== undefined) fund.risk = risk;
     if (description !== undefined) fund.description = description.trim();
     if (status !== undefined) fund.status = status;
+    const fee = parseAdminFeePct(req.body?.monthlyAdminFeePct);
+    if (fee.error) return res.status(400).json({ message: fee.error });
+    const previousFee = fund.monthlyAdminFeePct || "";
+    if (!fee.skip) fund.monthlyAdminFeePct = fee.value;
 
     const updated = await fund.save();
+    if (!fee.skip && previousFee !== fee.value) {
+      await logAudit({
+        userId: req.user.userId, userEmail: req.user.email, userName: req.user.name,
+        action: "FUND_ADMIN_FEE_CHANGED",
+        details: `Monthly administration fee for ${fund.name} changed from ${previousFee || "not set"}% to ${fee.value || "not set"}%`,
+        metadata: { fundId: fund._id, previous: previousFee, replacement: fee.value }, req,
+      });
+    }
     res.json(updated);
   } catch (e) {
     console.error("Update fund error:", e);

@@ -57,11 +57,12 @@ export function FundForm({ managerName, fund, onSave, onClose }: {
   const [risk, setRisk] = useState<RiskLevel>(fund?.risk ?? "Low")
   const [description, setDescription] = useState(fund?.description ?? "")
   const [status, setStatus] = useState<Status>(fund?.status ?? "Active")
+  const [adminFee, setAdminFee] = useState(fund?.monthlyAdminFeePct ?? "")
   const [error, setError] = useState("")
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (!name.trim()) { setError("Fund Name is required."); return }
-    onSave({ id: fund?.id ?? undefined, name: toTitleCase(name.trim()), type, code: code.trim(), risk, description: description.trim(), status })
+    onSave({ id: fund?.id ?? undefined, name: toTitleCase(name.trim()), type, code: code.trim(), risk, description: description.trim(), status, monthlyAdminFeePct: adminFee.trim() })
   }
   return <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
     <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] overflow-y-auto rounded-lg bg-card sm:max-w-xl">
@@ -73,6 +74,7 @@ export function FundForm({ managerName, fund, onSave, onClose }: {
           <div className="space-y-2"><Label htmlFor="fund-risk">Risk Level</Label><Select value={risk} onValueChange={(value) => setRisk(value as RiskLevel)}><SelectTrigger id="fund-risk"><SelectValue /></SelectTrigger><SelectContent>{RISK_LEVELS.map((value) => <SelectItem key={value} value={value}>{value}</SelectItem>)}</SelectContent></Select></div>
         </div>
         <div className="space-y-2"><Label htmlFor="fund-code">Fund Code <span className="text-muted-foreground">(optional)</span></Label><Input id="fund-code" value={code} onChange={(event) => setCode(event.target.value)} /></div>
+        <div className="space-y-2"><Label htmlFor="fund-admin-fee">Monthly Administration Fee % <span className="text-muted-foreground">(required for monthly processing)</span></Label><Input id="fund-admin-fee" inputMode="decimal" value={adminFee} onChange={(event) => setAdminFee(event.target.value)} placeholder="e.g. 0.0833" /><p className="text-xs text-muted-foreground">Up to 6 decimals. Changes are recorded in the audit trail.</p></div>
         <div className="space-y-2"><Label htmlFor="fund-description">Fund Description <span className="text-muted-foreground">(optional)</span></Label><Textarea id="fund-description" value={description} onChange={(event) => setDescription(event.target.value)} rows={3} /></div>
         <StatusField value={status} onChange={setStatus} />
         <DialogFooter className="gap-2 border-t border-border pt-4"><Button type="button" variant="secondary" onClick={onClose}>Cancel</Button><Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">{fund ? "Save Changes" : "Create Fund"}</Button></DialogFooter>

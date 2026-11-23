@@ -41,3 +41,15 @@ test("adjustments interleave chronologically and other funds excluded", () => {
   assert.deepEqual(rows.map((r) => r.date), ["2026-03-01", "2026-04-01", "2026-06-01"])
   assert.equal(latestClosingBalance(rows), "9")
 })
+
+test("monthly batch expands into three consecutive rows with negative expenses", () => {
+  const b = { fundId: "f1", valuationDate: "2026-03-31", newUnitPrice: "2.2", sequence: 1, rows: [
+    { type: "MARKET_ADJUSTMENT", description: "Market Price Adjustment", movement: "36.85", closingBalance: "1036.85" },
+    { type: "FUNERAL_PREMIUM", description: "Funeral Cover Premium", movement: "-14.00", closingBalance: "1022.85" },
+    { type: "ADMIN_FEE", description: "Administration Fee", movement: "-0.86", closingBalance: "1021.99" }] }
+  const rows = buildStatement([p()], "f1", [], [b, { ...b, fundId: "other" }])
+  assert.deepEqual(rows.map((r) => r.description), ["Net Investment Amount", "Market Price Adjustment", "Funeral Cover Premium", "Administration Fee"])
+  assert.equal(rows[2].units, null); assert.equal(rows[3].unitPrice, "2.2")
+  assert.equal(formatMoney(rows[2].marketValue), "(BWP 14.00)"); assert.equal(formatMoney(rows[3].marketValue), "(BWP 0.86)")
+  assert.equal(rows[3].closingBalance, "1021.99")
+})

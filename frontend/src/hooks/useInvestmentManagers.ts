@@ -114,6 +114,7 @@ export const useInvestmentManagers = () => {
     risk?: string
     description?: string
     status?: "Active" | "Inactive"
+    monthlyAdminFeePct?: string
   }) => {
     const token = localStorage.getItem("token")
     const response = await fetch(`${API_BASE_URL}/asset-managers/${managerId}/funds`, {
@@ -136,6 +137,7 @@ export const useInvestmentManagers = () => {
       code: newFund.code || "",
       risk: newFund.risk,
       description: newFund.description || "",
+      monthlyAdminFeePct: newFund.monthlyAdminFeePct || "",
       status: newFund.status as Status,
     }
     return mapped
@@ -148,6 +150,7 @@ export const useInvestmentManagers = () => {
     risk?: string
     description?: string
     status?: "Active" | "Inactive"
+    monthlyAdminFeePct?: string
   }) => {
     const token = localStorage.getItem("token")
     const response = await fetch(`${API_BASE_URL}/asset-managers/${managerId}/funds/${fundId}`, {
@@ -170,6 +173,7 @@ export const useInvestmentManagers = () => {
       code: updated.code || "",
       risk: updated.risk,
       description: updated.description || "",
+      monthlyAdminFeePct: updated.monthlyAdminFeePct || "",
       status: updated.status as Status,
     }
     return mapped
@@ -198,6 +202,7 @@ export const useInvestmentManagers = () => {
       code: f.code || "",
       risk: f.risk,
       description: f.description || "",
+      monthlyAdminFeePct: f.monthlyAdminFeePct || "",
       status: f.status as Status,
     }))
   }, [])
@@ -216,6 +221,7 @@ export const useInvestmentManagers = () => {
       code: f.code || "",
       risk: f.risk,
       description: f.description || "",
+      monthlyAdminFeePct: f.monthlyAdminFeePct || "",
       status: f.status as Status,
       assetManagerName: f.assetManagerId?.name || "",
       assetManagerId: f.assetManagerId?._id || f.assetManagerId || "",

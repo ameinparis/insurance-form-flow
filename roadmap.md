@@ -62,3 +62,9 @@ Scope: frontend only; no persistent storage, APIs, investment calculations or ch
 - [ ] Joint test against development data (blocker: needs user session + dev DB)
 - [x] Confirm initial unit purchase + initial closing balance (Phase 2)
 - [ ] Verify Phase 2 on staging with the Active test policy (unique index, Decimal128, real confirmation)
+
+## Phase 3C — Monthly Portfolio Processing
+- [x] Atomic monthly batch (market adjustment, funeral premium, admin fee) with cent rounding per step
+- [x] Fund-level monthly administration fee % with audit trail
+- [x] Statement expands batches; Fund Summary shows final balance
+- [ ] Staging check: set fund fee %, preview and confirm first batch on the Active test policy (waiting for your review)

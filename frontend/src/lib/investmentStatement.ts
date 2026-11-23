@@ -19,14 +19,24 @@ export interface StoredPurchase { fundId: string; purchaseDate: string; investme
 
 export interface StoredMarketAdjustment { fundId: string; valuationDate: string; newUnitPrice: string; adjustment: string; newClosingBalance: string; sequence?: number }
 
+export interface StoredMonthlyBatch { fundId: string; valuationDate: string; newUnitPrice: string; sequence?: number
+  rows: { type: string; description: string; movement: string; closingBalance: string }[] }
+
+const BATCH_TYPES: Record<string, StatementEntryType> = { MARKET_ADJUSTMENT: "MARKET_PRICE_ADJUSTMENT", FUNERAL_PREMIUM: "FUNERAL_COVER_PREMIUM", ADMIN_FEE: "ADMINISTRATION_FEE" }
+
 /** Rows from stored records only. Market Price Adjustment rows leave Number of Units blank (Excel convention). */
-export function buildStatement(purchases: StoredPurchase[], fundId: string | undefined, adjustments: StoredMarketAdjustment[] = []): StatementEntry[] {
+export function buildStatement(purchases: StoredPurchase[], fundId: string | undefined, adjustments: StoredMarketAdjustment[] = [], batches: StoredMonthlyBatch[] = []): StatementEntry[] {
   if (!fundId) return []
   const rows: StatementEntry[] = [
     ...purchases.filter((p) => p.fundId === fundId).map((p) => ({ type: "INITIAL_PURCHASE" as const, date: p.purchaseDate, description: STATEMENT_DESCRIPTIONS.INITIAL_PURCHASE,
       units: p.units, unitPrice: p.unitPrice, marketValue: p.investmentAmount, closingBalance: p.closingBalance })),
     ...adjustments.filter((a) => a.fundId === fundId).map((a) => ({ type: "MARKET_PRICE_ADJUSTMENT" as const, date: a.valuationDate,
       description: STATEMENT_DESCRIPTIONS.MARKET_PRICE_ADJUSTMENT, units: null, unitPrice: a.newUnitPrice, marketValue: a.adjustment, closingBalance: a.newClosingBalance })),
+    // Each monthly batch expands into its stored rows, in stored order (expense units not yet calculated).
+    ...batches.filter((b) => b.fundId === fundId).sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0)).flatMap((b) => b.rows.map((r) => {
+      const type = BATCH_TYPES[r.type] || "OTHER"
+      return { type, date: b.valuationDate, description: r.description || STATEMENT_DESCRIPTIONS[type], units: null, unitPrice: b.newUnitPrice, marketValue: r.movement, closingBalance: r.closingBalance }
+    })),
   ]
   return rows.map((e, i) => ({ e, i }))
     .sort((a, b) => (a.e.date < b.e.date ? -1 : a.e.date > b.e.date ? 1 : a.i - b.i))
