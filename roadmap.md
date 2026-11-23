@@ -46,7 +46,7 @@ Scope: frontend only; no persistent storage, APIs, investment calculations or ch
 
 ## Prudential activation and valuation — proposed, not implemented
 - [x] Inspect existing valuations, approved allocations, funding, permissions and policy fund panel; existing 58 regression tests pass.
-- [ ] Phase 1: verify the exact Excel purchase formula/precision and approved activation inputs. Blockers: investment workbook upload and plan approval.
+- [ ] Phase 1: verify the exact Excel purchase formula/precision and approved activation inputs. Plan approved; blocker: investment workbook upload. Live policy inputs also require development database access.
 - [ ] Phase 2: explicit, permission-checked initial Prudential purchase and immutable holdings. Blocker: Phase 1 validation and approval.
 - [ ] Phase 3: policy-specific valuation history and chart. Blocker: verified purchase flow and approval.
 - [ ] Phase 4: Excel-validated monthly performance. Blocker: confirmed monthly methodology and approval.
