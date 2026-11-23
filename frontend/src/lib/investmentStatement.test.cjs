@@ -62,3 +62,8 @@ test("market adjustment row shows price movement; deductions show new price", ()
   assert.equal(up[1].unitPrice, "3.1024"); assert.equal(up[2].unitPrice, "3.1024")
   assert.equal(m.exports.roundDecimal(rows("3.1024", "3.0798")[0].unitPrice, 6), "-0.022600")
 })
+
+test("legacy market adjustment row also shows price movement", () => {
+  const r = m.exports.buildStatement([], "f", [{ fundId: "f", valuationDate: "2026-11-24", previousUnitPrice: "3.0798", newUnitPrice: "3.1024", adjustment: "1", newClosingBalance: "1" }])
+  assert.equal(m.exports.roundDecimal(r[0].unitPrice, 6), "0.022600")
+})

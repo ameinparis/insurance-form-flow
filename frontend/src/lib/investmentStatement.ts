@@ -17,7 +17,7 @@ export interface StatementEntry {
 
 export interface StoredPurchase { fundId: string; purchaseDate: string; investmentAmount: string; unitPrice: string; units: string; closingBalance: string }
 
-export interface StoredMarketAdjustment { fundId: string; valuationDate: string; newUnitPrice: string; adjustment: string; newClosingBalance: string; sequence?: number }
+export interface StoredMarketAdjustment { fundId: string; valuationDate: string; newUnitPrice: string; previousUnitPrice?: string; adjustment: string; newClosingBalance: string; sequence?: number }
 
 export interface StoredMonthlyBatch { fundId: string; valuationDate: string; newUnitPrice: string; previousUnitPrice?: string; sequence?: number
   rows: { type: string; description: string; movement: string; closingBalance: string }[] }
@@ -31,7 +31,7 @@ export function buildStatement(purchases: StoredPurchase[], fundId: string | und
     ...purchases.filter((p) => p.fundId === fundId).map((p) => ({ type: "INITIAL_PURCHASE" as const, date: p.purchaseDate, description: STATEMENT_DESCRIPTIONS.INITIAL_PURCHASE,
       units: p.units, unitPrice: p.unitPrice, marketValue: p.investmentAmount, closingBalance: p.closingBalance })),
     ...adjustments.filter((a) => a.fundId === fundId).map((a) => ({ type: "MARKET_PRICE_ADJUSTMENT" as const, date: a.valuationDate,
-      description: STATEMENT_DESCRIPTIONS.MARKET_PRICE_ADJUSTMENT, units: null, unitPrice: a.newUnitPrice, marketValue: a.adjustment, closingBalance: a.newClosingBalance })),
+      description: STATEMENT_DESCRIPTIONS.MARKET_PRICE_ADJUSTMENT, units: null, unitPrice: batchRowUnitPrice(a, "MARKET_ADJUSTMENT"), marketValue: a.adjustment, closingBalance: a.newClosingBalance })),
     // Each monthly batch expands into its stored rows, in stored order (expense units not yet calculated).
     ...batches.filter((b) => b.fundId === fundId).sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0)).flatMap((b) => b.rows.map((r) => {
       const type = BATCH_TYPES[r.type] || "OTHER"
