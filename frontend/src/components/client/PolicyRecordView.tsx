@@ -10,6 +10,7 @@ import { InvestmentFundingCard } from "@/components/client/InvestmentFundingCard
 import { usePolicyFunding } from "@/hooks/usePolicyFunding"
 import { PurchasePreviewSection, Row as PurchaseRow, bwp, groupUnits, dmy } from "@/components/client/PurchasePreviewSection"
 import { useUnitPurchases } from "@/hooks/useUnitPurchases"
+import { InvestmentStatementSection } from "@/components/client/InvestmentStatementSection"
 import { useAuth } from "@/lib/authlibrary"
 
 /**
@@ -319,6 +320,7 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
               </div>}
               {!bought && permissions?.canManageFunding && funding.data?.status === "confirmed" && ["APPROVED", "ACTIVE"].includes(String(policy.status).toUpperCase()) &&
                 <PurchasePreviewSection key={panel.row.name} policyId={policy.id} fundId={fid} onConfirm={purchases.confirm} />}
+              <InvestmentStatementSection purchases={purchases.data} fundId={fid} />
               <div className="mt-6 space-y-2">
                 {(bought ? ["Portfolio Valuation", "Performance History", "Growth Chart"] : ["Unit Holdings", "Applicable Unit Price", "Portfolio Valuation", "Performance History", "Growth Chart"]).map((t) => (
                   <div key={t} className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border px-4 py-3">
