@@ -23,7 +23,7 @@ function setup({ premium = "20.00", fee = "0.0833", alloc = "70", legacy = [] } 
     { _id: "v1", fundId: "fA", valuationDate: "2026-01-31", unitPrice: "2.612345", revision: 1 },
     { _id: "v2", fundId: "fA", valuationDate: "2026-02-28", unitPrice: "2.400001", revision: 2 },
   ];
-  const fund = { monthlyAdminFeePct: fee };
+  const feeConfig = { administrationFeePct: fee, key: "global" };
   const batches = []; const audits = [];
   const before = JSON.stringify({ purchases, valuations, policies });
   const PolicyMonthlyBatch = {
@@ -34,7 +34,7 @@ function setup({ premium = "20.00", fee = "0.0833", alloc = "70", legacy = [] } 
   };
   const h = createMonthlyProcessingHandlers({ PolicyMonthlyBatch, User, Organisation, requireRootOrgAccess,
     PolicyMarketAdjustment: { find: () => q(legacy) },
-    AssetManagerFund: { findById: () => q(fund) },
+    FeeConfig: { findOne: () => q(feeConfig) },
     PolicyUnitPurchase: { findOne: (f) => q(purchases.find((p) => p.policyId === f.policyId && p.fundId === f.fundId) || null) },
     getPolicy: () => ({ findOne: (f) => q(f.status.$in.includes(policies[f.id]?.status) ? policies[f.id] : null) }),
     PolicyFunding: { findOne: () => q({ status: "confirmed" }) },
@@ -44,7 +44,7 @@ function setup({ premium = "20.00", fee = "0.0833", alloc = "70", legacy = [] } 
   const preview = async (u, date) => { const r = res(); await h.preview({ user: { userId: u }, params: { policyId: "P1", fundId: "fA" }, query: { date }, headers: {} }, r); return r; };
   const confirm = async (u, body) => { const r = res(); await h.confirm({ user: { userId: u }, params: { policyId: "P1", fundId: "fA" }, body, headers: {} }, r); return r; };
   const confirmFromPreview = async (u, date) => { const p = await preview("rootAdmin", date); return confirm(u, { ...p.body, confirmed: true }); };
-  return { preview, confirm, confirmFromPreview, batches, audits, valuations, fund, policies, unchanged: () => JSON.stringify({ purchases, valuations, policies }) === before };
+  return { preview, confirm, confirmFromPreview, batches, audits, valuations, feeConfig, policies, unchanged: () => JSON.stringify({ purchases, valuations, policies }) === before };
 }
 
 test("formula rounds each money step to thebe; fee uses rounded CB1", () => {
@@ -96,7 +96,7 @@ test("legacy adjustment counts as prior transaction", async () => {
 });
 
 test("stale preview rejected when fee, premium or price changes", async () => {
-  for (const mutate of [(s) => { s.fund.monthlyAdminFeePct = "0.09"; }, (s) => { s.policies.P1.form.funeralPremium = "25"; },
+  for (const mutate of [(s) => { s.feeConfig.administrationFeePct = "0.09"; }, (s) => { s.policies.P1.form.funeralPremium = "25"; },
     (s) => { s.valuations[0].unitPrice = "2.7"; s.valuations[0].revision = 4; }]) {
     const s = setup(); const p = await s.preview("rootAdmin", "2026-01-31"); mutate(s);
     const r = await s.confirm("rootAdmin", { ...p.body, confirmed: true });

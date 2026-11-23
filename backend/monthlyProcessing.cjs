@@ -65,7 +65,7 @@ const view = (b) => ({
   valuationId: b.valuationId, valuationRevision: b.valuationRevision, authorisedBy: b.authorisedBy, confirmedAt: b.confirmedAt,
 });
 
-async function computeMonthlyBatch({ policy, fundId, date, PolicyFunding, PolicyUnitPurchase, PolicyMarketAdjustment, PolicyMonthlyBatch, Valuation, AssetManagerFund }) {
+async function computeMonthlyBatch({ policy, fundId, date, PolicyFunding, PolicyUnitPurchase, PolicyMarketAdjustment, PolicyMonthlyBatch, Valuation, AssetManagerFund, FeeConfig }) {
   if (!["APPROVED", "ACTIVE"].includes(String(policy.status || "").toUpperCase())) return fail(409, "NOT_APPROVED", "Monthly processing is only available for approved or active policies");
   const funding = await PolicyFunding.findOne({ policyId: policy.id }).lean();
   if (funding?.status !== "confirmed") return fail(409, "FUNDING_NOT_CONFIRMED", "Funds must be confirmed first");
@@ -96,8 +96,14 @@ async function computeMonthlyBatch({ policy, fundId, date, PolicyFunding, Policy
   try { allocations = JSON.parse(form.portfolioAllocations || "{}"); } catch { allocations = {}; }
   const allocRaw = String(allocations?.[fid] ?? "").trim();
   if (!DEC.test(allocRaw) || new Decimal(allocRaw).gt(100)) return fail(422, "ALLOCATION_MISSING", "Approved allocation for this fund could not be read from the policy");
-  const fund = AssetManagerFund ? await AssetManagerFund.findById(fid).select("monthlyAdminFeePct").lean() : null;
-  const feeRaw = String(fund?.monthlyAdminFeePct ?? "").trim();
+  let feeRaw = "";
+  if (FeeConfig) {
+    const feeConfig = await FeeConfig.findOne({ key: "global" }).lean();
+    feeRaw = String(feeConfig?.administrationFeePct ?? "").trim();
+  } else if (AssetManagerFund) {
+    const fund = await AssetManagerFund.findById(fid).select("monthlyAdminFeePct").lean();
+    feeRaw = String(fund?.monthlyAdminFeePct ?? "").trim();
+  }
   if (!DEC.test(feeRaw)) return fail(422, "ADMIN_FEE_MISSING", "Administration fee not configured for this fund");
 
   const inputs = {
@@ -121,11 +127,11 @@ async function computeMonthlyBatch({ policy, fundId, date, PolicyFunding, Policy
   } };
 }
 
-function createMonthlyProcessingHandlers({ PolicyMonthlyBatch, PolicyMarketAdjustment, PolicyUnitPurchase, AssetManagerFund, toDecimal = (v) => v,
+function createMonthlyProcessingHandlers({ PolicyMonthlyBatch, PolicyMarketAdjustment, PolicyUnitPurchase, AssetManagerFund, FeeConfig, toDecimal = (v) => v,
   User, Organisation, requireRootOrgAccess, getPolicy, PolicyFunding, Valuation, logAudit }) {
   const { requireInvestmentPolicyAccess } = createInvestmentGuards({ User, Organisation, requireRootOrgAccess, getPolicy });
   const { requireFundingManager } = createFundingGuard({ User, Organisation });
-  const deps = { PolicyFunding, PolicyUnitPurchase, PolicyMarketAdjustment, PolicyMonthlyBatch, Valuation, AssetManagerFund };
+  const deps = { PolicyFunding, PolicyUnitPurchase, PolicyMarketAdjustment, PolicyMonthlyBatch, Valuation, AssetManagerFund, FeeConfig };
   const badDate = (res) => res.status(400).json({ code: "INVALID_DATE", message: "Select a valid valuation date" });
 
   const list = async (req, res) => {

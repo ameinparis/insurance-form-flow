@@ -266,6 +266,12 @@ const assetManagerFundSchema = new mongoose.Schema({
 
 const AssetManagerFund = mongoose.model("AssetManagerFund", assetManagerFundSchema);
 
+const feeConfigSchema = new mongoose.Schema({
+  key: { type: String, required: true, unique: true, default: "global" },
+  administrationFeePct: { type: String, default: "" },
+}, { timestamps: true });
+const FeeConfig = mongoose.models.FeeConfig || mongoose.model("FeeConfig", feeConfigSchema, "feeconfigs");
+
 // Users Schema
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
@@ -1307,7 +1313,7 @@ require("./marketAdjustment.cjs").registerMarketAdjustments({
 // Phase 3C: atomic monthly batches (writes only PolicyMonthlyBatch + audit log).
 require("./monthlyProcessing.cjs").registerMonthlyProcessing({
   app, mongoose, authenticateToken, User, Organisation, requireRootOrgAccess,
-  getPolicy: () => Policy, PolicyFunding, PolicyUnitPurchase, AssetManagerFund, Valuation: FundValuation, logAudit,
+  getPolicy: () => Policy, PolicyFunding, PolicyUnitPurchase, AssetManagerFund, FeeConfig, Valuation: FundValuation, logAudit,
 });
 
 /** GET /api/funding/access — read-only: tells the UI whether the signed-in user may manage funding. */
@@ -1320,6 +1326,45 @@ app.get("/api/funding/access", authenticateToken, async (req, res) => {
   } catch (e) {
     console.error("Funding access lookup error:", e);
     res.status(500).json({ message: "Failed to verify funding access" });
+  }
+});
+
+/* -------------------------- Fee Configuration -------------------------- */
+app.get("/api/fee-config", authenticateToken, async (req, res) => {
+  try {
+    const doc = await FeeConfig.findOne({ key: "global" }).lean();
+    res.json({ administrationFeePct: doc?.administrationFeePct || "" });
+  } catch (e) {
+    console.error("Fetch fee config error:", e);
+    res.status(500).json({ message: "Failed to fetch fee configuration" });
+  }
+});
+
+app.put("/api/fee-config", authenticateToken, async (req, res) => {
+  const access = await requireRootOrgAccess(req, res);
+  if (!access) return;
+
+  const s = String(req.body?.administrationFeePct ?? "").trim();
+  if (s !== "" && (!/^\d{1,3}(\.\d{1,6})?$/.test(s) || Number(s) > 100)) {
+    return res.status(400).json({ message: "Administration fee must be between 0 and 100 with up to 6 decimals" });
+  }
+
+  try {
+    const doc = await FeeConfig.findOneAndUpdate(
+      { key: "global" },
+      { $set: { administrationFeePct: s } },
+      { upsert: true, new: true }
+    );
+    await logAudit({
+      userId: req.user.userId, userEmail: req.user.email, userName: req.user.name,
+      action: "FEE_CONFIG_UPDATED",
+      details: `Administration fee changed to ${s || "not set"}%`,
+      metadata: { administrationFeePct: s }, req,
+    });
+    res.json({ administrationFeePct: doc.administrationFeePct || "" });
+  } catch (e) {
+    console.error("Update fee config error:", e);
+    res.status(500).json({ message: "Failed to update fee configuration" });
   }
 });
 
