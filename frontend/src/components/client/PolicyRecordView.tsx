@@ -8,13 +8,21 @@ import { readSubmittedPortfolio, splitFundRow, type ReviewRow } from "@/componen
 import { PolicyReviewContent } from "@/components/policy/PolicyReviewContent"
 import { InvestmentFundingCard } from "@/components/client/InvestmentFundingCard"
 import { usePolicyFunding } from "@/hooks/usePolicyFunding"
-import { PurchasePreviewSection } from "@/components/client/PurchasePreviewSection"
+import { PurchasePreviewSection, Row as PurchaseRow, bwp, groupUnits, dmy } from "@/components/client/PurchasePreviewSection"
+import { useUnitPurchases } from "@/hooks/useUnitPurchases"
 import { useAuth } from "@/lib/authlibrary"
 
 /**
  * Read-only presentation of an approved policy inside the Client context.
  * Deliberately carries no conversion/reviewer controls or metadata.
  */
+/** Two-decimal display of full-precision units by string rounding (half-up); never fed back into calculations. */
+const unitsDisplay = (u: string) => {
+  const [i, d = ""] = u.split(".")
+  const cents = BigInt(i + (d + "00").slice(0, 2)) + (Number(d[2] || "0") >= 5 ? 1n : 0n)
+  const t = cents.toString().padStart(3, "0")
+  return `${t.slice(0, -2)}.${t.slice(-2)}`
+}
 const SECTIONS: { title: string; fields: { key: string; label: string }[] }[] = [
   {
     title: "Policy Details",
@@ -78,6 +86,7 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
   const portfolio = readSubmittedPortfolio(form)
   const [panel, setPanel] = useState<Panel | null>(null)
   const funding = usePolicyFunding(policy.id)
+  const purchases = useUnitPurchases(policy.id)
   const { permissions } = useAuth()
   const fundIdFor = (row: ReviewRow): string | null => {
     try {
@@ -284,6 +293,8 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
           </>}
           {panel?.kind === "fund" && (() => {
             const { percent, amount } = splitFundRow(panel.row.value)
+            const fid = fundIdFor(panel.row)
+            const bought = fid ? purchases.data.find((p) => p.fundId === fid) : undefined
             return <div data-policy-fund-details>
               <SheetHeader><SheetTitle>{panel.row.name}</SheetTitle><SheetDescription>{panel.row.detail || "Asset manager not recorded"}</SheetDescription></SheetHeader>
               <div className="mt-4">
@@ -292,12 +303,24 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
                 <Detail label="Approved Allocation" value={percent} />
                 <Detail label="Approved Allocation Amount" value={amount} />
                 <Detail label="Funding Status" value={fundingLabel} />
-                <Detail label="Units Purchased" value="Not yet available" />
+                {!bought && <Detail label="Units Purchased" value="Not yet available" />}
               </div>
-              {permissions?.canManageFunding && funding.data?.status === "confirmed" && ["APPROVED", "ACTIVE"].includes(String(policy.status).toUpperCase()) &&
-                <PurchasePreviewSection key={panel.row.name} policyId={policy.id} fundId={fundIdFor(panel.row)} />}
+              {bought && <div data-initial-purchase className="mt-6 rounded-xl border border-border p-4">
+                <p className="text-sm font-semibold mb-2">Initial Unit Purchase</p>
+                <PurchaseRow label="Purchase Status" value="Purchased" />
+                <PurchaseRow label="Purchase Date" value={dmy(bought.purchaseDate)} />
+                <PurchaseRow label="Investment Amount" value={bwp(bought.investmentAmount)} />
+                <PurchaseRow label="Initial Unit Price" value={`BWP ${bought.unitPrice}`} />
+                <PurchaseRow label="Units Purchased" value={groupUnits(unitsDisplay(bought.units))} />
+                <PurchaseRow label="Unit Holdings" value={groupUnits(unitsDisplay(bought.units))} />
+                <PurchaseRow label="Initial Closing Balance" value={bwp(bought.closingBalance)} />
+                <PurchaseRow label="Authorised By" value={bought.authorisedBy?.name || "—"} />
+                <PurchaseRow label="Confirmation Date" value={new Date(bought.confirmedAt).toLocaleString()} />
+              </div>}
+              {!bought && permissions?.canManageFunding && funding.data?.status === "confirmed" && ["APPROVED", "ACTIVE"].includes(String(policy.status).toUpperCase()) &&
+                <PurchasePreviewSection key={panel.row.name} policyId={policy.id} fundId={fid} onConfirm={purchases.confirm} />}
               <div className="mt-6 space-y-2">
-                {["Unit Holdings", "Applicable Unit Price", "Portfolio Valuation", "Performance History", "Growth Chart"].map((t) => (
+                {(bought ? ["Portfolio Valuation", "Performance History", "Growth Chart"] : ["Unit Holdings", "Applicable Unit Price", "Portfolio Valuation", "Performance History", "Growth Chart"]).map((t) => (
                   <div key={t} className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border px-4 py-3">
                     <span className="text-sm font-medium">{t}</span>
                     <span className="text-xs text-muted-foreground">Available after investment activation</span>

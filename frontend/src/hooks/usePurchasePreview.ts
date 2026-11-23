@@ -4,6 +4,7 @@ import { API_BASE_URL } from "@/lib/api"
 export interface PurchasePreview {
   status: "PREVIEW_NOT_ACTIVATED"; purchaseDate: string; approvedAmount: string; unitPrice: string
   valuationDate: string; estimatedUnits: string; displayedUnits: string; fundName: string
+  closingBalance: string; valuationId: string; valuationRevision: number; inputHash: string
 }
 
 /** Read-only server preview. Nothing is purchased or saved. */

@@ -116,6 +116,8 @@ function registerFundValuations({ app, mongoose, authenticateToken, requireRootO
   const hasRelationships = async (fundIds) => {
     if (!fundIds.length) return false;
     if (await Valuation.exists({ fundId: { $in: fundIds } })) return true;
+    const Purchase = mongoose.models.PolicyUnitPurchase;
+    if (Purchase && await Purchase.exists({ fundId: { $in: fundIds.map(String) } })) return true;
     const ids = new Set(fundIds.map(String));
     const policies = await getPolicy().find({}).select("form fundAllocations").lean();
     return policies.some((policy) => {

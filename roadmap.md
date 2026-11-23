@@ -58,4 +58,5 @@ Scope: frontend only; no persistent storage, APIs, investment calculations or ch
 - [x] Backend preview endpoint (exact-date price, confirmed funding, Root Admin/Super Admin, no writes) + tests
 - [x] "Purchase Preview — Not Yet Activated" in fund panel
 - [ ] Joint test against development data (blocker: needs user session + dev DB)
-- [ ] Actual unit purchases (waiting for approval)
+- [x] Confirm initial unit purchase + initial closing balance (Phase 2)
+- [ ] Verify Phase 2 on staging with the Active test policy (unique index, Decimal128, real confirmation)
