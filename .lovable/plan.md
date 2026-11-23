@@ -10,8 +10,8 @@ On the Portfolio Tracking page, Root Admins and Super Admins pick a valuation da
 
 ```text
 Market Price Adjustment  | -  | new price | ± units × (new − previous price) | CB1
-Funeral Cover Premium    | -  | new price | (premium × allocation %)          | CB2
-Administration Fee       | -  | new price | (CB1 × fee %)                     | CB3
+Funeral Cover Premium    | -  | new price | −(premium × allocation %)         | CB2
+Administration Fee       | -  | new price | −(CB1 × fee %)                    | CB3
 ```
 - The preview also shows the inputs: previous price, units held, previous closing balance, allocation %, premium and fee %.
 - **Confirm Monthly Processing** (checkbox required) replaces Confirm Market Adjustment.
@@ -33,7 +33,8 @@ Administration Fee       | -  | new price | (CB1 × fee %)                     |
 
 ## Technical details
 - New `backend/monthlyProcessing.cjs` (+ tests). Collection `PolicyMonthlyBatch`: unique (policyId, fundId, valuationDate) and (policyId, fundId, sequence). Decimal128 inputs/outputs: premiumSource, feePctSource, valuationId/revision, a hash of the inputs.
-- Formulas: MA = units × (Pn − Pp); CB1 = CBprev + MA; FP = premium × alloc%/100; CB2 = CB1 − FP; AF = CB1 × fee%/100; CB3 = CB2 − AF. Store at full precision. Cents rounding is used only for display. Open question: should stored balances be rounded to cents at each step, like Excel?
+- Rounding (decimal-safe, half-up, to thebe/cents): MA = round2(units × (Pn − Pp)); CB1 = round2(CBprev + MA); FP = round2(premium × alloc%/100); CB2 = CB1 − FP; AF = round2(stored CB1 × fee%/100); CB3 = CB2 − AF. Every stored movement and balance is in BWP with 2 decimals. Units and prices stay at full precision.
+- Sign: in the statement, Funeral Cover and Administration Fee rows have negative Market Value (stored as negative movements and shown in brackets).
 - Prior state = the latest of purchase, legacy adjustment or batch.
 - Fund schema gets `monthlyAdminFeePct` (Decimal128, optional); the fund form gets a new field; audit log.
 - `fundValuations.cjs` deletion guard includes batches; `marketAdjustment.cjs` confirm route is disabled, but its reader is kept.
