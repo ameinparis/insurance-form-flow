@@ -19,7 +19,7 @@ function createPurchasePreviewHandler({ User, Organisation, requireRootOrgAccess
     try { date = validateDate(req.query?.date); } catch { return res.status(400).json({ code: "INVALID_DATE", message: "Select a valid purchase date" }); }
     try {
       const policy = access.policy;
-      if (policy.status !== "APPROVED") return res.status(409).json({ code: "NOT_APPROVED", message: "Previews are only available for approved policies" });
+      if (!["APPROVED", "ACTIVE"].includes(String(policy.status || "").toUpperCase())) return res.status(409).json({ code: "NOT_APPROVED", message: "Previews are only available for approved or active policies" });
       const funding = await PolicyFunding.findOne({ policyId: policy.id }).lean();
       if (funding?.status !== "confirmed") return res.status(409).json({ code: "FUNDING_NOT_CONFIRMED", message: "Funds must be confirmed before a purchase preview" });
 

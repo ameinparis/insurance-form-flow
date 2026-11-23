@@ -294,7 +294,7 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
                 <Detail label="Funding Status" value={fundingLabel} />
                 <Detail label="Units Purchased" value="Not yet available" />
               </div>
-              {permissions?.canManageFunding && funding.data?.status === "confirmed" && policy.status === "APPROVED" &&
+              {permissions?.canManageFunding && funding.data?.status === "confirmed" && ["APPROVED", "ACTIVE"].includes(String(policy.status).toUpperCase()) &&
                 <PurchasePreviewSection key={panel.row.name} policyId={policy.id} fundId={fundIdFor(panel.row)} />}
               <div className="mt-6 space-y-2">
                 {["Unit Holdings", "Applicable Unit Price", "Portfolio Valuation", "Performance History", "Growth Chart"].map((t) => (

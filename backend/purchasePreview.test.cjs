@@ -82,10 +82,11 @@ test("unconfirmed funding → 409", async () => {
   const r = await setup({ funded: false }).call("rootAdmin", "P1", "fB", "2026-01-05");
   assert.equal(r.code, 409); assert.equal(r.body.code, "FUNDING_NOT_CONFIRMED");
 });
-test("draft and active (non-approved) policies are refused", async () => {
+test("draft policies are refused; active policies can be previewed", async () => {
   const s = setup();
   assert.equal((await s.call("rootAdmin", "PD", "fA", "2026-01-05")).code, 404);
-  assert.equal((await s.call("rootAdmin", "PA", "fA", "2026-01-05")).body.code, "NOT_APPROVED");
+  const r = await s.call("rootAdmin", "PA", "fA", "2026-01-05");
+  assert.equal(r.code, 200); assert.equal(r.body.unitPrice, "2.500000");
 });
 test("fund not in policy → 404; bad date → 400", async () => {
   const s = setup();
