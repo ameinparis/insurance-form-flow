@@ -46,7 +46,9 @@ Scope: frontend only; no persistent storage, APIs, investment calculations or ch
 
 ## Prudential activation and valuation — proposed, not implemented
 - [x] Inspect existing valuations, approved allocations, funding, permissions and policy fund panel; existing 58 regression tests pass.
-- [ ] Phase 1: verify the exact Excel purchase formula/precision and approved activation inputs. Plan approved; blocker: investment workbook upload. Live policy inputs also require development database access.
+- [x] Phase 1 Excel inspection: uploaded XLSB confirms D17 = 3.0798 and C17 = E17/D17; decimal preview reproduces 442,642.38 displayed units. All 74 regression/reference tests pass; no live purchase writes.
+- [ ] Phase 1 exit gate: verify real approved inputs/funding/recorded valuation in development MongoDB and agree issued-unit storage precision/residual treatment. Blocker: live development database verification and final financial rounding decision; preview is not an issued-unit storage rule.
+- [ ] Reconcile monthly methodology: administration cash/unit mismatch (C20/E20), positive deduction units (C25), market-adjustment timing and entered return credits. Blocker: verified Prudential statement or administrator-approved correction/reference; do not silently fix the workbook or implement these monthly rules.
 - [ ] Phase 2: explicit, permission-checked initial Prudential purchase and immutable holdings. Blocker: Phase 1 validation and approval.
 - [ ] Phase 3: policy-specific valuation history and chart. Blocker: verified purchase flow and approval.
 - [ ] Phase 4: Excel-validated monthly performance. Blocker: confirmed monthly methodology and approval.
