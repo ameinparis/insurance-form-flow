@@ -8,7 +8,7 @@
 - **Market Price Adjustment** (Root Admin and Super Admin only):
   - Pick a valuation date. The page uses the price already recorded for that exact date in Administration. There is no field to type a price.
   - The preview shows the valuation date, previous price, new price, units held, adjustment (with + or − sign), previous closing balance and new closing balance.
-  - **Confirm Market Adjustment** needs a ticked checkbox and a final confirm. It adds a statement row: date, "Market Price Adjustment", units unchanged, new price, signed adjustment and new closing balance.
+  - **Confirm Market Adjustment** needs a ticked checkbox and a final confirm. It adds a statement row: date, "Market Price Adjustment", Number of Units left blank (as in Excel), new price, signed adjustment and new closing balance.
 - Advisors and External Admins can see the page and statement but get no actions.
 
 ## Rules
@@ -43,5 +43,5 @@
   - statement ordering and closing balance
 - No hardcoded workbook values. Work on backup-main only, with a local commit. No push or deploy. I'll stop for your review afterwards.
 
-## Assumption to confirm
-- The Number of Units column on adjustment rows shows the unchanged units held, which is how I read the workbook. Your screenshot leaves that column out. Tell me if it should be blank instead.
+## Decision
+- Market Price Adjustment rows leave Number of Units blank. The underlying units held stay unchanged and are still used in the calculation.
