@@ -43,6 +43,6 @@ A temporary conversion resolved the shared closing-balance formulas, checked all
 
 ## Before Phase 2
 
-The Excel initial purchase formula is verified, but Phase 1 is **not fully complete**: the real approved policy's saved fund IDs, exact snapshot amounts, manager relationship, funding record and recorded price still require read-only development MongoDB verification. Final issued-unit storage precision and residual treatment must also be agreed; the current high-precision preview does not establish a production rounding policy.
+The Excel initial purchase formula is verified, but Phase 1 is **not fully complete**: the real approved policy's saved fund IDs, exact snapshot amounts, manager relationship, funding record and recorded price still require read-only development MongoDB verification. The user confirmed that actual holdings must retain high precision for storage and calculations, with two-decimal rounding used only for display; displayed units must never replace actual holdings or drive valuations.
 
 Do not begin live purchases or monthly performance automatically. Monthly methodology remains held for reconciliation against a verified Prudential statement or administrator-approved reference.
