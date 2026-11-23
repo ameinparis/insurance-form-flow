@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Row } from "@/components/client/PurchasePreviewSection"
-import { formatDate, formatMoney, formatPrice, formatUnits } from "@/lib/investmentStatement"
+import { batchRowUnitPrice, formatDate, formatMoney, formatPrice, formatUnits } from "@/lib/investmentStatement"
 import type { MonthlyBatch } from "@/hooks/useMonthlyProcessing"
 
 const pct = (v: string) => `${v}%`
@@ -23,7 +23,7 @@ const Rows = ({ d }: { d: MonthlyBatch }) => (
         <TableCell className="whitespace-nowrap">{formatDate(d.valuationDate)}</TableCell>
         <TableCell className="whitespace-nowrap">{r.description}</TableCell>
         <TableCell className="text-right">-</TableCell>
-        <TableCell className="text-right whitespace-nowrap">{formatPrice(d.newUnitPrice)}</TableCell>
+        <TableCell className="text-right whitespace-nowrap">{formatPrice(batchRowUnitPrice(d, r.type))}</TableCell>
         <TableCell className="text-right whitespace-nowrap">{formatMoney(r.movement)}</TableCell>
         <TableCell className="text-right whitespace-nowrap font-semibold">{formatMoney(r.closingBalance)}</TableCell>
       </TableRow>))}

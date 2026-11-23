@@ -19,7 +19,7 @@ export interface StoredPurchase { fundId: string; purchaseDate: string; investme
 
 export interface StoredMarketAdjustment { fundId: string; valuationDate: string; newUnitPrice: string; adjustment: string; newClosingBalance: string; sequence?: number }
 
-export interface StoredMonthlyBatch { fundId: string; valuationDate: string; newUnitPrice: string; sequence?: number
+export interface StoredMonthlyBatch { fundId: string; valuationDate: string; newUnitPrice: string; previousUnitPrice?: string; sequence?: number
   rows: { type: string; description: string; movement: string; closingBalance: string }[] }
 
 const BATCH_TYPES: Record<string, StatementEntryType> = { MARKET_ADJUSTMENT: "MARKET_PRICE_ADJUSTMENT", FUNERAL_PREMIUM: "FUNERAL_COVER_PREMIUM", ADMIN_FEE: "ADMINISTRATION_FEE" }
@@ -35,7 +35,7 @@ export function buildStatement(purchases: StoredPurchase[], fundId: string | und
     // Each monthly batch expands into its stored rows, in stored order (expense units not yet calculated).
     ...batches.filter((b) => b.fundId === fundId).sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0)).flatMap((b) => b.rows.map((r) => {
       const type = BATCH_TYPES[r.type] || "OTHER"
-      return { type, date: b.valuationDate, description: r.description || STATEMENT_DESCRIPTIONS[type], units: null, unitPrice: b.newUnitPrice, marketValue: r.movement, closingBalance: r.closingBalance }
+      return { type, date: b.valuationDate, description: r.description || STATEMENT_DESCRIPTIONS[type], units: null, unitPrice: batchRowUnitPrice(b, r.type), marketValue: r.movement, closingBalance: r.closingBalance }
     })),
   ]
   return rows.map((e, i) => ({ e, i }))
@@ -67,3 +67,18 @@ export const formatMoney = (v: string) => signed(v, 2, "BWP ")
 export const formatUnits = (v: string) => signed(v, 2)
 export const formatPrice = (v: string) => `BWP ${group(roundDecimal(v, 6))}`
 export const formatDate = (iso: string) => iso.slice(0, 10).split("-").reverse().join(".")
+
+/** Exact a - b on decimal strings (BigInt, no floating point). */
+export function subtractDecimal(a: string, b: string): string {
+  const parse = (v: string) => { const t = v.trim(); const neg = t.startsWith("-"); const [i, f = ""] = t.replace(/^[-+]/, "").split("."); return { neg, i, f } }
+  const x = parse(a), y = parse(b), places = Math.max(x.f.length, y.f.length)
+  const big = (p: { neg: boolean; i: string; f: string }) => { const n = BigInt((p.i || "0") + p.f.padEnd(places, "0")); return p.neg ? -n : n }
+  const d = big(x) - big(y), neg = d < 0n, s = (neg ? -d : d).toString().padStart(places + 1, "0")
+  const out = places ? `${s.slice(0, -places)}.${s.slice(-places)}` : s
+  return neg ? `-${out}` : out
+}
+
+/** Excel convention: the Market Price Adjustment row shows the price movement (stored new - stored previous); other rows show the new price. */
+export function batchRowUnitPrice(b: { newUnitPrice: string; previousUnitPrice?: string }, rowType: string): string {
+  return rowType === "MARKET_ADJUSTMENT" && b.previousUnitPrice ? subtractDecimal(b.newUnitPrice, b.previousUnitPrice) : b.newUnitPrice
+}

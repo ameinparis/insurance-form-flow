@@ -53,3 +53,12 @@ test("monthly batch expands into three consecutive rows with negative expenses",
   assert.equal(formatMoney(rows[2].marketValue), "(BWP 14.00)"); assert.equal(formatMoney(rows[3].marketValue), "(BWP 0.86)")
   assert.equal(rows[3].closingBalance, "1021.99")
 })
+
+test("market adjustment row shows price movement; deductions show new price", () => {
+  const rows = (pp, np) => m.exports.buildStatement([], "f", [], [{ fundId: "f", valuationDate: "2026-11-24", previousUnitPrice: pp, newUnitPrice: np, sequence: 1,
+    rows: [{ type: "MARKET_ADJUSTMENT", description: "MA", movement: "1", closingBalance: "1" }, { type: "FUNERAL_PREMIUM", description: "FP", movement: "-1", closingBalance: "0" }, { type: "ADMIN_FEE", description: "AF", movement: "-1", closingBalance: "-1" }] }])
+  const up = rows("3.0798", "3.1024")
+  assert.equal(m.exports.roundDecimal(up[0].unitPrice, 6), "0.022600")
+  assert.equal(up[1].unitPrice, "3.1024"); assert.equal(up[2].unitPrice, "3.1024")
+  assert.equal(m.exports.roundDecimal(rows("3.1024", "3.0798")[0].unitPrice, 6), "-0.022600")
+})
