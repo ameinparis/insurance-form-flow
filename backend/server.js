@@ -1269,7 +1269,7 @@ app.put("/api/organisations/:id", authenticateToken, requireRootOrgAccess, async
 });
 
 const { registerFundValuations } = require("./fundValuations.cjs");
-const { protectFundDeletion, protectManagerDeletion } = registerFundValuations({
+const { protectFundDeletion, protectManagerDeletion, Valuation: FundValuation } = registerFundValuations({
   app, mongoose, authenticateToken, requireRootOrgAccess, User, AssetManager, AssetManagerFund,
   getPolicy: () => Policy,
 });
@@ -1280,9 +1280,14 @@ const { protectFundDeletion, protectManagerDeletion } = registerFundValuations({
 const { canManageFunding, createFundingGuard } = require("./fundingAccess.cjs");
 // Stage 3: one-time Funds Received confirmation (writes only PolicyFunding + audit log).
 const { registerFundingConfirmation } = require("./fundingConfirmation.cjs");
-registerFundingConfirmation({
+const { PolicyFunding } = registerFundingConfirmation({
   app, mongoose, authenticateToken, User, Organisation, requireRootOrgAccess,
   getPolicy: () => Policy, logAudit,
+});
+// Read-only Initial Unit Purchase Preview (no purchases, activation or writes).
+require("./purchasePreview.cjs").registerPurchasePreview({
+  app, mongoose, authenticateToken, User, Organisation, requireRootOrgAccess,
+  getPolicy: () => Policy, PolicyFunding, AssetManagerFund, Valuation: FundValuation,
 });
 
 /** GET /api/funding/access — read-only: tells the UI whether the signed-in user may manage funding. */

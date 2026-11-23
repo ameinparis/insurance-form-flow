@@ -8,6 +8,8 @@ import { readSubmittedPortfolio, splitFundRow, type ReviewRow } from "@/componen
 import { PolicyReviewContent } from "@/components/policy/PolicyReviewContent"
 import { InvestmentFundingCard } from "@/components/client/InvestmentFundingCard"
 import { usePolicyFunding } from "@/hooks/usePolicyFunding"
+import { PurchasePreviewSection } from "@/components/client/PurchasePreviewSection"
+import { useAuth } from "@/lib/authlibrary"
 
 /**
  * Read-only presentation of an approved policy inside the Client context.
@@ -76,6 +78,14 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
   const portfolio = readSubmittedPortfolio(form)
   const [panel, setPanel] = useState<Panel | null>(null)
   const funding = usePolicyFunding(policy.id)
+  const { permissions } = useAuth()
+  const fundIdFor = (row: ReviewRow): string | null => {
+    try {
+      const list = JSON.parse(String(form.selectedFunds || "[]"))
+      const hits = Array.isArray(list) ? list.filter((f: any) => f?.name === row.name && (f?.assetManagerName || "") === (row.detail || "")) : []
+      return hits.length === 1 && hits[0].id ? String(hits[0].id) : null
+    } catch { return null }
+  }
   const fundingLabel = funding.data?.status === "confirmed" ? "Funds Confirmed" : funding.data ? "Awaiting funds confirmation" : "Not yet available"
 
 
@@ -284,6 +294,8 @@ export const PolicyRecordView = ({ policy }: { policy: ClientPolicy }) => {
                 <Detail label="Funding Status" value={fundingLabel} />
                 <Detail label="Units Purchased" value="Not yet available" />
               </div>
+              {permissions?.canManageFunding && funding.data?.status === "confirmed" && policy.status === "APPROVED" &&
+                <PurchasePreviewSection key={panel.row.name} policyId={policy.id} fundId={fundIdFor(panel.row)} />}
               <div className="mt-6 space-y-2">
                 {["Unit Holdings", "Applicable Unit Price", "Portfolio Valuation", "Performance History", "Growth Chart"].map((t) => (
                   <div key={t} className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border px-4 py-3">

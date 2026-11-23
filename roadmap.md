@@ -53,3 +53,9 @@ Scope: frontend only; no persistent storage, APIs, investment calculations or ch
 - [ ] Phase 2: explicit, permission-checked initial Prudential purchase and immutable holdings. Blocker: Phase 1 validation and approval.
 - [ ] Phase 3: policy-specific valuation history and chart. Blocker: verified purchase flow and approval.
 - [ ] Phase 4: Excel-validated monthly performance. Blocker: confirmed monthly methodology and approval.
+
+## Initial Unit Purchase Preview (read-only)
+- [x] Backend preview endpoint (exact-date price, confirmed funding, Root Admin/Super Admin, no writes) + tests
+- [x] "Purchase Preview — Not Yet Activated" in fund panel
+- [ ] Joint test against development data (blocker: needs user session + dev DB)
+- [ ] Actual unit purchases (waiting for approval)
