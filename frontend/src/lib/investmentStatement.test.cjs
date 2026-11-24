@@ -67,3 +67,12 @@ test("legacy market adjustment row also shows price movement", () => {
   const r = m.exports.buildStatement([], "f", [{ fundId: "f", valuationDate: "2026-11-24", previousUnitPrice: "3.0798", newUnitPrice: "3.1024", adjustment: "1", newClosingBalance: "1" }])
   assert.equal(m.exports.roundDecimal(r[0].unitPrice, 6), "0.022600")
 })
+
+test("funeral row shows stored units; fee and market rows blank; legacy batch blank", () => {
+  const rows = [{ type: "MARKET_ADJUSTMENT", description: "M", movement: "1", closingBalance: "1" }, { type: "FUNERAL_PREMIUM", description: "F", movement: "-14.00", closingBalance: "1" }, { type: "ADMIN_FEE", description: "A", movement: "-1", closingBalance: "1" }]
+  const s = buildStatement([], "f1", [], [{ fundId: "f1", valuationDate: "2026-06-30", newUnitPrice: "3.1024", previousUnitPrice: "3.0798", funeralUnits: "-4.512635379061371", unitsHeldAfter: "442637.8667", rows }])
+  assert.deepEqual(s.map((r) => r.units), [null, "-4.512635379061371", null])
+  assert.equal(formatUnits(s[1].units), "(4.51)")
+  assert.equal(buildStatement([], "f1", [], [{ fundId: "f1", valuationDate: "2026-06-30", newUnitPrice: "3.1", rows }])[1].units, null)
+  assert.equal(m.exports.currentUnitsHeld("100", [{ fundId: "f1", sequence: 1, unitsHeldAfter: "95.5", rows: [] }, { fundId: "f1", sequence: 2, rows: [] }], "f1"), "95.5")
+})

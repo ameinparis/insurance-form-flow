@@ -13,7 +13,7 @@ import { PurchasePreviewSection } from "@/components/client/PurchasePreviewSecti
 import { InvestmentStatementSection } from "@/components/client/InvestmentStatementSection"
 import { MonthlyProcessingSection } from "@/components/client/MonthlyProcessingSection"
 import { useMonthlyProcessing } from "@/hooks/useMonthlyProcessing"
-import { buildStatement, formatDate, formatMoney, formatPrice, formatUnits, latestClosingBalance } from "@/lib/investmentStatement"
+import { buildStatement, formatDate, formatMoney, formatPrice, formatUnits, latestClosingBalance, currentUnitsHeld } from "@/lib/investmentStatement"
 
 const card = "rounded-[1.75rem] bg-card border border-border shadow-sm p-6"
 const Item = ({ label, value }: { label: string; value?: string | null }) => (
@@ -76,8 +76,8 @@ const PortfolioTracking = () => {
           <Item label="Purchase Status" value={bought ? "Purchased" : "Not yet purchased"} />
           <Item label="Initial Purchase Date" value={bought ? formatDate(bought.purchaseDate) : null} />
           <Item label="Initial Unit Price" value={bought ? formatPrice(bought.unitPrice) : null} />
-          <Item label="Initial Units Purchased" value={bought ? formatUnits(bought.units) : null} />
-          <Item label="Current Units Held" value={bought ? formatUnits(bought.units) : null} />
+          <Item label="Initial Units Purchased" value={bought ? formatUnits(currentUnitsHeld(bought.units, monthly.data || [], fundId || "")) : null} />
+          <Item label="Current Units Held" value={bought ? formatUnits(currentUnitsHeld(bought.units, monthly.data || [], fundId || "")) : null} />
           <Item label="Latest Closing Balance" value={latest ? formatMoney(latest) : null} />
         </div>
       </div>

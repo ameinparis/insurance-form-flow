@@ -63,6 +63,7 @@ export const MonthlyProcessingSection = ({ fundId, preview, confirm }: {
     ["Previous Unit Price", formatPrice(data.previousUnitPrice)],
     ["New Unit Price", formatPrice(data.newUnitPrice)],
     ["Units Held", formatUnits(data.unitsHeld)],
+    ...(data.funeralUnits ? [["Funeral Premium Units", formatUnits(data.funeralUnits)], ["Units Held After", formatUnits(data.unitsHeldAfter || data.unitsHeld)]] : []),
     ["Previous Closing Balance", formatMoney(data.previousClosingBalance)],
     ["Approved Allocation", pct(data.allocationPercent)],
     ["Policy Funeral Premium", formatMoney(data.funeralPremium)],

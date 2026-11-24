@@ -19,7 +19,7 @@ export interface StoredPurchase { fundId: string; purchaseDate: string; investme
 
 export interface StoredMarketAdjustment { fundId: string; valuationDate: string; newUnitPrice: string; previousUnitPrice?: string; adjustment: string; newClosingBalance: string; sequence?: number }
 
-export interface StoredMonthlyBatch { fundId: string; valuationDate: string; newUnitPrice: string; previousUnitPrice?: string; sequence?: number
+export interface StoredMonthlyBatch { fundId: string; valuationDate: string; newUnitPrice: string; previousUnitPrice?: string; sequence?: number; funeralUnits?: string | null; unitsHeldAfter?: string | null
   rows: { type: string; description: string; movement: string; closingBalance: string }[] }
 
 const BATCH_TYPES: Record<string, StatementEntryType> = { MARKET_ADJUSTMENT: "MARKET_PRICE_ADJUSTMENT", FUNERAL_PREMIUM: "FUNERAL_COVER_PREMIUM", ADMIN_FEE: "ADMINISTRATION_FEE" }
@@ -35,7 +35,7 @@ export function buildStatement(purchases: StoredPurchase[], fundId: string | und
     // Each monthly batch expands into its stored rows, in stored order (expense units not yet calculated).
     ...batches.filter((b) => b.fundId === fundId).sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0)).flatMap((b) => b.rows.map((r) => {
       const type = BATCH_TYPES[r.type] || "OTHER"
-      return { type, date: b.valuationDate, description: r.description || STATEMENT_DESCRIPTIONS[type], units: null, unitPrice: batchRowUnitPrice(b, r.type), marketValue: r.movement, closingBalance: r.closingBalance }
+      return { type, date: b.valuationDate, description: r.description || STATEMENT_DESCRIPTIONS[type], units: r.type === "FUNERAL_PREMIUM" && b.funeralUnits ? b.funeralUnits : null, unitPrice: batchRowUnitPrice(b, r.type), marketValue: r.movement, closingBalance: r.closingBalance }
     })),
   ]
   return rows.map((e, i) => ({ e, i }))
@@ -81,4 +81,10 @@ export function subtractDecimal(a: string, b: string): string {
 /** Excel convention: the Market Price Adjustment row shows the price movement (stored new - stored previous); other rows show the new price. */
 export function batchRowUnitPrice(b: { newUnitPrice: string; previousUnitPrice?: string }, rowType: string): string {
   return rowType === "MARKET_ADJUSTMENT" && b.previousUnitPrice ? subtractDecimal(b.newUnitPrice, b.previousUnitPrice) : b.newUnitPrice
+}
+
+/** Current units held: last monthly batch's stored unitsHeldAfter (legacy batches deduct nothing), else purchase units. */
+export function currentUnitsHeld(purchaseUnits: string, batches: StoredMonthlyBatch[], fundId: string): string {
+  const b = batches.filter((x) => x.fundId === fundId && x.unitsHeldAfter).sort((a, c) => (a.sequence ?? 0) - (c.sequence ?? 0))
+  return b.length ? (b[b.length - 1].unitsHeldAfter as string) : purchaseUnits
 }

@@ -2,7 +2,8 @@
  * Phase 3C: Monthly Portfolio Processing per policy fund.
  * One immutable PolicyMonthlyBatch holds three rows (market adjustment, funeral premium,
  * administration fee) so no partial batch can exist. Writes ONLY that collection + audit log.
- * Never changes units, purchases, valuations, funding, allocations or policies.
+ * Units held = purchase units + stored funeralUnits of earlier batches (admin fee units not yet unitised).
+ * Never changes purchases, valuations, funding, allocations or policies.
  * Money is rounded half-up to cents at each step; units and prices keep full precision.
  */
 const crypto = require("node:crypto");
@@ -25,7 +26,10 @@ function monthlyCalculation({ unitsHeld, previousUnitPrice, newUnitPrice, previo
   const cb2 = cb1.minus(fp);
   const af = r2(cb1.times(adminFeePercent).div(100));
   const cb3 = cb2.minus(af);
+  const funeralUnits = new Decimal(0).minus(fp).div(newUnitPrice).toSignificantDigits(34);
+  const unitsHeldAfter = new Decimal(unitsHeld).plus(funeralUnits).toSignificantDigits(34);
   return {
+    funeralUnits: funeralUnits.toFixed(), unitsHeldAfter: unitsHeldAfter.toFixed(),
     marketAdjustment: ma.toFixed(2), closingBalance1: cb1.toFixed(2),
     funeralPremium: fp.negated().toFixed(2), closingBalance2: cb2.toFixed(2),
     administrationFee: af.negated().toFixed(2), closingBalance3: cb3.toFixed(2),
@@ -43,6 +47,7 @@ function getMonthlyBatchModel(mongoose) {
     previousDate: { type: String, required: true }, previousTransaction: { type: String, required: true },
     unitsHeld: { type: D, required: true }, previousUnitPrice: { type: D, required: true }, newUnitPrice: { type: D, required: true },
     previousClosingBalance: { type: D, required: true },
+    funeralUnits: { type: D }, unitsHeldAfter: { type: D },
     funeralPremium: { type: D, required: true }, allocationPercent: { type: D, required: true }, adminFeePercent: { type: D, required: true },
     rows: { type: [row], required: true, validate: (v) => v.length === 3 },
     valuationId: { type: String, required: true }, valuationRevision: { type: Number, required: true },
@@ -59,6 +64,7 @@ function getMonthlyBatchModel(mongoose) {
 const view = (b) => ({
   policyId: b.policyId, fundId: b.fundId, sequence: b.sequence, valuationDate: b.valuationDate, previousDate: b.previousDate,
   unitsHeld: str(b.unitsHeld), previousUnitPrice: str(b.previousUnitPrice), newUnitPrice: str(b.newUnitPrice),
+  funeralUnits: b.funeralUnits == null ? null : str(b.funeralUnits), unitsHeldAfter: b.unitsHeldAfter == null ? null : str(b.unitsHeldAfter),
   previousClosingBalance: str(b.previousClosingBalance), funeralPremium: str(b.funeralPremium),
   allocationPercent: str(b.allocationPercent), adminFeePercent: str(b.adminFeePercent),
   rows: (b.rows || []).map((r) => ({ type: r.type, description: r.description, movement: str(r.movement), closingBalance: str(r.closingBalance) })),
@@ -107,17 +113,17 @@ async function computeMonthlyBatch({ policy, fundId, date, PolicyFunding, Policy
   if (!DEC.test(feeRaw)) return fail(422, "ADMIN_FEE_MISSING", "Administration fee not configured for this fund");
 
   const inputs = {
-    unitsHeld: str(purchase.units), previousUnitPrice: full(prior.price), newUnitPrice: full(str(valuation.unitPrice)),
+    unitsHeld: batches.reduce((u, b) => (b.funeralUnits == null ? u : u.plus(str(b.funeralUnits))), new Decimal(str(purchase.units))).toSignificantDigits(34).toFixed(), previousUnitPrice: full(prior.price), newUnitPrice: full(str(valuation.unitPrice)),
     previousClosingBalance: r2(prior.balance).toFixed(2), funeralPremium: full(premiumRaw),
     allocationPercent: full(allocRaw), adminFeePercent: full(feeRaw),
   };
   const calc = monthlyCalculation(inputs);
-  const hashSource = { ...inputs, policyId: policy.id, fundId: fid, date, previousTransaction: prior.ref,
+  const hashSource = { ...inputs, funeralUnits: calc.funeralUnits, unitsHeldAfter: calc.unitsHeldAfter, policyId: policy.id, fundId: fid, date, previousTransaction: prior.ref,
     valuationId: String(valuation._id), valuationRevision: valuation.revision };
   const inputHash = crypto.createHash("sha256").update(JSON.stringify(hashSource)).digest("hex");
   return { result: {
     policyId: policy.id, fundId: fid, valuationDate: date, previousDate: prior.date, previousTransaction: prior.ref,
-    sequence: nextSequence, ...inputs,
+    sequence: nextSequence, ...inputs, funeralUnits: calc.funeralUnits, unitsHeldAfter: calc.unitsHeldAfter,
     rows: [
       { type: "MARKET_ADJUSTMENT", description: "Market Price Adjustment", movement: calc.marketAdjustment, closingBalance: calc.closingBalance1 },
       { type: "FUNERAL_PREMIUM", description: "Funeral Cover Premium", movement: calc.funeralPremium, closingBalance: calc.closingBalance2 },
@@ -168,6 +174,7 @@ function createMonthlyProcessingHandlers({ PolicyMonthlyBatch, PolicyMarketAdjus
         policyId: policy.id, fundId: p.fundId, sequence: p.sequence, valuationDate: date, previousDate: p.previousDate,
         previousTransaction: p.previousTransaction, unitsHeld: D(p.unitsHeld), previousUnitPrice: D(p.previousUnitPrice),
         newUnitPrice: D(p.newUnitPrice), previousClosingBalance: D(p.previousClosingBalance), funeralPremium: D(p.funeralPremium),
+        funeralUnits: D(p.funeralUnits), unitsHeldAfter: D(p.unitsHeldAfter),
         allocationPercent: D(p.allocationPercent), adminFeePercent: D(p.adminFeePercent),
         rows: p.rows.map((row) => ({ ...row, movement: D(row.movement), closingBalance: D(row.closingBalance) })),
         valuationId: p.valuationId, valuationRevision: p.valuationRevision, purchaseId: p.purchaseId, inputHash: p.inputHash,
@@ -176,7 +183,7 @@ function createMonthlyProcessingHandlers({ PolicyMonthlyBatch, PolicyMarketAdjus
       await logAudit({
         userId: actor.id, userName: actor.name, action: "MONTHLY_PROCESSING_RECORDED",
         details: `Monthly processing on ${date} recorded for fund ${p.fundId} on policy ${policy.id}`,
-        metadata: { policyId: policy.id, fundId: p.fundId, valuationDate: date, inputHash: p.inputHash, unitsHeld: p.unitsHeld,
+        metadata: { policyId: policy.id, fundId: p.fundId, valuationDate: date, inputHash: p.inputHash, unitsHeld: p.unitsHeld, funeralUnits: p.funeralUnits, unitsHeldAfter: p.unitsHeldAfter,
           previousUnitPrice: p.previousUnitPrice, newUnitPrice: p.newUnitPrice, previousClosingBalance: p.previousClosingBalance,
           funeralPremium: p.funeralPremium, allocationPercent: p.allocationPercent, adminFeePercent: p.adminFeePercent,
           rows: p.rows, valuationId: p.valuationId, valuationRevision: p.valuationRevision }, req,

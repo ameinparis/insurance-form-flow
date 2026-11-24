@@ -51,7 +51,8 @@ test("formula rounds each money step to thebe; fee uses rounded CB1", () => {
   const c = monthlyCalculation({ unitsHeld: "400.123456789", previousUnitPrice: "2.5", newUnitPrice: "2.612345", previousClosingBalance: "1000.31",
     funeralPremium: "20", allocationPercent: "70", adminFeePercent: "0.0833" });
   assert.deepEqual(c, { marketAdjustment: "44.95", closingBalance1: "1045.26", funeralPremium: "-14.00", closingBalance2: "1031.26",
-    administrationFee: "-0.87", closingBalance3: "1030.39" });
+    administrationFee: "-0.87", closingBalance3: "1030.39",
+    funeralUnits: "-5.359169634944848402488951497600815", unitsHeldAfter: "394.7642871540551515975110485023992" });
   // Half-up at the cent boundary: 1000 × 0.0835% = 0.835 → 0.84
   assert.equal(monthlyCalculation({ unitsHeld: "1", previousUnitPrice: "1", newUnitPrice: "1", previousClosingBalance: "1000",
     funeralPremium: "0", allocationPercent: "0", adminFeePercent: "0.0835" }).administrationFee, "-0.84");
@@ -78,7 +79,7 @@ for (const u of ["super", "rootAdmin"]) test(`${u} confirms one atomic batch; ne
   assert.equal(s.batches[0].rows.length, 3); assert.equal(s.audits.length, 1);
   const p2 = await s.preview("rootAdmin", "2026-02-28");
   assert.equal(p2.body.previousClosingBalance, "1030.39"); assert.equal(p2.body.previousUnitPrice, "2.612345");
-  assert.equal(p2.body.unitsHeld, "400.123456789"); assert.equal(p2.body.sequence, 2);
+  assert.equal(p2.body.unitsHeld, "394.7642871540551515975110485023992"); // reduced by month 1 funeral units assert.equal(p2.body.sequence, 2);
   assert.ok(s.unchanged());
 });
 
@@ -116,4 +117,13 @@ for (const u of ["advisor", "externalAdmin"]) test(`${u} cannot preview or confi
   assert.equal((await s.preview(u, "2026-01-31")).code, 403);
   assert.equal((await s.confirm(u, { confirmed: true, valuationDate: "2026-01-31" })).code, 403);
   assert.equal(s.batches.length, 0);
+});
+
+test("funeral premium units = -premium / new price, full precision, reduce units held", () => {
+  const c = monthlyCalculation({ unitsHeld: "442642.3793752841", previousUnitPrice: "3.0798", newUnitPrice: "3.1024", previousClosingBalance: "1363250.00",
+    funeralPremium: "14", allocationPercent: "100", adminFeePercent: "0.0833" });
+  assert.equal(c.funeralPremium, "-14.00");
+  assert.ok(c.funeralUnits.startsWith("-4.51263537"));
+  assert.ok(c.unitsHeldAfter.startsWith("442637.86673990"));
+  assert.equal(c.marketAdjustment, "10003.72"); // MA uses units before the deduction
 });

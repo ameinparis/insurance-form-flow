@@ -5,6 +5,7 @@ export interface MonthlyRow { type: string; description: string; movement: strin
 export interface MonthlyBatch {
   policyId: string; fundId: string; sequence: number; valuationDate: string; previousDate: string
   unitsHeld: string; previousUnitPrice: string; newUnitPrice: string; previousClosingBalance: string
+  funeralUnits?: string | null; unitsHeldAfter?: string | null
   funeralPremium: string; allocationPercent: string; adminFeePercent: string; rows: MonthlyRow[]
   valuationId: string; valuationRevision: number; inputHash?: string
   authorisedBy?: { id: string; name: string }; confirmedAt?: string
